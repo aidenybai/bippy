@@ -10,6 +10,10 @@ const MUTABLE: Record<string, string> = { a: "b" };
 
 const SETTINGS = { flag: "a" };
 
+const DEFAULTS = { level: 0 };
+
+const COPIED = { level: 0 };
+
 const settingsAlias = SETTINGS;
 
 settingsAlias.flag = "b";
@@ -67,6 +71,34 @@ export const AliasedConstant = () => {
     <div>
       <button onClick={() => setCount(count + 1)}>go</button>
       {SETTINGS.flag === "b" ? <i>yes</i> : <i>no</i>}
+    </div>
+  );
+};
+
+export const StateSharedConstant = () => {
+  const [config] = useState(DEFAULTS);
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          config.level = 2;
+          setCount(count + 1);
+        }}
+      >
+        go
+      </button>
+      {DEFAULTS.level === 2 ? <i>yes</i> : <i>no</i>}
+    </div>
+  );
+};
+
+export const StateCopiedConstant = () => {
+  const [config, setConfig] = useState({ ...COPIED });
+  return (
+    <div>
+      <button onClick={() => setConfig({ ...config, level: 2 })}>go</button>
+      {COPIED.level === 2 ? <i>yes</i> : <i>no</i>}
     </div>
   );
 };

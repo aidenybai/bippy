@@ -35,4 +35,20 @@ describe("a module-level constant", () => {
       getComponent(project, "AliasedConstant").report.states.map((state) => state.conditions),
     ).toEqual([['SETTINGS.flag === "b"'], ['SETTINGS.flag !== "b"']]);
   });
+
+  it("can change once state holds it by reference", () => {
+    expect(
+      getComponent(project, "StateSharedConstant").report.states.map((state) => state.conditions),
+    ).toEqual([["DEFAULTS.level === 2"], ["DEFAULTS.level !== 2"]]);
+    expect(getComponent(project, "StateSharedConstant").report.regions[0]?.firstRenderState).toBe(
+      1,
+    );
+    expect(getTargets("StateSharedConstant")[1]).toEqual([[0, 1]]);
+  });
+
+  it("is read as its literal when state holds a copy of its fields", () => {
+    expect(
+      getComponent(project, "StateCopiedConstant").report.states.map((state) => state.conditions),
+    ).toEqual([[]]);
+  });
 });
