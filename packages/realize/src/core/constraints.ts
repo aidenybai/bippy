@@ -19,7 +19,7 @@ import { PlaceMap } from "./utils/place-map";
 import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
-import { foldBinary } from "./symbolic-values";
+import { foldBinary, foldUnary } from "./symbolic-values";
 import { applyPureFunctionToCases } from "./utils/pure-functions";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
@@ -942,6 +942,86 @@ const evaluateAlias = (value: SymbolicValue, constraints: Constraints): boolean 
   return consequent !== null && consequent === alternate ? consequent : null;
 };
 
+const MAX_CASE_COMBINATIONS = 16;
+
+const isNestedTest = (value: SymbolicValue): value is BinaryExpressionValue =>
+  value.kind === "BinaryExpression" &&
+  value.left.kind !== "Binding" &&
+  value.right.kind !== "Binding";
+
+const getCaseBindings = memoizeByIdentity((value: SymbolicValue): BindingValue[] => {
+  const bindingsByKey = new Map<string, BindingValue>();
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Binding") bindingsByKey.set(getPlaceKey(getValuePlace(part)), part);
+  });
+  return [...bindingsByKey.values()];
+});
+
+const foldCase = (
+  value: SymbolicValue,
+  valuesByKey: ReadonlyMap<string, PrimitiveValue>,
+): SymbolicValue => {
+  if (value.kind === "Binding") {
+    const key = getPlaceKey(getValuePlace(value));
+    return valuesByKey.has(key) ? { kind: "Primitive", value: valuesByKey.get(key) } : value;
+  }
+  if (value.kind === "BinaryExpression")
+    return foldBinary(
+      value.operator,
+      foldCase(value.left, valuesByKey),
+      foldCase(value.right, valuesByKey),
+    );
+  if (value.kind === "UnaryExpression")
+    return foldUnary(value.operator, foldCase(value.value, valuesByKey));
+  return value;
+};
+
+const getCaseOutcome = (
+  value: SymbolicValue,
+  valuesByKey: ReadonlyMap<string, PrimitiveValue>,
+): boolean | null => {
+  const folded = foldCase(value, valuesByKey);
+  return folded.kind === "Primitive" ? Boolean(folded.value) : null;
+};
+
+const evaluateByCases = (value: SymbolicValue, constraints: Constraints): boolean | null => {
+  if (!isNestedTest(value)) return null;
+  const bindings = getCaseBindings(value);
+  if (bindings.length === 0 || bindings.length > 2) return null;
+  const cases = bindings.map((binding) => getLiteralCases(binding, constraints));
+  if (cases.some((literals) => literals === null || literals.length === 0)) return null;
+  const literalCases = cases.filter((literals): literals is PrimitiveValue[] => literals !== null);
+  const combinationCount = literalCases.reduce((count, literals) => count * literals.length, 1);
+  if (combinationCount > MAX_CASE_COMBINATIONS) return null;
+  const combinations = literalCases.reduce<PrimitiveValue[][]>(
+    (prefixes, literals) =>
+      prefixes.flatMap((prefix) => literals.map((literal) => [...prefix, literal])),
+    [[]],
+  );
+  const keys = bindings.map((binding) => getPlaceKey(getValuePlace(binding)));
+  const outcomes = combinations.map((combination) =>
+    getCaseOutcome(value, new Map(keys.map((key, index) => [key, combination[index]]))),
+  );
+  const [first] = outcomes;
+  return first !== undefined && first !== null && outcomes.every((outcome) => outcome === first)
+    ? first
+    : null;
+};
+
+const narrowByCase = (
+  value: SymbolicValue,
+  binding: BindingValue,
+  candidate: AbstractValue,
+  isTrue: boolean,
+): AbstractValue[] => {
+  if (candidate.kind !== "Literal") return [candidate];
+  const outcome = getCaseOutcome(
+    value,
+    new Map([[getPlaceKey(getValuePlace(binding)), candidate.value]]),
+  );
+  return outcome === null || outcome === isTrue ? [candidate] : [];
+};
+
 export const evaluateCondition = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -971,8 +1051,12 @@ export const evaluateCondition = (
       if (distributed) return evaluateCondition(distributed, constraints);
       const bounded = evaluateBounds(value, constraints);
       if (bounded !== null) return bounded;
-      if (ORDER_OPERATORS.has(value.operator)) return evaluateComparison(value, constraints);
-      return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
+      const compared = ORDER_OPERATORS.has(value.operator)
+        ? evaluateComparison(value, constraints)
+        : EQUALITY_OPERATORS.has(value.operator)
+          ? evaluateEquality(value, constraints)
+          : null;
+      return compared ?? evaluateByCases(value, constraints);
     }
     case "Conditional": {
       const test = evaluateCondition(getTestExpression(value), constraints);
@@ -1199,6 +1283,15 @@ const assumeUncached = (
       : assumeOpaqueCondition(value, isTrue, constraints);
     return assumed && withStringLengthBounds(value, isTrue, assumed);
   }
+  const [caseBinding, ...otherBindings] = isNestedTest(value) ? getCaseBindings(value) : [];
+  if (
+    caseBinding &&
+    otherBindings.length === 0 &&
+    (getLiteralCases(caseBinding, constraints)?.length ?? 0) > 0
+  )
+    return assumeByNarrowing(value, isTrue, caseBinding, constraints, (candidate) =>
+      narrowByCase(value, caseBinding, candidate, isTrue),
+    );
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
     return assumeEquality(value, isTrue, constraints);
   if (value.kind === "BinaryExpression" && ORDER_OPERATORS.has(value.operator))
