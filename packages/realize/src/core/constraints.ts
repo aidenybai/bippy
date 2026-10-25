@@ -62,12 +62,6 @@ export interface Bound {
   isStrict: boolean;
 }
 
-interface LinearTerm {
-  atom: BindingPlace | null;
-  isNegated: boolean;
-  offset: number;
-}
-
 interface AtomDifference {
   plus: BindingPlace | null;
   minus: BindingPlace | null;
@@ -272,40 +266,52 @@ const collectPlaces = memoizeByIdentity((value: SymbolicValue): BindingPlace[] =
   return places;
 });
 
-const negateTerm = (term: LinearTerm): LinearTerm => ({
-  atom: term.atom,
-  isNegated: term.atom !== null && !term.isNegated,
-  offset: -term.offset,
+interface SignedAtom {
+  atom: BindingPlace;
+  isPlus: boolean;
+}
+
+interface SignedSum {
+  atoms: SignedAtom[];
+  offset: number;
+}
+
+const MAX_SUM_ATOMS = 2;
+
+const negateSum = ({ atoms, offset }: SignedSum): SignedSum => ({
+  atoms: atoms.map(({ atom, isPlus }) => ({ atom, isPlus: !isPlus })),
+  offset: -offset,
 });
 
-const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
+const getSignedSum = (value: SymbolicValue): SignedSum | null => {
   if (value.kind === "Primitive")
-    return typeof value.value === "number"
-      ? { atom: null, isNegated: false, offset: value.value }
-      : null;
-  if (value.kind === "Binding") return { atom: getValuePlace(value), isNegated: false, offset: 0 };
+    return typeof value.value === "number" ? { atoms: [], offset: value.value } : null;
+  if (value.kind === "Binding")
+    return { atoms: [{ atom: getValuePlace(value), isPlus: true }], offset: 0 };
   if (value.kind === "UnaryExpression" && value.operator === "-") {
-    const operandTerm = getLinearTerm(value.value);
-    return operandTerm && negateTerm(operandTerm);
+    const operand = getSignedSum(value.value);
+    return operand && negateSum(operand);
   }
   if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
     return null;
-  const leftTerm = getLinearTerm(value.left);
-  const rightTerm = getLinearTerm(value.right);
-  if (!leftTerm || !rightTerm) return null;
-  const addedTerm = value.operator === "+" ? rightTerm : negateTerm(rightTerm);
-  if (addedTerm.atom === null) return { ...leftTerm, offset: leftTerm.offset + addedTerm.offset };
-  if (leftTerm.atom === null) return { ...addedTerm, offset: leftTerm.offset + addedTerm.offset };
-  return null;
+  const left = getSignedSum(value.left);
+  const right = getSignedSum(value.right);
+  if (!left || !right) return null;
+  const added = value.operator === "+" ? right : negateSum(right);
+  const atoms = [...left.atoms, ...added.atoms];
+  return atoms.length > MAX_SUM_ATOMS ? null : { atoms, offset: left.offset + added.offset };
 };
 
-const getAtomDifference = (leftTerm: LinearTerm, rightTerm: LinearTerm): AtomDifference | null => {
-  const signedAtoms: Array<[BindingPlace | null, boolean]> = [
-    [leftTerm.atom, !leftTerm.isNegated],
-    [rightTerm.atom, rightTerm.isNegated],
-  ];
-  const plus = signedAtoms.flatMap(([atom, isPlus]) => (atom && isPlus ? [atom] : []));
-  const minus = signedAtoms.flatMap(([atom, isPlus]) => (atom && !isPlus ? [atom] : []));
+const getAtomDifference = (left: SignedSum, right: SignedSum): AtomDifference | null => {
+  const signedAtoms = [...left.atoms, ...negateSum(right).atoms];
+  const remaining = signedAtoms.filter(
+    (signed) =>
+      !signedAtoms.some(
+        (other) => other.isPlus !== signed.isPlus && isSamePlace(other.atom, signed.atom),
+      ),
+  );
+  const plus = remaining.flatMap(({ atom, isPlus }) => (isPlus ? [atom] : []));
+  const minus = remaining.flatMap(({ atom, isPlus }) => (isPlus ? [] : [atom]));
   if (plus.length > 1 || minus.length > 1 || plus.length + minus.length === 0) return null;
   return { plus: plus[0] ?? null, minus: minus[0] ?? null };
 };
@@ -355,8 +361,8 @@ const isNumberValue = (value: SymbolicValue, constraints: Constraints): boolean 
     return (
       isNumberValue(value.consequent, constraints) && isNumberValue(value.alternate, constraints)
     );
-  const term = getLinearTerm(value);
-  return term !== null && (term.atom === null || isNumberAtom(term.atom, constraints));
+  const sum = getSignedSum(value);
+  return sum !== null && sum.atoms.every(({ atom }) => isNumberAtom(atom, constraints));
 };
 
 export const isComplementNegation = (
@@ -375,8 +381,8 @@ export const getBounds = (
   if (!isTrue && constraints && !isComplementNegation(value, constraints)) return null;
   const operator = isTrue ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
-  const leftTerm = getLinearTerm(value.left);
-  const rightTerm = getLinearTerm(value.right);
+  const leftTerm = getSignedSum(value.left);
+  const rightTerm = getSignedSum(value.right);
   const difference = leftTerm && rightTerm && getAtomDifference(leftTerm, rightTerm);
   if (!leftTerm || !rightTerm || !difference) return null;
   const { plus, minus } = difference;
