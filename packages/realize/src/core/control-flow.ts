@@ -147,7 +147,7 @@ export const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
 export const NO_STOPS: ReadonlySet<BlockId> = new Set();
 
 export const getBranchKey = (branch: Branch): string =>
-  `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}`;
+  `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}${branch.caseIndex === undefined ? "" : `#${branch.caseIndex}`}`;
 
 export const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split);

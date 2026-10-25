@@ -375,6 +375,27 @@ const REF_CONTAINER_WRITES = new Set(["push", "unshift", "add", "set"]);
 const isRefContents = (value: BindingValue): boolean =>
   value.binding.kind === "ref" && value.path[0] === "current";
 
+const getCollectionEntries = (
+  receiver: SymbolicValue,
+): Map<PrimitiveValue, SymbolicValue> | null => {
+  if (receiver.kind !== "Collection" || receiver.writes.length > 0) return null;
+  const { source } = receiver;
+  if (source?.kind !== "ArrayExpression" || source.spreads.length > 0) return null;
+  const entries = new Map<PrimitiveValue, SymbolicValue>();
+  for (const element of source.elements) {
+    const [entryKey, entryValue] =
+      receiver.collection === "Map" && element.kind === "ArrayExpression"
+        ? element.elements
+        : [element, element];
+    const isKey =
+      entryKey?.kind === "Primitive" &&
+      !(typeof entryKey.value === "number" && Number.isNaN(entryKey.value));
+    if (!isKey || entryKey.kind !== "Primitive") return null;
+    entries.set(entryKey.value, entryValue ?? UNDEFINED_VALUE);
+  }
+  return entries;
+};
+
 const getSourceItems = (source: SymbolicValue | null, loc: SourceLocation): SymbolicValue[] => {
   if (source === null) return [];
   if (source.kind !== "ArrayExpression") return [createUnknown("item", loc)];
@@ -1725,6 +1746,34 @@ export class Interpreter {
     return argumentValues;
   }
 
+  #getCollectionLookup(
+    receiver: SymbolicValue,
+    methodName: string,
+    [key]: SymbolicValue[],
+    loc: SourceLocation,
+    instructionId: InstructionId,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const entries = key && key.kind !== "Primitive" ? getCollectionEntries(receiver) : null;
+    if (!key || !entries || (methodName !== "get" && methodName !== "has")) return null;
+    if (receiver.kind === "Collection" && receiver.collection === "Set" && methodName === "get")
+      return null;
+    const fallback: SymbolicValue =
+      methodName === "has" ? { kind: "Primitive", value: false } : UNDEFINED_VALUE;
+    return [...entries].reduceRight<SymbolicValue>(
+      (rest, [entryKey, entryValue], index) => ({
+        kind: "Conditional",
+        test: foldBinary("===", key, { kind: "Primitive", value: entryKey }),
+        testKind: "truthy",
+        consequent: methodName === "has" ? { kind: "Primitive", value: true } : entryValue,
+        alternate: rest,
+        branch: this.createBranch(instructionId, loc, "none", index),
+        guardKeys: walkState.guards.map(getValueKey),
+      }),
+      fallback,
+    );
+  }
+
   #getMembershipTest(
     receiver: SymbolicValue,
     [candidate]: SymbolicValue[],
@@ -1738,7 +1787,7 @@ export class Interpreter {
     );
     if (!isLiteralList) return null;
     return receiver.elements.reduceRight<SymbolicValue>(
-      (rest, element) => {
+      (rest, element, index) => {
         const isElement = foldBinary("===", candidate, element);
         return rest.kind === "Primitive" && rest.value === false
           ? isElement
@@ -1748,7 +1797,7 @@ export class Interpreter {
               testKind: "truthy",
               consequent: isElement,
               alternate: rest,
-              branch: this.createBranch(instructionId, loc, "none"),
+              branch: this.createBranch(instructionId, loc, "none", index),
               guardKeys: [],
             };
       },
@@ -1839,6 +1888,15 @@ export class Interpreter {
       return receiver;
     const literalRead = getLiteralRead(receiver, methodName, argumentValues);
     if (literalRead) return literalRead;
+    const lookup = this.#getCollectionLookup(
+      receiver,
+      methodName,
+      argumentValues,
+      methodCall.loc,
+      instructionId,
+      walkState,
+    );
+    if (lookup) return lookup;
     const invokedArguments = INVOKABLE_KINDS.has(receiver.kind)
       ? getInvokedArguments(methodName, argumentValues)
       : null;
@@ -2301,23 +2359,26 @@ export class Interpreter {
         ? propertyKey.binding.domain
         : this.#resolver.getDomain(computedLoad.property.loc),
     );
-    if (entries)
-      return entries.reduceRight<SymbolicValue>(
-        (rest, [key, entry]) =>
-          getPropertyKeyForms(key, keyType).reduceRight<SymbolicValue>(
-            (alternate, keyForm) => ({
-              kind: "Conditional",
-              test: foldBinary("===", propertyKey, { kind: "Primitive", value: keyForm }),
-              testKind: "truthy",
-              consequent: entry,
-              alternate,
-              branch: this.createBranch(instructionId, computedLoad.loc, "none"),
-              guardKeys: walkState.guards.map(getValueKey),
-            }),
-            rest,
-          ),
+    if (entries) {
+      const keyedEntries = entries.flatMap(([key, entry]) =>
+        getPropertyKeyForms(key, keyType).map((keyForm): [PrimitiveValue, SymbolicValue] => [
+          keyForm,
+          entry,
+        ]),
+      );
+      return keyedEntries.reduceRight<SymbolicValue>(
+        (alternate, [keyForm, entry], index) => ({
+          kind: "Conditional",
+          test: foldBinary("===", propertyKey, { kind: "Primitive", value: keyForm }),
+          testKind: "truthy",
+          consequent: entry,
+          alternate,
+          branch: this.createBranch(instructionId, computedLoad.loc, "none", index),
+          guardKeys: walkState.guards.map(getValueKey),
+        }),
         UNDEFINED_VALUE,
       );
+    }
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
       return this.createDerivedValue(
         [this.read(computedLoad.object), propertyKey],
@@ -2569,8 +2630,14 @@ export class Interpreter {
     );
   }
 
-  createBranch(terminalId: InstructionId, loc: SourceLocation, probe: Branch["probe"]): Branch {
-    return { terminalId, probe, loc, file: this.#resolver.fileName };
+  createBranch(
+    terminalId: InstructionId,
+    loc: SourceLocation,
+    probe: Branch["probe"],
+    caseIndex?: number,
+  ): Branch {
+    const branch: Branch = { terminalId, probe, loc, file: this.#resolver.fileName };
+    return caseIndex === undefined ? branch : { ...branch, caseIndex };
   }
 
   #evaluateFunction(
