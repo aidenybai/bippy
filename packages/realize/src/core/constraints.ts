@@ -871,16 +871,18 @@ const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
   return null;
 };
 
-const getEqualityCounterpart = (value: SymbolicValue): BinaryExpressionValue | null => {
-  if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return null;
-  const operator = getNegatedOperator(value.operator);
-  return operator ? { ...value, operator } : null;
-};
+const getEqualityCounterpart = memoizeByIdentity(
+  (value: SymbolicValue): BinaryExpressionValue | null => {
+    if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return null;
+    const operator = getNegatedOperator(value.operator);
+    return operator ? { ...value, operator } : null;
+  },
+);
 
 const getAlias = (value: SymbolicValue): SymbolicValue | null =>
   value.kind === "Binding" && value.path.length === 0 ? value.binding.alias : null;
 
-const expandAliasOperands = (value: SymbolicValue): SymbolicValue | null => {
+const expandAliasOperands = memoizeByIdentity((value: SymbolicValue): SymbolicValue | null => {
   const alias = getAlias(value);
   if (alias) return alias;
   if (value.kind === "UnaryExpression") {
@@ -891,7 +893,7 @@ const expandAliasOperands = (value: SymbolicValue): SymbolicValue | null => {
   const left = getAlias(value.left);
   const right = getAlias(value.right);
   return left || right ? { ...value, left: left ?? value.left, right: right ?? value.right } : null;
-};
+});
 
 const evaluateAlias = (value: SymbolicValue, constraints: Constraints): boolean | null => {
   const distributed = value.kind === "BinaryExpression" ? distributeComparison(value) : null;
