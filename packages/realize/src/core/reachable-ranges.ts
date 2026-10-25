@@ -1,5 +1,5 @@
 import { getBounds } from "./constraints";
-import type { Bound } from "./constraints";
+import type { Bound, Constraints } from "./constraints";
 import type {
   AbstractValue,
   Binding,
@@ -9,6 +9,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { getBindingPlace } from "./utils/get-binding-place";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { negate } from "./utils/negate";
@@ -31,6 +32,11 @@ interface ReachableInterval {
 const MAX_ROUNDS = 8;
 
 const MAX_INTEGER_CASES = 16;
+
+const EXTREMES = new Map<string, (...values: number[]) => number>([
+  ["Math.min", Math.min],
+  ["Math.max", Math.max],
+]);
 
 const union = (left: Interval, right: Interval): Interval => ({
   min: Math.min(left.min, right.min),
@@ -136,6 +142,20 @@ const getValueInterval = (
         max: Infinity,
       },
     );
+  const derived =
+    value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
+  const extreme = derived && "callee" in derived ? EXTREMES.get(derived.callee) : undefined;
+  if (derived && "callee" in derived && extreme && derived.operands.length > 0) {
+    const operands = derived.operands.map((operand) =>
+      getValueInterval(operand, binding, hypothesis, guards, isInteger),
+    );
+    if (operands.some((operand) => operand === null)) return null;
+    const intervals = operands.filter((operand): operand is Interval => operand !== null);
+    return {
+      min: extreme(...intervals.map((interval) => interval.min)),
+      max: extreme(...intervals.map((interval) => interval.max)),
+    };
+  }
   if (value.kind === "BinaryExpression" && (value.operator === "+" || value.operator === "-")) {
     const offset = getNumber(value.right);
     const term =
@@ -179,6 +199,47 @@ const getValueInterval = (
     return consequent && alternate ? union(consequent, alternate) : null;
   }
   return null;
+};
+
+const getValuesInterval = (values: AbstractValue[] | undefined): Interval => {
+  const numbers = (values ?? []).flatMap((value) =>
+    value.kind === "Literal" && typeof value.value === "number" && Number.isFinite(value.value)
+      ? [value.value]
+      : [],
+  );
+  return numbers.length > 0 && numbers.length === values?.length
+    ? { min: Math.min(...numbers), max: Math.max(...numbers) }
+    : { min: -Infinity, max: Infinity };
+};
+
+const getSourceInterval = (constraints: Constraints, binding: Binding): Interval =>
+  constraints.bounds.reduce<Interval>(
+    (interval, bound) => {
+      const limit = getBoundLimit(bound, binding, false);
+      return {
+        min: Math.max(interval.min, limit.min ?? interval.min),
+        max: Math.min(interval.max, limit.max ?? interval.max),
+      };
+    },
+    getValuesInterval(constraints.possibleValues.get(getBindingPlace(binding))),
+  );
+
+export const getIntervalBounds = (update: StateUpdate, constraints: Constraints): Bound[] => {
+  const { binding, value } = update;
+  const { initial } = binding;
+  const isNumber = initial?.kind === "Primitive" && typeof initial.value === "number";
+  if (!isNumber || update.isRepeated || getNumber(value) !== null) return [];
+  const source = getSourceInterval(constraints, binding);
+  const next = getValueInterval(value, binding, source, update.guards, false);
+  if (!next) return [];
+  const atom = getBindingPlace(binding);
+  const atMost: Bound[] = Number.isFinite(next.max)
+    ? [{ left: atom, right: null, maxDifference: next.max, isStrict: false }]
+    : [];
+  const atLeast: Bound[] = Number.isFinite(next.min)
+    ? [{ left: null, right: atom, maxDifference: -next.min, isStrict: false }]
+    : [];
+  return [...atMost, ...atLeast];
 };
 
 const widen = (previous: Interval, next: Interval): Interval => ({

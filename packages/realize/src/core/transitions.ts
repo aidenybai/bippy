@@ -13,6 +13,7 @@ import {
 } from "./constraints";
 import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
+import { getIntervalBounds } from "./reachable-ranges";
 import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
 import type {
@@ -108,7 +109,10 @@ const applyUpdates = (
       !updatedBindingIds.has(update.binding.id) && isLengthPreserving(update.value, update.binding);
     const shiftedBounds = update.isRepeated
       ? []
-      : getShiftedBounds(update.value, update.binding, constraints.bounds);
+      : [
+          ...getShiftedBounds(update.value, update.binding, constraints.bounds),
+          ...getIntervalBounds(update, constraints),
+        ];
     forgetBinding(updated, update.binding.id, keepsRenderedLength);
     updatedBindingIds.add(update.binding.id);
     if (!isMaybe)
