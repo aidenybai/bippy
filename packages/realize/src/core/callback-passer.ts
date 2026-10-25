@@ -122,17 +122,19 @@ export class CallbackPasser {
     loc: SourceLocation,
   ): void {
     const dependencyPlaces = new PlaceMap<true>();
-    if (dependenciesPlace)
-      this.#interpreter.collectInputPlaces(
-        this.#interpreter.read(dependenciesPlace),
-        dependencyPlaces,
-      );
+    const dependencies = dependenciesPlace ? this.#interpreter.read(dependenciesPlace) : null;
+    if (dependencies) this.#interpreter.collectInputPlaces(dependencies, dependencyPlaces);
+    const isEmptyList =
+      dependencies?.kind === "ArrayExpression" &&
+      dependencies.elements.length === 0 &&
+      dependencies.spreads.length === 0;
     this.#interpreter.effectCalls.push({
       hookKind,
       callback,
       callbackArguments: [],
       dependencies: dependenciesPlace
-        ? this.#interpreter.resolver.getSourceText(dependenciesPlace.loc)
+        ? (this.#interpreter.resolver.getSourceText(dependenciesPlace.loc) ??
+          (isEmptyList ? "[]" : null))
         : null,
       dependencyPlaces: dependenciesPlace ? dependencyPlaces.places() : null,
       loc,

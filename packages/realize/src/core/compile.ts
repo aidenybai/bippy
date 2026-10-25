@@ -18,6 +18,7 @@ import type { ModuleFunctionLoader } from "./function-registry";
 import { createModuleConstantLoader, createModuleVariableLoader } from "./module-values";
 import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
+import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
@@ -96,17 +97,6 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   lowerModuleFunction: () => null,
   loadModuleConstant: () => null,
   loadModuleVariable: () => null,
-};
-
-const COMPONENT_BASE_CLASSES = new Set(["Component", "PureComponent"]);
-
-const isComponentBaseClass = (superClass: types.Expression | null | undefined): boolean => {
-  if (types.isIdentifier(superClass)) return COMPONENT_BASE_CLASSES.has(superClass.name);
-  return (
-    types.isMemberExpression(superClass) &&
-    types.isIdentifier(superClass.property) &&
-    COMPONENT_BASE_CLASSES.has(superClass.property.name)
-  );
 };
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
@@ -355,6 +345,7 @@ export const compileFile = (
 ): CompiledFile => {
   const ast = parseFile(fileName, code);
   if (!ast) return EMPTY_COMPILED_FILE;
+  lowerClassComponents(ast);
   const collector = new CompiledFunctionCollector();
   const pluginOptions = createPluginOptions(environment, {
     logEvent: collector.recordEvent,
