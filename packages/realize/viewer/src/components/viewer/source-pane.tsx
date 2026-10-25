@@ -92,7 +92,7 @@ const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
   const { view } = useViewer();
   const { colorByNodeId } = useViewer();
   const arcs = useMemo(
-    () => placeArcs(view, layout.tokens, colorByNodeId, isRestingArc),
+    () => placeArcs(view, layout, colorByNodeId, isRestingArc),
     [view, layout, colorByNodeId],
   );
   return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
@@ -108,7 +108,7 @@ const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
         ? []
         : placeArcs(
             view,
-            layout.tokens,
+            layout,
             colorByNodeId,
             (edge) =>
               !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),

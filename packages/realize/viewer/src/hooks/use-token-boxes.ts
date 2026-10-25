@@ -2,6 +2,7 @@ import { useLayoutEffect, useState, type RefObject } from "react";
 import {
   createLineLookup,
   getBoundingBox,
+  getLineBox,
   getLinesBox,
   getLocationBox,
   getLocationRows,
@@ -19,11 +20,12 @@ export interface PlacedToken {
 
 export interface TokenLayout {
   tokens: PlacedToken[];
+  codeLeft: number;
   width: number;
   height: number;
 }
 
-const EMPTY_LAYOUT: TokenLayout = { tokens: [], width: 0, height: 0 };
+const EMPTY_LAYOUT: TokenLayout = { tokens: [], codeLeft: 0, width: 0, height: 0 };
 
 const measure = (wrapper: HTMLElement, nodes: GraphNode[]): TokenLayout => {
   const host = wrapper.querySelector<HTMLElement>("diffs-container");
@@ -37,6 +39,7 @@ const measure = (wrapper: HTMLElement, nodes: GraphNode[]): TokenLayout => {
       const anchorBox = node.anchor ? getLocationBox(lookup, node.anchor) : null;
       return box && box.height > 0 ? [{ node, box, rows, anchorBox, isMultiLine }] : [];
     }),
+    codeLeft: getLineBox(lookup, 1)?.x ?? 0,
     width: wrapper.clientWidth,
     height: wrapper.clientHeight,
   };

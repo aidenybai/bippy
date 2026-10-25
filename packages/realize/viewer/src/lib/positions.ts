@@ -75,7 +75,7 @@ export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLo
   };
 };
 
-const getLineBox = (lookup: LineLookup, line: number): Box | null => {
+export const getLineBox = (lookup: LineLookup, line: number): Box | null => {
   const element = lookup.getLine(line);
   return element ? toBox(element.getBoundingClientRect(), lookup.origin) : null;
 };
