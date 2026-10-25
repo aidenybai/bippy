@@ -34,7 +34,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
       open={isLegendOpen && hasLegend && mode !== "json"}
       onOpenChange={setLegendOpen}
     >
-      <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
+      <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
         {children}
       </div>
     </SidebarProvider>
