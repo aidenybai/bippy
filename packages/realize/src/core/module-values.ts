@@ -256,33 +256,6 @@ const isMemberWrite = (path: NodePath): boolean => {
   );
 };
 
-export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
-  const variables = new Map<string, ModuleVariable>();
-  traverse(ast, {
-    VariableDeclarator(path) {
-      const declaration = path.parentPath;
-      const { id, init } = path.node;
-      if (
-        !declaration.isVariableDeclaration() ||
-        !isModuleLevel(declaration.parentPath) ||
-        !types.isIdentifier(id) ||
-        !id.loc
-      )
-        return;
-      const binding = path.scope.getBinding(id.name);
-      const isWritten =
-        binding !== undefined &&
-        (binding.constantViolations.length > 0 || binding.referencePaths.some(isMemberWrite));
-      if (isWritten)
-        variables.set(id.name, {
-          initial: init ? toSymbolicValue(init) : { kind: "Primitive", value: undefined },
-          loc: id.loc,
-        });
-    },
-  });
-  return (variableName) => variables.get(variableName) ?? null;
-};
-
 const HOOK_INITIAL_ARGUMENTS = new Map([
   ["useState", 0],
   ["useReducer", 1],
@@ -309,6 +282,51 @@ const isStateValueReference = (path: NodePath): boolean => {
   return isHookInitialArgument(path);
 };
 
+const getFieldValues = (value: SymbolicValue): SymbolicValue[] => {
+  if (value.kind === "ObjectExpression") return value.properties.map((property) => property.value);
+  if (value.kind === "ArrayExpression") return value.elements;
+  return [value];
+};
+
+const isSharedStateReference = (path: NodePath, value: SymbolicValue): boolean =>
+  isStateValueReference(path) &&
+  !(path.parentPath?.isSpreadElement() && getFieldValues(value).every(isPrimitive));
+
+const isReadThroughState = (references: NodePath[], value: SymbolicValue): boolean =>
+  !isPrimitive(value) &&
+  references.some((reference) => isSharedStateReference(reference, value)) &&
+  references.some((reference) => !isStateValueReference(reference));
+
+export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
+  const variables = new Map<string, ModuleVariable>();
+  traverse(ast, {
+    VariableDeclarator(path) {
+      const declaration = path.parentPath;
+      const { id, init } = path.node;
+      if (
+        !declaration.isVariableDeclaration() ||
+        !isModuleLevel(declaration.parentPath) ||
+        !types.isIdentifier(id) ||
+        !id.loc
+      )
+        return;
+      const binding = path.scope.getBinding(id.name);
+      const value = init ? toSymbolicValue(init) : null;
+      const isWritten =
+        binding !== undefined &&
+        (binding.constantViolations.length > 0 ||
+          binding.referencePaths.some(isMemberWrite) ||
+          (value !== null && isReadThroughState(binding.referencePaths, value)));
+      if (isWritten)
+        variables.set(id.name, {
+          initial: init ? value : { kind: "Primitive", value: undefined },
+          loc: id.loc,
+        });
+    },
+  });
+  return (variableName) => variables.get(variableName) ?? null;
+};
+
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
   const constants = new Map<string, SymbolicValue>();
   const enums = new Map<string, SymbolicValue>();
@@ -333,6 +351,7 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
         (!isExported &&
           binding !== undefined &&
           binding.constantViolations.length === 0 &&
+          !isReadThroughState(binding.referencePaths, value) &&
           binding.referencePaths.every(
             (reference) =>
               isStateValueReference(reference) || isReadOfPrimitive(reference, [value], []),
