@@ -352,6 +352,20 @@ const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
 
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
+const getSourceItems = (source: SymbolicValue | null, loc: SourceLocation): SymbolicValue[] => {
+  if (source === null) return [];
+  if (source.kind !== "ArrayExpression") return [createUnknown("item", loc)];
+  return [...source.elements, ...source.spreads.map(() => createUnknown("item", loc))];
+};
+
+const getSetItems = (receiver: SymbolicValue, loc: SourceLocation): SymbolicValue[] | null => {
+  if (receiver.kind !== "Collection" || receiver.collection !== "Set") return null;
+  const addedItems = receiver.writes
+    .filter((write) => write.method === "add")
+    .map((write) => write.argumentValues[0] ?? createUnknown("item", loc));
+  return [...getSourceItems(receiver.source, loc), ...addedItems];
+};
+
 const getConcatenatedParts = (value: SymbolicValue): SymbolicValue[] | null => {
   if (value.kind === "Primitive") return typeof value.value === "string" ? [value] : null;
   if (value.kind !== "BinaryExpression" || value.operator !== "+") return null;
@@ -791,7 +805,7 @@ export class Interpreter {
     return this.#storedFunctionCount;
   }
 
-  addStoredFunctions(place: BindingValue, value: SymbolicValue): void {
+  addStoredFunctions(place: BindingValue, value: SymbolicValue, isMountClosure = true): void {
     const key = getValueKey(place);
     const known = new Set((this.#storedFunctions.get(key) ?? []).map(getValueKey));
     const added = getPassedCallbacks([value]).filter(
@@ -800,7 +814,8 @@ export class Interpreter {
     if (added.length === 0) return;
     this.#storedFunctions.set(key, [...(this.#storedFunctions.get(key) ?? []), ...added]);
     this.#storedFunctionCount += added.length;
-    for (const stored of added) if (stored.kind === "Function") this.addMountClosure(stored);
+    for (const stored of added)
+      if (isMountClosure && stored.kind === "Function") this.addMountClosure(stored);
   }
 
   #callStoredFunctions(
@@ -1712,6 +1727,15 @@ export class Interpreter {
       walkState,
     );
     if (found) return found;
+    const setItems =
+      this.#handlerEffects !== null && methodName === "forEach" && callback?.kind === "Function"
+        ? getSetItems(receiver, methodCall.loc)
+        : null;
+    if (setItems && callback?.kind === "Function") {
+      for (const item of setItems)
+        this.callFunction(callback, [item, item, receiver], methodCall.loc, walkState);
+      return UNDEFINED_VALUE;
+    }
     if (isIteratingLiteral) {
       const results = this.iteration.callForEachItem(callback, receiver, methodCall.loc, walkState);
       return (

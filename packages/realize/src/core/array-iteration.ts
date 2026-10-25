@@ -285,6 +285,7 @@ export class ArrayIteration {
       inputPlaces: inputPlaces.places(),
     });
     this.#interpreter.addItemSource(binding, collection);
+    this.#interpreter.addStoredFunctions(createBindingValue(binding), collection, false);
     return createBindingValue(binding);
   }
 
