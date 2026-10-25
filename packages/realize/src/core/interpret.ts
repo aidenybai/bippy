@@ -81,6 +81,7 @@ import {
 } from "./utils/literal-receivers";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
+import { getLiteralRead } from "./utils/literal-reads";
 import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
@@ -1805,6 +1806,8 @@ export class Interpreter {
     if (storeResult) return storeResult;
     if (receiver.kind === "Collection" && CHAINED_COLLECTION_WRITES.has(methodName))
       return receiver;
+    const literalRead = getLiteralRead(receiver, methodName, argumentValues);
+    if (literalRead) return literalRead;
     const invokedArguments = INVOKABLE_KINDS.has(receiver.kind)
       ? getInvokedArguments(methodName, argumentValues)
       : null;

@@ -1,5 +1,6 @@
 import { traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { SymbolicValue } from "./types";
 
@@ -15,6 +16,11 @@ export interface ModuleVariable {
 export interface ModuleVariableLoader {
   (variableName: string): ModuleVariable | null;
 }
+
+const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
+  ["Set", "Set"],
+  ["Map", "Map"],
+]);
 
 const isModuleLevel = (path: NodePath | null): boolean =>
   path !== null &&
@@ -50,6 +56,23 @@ const toSymbolicValue = (node: types.Node): SymbolicValue | null => {
     types.isParenthesizedExpression(node)
   )
     return toSymbolicValue(node.expression);
+  if (types.isNewExpression(node) && types.isIdentifier(node.callee)) {
+    const collection = COLLECTION_NAMES.get(node.callee.name);
+    const [source] = node.arguments;
+    const sourceValue =
+      source && !types.isSpreadElement(source) && types.isExpression(source)
+        ? toSymbolicValue(source)
+        : null;
+    if (!collection || node.arguments.length > 1 || (source && !sourceValue)) return null;
+    return {
+      kind: "Collection",
+      collection,
+      source: sourceValue,
+      isCopy: false,
+      writes: [],
+      loc: node.loc ?? GeneratedSource,
+    };
+  }
   if (types.isArrayExpression(node)) {
     const elements = allOrNone(
       node.elements.map((element) =>
@@ -115,23 +138,66 @@ const isWriteTarget = (path: NodePath): boolean => {
   );
 };
 
-const LIST_READS = new Set(["includes", "indexOf"]);
+const LIST_READS = new Set(["includes", "indexOf", "at", "get", "has"]);
+
+const CALLBACK_READS = new Set(["find", "findLast", "findIndex"]);
+
+const OBJECT_READS = new Set(["keys", "values", "entries"]);
 
 const isLiteralList = (value: SymbolicValue): boolean =>
   value.kind === "ArrayExpression" &&
   value.spreads.length === 0 &&
   value.elements.every(isPrimitive);
 
+const isLiteralEntries = (value: SymbolicValue | null): boolean =>
+  value === null ||
+  (value.kind === "ArrayExpression" &&
+    value.spreads.length === 0 &&
+    value.elements.every((element) => isPrimitive(element) || isLiteralList(element)));
+
+const isLiteralTable = (value: SymbolicValue): boolean =>
+  value.kind === "ObjectExpression" &&
+  value.spreads.length === 0 &&
+  value.properties.every((property) => isPrimitive(property.value));
+
+const isLiteralContainer = (value: SymbolicValue): boolean =>
+  isLiteralList(value) ||
+  (value.kind === "Collection" && value.writes.length === 0 && isLiteralEntries(value.source));
+
+const isCallbackWithoutArray = (node: types.Node | undefined): boolean =>
+  (types.isArrowFunctionExpression(node) || types.isFunctionExpression(node)) &&
+  node.params.length < 3;
+
 const isListRead = (path: NodePath, values: SymbolicValue[]): boolean => {
   const member = path.parentPath?.node;
-  const isMethodRead =
-    types.isMemberExpression(member) &&
-    member.object === path.node &&
-    types.isIdentifier(member.property) &&
-    !member.computed &&
-    LIST_READS.has(member.property.name) &&
-    (path.parentPath?.parentPath?.isCallExpression({ callee: member }) ?? false);
-  return isMethodRead && values.every(isLiteralList);
+  const call = path.parentPath?.parentPath?.node;
+  if (
+    !types.isMemberExpression(member) ||
+    member.object !== path.node ||
+    !types.isIdentifier(member.property) ||
+    member.computed ||
+    !types.isCallExpression(call) ||
+    call.callee !== member
+  )
+    return false;
+  const methodName = member.property.name;
+  const isRead =
+    LIST_READS.has(methodName) ||
+    (CALLBACK_READS.has(methodName) && isCallbackWithoutArray(call.arguments[0]));
+  return isRead && values.every(isLiteralContainer);
+};
+
+const isObjectRead = (path: NodePath, values: SymbolicValue[]): boolean => {
+  const call = path.parentPath?.node;
+  if (!types.isCallExpression(call) || call.arguments[0] !== path.node) return false;
+  const { callee } = call;
+  return (
+    types.isMemberExpression(callee) &&
+    types.isIdentifier(callee.object, { name: "Object" }) &&
+    types.isIdentifier(callee.property) &&
+    OBJECT_READS.has(callee.property.name) &&
+    values.every((value) => isLiteralList(value) || isLiteralTable(value))
+  );
 };
 
 const isReadOfPrimitive = (
@@ -140,7 +206,7 @@ const isReadOfPrimitive = (
   receiverValues: SymbolicValue[],
 ): boolean => {
   const { parentPath } = path;
-  if (isListRead(path, values)) return true;
+  if (isListRead(path, values) || isObjectRead(path, values)) return true;
   const member = parentPath?.node;
   const isMemberObject =
     (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
