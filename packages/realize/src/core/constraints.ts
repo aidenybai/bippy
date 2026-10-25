@@ -957,8 +957,11 @@ const getPureCall = (value: SymbolicValue): DerivedCall | null => {
 const isPlainBinding = (value: SymbolicValue): boolean =>
   value.kind === "Binding" && getPureCall(value) === null;
 
-const isNestedTest = (value: SymbolicValue): value is BinaryExpressionValue =>
-  value.kind === "BinaryExpression" && !isPlainBinding(value.left) && !isPlainBinding(value.right);
+const isNestedTest = (value: SymbolicValue): boolean =>
+  (value.kind === "BinaryExpression" &&
+    !isPlainBinding(value.left) &&
+    !isPlainBinding(value.right)) ||
+  (value.kind === "UnaryExpression" && value.operator !== "!");
 
 const collectCaseBindings = (value: SymbolicValue, bindingsByKey: Map<string, BindingValue>) => {
   const pureCall = getPureCall(value);
@@ -1081,7 +1084,7 @@ export const evaluateCondition = (
       );
     }
     case "UnaryExpression": {
-      if (value.operator !== "!") return null;
+      if (value.operator !== "!") return evaluateByCases(value, constraints);
       const operand = evaluateCondition(value.value, constraints);
       return operand === null ? null : !operand;
     }
