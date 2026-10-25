@@ -13,6 +13,7 @@ import {
   type TreeNode,
 } from "@/lib/tree";
 import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
+import { ArrowHead, type Point } from "./arrow-head";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
 
@@ -22,11 +23,6 @@ const BRANCH_HEIGHT = 24;
 const CHAR_WIDTH = 7.7;
 const LABEL_HEIGHT = 22;
 
-interface Point {
-  x: number;
-  y: number;
-}
-
 interface LaidOutNode {
   node: TreeNode;
   x: number;
@@ -35,10 +31,16 @@ interface LaidOutNode {
   height: number;
 }
 
+interface HeadSegment {
+  from: Point;
+  tip: Point;
+}
+
 interface LaidOutEdge {
   id: string;
   points: Point[];
   path?: string;
+  head: HeadSegment;
   label: Point;
   labelAlign?: "center" | "start";
   answer?: "yes" | "no";
@@ -90,7 +92,9 @@ const addTransitionEdges = (
 
 const readEdge = (graph: graphlib.Graph, from: string, to: string, name: string) => {
   const edge = graph.edge(from, to, name);
-  return { points: edge.points, label: { x: edge.x, y: edge.y } };
+  const tip = edge.points.at(-1) ?? { x: edge.x, y: edge.y };
+  const head = { from: edge.points.at(-2) ?? tip, tip };
+  return { points: edge.points, head, label: { x: edge.x, y: edge.y } };
 };
 
 const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null => {
@@ -152,10 +156,13 @@ const layoutLoops = (
     const bulge = LOOP_BULGE + slot * LOOP_STEP;
     const labelX = right + LOOP_BULGE + (count - 1) * LOOP_STEP + 10;
     const handler = handlersById.get(loop.handlerId);
+    const control = { x: right + bulge, y: node.y + reach + 14 };
+    const tip = { x: right, y: node.y + reach };
     return {
       id: `l${order}`,
       points: [],
-      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${right + bulge} ${node.y + reach + 14}, ${right} ${node.y + reach}`,
+      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${control.x} ${control.y}, ${tip.x} ${tip.y}`,
+      head: { from: control, tip },
       label: { x: labelX, y: node.y + (slot - (count - 1) / 2) * LABEL_HEIGHT },
       labelAlign: "start",
       transition: loop,
@@ -173,16 +180,19 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
   const handlerId = edge.transition?.handlerId;
   const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
   const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
+  const stroke = color ? getSolidColor(color) : "var(--faint)";
+  const strokeWidth = edge.transition ? 1.25 : 1;
   return (
-    <path
-      d={edge.path ?? toPath(edge.points)}
-      fill="none"
-      stroke={color ? getSolidColor(color) : "var(--faint)"}
-      strokeWidth={edge.transition ? 1.25 : 1}
-      strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
-      opacity={edge.transition ? 0.85 : 1}
-      markerEnd="url(#tree-arrow)"
-    />
+    <g opacity={edge.transition ? 0.85 : 1}>
+      <path
+        d={edge.path ?? toPath(edge.points)}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
+      />
+      <ArrowHead {...edge.head} color={stroke} size={6 * strokeWidth} />
+    </g>
   );
 };
 
@@ -252,19 +262,6 @@ export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
           height={layout.height}
           aria-hidden="true"
         >
-          <defs>
-            <marker
-              id="tree-arrow"
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
-            </marker>
-          </defs>
           {layout.edges.map((edge) => (
             <EdgePath key={edge.id} edge={edge} component={component} />
           ))}

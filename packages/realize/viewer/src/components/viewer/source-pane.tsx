@@ -28,7 +28,7 @@ import {
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
 import { useHasHover, useHoverStore } from "@/store/hover";
-import { Arc, ArcHead } from "./arc";
+import { Arc } from "./arc";
 import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
 
@@ -183,7 +183,6 @@ const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
       width={layout.width}
       height={layout.height}
     >
-      <ArcHead />
       <FocusScrim wrapperRef={wrapperRef} layout={layout} />
       {layout.tokens.map((token) => (
         <TokenMark
