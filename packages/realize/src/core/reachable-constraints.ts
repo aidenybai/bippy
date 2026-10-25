@@ -507,14 +507,53 @@ export const getUpdateBounds = (value: SymbolicValue, binding: Binding): Bound[]
 const isRootAtom = (atom: BindingPlace | null, binding: Binding): boolean =>
   atom !== null && atom.bindingId === binding.id && atom.path.length === 0;
 
-const getOffset = (value: SymbolicValue, binding: Binding): number | null => {
-  if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
-    return null;
-  const { left, right } = value;
-  if (!isWholeBinding(left, binding) || right.kind !== "Primitive") return null;
-  if (typeof right.value !== "number") return null;
-  if (!Number.isFinite(right.value)) return null;
-  return value.operator === "+" ? right.value : -right.value;
+interface AffineUpdate {
+  scale: number;
+  offset: number;
+}
+
+const getFiniteNumber = (value: SymbolicValue): number | null =>
+  value.kind === "Primitive" && typeof value.value === "number" && Number.isFinite(value.value)
+    ? value.value
+    : null;
+
+const getAffineUpdate = (value: SymbolicValue, binding: Binding): AffineUpdate | null => {
+  if (isWholeBinding(value, binding)) return { scale: 1, offset: 0 };
+  if (value.kind === "UnaryExpression" && value.operator === "-") {
+    const operand = getAffineUpdate(value.value, binding);
+    return operand && { scale: -operand.scale, offset: -operand.offset };
+  }
+  if (value.kind !== "BinaryExpression") return null;
+  const left = getAffineUpdate(value.left, binding);
+  const right = getAffineUpdate(value.right, binding);
+  const leftNumber = getFiniteNumber(value.left);
+  const rightNumber = getFiniteNumber(value.right);
+  if (value.operator === "+" && left && rightNumber !== null)
+    return { scale: left.scale, offset: left.offset + rightNumber };
+  if (value.operator === "+" && right && leftNumber !== null)
+    return { scale: right.scale, offset: right.offset + leftNumber };
+  if (value.operator === "-" && left && rightNumber !== null)
+    return { scale: left.scale, offset: left.offset - rightNumber };
+  if (value.operator === "-" && right && leftNumber !== null)
+    return { scale: -right.scale, offset: leftNumber - right.offset };
+  if (value.operator === "*" && left && rightNumber !== null && Math.abs(rightNumber) >= 1)
+    return { scale: left.scale * rightNumber, offset: left.offset * rightNumber };
+  if (value.operator === "*" && right && leftNumber !== null && Math.abs(leftNumber) >= 1)
+    return { scale: right.scale * leftNumber, offset: right.offset * leftNumber };
+  return null;
+};
+
+const shiftBound = (bound: Bound, binding: Binding, update: AffineUpdate): Bound | null => {
+  const isUpper = isRootAtom(bound.left, binding) && bound.right === null;
+  const isLower = bound.left === null && isRootAtom(bound.right, binding);
+  const atom = isUpper ? bound.left : bound.right;
+  if ((!isUpper && !isLower) || !atom) return null;
+  const limit = update.scale * (isUpper ? bound.maxDifference : -bound.maxDifference);
+  const shifted = limit + update.offset;
+  if (!Number.isFinite(shifted)) return null;
+  return isUpper === update.scale > 0
+    ? { left: atom, right: null, maxDifference: shifted, isStrict: bound.isStrict }
+    : { left: null, right: atom, maxDifference: -shifted, isStrict: bound.isStrict };
 };
 
 export const getShiftedBounds = (
@@ -524,15 +563,9 @@ export const getShiftedBounds = (
 ): Bound[] => {
   const isNumber =
     binding.initial?.kind === "Primitive" && typeof binding.initial.value === "number";
-  const offset = isNumber ? getOffset(value, binding) : null;
-  if (offset === null) return [];
-  return bounds.flatMap((bound): Bound[] => {
-    if (isRootAtom(bound.left, binding) && bound.right === null)
-      return [{ ...bound, maxDifference: bound.maxDifference + offset }];
-    if (bound.left === null && isRootAtom(bound.right, binding))
-      return [{ ...bound, maxDifference: bound.maxDifference - offset }];
-    return [];
-  });
+  const update = isNumber ? getAffineUpdate(value, binding) : null;
+  if (!update || update.scale === 0 || isWholeBinding(value, binding)) return [];
+  return bounds.flatMap((bound) => shiftBound(bound, binding, update) ?? []);
 };
 
 export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
