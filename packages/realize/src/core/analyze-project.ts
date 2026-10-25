@@ -57,7 +57,7 @@ const compileProjectFiles = (
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const lowerersByPath = new Map<string, ModuleFunctionLoader>();
-  const mutatedParametersByDeclaration = new Map<string, Set<number>>();
+  const mutatedParametersByDeclaration = new Map<string, Map<number, boolean>>();
   const modelsByStore = new Map<string, StoreModel>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
@@ -72,12 +72,12 @@ const compileProjectFiles = (
       projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
     return projectFunctionsByDeclaration.get(declarationKey) ?? null;
   };
-  const summarizeMutatedParameters = (declarationKey: string): Set<number> => {
+  const summarizeMutatedParameters = (declarationKey: string): Map<number, boolean> => {
     const { path, name } = parseDeclarationKey(declarationKey);
     const hirFunction = lowerersByPath.get(path)?.(name);
-    return hirFunction ? getMutatedParameters(hirFunction) : new Set();
+    return hirFunction ? getMutatedParameters(hirFunction) : new Map();
   };
-  const loadMutatedParameters = (declarationKey: string): Set<number> => {
+  const loadMutatedParameters = (declarationKey: string): Map<number, boolean> => {
     const cached = mutatedParametersByDeclaration.get(declarationKey);
     if (cached) return cached;
     const mutated = summarizeMutatedParameters(declarationKey);

@@ -230,8 +230,18 @@ export class MutationTracker {
     }
   }
 
-  trackArgument(place: Place, loc: SourceLocation): void {
-    this.#trackOwnedValues(place, this.#interpreter.read(place), loc, null);
+  trackArgument(place: Place, loc: SourceLocation, isPart = false): void {
+    const value = this.#interpreter.read(place);
+    const copiedValue = isPart ? this.#getCopiedOwnedValue(place, value) : null;
+    this.#trackOwnedValues(place, copiedValue ?? value, loc, null);
+  }
+
+  #getCopiedOwnedValue(place: Place, value: SymbolicValue): BindingValue | null {
+    if (value.kind === "ArrayExpression") return getCopiedOwnedValue(value);
+    const { elementSources } = this.#interpreter.getCompilationTables();
+    const source = elementSources.get(place.identifier.id);
+    const sourceValue = source ? this.#interpreter.read(source) : null;
+    return sourceValue && isOwnedValue(sourceValue) ? sourceValue : null;
   }
 
   #trackOwnedValues(
