@@ -3,42 +3,64 @@ import { eachPatternOperand } from "../../react-compiler/HIR/visitors";
 import { getMutatedPlace } from "./get-mutated-place";
 import { getPlaceOrSpread } from "./get-place-or-spread";
 
-const getDerivation = (instruction: Instruction): [Place, Place[]] | null => {
+interface Derivation {
+  source: Place;
+  derived: Place[];
+  isPart: boolean;
+}
+
+interface ParameterPart {
+  index: number;
+  isPart: boolean;
+}
+
+const getDerivation = (instruction: Instruction): Derivation | null => {
   const { value, lvalue } = instruction;
   switch (value.kind) {
     case "LoadLocal":
-      return [value.place, [lvalue]];
+      return { source: value.place, derived: [lvalue], isPart: false };
     case "StoreLocal":
-      return [value.value, [value.lvalue.place, lvalue]];
+      return { source: value.value, derived: [value.lvalue.place, lvalue], isPart: false };
     case "PropertyLoad":
     case "ComputedLoad":
-      return [value.object, [lvalue]];
+      return { source: value.object, derived: [lvalue], isPart: true };
+    case "GetIterator":
+      return { source: value.collection, derived: [lvalue], isPart: false };
+    case "IteratorNext":
+      return { source: value.iterator, derived: [lvalue], isPart: true };
     case "Destructure":
-      return [value.value, [...eachPatternOperand(value.lvalue.pattern)]];
+      return {
+        source: value.value,
+        derived: [...eachPatternOperand(value.lvalue.pattern)],
+        isPart: true,
+      };
     default:
       return null;
   }
 };
 
-export const getMutatedParameters = (hirFunction: HIRFunction): Set<number> => {
-  const parameterIndexById = new Map<IdentifierId, number>(
+export const getMutatedParameters = (hirFunction: HIRFunction): Map<number, boolean> => {
+  const partsById = new Map<IdentifierId, ParameterPart>(
     hirFunction.params.map((parameter, index) => [
       getPlaceOrSpread(parameter).identifier.id,
-      index,
+      { index, isPart: false },
     ]),
   );
-  const mutated = new Set<number>();
+  const mutated = new Map<number, boolean>();
   for (const block of hirFunction.body.blocks.values())
     for (const instruction of block.instructions) {
       const derivation = getDerivation(instruction);
-      const sourceIndex = derivation && parameterIndexById.get(derivation[0].identifier.id);
-      if (derivation && sourceIndex !== undefined && sourceIndex !== null)
-        for (const derived of derivation[1])
-          parameterIndexById.set(derived.identifier.id, sourceIndex);
+      const source = derivation && partsById.get(derivation.source.identifier.id);
+      if (derivation && source)
+        for (const derived of derivation.derived)
+          partsById.set(derived.identifier.id, {
+            index: source.index,
+            isPart: source.isPart || derivation.isPart,
+          });
       for (const effect of instruction.effects ?? []) {
         const mutatedPlace = getMutatedPlace(effect);
-        const mutatedIndex = mutatedPlace && parameterIndexById.get(mutatedPlace.identifier.id);
-        if (mutatedIndex !== undefined && mutatedIndex !== null) mutated.add(mutatedIndex);
+        const part = mutatedPlace && partsById.get(mutatedPlace.identifier.id);
+        if (part) mutated.set(part.index, (mutated.get(part.index) ?? false) || part.isPart);
       }
     }
   return mutated;

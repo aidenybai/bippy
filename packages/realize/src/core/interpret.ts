@@ -185,7 +185,7 @@ export interface ProjectHookLoader {
 export interface ProjectLoaders {
   loadProjectHook: ProjectHookLoader;
   loadProjectFunction: ProjectHookLoader;
-  loadMutatedParameters: (declarationKey: string) => Set<number>;
+  loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
 }
 
 const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
@@ -1375,9 +1375,9 @@ export class Interpreter {
   #trackProjectCallMutations(callSite: CallSite): void {
     const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
     if (!declarationKey) return;
-    for (const index of this.#projectLoaders.loadMutatedParameters(declarationKey)) {
+    for (const [index, isPart] of this.#projectLoaders.loadMutatedParameters(declarationKey)) {
       const argumentPlace = callSite.argumentPlaces[index];
-      if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
+      if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc, isPart);
     }
   }
 

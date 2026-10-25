@@ -49,3 +49,26 @@ describe("conditional mutations", () => {
     ]);
   });
 });
+
+describe("helper mutations through a copy", () => {
+  const project = analyzeFixture("conformance-repros", "copied-helper-mutations");
+
+  it.each(["SlicedRowsHelper", "SpreadRowsLoopHelper"])(
+    "warns when %s passes a copy to a helper that mutates its rows",
+    (name) => {
+      expect(getComponent(project, name).analysis.warnings).toMatchObject([
+        { kind: "state-mutation", message: "mutates rows in place before setting it" },
+      ]);
+    },
+  );
+
+  it("warns when render passes a copy to a helper that mutates its rows", () => {
+    expect(getComponent(project, "CopiedRowsInRender").analysis.warnings).toMatchObject([
+      { kind: "render-mutation", message: "mutates rows during render" },
+    ]);
+  });
+
+  it("stays quiet when the helper only appends to the copy", () => {
+    expect(getWarningKinds(getComponent(project, "AppendedCopyHelper"))).toEqual([]);
+  });
+});
