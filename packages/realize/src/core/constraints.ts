@@ -20,7 +20,11 @@ import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
 import { foldBinary, foldUnary } from "./symbolic-values";
-import { applyPureFunctionToCases } from "./utils/pure-functions";
+import {
+  applyPureFunction,
+  applyPureFunctionToCases,
+  isPureFunction,
+} from "./utils/pure-functions";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
@@ -944,16 +948,41 @@ const evaluateAlias = (value: SymbolicValue, constraints: Constraints): boolean 
 
 const MAX_CASE_COMBINATIONS = 16;
 
-const isNestedTest = (value: SymbolicValue): value is BinaryExpressionValue =>
-  value.kind === "BinaryExpression" &&
-  value.left.kind !== "Binding" &&
-  value.right.kind !== "Binding";
+const getPureCall = (value: SymbolicValue): DerivedCall | null => {
+  const derived =
+    value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
+  return derived && "callee" in derived && isPureFunction(derived.callee) ? derived : null;
+};
 
-const getCaseBindings = memoizeByIdentity((value: SymbolicValue): BindingValue[] => {
-  const bindingsByKey = new Map<string, BindingValue>();
+const isPlainBinding = (value: SymbolicValue): boolean =>
+  value.kind === "Binding" && getPureCall(value) === null;
+
+const isNestedTest = (value: SymbolicValue): value is BinaryExpressionValue =>
+  value.kind === "BinaryExpression" && !isPlainBinding(value.left) && !isPlainBinding(value.right);
+
+const collectCaseBindings = (value: SymbolicValue, bindingsByKey: Map<string, BindingValue>) => {
+  const pureCall = getPureCall(value);
+  if (pureCall) {
+    for (const operand of pureCall.operands) collectCaseBindings(operand, bindingsByKey);
+    return;
+  }
+  if (value.kind === "BinaryExpression") {
+    collectCaseBindings(value.left, bindingsByKey);
+    collectCaseBindings(value.right, bindingsByKey);
+    return;
+  }
+  if (value.kind === "UnaryExpression") {
+    collectCaseBindings(value.value, bindingsByKey);
+    return;
+  }
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Binding") bindingsByKey.set(getPlaceKey(getValuePlace(part)), part);
   });
+};
+
+const getCaseBindings = memoizeByIdentity((value: SymbolicValue): BindingValue[] => {
+  const bindingsByKey = new Map<string, BindingValue>();
+  collectCaseBindings(value, bindingsByKey);
   return [...bindingsByKey.values()];
 });
 
@@ -961,6 +990,16 @@ const foldCase = (
   value: SymbolicValue,
   valuesByKey: ReadonlyMap<string, PrimitiveValue>,
 ): SymbolicValue => {
+  const pureCall = getPureCall(value);
+  if (pureCall) {
+    const operands = pureCall.operands.map((operand) => foldCase(operand, valuesByKey));
+    const primitives = operands.flatMap((operand) =>
+      operand.kind === "Primitive" ? [operand.value] : [],
+    );
+    const result =
+      primitives.length === operands.length ? applyPureFunction(pureCall.callee, primitives) : null;
+    return result === null ? value : { kind: "Primitive", value: result };
+  }
   if (value.kind === "Binding") {
     const key = getPlaceKey(getValuePlace(value));
     return valuesByKey.has(key) ? { kind: "Primitive", value: valuesByKey.get(key) } : value;
