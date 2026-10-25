@@ -8,6 +8,7 @@ import type {
   SymbolicValue,
   TestKind,
   UnaryOperator,
+  UnknownOrigin,
 } from "./types";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
@@ -101,11 +102,12 @@ export const getContainedValues = (value: SymbolicValue): SymbolicValue[] => {
   return [value];
 };
 
-export const createUnknown = (reason: string, loc: SourceLocation): SymbolicValue => ({
-  kind: "Unknown",
-  reason,
-  loc,
-});
+export const createUnknown = (
+  reason: string,
+  loc: SourceLocation,
+  origin?: UnknownOrigin,
+): SymbolicValue =>
+  origin ? { kind: "Unknown", reason, loc, origin } : { kind: "Unknown", reason, loc };
 
 export const createBindingValue = (binding: Binding, path: string[] = []): BindingValue => ({
   kind: "Binding",

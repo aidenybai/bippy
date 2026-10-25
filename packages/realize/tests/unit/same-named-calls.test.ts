@@ -7,12 +7,12 @@ describe("calls that print the same", () => {
   it("stay apart, so knowing one result says nothing about the other", () => {
     const range = getComponent(project, "DateRangeLabel");
     expect(range.report.states.map((state) => state.conditions.at(-1))).toEqual([
-      "parseDate(Unknown(member)) && parseDate(Unknown(member))",
-      "!(parseDate(Unknown(member)) && parseDate(Unknown(member)))",
-      "!(parseDate(Unknown(member)) || parseDate(Unknown(member)))",
+      "parseDate(Unknown(call)[0]) && parseDate(Unknown(call)[1])",
+      "!(parseDate(Unknown(call)[0]) && parseDate(Unknown(call)[1]))",
+      "!(parseDate(Unknown(call)[0]) || parseDate(Unknown(call)[1]))",
     ]);
     expect(range.report.unreachableBranches.map((branch) => branch.description)).toEqual([
-      "never !parseDate(Unknown(member)) && !parseDate(Unknown(member))",
+      "never !parseDate(Unknown(call)[0]) && !parseDate(Unknown(call)[1])",
     ]);
   });
 });

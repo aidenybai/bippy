@@ -185,7 +185,13 @@ export class EffectCollector {
     this.addUpdate(
       binding,
       condition.isAsync && !isLiteral(knownValue)
-        ? createUnknown("async", GeneratedSource)
+        ? createUnknown(
+            "async",
+            GeneratedSource,
+            knownValue.kind === "Unknown"
+              ? knownValue.origin
+              : { kind: "Value", value: knownValue },
+          )
         : knownValue,
       condition,
     );
