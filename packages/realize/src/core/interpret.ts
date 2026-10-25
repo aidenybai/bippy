@@ -968,7 +968,8 @@ export class Interpreter {
       setter.binding.loc,
       walkState,
     );
-    const isRepeated = this.walker.loopDepth > 0 && setterArgument?.kind === "Function";
+    const isRepeated =
+      !this.#handlerEffects || (this.walker.loopDepth > 0 && setterArgument?.kind === "Function");
     collector.recordSetterCall(
       setter.binding,
       nextValue,
@@ -996,8 +997,8 @@ export class Interpreter {
           )
         : createUnknown("dispatch", loc);
     const asyncWalkState = isAsyncAction ? getAsyncWalkState(walkState) : walkState;
-    const settledWalkState =
-      this.walker.loopDepth > 0 ? { ...asyncWalkState, isRepeated: true } : asyncWalkState;
+    const isRepeated = !this.#handlerEffects || this.walker.loopDepth > 0;
+    const settledWalkState = isRepeated ? { ...asyncWalkState, isRepeated } : asyncWalkState;
     if (pending && isAsyncAction)
       collector.recordSetterCall(pending, { kind: "Primitive", value: true }, walkState);
     collector.recordSetterCall(dispatch.binding, nextValue, settledWalkState);
