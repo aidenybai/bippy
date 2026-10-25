@@ -161,6 +161,21 @@ const NUMBER_OPERATIONS: Partial<Record<BinaryOperator, (left: number, right: nu
     "/": (left, right) => left / right,
     "%": (left, right) => left % right,
     "**": (left, right) => left ** right,
+    "&": (left, right) => left & right,
+    "|": (left, right) => left | right,
+    "^": (left, right) => left ^ right,
+    "<<": (left, right) => left << right,
+    ">>": (left, right) => left >> right,
+    ">>>": (left, right) => left >>> right,
+  };
+
+const UNARY_OPERATIONS: Partial<Record<UnaryOperator, (value: PrimitiveValue) => PrimitiveValue>> =
+  {
+    "-": (value) => -Number(value),
+    "+": (value) => Number(value),
+    "~": (value) => ~Number(value),
+    typeof: (value) => (value === null ? "object" : typeof value),
+    void: () => undefined,
   };
 
 export const foldBinary = (
@@ -232,6 +247,9 @@ const isNegatedNonBoolean = (value: SymbolicValue): boolean =>
 export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): SymbolicValue => {
   if (operator === "!" && value.kind === "Primitive")
     return { kind: "Primitive", value: !value.value };
+  const operation = UNARY_OPERATIONS[operator];
+  if (operation && value.kind === "Primitive")
+    return { kind: "Primitive", value: operation(value.value) };
   if (operator === "!" && !isNegatedNonBoolean(value)) return negate(value);
   return { kind: "UnaryExpression", operator, value };
 };
