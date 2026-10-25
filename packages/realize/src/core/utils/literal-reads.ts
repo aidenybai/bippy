@@ -1,3 +1,4 @@
+import { SETTER_KEY_PREFIX } from "../../react-compiler/HIR/HIR";
 import { UNDEFINED_VALUE } from "../symbolic-values";
 import type { SymbolicValue } from "../types";
 
@@ -16,7 +17,11 @@ const getLiteralEntries = (value: SymbolicValue): Array<[string, SymbolicValue]>
       ? value.elements.map((element, index) => [String(index), element])
       : null;
   if (value.kind !== "ObjectExpression" || value.spreads.length > 0) return null;
-  const valuesByKey = new Map(value.properties.map((property) => [property.key, property.value]));
+  const valuesByKey = new Map(
+    value.properties
+      .filter((property) => !property.key.startsWith(SETTER_KEY_PREFIX))
+      .map((property) => [property.key, property.value]),
+  );
   const keys = [...valuesByKey.keys()];
   const indexKeys = keys.filter(isArrayIndex).sort((left, right) => Number(left) - Number(right));
   return [...indexKeys, ...keys.filter((key) => !isArrayIndex(key))].map((key) => [
