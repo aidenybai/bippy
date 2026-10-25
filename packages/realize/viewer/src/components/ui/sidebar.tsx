@@ -16,7 +16,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_WIDTH = "26rem";
-const SIDEBAR_WIDTH_MOBILE = "24rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 interface SidebarStyle extends CSSProperties {
@@ -111,7 +110,6 @@ interface SidebarProps extends ComponentProps<"div"> {
 
 const MobileSidebar = ({ side, title, children }: SidebarProps) => {
   const { openMobile, setOpenMobile } = useSidebar();
-  const style: SidebarStyle = { "--sidebar-width": SIDEBAR_WIDTH_MOBILE };
   return (
     <Sheet open={openMobile} onOpenChange={setOpenMobile}>
       <SheetContent
@@ -119,8 +117,7 @@ const MobileSidebar = ({ side, title, children }: SidebarProps) => {
         data-sidebar="sidebar"
         data-slot="sidebar"
         data-mobile="true"
-        className="w-(--sidebar-width) p-0"
-        style={style}
+        className="p-0"
       >
         <div className="flex h-11 shrink-0 items-center border-b px-4">
           <SheetTitle>{title}</SheetTitle>

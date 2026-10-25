@@ -27,8 +27,12 @@ const ModeTabs = () => {
   const { name, mode, setMode } = useViewer();
   usePrefetchModes(name);
   return (
-    <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
-      <TabsList aria-label="View">
+    <Tabs
+      value={mode}
+      onValueChange={(value) => isViewMode(value) && setMode(value)}
+      className="max-sm:w-full"
+    >
+      <TabsList aria-label="View" className="max-sm:w-full">
         <TabsTrigger value="code">Code</TabsTrigger>
         <TabsTrigger value="state-chart">State chart</TabsTrigger>
         <TabsTrigger value="json">JSON</TabsTrigger>
@@ -70,8 +74,8 @@ const Title = () => {
 };
 
 export const Toolbar = () => (
-  <div className="flex h-12 items-center gap-2 border-b px-3 sm:gap-3">
-    <div className="flex min-w-0 flex-1 items-center gap-2">
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 pt-2 pb-2.5 sm:h-12 sm:flex-nowrap sm:gap-3 sm:py-0">
+    <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
       <span className="shrink-0 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
         Realize
       </span>

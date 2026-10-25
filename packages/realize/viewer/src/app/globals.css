@@ -82,10 +82,12 @@
   html {
     @apply font-sans text-[13px]/[19px] font-normal tracking-[-0.01em] antialiased;
     text-rendering: optimizeLegibility;
+    overflow: hidden;
     overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden;
     overscroll-behavior: none;
   }
   ::selection {
