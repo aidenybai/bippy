@@ -1714,8 +1714,8 @@ stateDiagram-v2
   S2: watch("plan") !== "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "No charge"
   [*] --> S1
   [*] --> S2
-  S1 --> S2: "Free" "Pro" (async)
-  S2 --> S1: "Free" "Pro" (async)"
+  S1 --> S2: #lt;select#gt; {...} (async)
+  S2 --> S1: #lt;select#gt; {...} (async)"
 `;
 
 exports[`fixture analysis > PriceTag keeps its render tree and handlers 1`] = `
