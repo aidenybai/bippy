@@ -41,6 +41,12 @@ export const getStoreFieldValue = (
   }
 };
 
+const EXTERNAL_STORE_HOOKS = new Map<string, string[]>([
+  ["react", ["useSyncExternalStore"]],
+  ["use-sync-external-store/shim", ["useSyncExternalStore"]],
+  ["use-sync-external-store/shim/with-selector", ["useSyncExternalStoreWithSelector"]],
+  ["use-sync-external-store/with-selector", ["useSyncExternalStoreWithSelector"]],
+]);
 export class ExternalSources {
   readonly #contextSetterFields: ContextSetterFields;
   readonly #modelsByStore: Map<string, StoreModel>;
@@ -74,8 +80,10 @@ export class ExternalSources {
 
   bindHookResult(binding: Binding, hook: HookResultValue, resolver: SourceFileResolver): void {
     if (hook.module !== null) this.#modulesByBinding.set(binding.id, hook.module);
-    if (hook.module === "react" && hook.name === "useSyncExternalStore")
-      this.#externalStoreIds.add(binding.id);
+    const isExternalStore =
+      resolver.getReactExportName(hook.loc) === "useSyncExternalStore" ||
+      (EXTERNAL_STORE_HOOKS.get(hook.module ?? "")?.includes(hook.name) ?? false);
+    if (isExternalStore) this.#externalStoreIds.add(binding.id);
     const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;
     const setterFields = this.#contextSetterFields.get(contextKey);

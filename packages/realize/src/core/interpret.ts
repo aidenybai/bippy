@@ -525,7 +525,7 @@ export class Interpreter {
       this.forgetHandlerWrites(callback);
       if (handlerEffects.callsOutside && !handlerEffects.mutatesModule)
         this.#recordExternalStoreChanges(handlerEffects);
-      if (callback.kind === "Unknown")
+      if (callback.kind === "Unknown" || callback.kind === "Global")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
             this.#recordExternalUpdate(
