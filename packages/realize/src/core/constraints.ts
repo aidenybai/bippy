@@ -60,7 +60,13 @@ export interface Bound {
 
 interface LinearTerm {
   atom: BindingPlace | null;
+  isNegated: boolean;
   offset: number;
+}
+
+interface AtomDifference {
+  plus: BindingPlace | null;
+  minus: BindingPlace | null;
 }
 
 interface Distance {
@@ -262,29 +268,42 @@ const collectPlaces = memoizeByIdentity((value: SymbolicValue): BindingPlace[] =
   return places;
 });
 
+const negateTerm = (term: LinearTerm): LinearTerm => ({
+  atom: term.atom,
+  isNegated: term.atom !== null && !term.isNegated,
+  offset: -term.offset,
+});
+
 const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   if (value.kind === "Primitive")
-    return typeof value.value === "number" ? { atom: null, offset: value.value } : null;
-  if (value.kind === "Binding") return { atom: getValuePlace(value), offset: 0 };
-  if (
-    value.kind === "UnaryExpression" &&
-    value.operator === "-" &&
-    value.value.kind === "Primitive" &&
-    typeof value.value.value === "number"
-  ) {
-    return { atom: null, offset: -value.value.value };
+    return typeof value.value === "number"
+      ? { atom: null, isNegated: false, offset: value.value }
+      : null;
+  if (value.kind === "Binding") return { atom: getValuePlace(value), isNegated: false, offset: 0 };
+  if (value.kind === "UnaryExpression" && value.operator === "-") {
+    const operandTerm = getLinearTerm(value.value);
+    return operandTerm && negateTerm(operandTerm);
   }
-  if (value.kind === "BinaryExpression" && (value.operator === "+" || value.operator === "-")) {
-    const leftTerm = getLinearTerm(value.left);
-    const rightTerm = getLinearTerm(value.right);
-    if (!leftTerm || !rightTerm) return null;
-    const sign = value.operator === "+" ? 1 : -1;
-    if (rightTerm.atom === null)
-      return { atom: leftTerm.atom, offset: leftTerm.offset + sign * rightTerm.offset };
-    if (leftTerm.atom === null && sign === 1)
-      return { atom: rightTerm.atom, offset: leftTerm.offset + rightTerm.offset };
-  }
+  if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
+    return null;
+  const leftTerm = getLinearTerm(value.left);
+  const rightTerm = getLinearTerm(value.right);
+  if (!leftTerm || !rightTerm) return null;
+  const addedTerm = value.operator === "+" ? rightTerm : negateTerm(rightTerm);
+  if (addedTerm.atom === null) return { ...leftTerm, offset: leftTerm.offset + addedTerm.offset };
+  if (leftTerm.atom === null) return { ...addedTerm, offset: leftTerm.offset + addedTerm.offset };
   return null;
+};
+
+const getAtomDifference = (leftTerm: LinearTerm, rightTerm: LinearTerm): AtomDifference | null => {
+  const signedAtoms: Array<[BindingPlace | null, boolean]> = [
+    [leftTerm.atom, !leftTerm.isNegated],
+    [rightTerm.atom, rightTerm.isNegated],
+  ];
+  const plus = signedAtoms.flatMap(([atom, isPlus]) => (atom && isPlus ? [atom] : []));
+  const minus = signedAtoms.flatMap(([atom, isPlus]) => (atom && !isPlus ? [atom] : []));
+  if (plus.length > 1 || minus.length > 1 || plus.length + minus.length === 0) return null;
+  return { plus: plus[0] ?? null, minus: minus[0] ?? null };
 };
 
 const appearsIn = (atom: BindingPlace, bounds: Bound[]): boolean =>
@@ -354,42 +373,38 @@ export const getBounds = (
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const leftTerm = getLinearTerm(value.left);
   const rightTerm = getLinearTerm(value.right);
-  if (!leftTerm || !rightTerm || (leftTerm.atom === null && rightTerm.atom === null)) return null;
+  const difference = leftTerm && rightTerm && getAtomDifference(leftTerm, rightTerm);
+  if (!leftTerm || !rightTerm || !difference) return null;
+  const { plus, minus } = difference;
   const offsetDifference = rightTerm.offset - leftTerm.offset;
-  const atoms = [leftTerm.atom, rightTerm.atom].filter(
-    (atom): atom is BindingPlace => atom !== null,
-  );
-  const isBetweenAtoms = constraints !== null && atoms.length === 2;
-  if (isBetweenAtoms && !atoms.every((atom) => isNumericAtom(atom, constraints))) return null;
-  if (
-    isBetweenAtoms &&
-    offsetDifference !== 0 &&
-    !atoms.every((atom) => isFiniteAtom(atom, constraints))
-  )
-    return null;
-  const lessThan = (isStrict: boolean): Bound => ({
-    left: leftTerm.atom,
-    right: rightTerm.atom,
+  if (constraints !== null && plus !== null && minus !== null) {
+    if (!isNumericAtom(plus, constraints) || !isNumericAtom(minus, constraints)) return null;
+    const isFinite = isFiniteAtom(plus, constraints) && isFiniteAtom(minus, constraints);
+    if (offsetDifference !== 0 && !isFinite) return null;
+  }
+  const below: Bound = {
+    left: plus,
+    right: minus,
     maxDifference: offsetDifference,
-    isStrict,
-  });
-  const greaterThan = (isStrict: boolean): Bound => ({
-    left: rightTerm.atom,
-    right: leftTerm.atom,
+    isStrict: false,
+  };
+  const above: Bound = {
+    left: minus,
+    right: plus,
     maxDifference: -offsetDifference,
-    isStrict,
-  });
+    isStrict: false,
+  };
   switch (operator) {
     case "<":
-      return [lessThan(true)];
+      return [{ ...below, isStrict: true }];
     case "<=":
-      return [lessThan(false)];
+      return [below];
     case ">":
-      return [greaterThan(true)];
+      return [{ ...above, isStrict: true }];
     case ">=":
-      return [greaterThan(false)];
+      return [above];
     default:
-      return [lessThan(false), greaterThan(false)];
+      return [below, above];
   }
 };
 
