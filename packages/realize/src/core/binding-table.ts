@@ -26,6 +26,7 @@ export interface BindingOptions extends Partial<
     | "range"
     | "domain"
     | "alias"
+    | "firstRender"
   >
 > {
   identityKey?: string;
@@ -75,6 +76,7 @@ export class BindingTable {
       derived: options.derived ?? null,
       range: options.range ?? null,
       alias: options.alias ?? null,
+      ...(options.firstRender && { firstRender: options.firstRender }),
     };
     this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);

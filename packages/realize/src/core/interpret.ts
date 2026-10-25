@@ -37,6 +37,7 @@ import type {
   Claim,
   ContextSetterFields,
   DerivedCall,
+  FirstRenderValue,
   DerivedString,
   DispatchValue,
   Domain,
@@ -81,6 +82,7 @@ import {
 } from "./utils/literal-receivers";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
+import { isStateBinding } from "./utils/is-state-binding";
 import { getLiteralRead } from "./utils/literal-reads";
 import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
@@ -1158,7 +1160,7 @@ export class Interpreter {
     return UNDEFINED_VALUE;
   }
 
-  #getPureHelperResult(callSite: CallSite, walkState: WalkState): SymbolicValue | null {
+  #loadPureHelper(callSite: CallSite): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
     const inputPlaces = new PlaceMap<true>();
     for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
@@ -1169,10 +1171,43 @@ export class Interpreter {
       !callSite.argumentValues.some((argument) => BOUND_CALLEES.has(argument.kind)) &&
       this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
     const helper = isPure ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
+    if (helper)
+      this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
+    return helper;
+  }
+
+  #getPureHelperResult(
+    helper: ProjectHook | null,
+    callSite: CallSite,
+    walkState: WalkState,
+  ): SymbolicValue | null {
     if (!helper) return null;
-    this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
     const returned = this.#inlineFunction(helper.hirFunction, callSite, walkState);
     return hasUnknownPart(returned) ? null : returned;
+  }
+
+  #getFirstRenderHelperResult(
+    helper: ProjectHook | null,
+    callSite: CallSite,
+    walkState: WalkState,
+  ): FirstRenderValue | null {
+    if (!helper || this.#handlerEffects) return null;
+    const inputIds: number[] = [];
+    const argumentValues: SymbolicValue[] = [];
+    for (const argument of callSite.argumentValues) {
+      const initial =
+        argument.kind === "Binding" &&
+        argument.path.length === 0 &&
+        isStateBinding(argument.binding)
+          ? argument.binding.initial
+          : null;
+      if (argument.kind !== "Primitive" && initial?.kind !== "Primitive") return null;
+      argumentValues.push(argument.kind === "Primitive" ? argument : (initial ?? argument));
+      if (argument.kind === "Binding") inputIds.push(argument.binding.id);
+    }
+    if (inputIds.length === 0) return null;
+    const value = this.#getPureHelperResult(helper, { ...callSite, argumentValues }, walkState);
+    return value?.kind === "Primitive" ? { value, inputIds } : null;
   }
 
   #findProjectFunction(calleePlace: Place): ProjectHook | null {
@@ -1322,8 +1357,11 @@ export class Interpreter {
       );
       return createUnknown("call", loc);
     }
+    const helper = this.#loadPureHelper(callSite);
+    const initial = this.#getPureHelperResult(helper, callSite, walkState);
     const result = this.#createCallResult(callSite, {
-      initial: this.#getPureHelperResult(callSite, walkState),
+      initial,
+      firstRender: this.#getFirstRenderHelperResult(helper, callSite, walkState),
     });
     const callbacks = getPassedCallbacks(argumentValues);
     const isExternalWrapper = callee.kind === "Binding" && isExternalSource(callee.binding);
@@ -1654,10 +1692,12 @@ export class Interpreter {
       derived = null,
       range = null,
       initial = null,
+      firstRender = null,
     }: {
       derived?: DerivedString | DerivedCall | null;
       range?: NumberRange | null;
       initial?: SymbolicValue | null;
+      firstRender?: FirstRenderValue | null;
     } = {},
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
@@ -1694,6 +1734,7 @@ export class Interpreter {
         range,
         initial,
         ...(domain && { domain }),
+        ...(firstRender && { firstRender }),
       }),
     );
   }

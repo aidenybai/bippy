@@ -462,11 +462,21 @@ export const createFirstRenderConstraints = (
     bounds: [...reachableConstraints.bounds],
   };
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
+  const renderUpdatedIds = new Set(
+    analysis.handlers
+      .filter((handler) => handler.trigger.kind === "Render")
+      .flatMap((handler) => handler.updates.map((update) => update.binding.id)),
+  );
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
-    if (!binding?.initial) continue;
+    const helperValue =
+      binding?.firstRender &&
+      !binding.firstRender.inputIds.some((inputId) => renderUpdatedIds.has(inputId))
+        ? binding.firstRender.value
+        : null;
+    if (!binding || (!binding.initial && !helperValue)) continue;
     const initialCases = getValueCases(
-      getFirstValue(binding, bindingsById),
+      helperValue ?? getFirstValue(binding, bindingsById),
       place.path,
       binding,
       firstRender,
