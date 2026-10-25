@@ -236,13 +236,13 @@ export const getRelevantConstraintsKey = (
     .digest("base64");
 };
 
-const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
+const collectPlaces = memoizeByIdentity((value: SymbolicValue): BindingPlace[] => {
   const places: BindingPlace[] = [];
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Binding") places.push(getValuePlace(part));
   });
   return places;
-};
+});
 
 const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   if (value.kind === "Primitive")
@@ -1019,13 +1019,13 @@ const narrowPlace = (
   return withMembers && narrowOwner(bindingValue, withMembers, narrowedValues);
 };
 
-export const hasUnknownPart = (value: SymbolicValue): boolean => {
+export const hasUnknownPart = memoizeByIdentity((value: SymbolicValue): boolean => {
   let hasUnknown = false;
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Unknown") hasUnknown = true;
   });
   return hasUnknown;
-};
+});
 
 const hasNullishAncestor = (place: BindingPlace, possibleValues: PlaceMap<AbstractValue[]>) =>
   place.path.some((_segment, length) => {
@@ -1352,27 +1352,32 @@ export const addBounds = (constraints: Constraints, bounds: Bound[]): void => {
   constraints.bounds.push(...bounds);
 };
 
+const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
+  atom !== null && isSamePlace(atom, place);
+
 export const forgetBinding = (
   constraints: Constraints,
   bindingId: number,
   shouldKeepLength: boolean,
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
-  const isLength = (atom: BindingPlace | null): boolean =>
-    atom !== null && isSamePlace(atom, lengthAtom);
   constraints.possibleMembers.delete(bindingId);
   for (const [assumptionKey, assumption] of constraints.assumptions) {
-    const bindingPlaces = assumption.places.filter((place) => place.bindingId === bindingId);
-    if (bindingPlaces.length === 0) continue;
-    if (shouldKeepLength && bindingPlaces.every(isLength)) continue;
+    if (!assumption.places.some((place) => place.bindingId === bindingId)) continue;
+    if (
+      shouldKeepLength &&
+      assumption.places.every(
+        (place) => place.bindingId !== bindingId || isSamePlace(place, lengthAtom),
+      )
+    )
+      continue;
     constraints.assumptions.delete(assumptionKey);
   }
-  const bounds = constraints.bounds.filter((bound) => {
-    const mentionsBinding = [bound.left, bound.right].some((atom) => atom?.bindingId === bindingId);
-    return (
-      !mentionsBinding || (shouldKeepLength && (isLength(bound.left) || isLength(bound.right)))
-    );
-  });
+  const bounds = constraints.bounds.filter(
+    (bound) =>
+      (bound.left?.bindingId !== bindingId && bound.right?.bindingId !== bindingId) ||
+      (shouldKeepLength && (isAtomAt(bound.left, lengthAtom) || isAtomAt(bound.right, lengthAtom))),
+  );
   if (bounds.length === constraints.bounds.length) return;
   constraints.bounds = bounds;
   constraints.boundGraph = null;

@@ -37,11 +37,11 @@ export const forEachSymbolicValue = (
   visit: (value: SymbolicValue) => void,
 ): void => {
   const visited = new WeakSet<SymbolicValue>();
-  const walk = (value: SymbolicValue): void => {
-    if (visited.has(value)) return;
+  const pending = [root];
+  for (let value = pending.pop(); value !== undefined; value = pending.pop()) {
+    if (visited.has(value)) continue;
     visited.add(value);
     visit(value);
-    for (const child of getChildValues(value)) walk(child);
-  };
-  walk(root);
+    pending.push(...getChildValues(value).toReversed());
+  }
 };
