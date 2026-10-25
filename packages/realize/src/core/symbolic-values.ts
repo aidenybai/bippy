@@ -79,6 +79,14 @@ export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): Symbolic
       return getPassedCallbacks([value.consequent, value.alternate], depth);
     if (depth >= MAX_OPTIONS_NESTING) return [];
     if (value.kind === "ArrayExpression") return getPassedCallbacks(value.elements, depth + 1);
+    if (value.kind === "Collection")
+      return getPassedCallbacks(
+        [
+          ...(value.source ? [value.source] : []),
+          ...value.writes.flatMap((write) => write.argumentValues),
+        ],
+        depth + 1,
+      );
     if (value.kind !== "ObjectExpression") return [];
     return getPassedCallbacks(
       value.properties.map((property) => property.value),
