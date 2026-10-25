@@ -48,6 +48,7 @@ export class ExternalSources {
   readonly #resolversByHook = new WeakMap<HookResultValue, SourceFileResolver>();
   readonly #setterFieldsByBinding = new Map<number, Map<string, string>>();
   readonly #modulesByBinding = new Map<number, string>();
+  readonly #externalStoreIds = new Set<number>();
   readonly #bindingsByStore = new Map<string, Binding>();
   readonly #actionsByStoreBinding = new Map<number, StoreActions>();
   readonly contextSamples = new Map<string, Sample>();
@@ -73,6 +74,8 @@ export class ExternalSources {
 
   bindHookResult(binding: Binding, hook: HookResultValue, resolver: SourceFileResolver): void {
     if (hook.module !== null) this.#modulesByBinding.set(binding.id, hook.module);
+    if (hook.module === "react" && hook.name === "useSyncExternalStore")
+      this.#externalStoreIds.add(binding.id);
     const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;
     const setterFields = this.#contextSetterFields.get(contextKey);
@@ -87,6 +90,10 @@ export class ExternalSources {
       .find(isDefinedSample);
     if (contextSample && !this.contextSamples.has(contextKey))
       this.contextSamples.set(contextKey, contextSample);
+  }
+
+  isExternalStore(binding: Binding): boolean {
+    return this.#externalStoreIds.has(binding.id);
   }
 
   isFromSameModule(binding: Binding, otherBinding: Binding): boolean {

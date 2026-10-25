@@ -65,6 +65,7 @@ export class EffectCollector {
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #sameReferenceSets = new Set<number>();
   #callsImportedCode = false;
+  #callsOpaqueCode = false;
   readonly #warn: WarnCallback;
 
   constructor(warn: WarnCallback) {
@@ -100,6 +101,18 @@ export class EffectCollector {
 
   addImportedCall(): void {
     this.#callsImportedCode = true;
+  }
+
+  addOpaqueCall(): void {
+    this.#callsOpaqueCode = true;
+  }
+
+  get callsOutside(): boolean {
+    return this.#callsImportedCode || this.#callsOpaqueCode;
+  }
+
+  get mutatesModule(): boolean {
+    return [...this.#possiblyMutatedBindings.values()].some((binding) => binding.kind === "module");
   }
 
   addDelegate(delegateName: string): void {

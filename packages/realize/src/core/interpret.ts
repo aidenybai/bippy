@@ -509,6 +509,8 @@ export class Interpreter {
         this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
       }
       this.forgetHandlerWrites(callback);
+      if (handlerEffects.callsOutside && !handlerEffects.mutatesModule)
+        this.#recordExternalStoreChanges(handlerEffects);
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
@@ -1248,6 +1250,7 @@ export class Interpreter {
     this.#trackProjectCallMutations(callSite);
     this.#trackBuiltinMutation(callSite);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
+    if (isMutatingCall) this.#handlerEffects?.addOpaqueCall();
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
       this.#callBinding(callee, argumentValues, walkState);
     if (this.#handlerEffects || isMutatingCall)
@@ -1406,6 +1409,16 @@ export class Interpreter {
 
   #getQueuedState(binding: Binding, walkState: WalkState): SymbolicValue {
     return this.#handlerEffects?.getQueuedValue(binding, walkState) ?? createBindingValue(binding);
+  }
+
+  #recordExternalStoreChanges(handlerEffects: EffectCollector): void {
+    for (const binding of this.bindingTable.bindings)
+      if (this.externalSources.isExternalStore(binding) && !handlerEffects.hasUpdate(binding))
+        handlerEffects.addUpdate(
+          binding,
+          createUnknown("external", GeneratedSource),
+          getAsyncWalkState(ROOT_WALK_STATE),
+        );
   }
 
   #recordExternalUpdate(
