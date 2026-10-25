@@ -44,32 +44,27 @@ const ModeTabs = () => {
 const Title = () => {
   const { examples, name, mode, view } = useViewer();
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(buttonVariants({ variant: "ghost" }), "min-w-0 font-mono text-foreground")}
-        >
-          <span className="truncate">{getFileTitle(view.file)}</span>
-          <ChevronDown className="text-muted-foreground" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          {examples.map((example) => (
-            <DropdownMenuLinkItem
-              key={example.name}
-              render={<Link href={getRouteHref(example.name, mode)} />}
-              aria-current={example.name === name ? "page" : undefined}
-              className="font-mono"
-            >
-              <span className="flex-1">{getFileTitle(example.file)}</span>
-              {example.name === name && <Check />}
-            </DropdownMenuLinkItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <span className="hidden text-muted-foreground tabular-nums sm:inline">
-        {view.components.length} components
-      </span>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(buttonVariants({ variant: "ghost" }), "min-w-0 font-mono text-foreground")}
+      >
+        <span className="truncate">{getFileTitle(view.file)}</span>
+        <ChevronDown className="text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {examples.map((example) => (
+          <DropdownMenuLinkItem
+            key={example.name}
+            render={<Link href={getRouteHref(example.name, mode)} />}
+            aria-current={example.name === name ? "page" : undefined}
+            className="font-mono"
+          >
+            <span className="flex-1">{getFileTitle(example.file)}</span>
+            {example.name === name && <Check />}
+          </DropdownMenuLinkItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
