@@ -20,7 +20,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [build, check, test, typecheck]
+        include:
+          - task: build
+            command: pnpm run build
+          - task: check
+            command: pnpm run check
+          - task: typecheck
+            command: pnpm run typecheck
+          - task: test bippy
+            command: pnpm --filter bippy test
+          - task: test realize 1/3
+            command: pnpm --filter realize exec vp test run --shard=1/3
+          - task: test realize 2/3
+            command: pnpm --filter realize exec vp test run --shard=2/3
+          - task: test realize 3/3
+            command: pnpm --filter realize exec vp test run --shard=3/3
 
     steps:
       - uses: actions/checkout@v4
@@ -34,14 +48,14 @@ jobs:
           path: packages/realize/src/react-compiler
           key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
-      - if: matrix.task == 'test'
+      - if: startsWith(matrix.task, 'test')
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
-      - if: matrix.task == 'test'
+      - if: startsWith(matrix.task, 'test')
         run: pnpm --filter realize exec playwright install --with-deps chromium
-      - run: pnpm run ${{ matrix.task }}
+      - run: ${{ matrix.command }}
       - if: matrix.task == 'build'
         run: |
           pnpm --filter bippy exec tsx scripts/check-built.ts
