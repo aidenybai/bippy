@@ -11,7 +11,7 @@ import type {
   Place,
   SourceLocation,
 } from "../react-compiler/HIR/HIR";
-import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR";
+import { GeneratedSource, SETTER_KEY_PREFIX, getHookKind } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "./source-file-resolver";
@@ -354,6 +354,16 @@ const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
 const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
+
+const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null => {
+  const literal =
+    object.kind === "Binding" && object.path.length === 0 ? object.binding.initial : object;
+  const setter =
+    literal?.kind === "ObjectExpression"
+      ? literal.properties.find(({ key }) => key === `${SETTER_KEY_PREFIX}${property}`)?.value
+      : undefined;
+  return setter?.kind === "Function" ? setter : null;
+};
 
 const getStoredLabel = ({ binding, path }: BindingValue): string =>
   `${formatPlace(binding, path)}@${binding.id}`;
@@ -2158,6 +2168,8 @@ export class Interpreter {
     this.callbacks.passStoredCallback(store, walkState);
     const object = this.read(store.object);
     const storedValue = this.read(store.value);
+    const setter = getSetterAccessor(object, String(store.property));
+    if (setter) this.callFunction(setter, [storedValue], store.loc, walkState);
     if (isRefCell(object, String(store.property))) {
       this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
       this.carryWrappedCallbacks(object.binding, storedValue);
