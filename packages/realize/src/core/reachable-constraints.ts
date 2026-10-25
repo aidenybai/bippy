@@ -568,6 +568,42 @@ export const getShiftedBounds = (
   return bounds.flatMap((bound) => shiftBound(bound, binding, update) ?? []);
 };
 
+const getAppendedCount = (value: SymbolicValue, binding: Binding): number | null => {
+  const { initial } = binding;
+  if (value.kind === "ArrayExpression" && initial?.kind === "ArrayExpression") {
+    const [spread, ...otherSpreads] = value.spreads;
+    return spread && otherSpreads.length === 0 && isWholeBinding(spread, binding)
+      ? value.elements.length
+      : null;
+  }
+  const isText = initial?.kind === "Primitive" && typeof initial.value === "string";
+  const isAppend =
+    isText &&
+    value.kind === "BinaryExpression" &&
+    value.operator === "+" &&
+    isWholeBinding(value.left, binding) &&
+    value.right.kind === "Primitive" &&
+    typeof value.right.value === "string";
+  return isAppend && value.right.kind === "Primitive" ? String(value.right.value).length : null;
+};
+
+export const getAppendedLengthBounds = (
+  value: SymbolicValue,
+  binding: Binding,
+  bounds: Bound[],
+): Bound[] => {
+  const count = getAppendedCount(value, binding);
+  if (count === null) return [];
+  const lengthAtom = getLengthAtom(binding.id);
+  return bounds.flatMap((bound): Bound[] => {
+    if (bound.left && isSamePlace(bound.left, lengthAtom) && bound.right === null)
+      return [{ ...bound, maxDifference: bound.maxDifference + count }];
+    if (bound.left === null && bound.right && isSamePlace(bound.right, lengthAtom))
+      return [{ ...bound, maxDifference: bound.maxDifference - count }];
+    return [];
+  });
+};
+
 export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   const known = getKnownLength(value);
   if (!known) return [];

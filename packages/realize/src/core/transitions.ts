@@ -32,6 +32,7 @@ import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
+  getAppendedLengthBounds,
   getShiftedBounds,
   getToggleCases,
   getUpdateBounds,
@@ -112,6 +113,7 @@ const applyUpdates = (
       : [
           ...getShiftedBounds(update.value, update.binding, constraints.bounds),
           ...getIntervalBounds(update, constraints),
+          ...getAppendedLengthBounds(update.value, update.binding, constraints.bounds),
         ];
     forgetBinding(updated, update.binding.id, keepsRenderedLength);
     updatedBindingIds.add(update.binding.id);
