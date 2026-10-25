@@ -15,7 +15,7 @@ import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
 import { ArcKey } from "./arc-key";
-import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
+import { ViewerProvider, useHoveredNode, useViewer } from "./context";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
@@ -91,17 +91,10 @@ const LegendPane = ({ children }: { children: ReactNode }) => <Legend>{children}
 
 const Status = () => {
   const { view, mode } = useViewer();
-  const activeComponent = useActiveComponent();
   const hoveredNode = useHoveredNode();
   return (
     <div className="flex h-9 items-center gap-4 border-t pr-1.5 pl-3 whitespace-nowrap text-muted-foreground tabular-nums">
       <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
-        {activeComponent && (
-          <span className="shrink-0">
-            {activeComponent.name} · {activeComponent.states.length} states ·{" "}
-            {activeComponent.handlers.length} actions
-          </span>
-        )}
         {hoveredNode && (
           <>
             <span className="hidden shrink-0 sm:inline">
