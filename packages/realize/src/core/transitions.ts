@@ -79,6 +79,12 @@ const applyUpdates = (
   const updated = cloneConstraints(constraints);
   const placesByBinding = groupPlacesByBinding(constraints.possibleValues.places());
   const updatedBindingIds = new Set<number>();
+  const sequenceBindingIds = new Set(
+    updates.flatMap((update) => [
+      update.binding.id,
+      ...(dependentsByBinding.get(update.binding.id) ?? []),
+    ]),
+  );
   for (const update of updates) {
     const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
@@ -111,7 +117,7 @@ const applyUpdates = (
     const shiftedBounds = update.isRepeated
       ? []
       : [
-          ...getShiftedBounds(update.value, update.binding, constraints.bounds),
+          ...getShiftedBounds(update.value, update.binding, constraints.bounds, sequenceBindingIds),
           ...getIntervalBounds(update, constraints),
           ...getAppendedLengthBounds(update.value, update.binding, constraints.bounds),
         ];

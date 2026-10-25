@@ -558,16 +558,38 @@ const shiftBound = (bound: Bound, binding: Binding, update: AffineUpdate): Bound
     : { left: null, right: atom, maxDifference: -shifted, isStrict: bound.isStrict };
 };
 
+const shiftPairBound = (
+  bound: Bound,
+  binding: Binding,
+  update: AffineUpdate,
+  updatedBindingIds: ReadonlySet<number>,
+): Bound | null => {
+  if (update.scale !== 1 || !bound.left || !bound.right) return null;
+  const isLeft = isRootAtom(bound.left, binding);
+  const other = isLeft ? bound.right : bound.left;
+  const isPair = isLeft || isRootAtom(bound.right, binding);
+  if (!isPair || other.bindingId === binding.id || updatedBindingIds.has(other.bindingId))
+    return null;
+  const shifted = bound.maxDifference + (isLeft ? update.offset : -update.offset);
+  return Number.isFinite(shifted) ? { ...bound, maxDifference: shifted } : null;
+};
+
 export const getShiftedBounds = (
   value: SymbolicValue,
   binding: Binding,
   bounds: Bound[],
+  updatedBindingIds: ReadonlySet<number> = new Set([binding.id]),
 ): Bound[] => {
   const isNumber =
     binding.initial?.kind === "Primitive" && typeof binding.initial.value === "number";
   const update = isNumber ? getAffineUpdate(value, binding) : null;
   if (!update || update.scale === 0 || isWholeBinding(value, binding)) return [];
-  return bounds.flatMap((bound) => shiftBound(bound, binding, update) ?? []);
+  return bounds.flatMap(
+    (bound) =>
+      shiftBound(bound, binding, update) ??
+      shiftPairBound(bound, binding, update, updatedBindingIds) ??
+      [],
+  );
 };
 
 const getAppendedCount = (value: SymbolicValue, binding: Binding): number | null => {
