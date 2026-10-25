@@ -16,6 +16,7 @@ import { truncate } from "./text";
 
 const MAX_TEXT_WIDTH = 24;
 const MAX_HANDLER_WIDTH = 40;
+const UNLABELED_CHILDREN_TAGS = new Set(["select", "textarea"]);
 const ARROW_FUNCTION_HEAD = /^(\(\s*\)|\(?\w+\)?)\s*=>\s*/;
 const DECLARED_NAME = /(?:const|let|var|function)\s+(\w+)\s*=?\s*$/;
 
@@ -59,7 +60,7 @@ const getEventTriggerLabel = (
   prop: JsxProp | JsxSpreadProp,
   sourceReader: SourceReader,
 ): string => {
-  const text = getChildrenText(element);
+  const text = UNLABELED_CHILDREN_TAGS.has(element.tag.name) ? "" : getChildrenText(element);
   if (text) return truncate(text, MAX_TEXT_WIDTH);
   const handlerText = prop.kind === "JsxAttribute" ? formatHandlerValue(prop, sourceReader) : null;
   if (handlerText) return truncate(handlerText, MAX_HANDLER_WIDTH);

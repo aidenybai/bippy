@@ -30,6 +30,16 @@ describe("Mermaid state labels", () => {
     for (const line of transitionLines) expect(line).toMatch(/: set isOpen$/);
   });
 
+  it("labels a select by its handler, not its option texts", () => {
+    const diagram = formatMermaid(getComponent(project, "SizeSelect"), {
+      rootDirectory,
+      maxStates: DEFAULT_MAX_STATES,
+    });
+    const transitionLines = diagram.split("\n").filter((line) => /^\s+S\d+ --> S\d+: /.test(line));
+    expect(transitionLines).toHaveLength(2);
+    for (const line of transitionLines) expect(line).toMatch(/: setSize\(event\.target\.value\)$/);
+  });
+
   it("writes quotes and backslashes in text as they are, without JSON escapes", () => {
     const component = getComponent(project, "QuotedText");
     const diagram = formatMermaid(component, { rootDirectory, maxStates: DEFAULT_MAX_STATES });

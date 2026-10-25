@@ -38,3 +38,16 @@ export const QuotedText = () => {
     </div>
   );
 };
+
+export const SizeSelect = () => {
+  const [size, setSize] = useState("small");
+  return (
+    <div>
+      <select value={size} onChange={(event) => setSize(event.target.value)}>
+        <option value="small">small</option>
+        <option value="large">large</option>
+      </select>
+      {size === "large" ? <p>big</p> : <p>little</p>}
+    </div>
+  );
+};
