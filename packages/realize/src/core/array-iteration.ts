@@ -152,6 +152,7 @@ export class ArrayIteration {
       outcome: SymbolicValue,
       consequent: SymbolicValue,
       alternate: SymbolicValue,
+      caseIndex: number,
     ): SymbolicValue => {
       const truthiness = getKnownTruthiness(outcome);
       if (truthiness !== null) return truthiness ? consequent : alternate;
@@ -161,7 +162,7 @@ export class ArrayIteration {
         testKind: "truthy",
         consequent,
         alternate,
-        branch: this.#interpreter.createBranch(instructionId, loc, "none"),
+        branch: this.#interpreter.createBranch(instructionId, loc, "none", caseIndex),
         guardKeys: [],
       };
     };
@@ -173,8 +174,8 @@ export class ArrayIteration {
       outcomes.reduceRight<SymbolicValue>(
         (rest, outcome, index) =>
           isFirstMatch
-            ? select(outcome, consequentAt(index), rest)
-            : select(outcome, rest, consequentAt(index)),
+            ? select(outcome, consequentAt(index), rest, index)
+            : select(outcome, rest, consequentAt(index), index),
         fallback,
       );
     switch (methodName) {
@@ -197,7 +198,7 @@ export class ArrayIteration {
           const element = elements[index];
           if (outcome === undefined || element === undefined)
             return { kind: "ArrayExpression", elements: kept, spreads: [] };
-          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept));
+          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept), index);
         };
         return keep(0, []);
       }
@@ -221,13 +222,13 @@ export class ArrayIteration {
     const openMatches: Array<[SymbolicValue, SymbolicValue]> = [];
     const chooseFirstMatch = (fallback: SymbolicValue): SymbolicValue =>
       openMatches.reduceRight<SymbolicValue>(
-        (rest, [test, element]) => ({
+        (rest, [test, element], index) => ({
           kind: "Conditional",
           test,
           testKind: "truthy",
           consequent: element,
           alternate: rest,
-          branch: this.#interpreter.createBranch(instructionId, loc, "none"),
+          branch: this.#interpreter.createBranch(instructionId, loc, "none", index),
           guardKeys: walkState.guards.map(getValueKey),
         }),
         fallback,

@@ -105,6 +105,7 @@ export interface Branch {
   probe: TestKind | "none";
   loc: SourceLocation;
   file: string;
+  caseIndex?: number;
 }
 
 export interface JsxProp {
