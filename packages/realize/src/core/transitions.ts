@@ -30,13 +30,16 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import type { PlaceMap } from "./utils/place-map";
+import { isSamePlace } from "./utils/is-same-place";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
   getAppendedLengthBounds,
+  getAssignedPaths,
   getShiftedBounds,
   getToggleCases,
+  getUnchangedPaths,
   getUpdateBounds,
   isLengthPreserving,
 } from "./reachable-constraints";
@@ -116,22 +119,30 @@ const applyUpdates = (
     }
     const keepsRenderedLength =
       !updatedBindingIds.has(update.binding.id) && isLengthPreserving(update.value, update.binding);
+    const decidedValue = getDecidedValue(update.value, constraints);
     const shiftedBounds = update.isRepeated
       ? []
       : [
           ...getShiftedBounds(
-            update.value,
+            decidedValue,
             update.binding,
             [...constraints.bounds, ...constraints.invariants],
             sequenceBindingIds,
           ),
           ...getIntervalBounds(update, constraints),
-          ...getAppendedLengthBounds(update.value, update.binding, constraints.bounds),
+          ...getAppendedLengthBounds(decidedValue, update.binding, constraints.bounds),
         ];
-    forgetBinding(updated, update.binding.id, keepsRenderedLength);
+    forgetBinding(
+      updated,
+      update.binding.id,
+      keepsRenderedLength,
+      updatedBindingIds.has(update.binding.id)
+        ? []
+        : getUnchangedPaths(decidedValue, update.binding),
+    );
     updatedBindingIds.add(update.binding.id);
     if (!isMaybe)
-      addBounds(updated, [...getUpdateBounds(update.value, update.binding), ...shiftedBounds]);
+      addBounds(updated, [...getUpdateBounds(decidedValue, update.binding), ...shiftedBounds]);
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
       for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])
@@ -144,18 +155,36 @@ const applyUpdates = (
       placesByBinding,
       reachableConstraints,
     );
-    const isUntracked = !isMaybe && !reachablePlacesByBinding.has(update.binding.id);
-    const literalCases = isUntracked
-      ? getFieldCases(update.value, [], update.binding, constraints)
-      : null;
-    if (Array.isArray(literalCases) && literalCases.every((value) => value.kind === "Literal")) {
-      const bindingPlace = getBindingPlace(update.binding);
+    const reachablePlaces = reachablePlacesByBinding.get(update.binding.id);
+    const untrackedPaths = isMaybe
+      ? []
+      : [
+          ...(reachablePlaces ? [] : [[]]),
+          ...getAssignedPaths(update.value).filter(
+            (path) =>
+              !reachablePlaces?.some(([place]) =>
+                isSamePlace(place, getBindingPlace(update.binding, path)),
+              ),
+          ),
+        ];
+    for (const path of untrackedPaths) {
+      const literalCases = getFieldCases(update.value, path, update.binding, constraints);
+      if (!Array.isArray(literalCases) || literalCases.some((value) => value.kind !== "Literal"))
+        continue;
+      const bindingPlace = getBindingPlace(update.binding, path);
       updated.possibleValues.set(bindingPlace, dedupeAbstractValues(literalCases));
       addPlace(placesByBinding, bindingPlace);
     }
   }
   if (updates.length > 0) forgetUnknownAssumptions(updated);
   return updated;
+};
+
+const getDecidedValue = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
+  if (value.kind !== "Conditional") return value;
+  const outcome = evaluateCondition(getTestExpression(value), constraints);
+  if (outcome === null) return value;
+  return getDecidedValue(outcome ? value.consequent : value.alternate, constraints);
 };
 
 const addPlace = (placesByBinding: Map<number, BindingPlace[]>, place: BindingPlace): void => {

@@ -6,6 +6,7 @@ import { getReachableIntegers, getReachableRange } from "./reachable-ranges";
 import type {
   AbstractValue,
   Binding,
+  Handler,
   BindingPlace,
   ComponentAnalysis,
   Domain,
@@ -34,6 +35,7 @@ import { isNullishCase } from "./utils/is-nullish-case";
 import { isSamePlace } from "./utils/is-same-place";
 import { isStateBinding } from "./utils/is-state-binding";
 import { isWholeBinding } from "./utils/is-whole-binding";
+import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { PlaceMap } from "./utils/place-map";
 import type { FirstRenderOutcomes } from "./state-enumerator";
 
@@ -346,6 +348,75 @@ const getReachableRanges = (analysis: ComponentAnalysis): Map<number, NumberRang
     }),
   );
 
+const getFieldValue = (
+  value: SymbolicValue,
+  binding: Binding,
+  key: string,
+): SymbolicValue | null => {
+  if (value.kind === "Binding" && isWholeBinding(value, binding)) return { ...value, path: [key] };
+  if (value.kind === "Conditional") {
+    const consequent = getFieldValue(value.consequent, binding, key);
+    const alternate = getFieldValue(value.alternate, binding, key);
+    return consequent && alternate ? { ...value, consequent, alternate } : null;
+  }
+  if (value.kind !== "ObjectExpression") return null;
+  const assigned = value.properties.findLast((property) => property.key === key);
+  if (assigned) return assigned.value;
+  const spread = value.spreads.findLast(
+    (candidate) =>
+      candidate.kind !== "ObjectExpression" ||
+      candidate.spreads.length > 0 ||
+      candidate.properties.some((property) => property.key === key),
+  );
+  return spread ? getFieldValue(spread, binding, key) : null;
+};
+
+const getFieldRangeBounds = (binding: Binding, handlers: Handler[]): Bound[] => {
+  const { initial } = binding;
+  if (!isStateBinding(binding) || initial?.kind !== "ObjectExpression") return [];
+  return initial.properties.flatMap((property) => {
+    if (property.value.kind !== "Primitive" || typeof property.value.value !== "number") return [];
+    const fieldBinding: Binding = { ...binding, id: -1 - binding.id, initial: property.value };
+    const toField = (value: SymbolicValue): SymbolicValue =>
+      mapSymbolicValue(value, (part) =>
+        part.kind === "Binding" &&
+        part.binding.id === binding.id &&
+        part.path.length === 1 &&
+        part.path[0] === property.key
+          ? { ...part, binding: fieldBinding, path: [] }
+          : part,
+      );
+    const fieldUpdates = handlers.map((handler) =>
+      handler.updates.flatMap((update): Array<StateUpdate | null> => {
+        if (update.binding.id !== binding.id) return [];
+        const fieldValue = getFieldValue(update.value, binding, property.key);
+        return fieldValue
+          ? [
+              {
+                ...update,
+                binding: fieldBinding,
+                value: toField(fieldValue),
+                guards: update.guards.map(toField),
+              },
+            ]
+          : [null];
+      }),
+    );
+    if (fieldUpdates.some((updates) => updates.includes(null))) return [];
+    const fieldHandlers = handlers.map((handler, index) => ({
+      ...handler,
+      guards: handler.guards.map(toField),
+      updates: (fieldUpdates[index] ?? []).filter(
+        (update): update is StateUpdate => update !== null,
+      ),
+    }));
+    return getRangeBounds(
+      getBindingPlace(binding, [property.key]),
+      getReachableRange(fieldBinding, fieldHandlers),
+    );
+  });
+};
+
 const createEmptyConstraints = (
   analysis: ComponentAnalysis,
   reachableRanges: Map<number, NumberRange>,
@@ -360,6 +431,7 @@ const createEmptyConstraints = (
       getBindingPlace(binding),
       binding.range ?? reachableRanges.get(binding.id) ?? null,
     ),
+    ...getFieldRangeBounds(binding, analysis.handlers),
   ]),
   finitePlaces: new PlaceMap(
     analysis.bindings
@@ -560,8 +632,8 @@ export const getUpdateBounds = (value: SymbolicValue, binding: Binding): Bound[]
     ? getRangeBounds(getBindingPlace(binding), value.binding.range)
     : getLengthBounds(value, binding);
 
-const isRootAtom = (atom: BindingPlace | null, binding: Binding): boolean =>
-  atom !== null && atom.bindingId === binding.id && atom.path.length === 0;
+const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
+  atom !== null && isSamePlace(atom, place);
 
 interface AffineUpdate {
   scale: number;
@@ -573,15 +645,18 @@ const getFiniteNumber = (value: SymbolicValue): number | null =>
     ? value.value
     : null;
 
-const getAffineUpdate = (value: SymbolicValue, binding: Binding): AffineUpdate | null => {
-  if (isWholeBinding(value, binding)) return { scale: 1, offset: 0 };
+const isValueAt = (value: SymbolicValue, place: BindingPlace): boolean =>
+  value.kind === "Binding" && isSamePlace(getBindingPlace(value.binding, value.path), place);
+
+const getAffineUpdate = (value: SymbolicValue, place: BindingPlace): AffineUpdate | null => {
+  if (isValueAt(value, place)) return { scale: 1, offset: 0 };
   if (value.kind === "UnaryExpression" && value.operator === "-") {
-    const operand = getAffineUpdate(value.value, binding);
+    const operand = getAffineUpdate(value.value, place);
     return operand && { scale: -operand.scale, offset: -operand.offset };
   }
   if (value.kind !== "BinaryExpression") return null;
-  const left = getAffineUpdate(value.left, binding);
-  const right = getAffineUpdate(value.right, binding);
+  const left = getAffineUpdate(value.left, place);
+  const right = getAffineUpdate(value.right, place);
   const leftNumber = getFiniteNumber(value.left);
   const rightNumber = getFiniteNumber(value.right);
   if (value.operator === "+" && left && rightNumber !== null)
@@ -599,9 +674,9 @@ const getAffineUpdate = (value: SymbolicValue, binding: Binding): AffineUpdate |
   return null;
 };
 
-const shiftBound = (bound: Bound, binding: Binding, update: AffineUpdate): Bound | null => {
-  const isUpper = isRootAtom(bound.left, binding) && bound.right === null;
-  const isLower = bound.left === null && isRootAtom(bound.right, binding);
+const shiftBound = (bound: Bound, place: BindingPlace, update: AffineUpdate): Bound | null => {
+  const isUpper = isAtomAt(bound.left, place) && bound.right === null;
+  const isLower = bound.left === null && isAtomAt(bound.right, place);
   const atom = isUpper ? bound.left : bound.right;
   if ((!isUpper && !isLower) || !atom) return null;
   const limit = update.scale * (isUpper ? bound.maxDifference : -bound.maxDifference);
@@ -614,19 +689,70 @@ const shiftBound = (bound: Bound, binding: Binding, update: AffineUpdate): Bound
 
 const shiftPairBound = (
   bound: Bound,
-  binding: Binding,
+  place: BindingPlace,
   update: AffineUpdate,
   updatedBindingIds: ReadonlySet<number>,
 ): Bound | null => {
   if (update.scale !== 1 || !bound.left || !bound.right) return null;
-  const isLeft = isRootAtom(bound.left, binding);
+  const isLeft = isAtomAt(bound.left, place);
   const other = isLeft ? bound.right : bound.left;
-  const isPair = isLeft || isRootAtom(bound.right, binding);
-  if (!isPair || other.bindingId === binding.id || updatedBindingIds.has(other.bindingId))
+  const isPair = isLeft || isAtomAt(bound.right, place);
+  if (!isPair || other.bindingId === place.bindingId || updatedBindingIds.has(other.bindingId))
     return null;
   const shifted = bound.maxDifference + (isLeft ? update.offset : -update.offset);
   return Number.isFinite(shifted) ? { ...bound, maxDifference: shifted } : null;
 };
+
+const isNumber = (value: SymbolicValue | null | undefined): boolean =>
+  value?.kind === "Primitive" && typeof value.value === "number";
+
+interface FieldTarget {
+  place: BindingPlace;
+  value: SymbolicValue;
+  initial: SymbolicValue;
+}
+
+const getEntries = (value: SymbolicValue): Array<[string, SymbolicValue]> | null => {
+  if (value.kind === "ObjectExpression")
+    return value.properties.map((property) => [property.key, property.value]);
+  if (value.kind === "ArrayExpression" && value.spreads.length === 0)
+    return value.elements.map((element, index) => [String(index), element]);
+  return null;
+};
+
+export const getAssignedPaths = (value: SymbolicValue, path: string[] = []): string[][] =>
+  (getEntries(value) ?? []).flatMap(([key, entry]) => [
+    [...path, key],
+    ...getAssignedPaths(entry, [...path, key]),
+  ]);
+
+const getFieldTargets = (
+  value: SymbolicValue,
+  initial: SymbolicValue | null | undefined,
+  binding: Binding,
+  path: string[] = [],
+): FieldTarget[] => {
+  const place = getBindingPlace(binding, path);
+  const isLeaf = initial?.kind === "Primitive" || initial?.kind === "ArrayExpression";
+  if (path.length > 0 && initial && isLeaf) return [{ place, value, initial }];
+  if (initial?.kind !== "ObjectExpression") return [];
+  const spread = value.kind === "ObjectExpression" ? value.spreads.at(-1) : value;
+  const copied = spread && isValueAt(spread, place) ? spread : null;
+  const assignedEntries = value.kind === "Binding" ? [] : getEntries(value);
+  if (!assignedEntries) return [];
+  return initial.properties.flatMap((initialProperty) => {
+    const fieldPath = [...path, initialProperty.key];
+    const assigned = assignedEntries.findLast(([key]) => key === initialProperty.key)?.[1];
+    const fieldValue =
+      assigned ?? (copied?.kind === "Binding" ? { ...copied, path: fieldPath } : null);
+    return fieldValue ? getFieldTargets(fieldValue, initialProperty.value, binding, fieldPath) : [];
+  });
+};
+
+export const getUnchangedPaths = (value: SymbolicValue, binding: Binding): string[][] =>
+  getFieldTargets(value, binding.initial, binding)
+    .filter((target) => isValueAt(target.value, target.place))
+    .map((target) => target.place.path);
 
 export const getShiftedBounds = (
   value: SymbolicValue,
@@ -634,23 +760,53 @@ export const getShiftedBounds = (
   bounds: Bound[],
   updatedBindingIds: ReadonlySet<number> = new Set([binding.id]),
 ): Bound[] => {
-  const isNumber =
-    binding.initial?.kind === "Primitive" && typeof binding.initial.value === "number";
-  const update = isNumber ? getAffineUpdate(value, binding) : null;
-  if (!update || update.scale === 0 || isWholeBinding(value, binding)) return [];
-  return bounds.flatMap(
-    (bound) =>
-      shiftBound(bound, binding, update) ??
-      shiftPairBound(bound, binding, update, updatedBindingIds) ??
-      [],
-  );
+  const isRootNumber =
+    isNumber(binding.initial) ||
+    (binding.domain.kind === "Opaque" && binding.domain.typeText === "number");
+  const targets = isRootNumber
+    ? isWholeBinding(value, binding)
+      ? []
+      : [{ place: getBindingPlace(binding), value }]
+    : getFieldTargets(value, binding.initial, binding).filter((target) => isNumber(target.initial));
+  const updates = targets.map((target) => ({
+    place: target.place,
+    update: getAffineUpdate(target.value, target.place),
+  }));
+  const getOffset = (atom: BindingPlace): number | null => {
+    const update = updates.find((candidate) => isSamePlace(candidate.place, atom))?.update;
+    return update?.scale === 1 ? update.offset : null;
+  };
+  const fieldPairBounds = bounds.flatMap((bound): Bound[] => {
+    if (bound.left?.bindingId !== binding.id || bound.right?.bindingId !== binding.id) return [];
+    const leftOffset = getOffset(bound.left);
+    const rightOffset = getOffset(bound.right);
+    if (leftOffset === null || rightOffset === null) return [];
+    const shifted = bound.maxDifference + leftOffset - rightOffset;
+    return Number.isFinite(shifted) ? [{ ...bound, maxDifference: shifted }] : [];
+  });
+  return [
+    ...updates.flatMap(({ place, update }) => {
+      if (!update || update.scale === 0) return [];
+      return bounds.flatMap(
+        (bound) =>
+          shiftBound(bound, place, update) ??
+          shiftPairBound(bound, place, update, updatedBindingIds) ??
+          [],
+      );
+    }),
+    ...fieldPairBounds,
+  ];
 };
 
-const getAppendedCount = (value: SymbolicValue, binding: Binding): number | null => {
-  const { initial } = binding;
+const getAppendedCount = (
+  value: SymbolicValue,
+  initial: SymbolicValue | null | undefined,
+  place: BindingPlace,
+): number | null => {
+  if (place.path.length > 0 && isValueAt(value, place)) return 0;
   if (value.kind === "ArrayExpression" && initial?.kind === "ArrayExpression") {
     const [spread, ...otherSpreads] = value.spreads;
-    return spread && otherSpreads.length === 0 && isWholeBinding(spread, binding)
+    return spread && otherSpreads.length === 0 && isValueAt(spread, place)
       ? value.elements.length
       : null;
   }
@@ -659,7 +815,7 @@ const getAppendedCount = (value: SymbolicValue, binding: Binding): number | null
     isText &&
     value.kind === "BinaryExpression" &&
     value.operator === "+" &&
-    isWholeBinding(value.left, binding) &&
+    isValueAt(value.left, place) &&
     value.right.kind === "Primitive" &&
     typeof value.right.value === "string";
   return isAppend && value.right.kind === "Primitive" ? String(value.right.value).length : null;
@@ -669,23 +825,26 @@ export const getAppendedLengthBounds = (
   value: SymbolicValue,
   binding: Binding,
   bounds: Bound[],
-): Bound[] => {
-  const count = getAppendedCount(value, binding);
-  if (count === null) return [];
-  const lengthAtom = getLengthAtom(binding.id);
-  return bounds.flatMap((bound): Bound[] => {
-    if (bound.left && isSamePlace(bound.left, lengthAtom) && bound.right === null)
-      return [{ ...bound, maxDifference: bound.maxDifference + count }];
-    if (bound.left === null && bound.right && isSamePlace(bound.right, lengthAtom))
-      return [{ ...bound, maxDifference: bound.maxDifference - count }];
-    return [];
+): Bound[] =>
+  [
+    { place: getBindingPlace(binding), value, initial: binding.initial },
+    ...getFieldTargets(value, binding.initial, binding),
+  ].flatMap((target) => {
+    const count = getAppendedCount(target.value, target.initial, target.place);
+    if (count === null) return [];
+    const lengthAtom = getLengthAtom(binding.id, target.place.path);
+    return bounds.flatMap((bound): Bound[] => {
+      if (bound.left && isSamePlace(bound.left, lengthAtom) && bound.right === null)
+        return [{ ...bound, maxDifference: bound.maxDifference + count }];
+      if (bound.left === null && bound.right && isSamePlace(bound.right, lengthAtom))
+        return [{ ...bound, maxDifference: bound.maxDifference - count }];
+      return [];
+    });
   });
-};
 
-export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
+const getAtomLengthBounds = (value: SymbolicValue, lengthAtom: BindingPlace): Bound[] => {
   const known = getKnownLength(value);
   if (!known) return [];
-  const lengthAtom = getLengthAtom(binding.id);
   const isAtLeastElementCount: Bound = {
     left: null,
     right: lengthAtom,
@@ -701,6 +860,13 @@ export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[]
   };
   return [isAtLeastElementCount, isAtMostElementCount];
 };
+
+export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => [
+  ...getAtomLengthBounds(value, getLengthAtom(binding.id)),
+  ...getFieldTargets(value, binding.initial, binding).flatMap((target) =>
+    getAtomLengthBounds(target.value, getLengthAtom(binding.id, target.place.path)),
+  ),
+];
 
 export const getDependentsByBinding = (bindings: Binding[]): Map<number, number[]> => {
   const directDependents = new Map<number, number[]>();

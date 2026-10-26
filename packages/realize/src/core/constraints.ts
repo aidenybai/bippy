@@ -106,9 +106,9 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   possibleMembers: new Map(constraints.possibleMembers),
 });
 
-export const getLengthAtom = (bindingId: number): BindingPlace => ({
+export const getLengthAtom = (bindingId: number, path: string[] = []): BindingPlace => ({
   bindingId,
-  path: [LENGTH_FIELD],
+  path: [...path, LENGTH_FIELD],
 });
 
 const getAtomKey = (atom: BindingPlace | null): string => (atom ? getPlaceKey(atom) : CONSTANT_KEY);
@@ -1550,11 +1550,21 @@ export const forgetBinding = (
   constraints: Constraints,
   bindingId: number,
   shouldKeepLength: boolean,
+  unchangedPaths: string[][] = [],
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
   constraints.possibleMembers.delete(bindingId);
   for (const [assumptionKey, assumption] of constraints.assumptions) {
     if (!assumption.places.some((place) => place.bindingId === bindingId)) continue;
+    const isUnchanged = assumption.places.every(
+      (place) =>
+        place.bindingId !== bindingId ||
+        unchangedPaths.some(
+          (path) =>
+            path.length > 0 && path.every((segment, index) => place.path[index] === segment),
+        ),
+    );
+    if (isUnchanged) continue;
     if (
       shouldKeepLength &&
       assumption.places.every(
