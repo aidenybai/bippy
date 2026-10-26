@@ -131,6 +131,25 @@ const getSpreadHandlers = (
   return properties.length > 0 ? { kind: "ObjectExpression", properties, spreads: [] } : null;
 };
 
+const getDefinitePropKeys = (prop: JsxProp | JsxSpreadProp): string[] => {
+  if (prop.kind === "JsxAttribute") return [prop.name];
+  const { value } = prop;
+  return value.kind === "ObjectExpression" && value.spreads.length === 0
+    ? value.properties.map((property) => property.key)
+    : [];
+};
+
+const getLaterPropKeys = (props: Array<JsxProp | JsxSpreadProp>): Array<Set<string>> => {
+  const laterKeys: Array<Set<string>> = [];
+  let keys = new Set<string>();
+  for (let index = props.length - 1; index >= 0; index--) {
+    laterKeys[index] = keys;
+    const prop = props[index];
+    keys = prop ? new Set([...keys, ...getDefinitePropKeys(prop)]) : keys;
+  }
+  return laterKeys;
+};
+
 const chooseSpreadHandler = (
   handlers: ObjectExpressionValue,
   loc: SourceLocation,
@@ -403,12 +422,16 @@ class HandlerCollector {
     ancestors: JsxExpressionValue[],
   ): void {
     const eventGuards = [...renderGuards, ...getEnabledGuards(element)];
-    for (const prop of element.props) {
-      if (prop.kind === "JsxSpreadAttribute") this.#planSpreadHandlers(element, prop, eventGuards);
+    const laterKeys = getLaterPropKeys(element.props);
+    element.props.forEach((prop, index) => {
+      const overridden = laterKeys[index] ?? new Set<string>();
+      if (prop.kind === "JsxSpreadAttribute")
+        this.#planSpreadHandlers(element, prop, eventGuards, overridden);
+      else if (overridden.has(prop.name)) return;
       else if (isRefCallback(prop)) this.#planRefCallback(prop, renderGuards);
       else if (isHandlerProp(element.tag, prop))
         this.#planEventHandler(element, prop, eventGuards, ancestors);
-    }
+    });
   }
 
   get plannedCallbacks(): SymbolicValue[] {
@@ -443,6 +466,7 @@ class HandlerCollector {
     element: JsxExpressionValue,
     prop: JsxSpreadProp,
     guards: SymbolicValue[],
+    overridden: ReadonlySet<string>,
   ): void {
     const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
     if (prop.value.kind === "Unknown") {
@@ -456,7 +480,14 @@ class HandlerCollector {
       });
       return;
     }
-    const spreadHandlers = getSpreadHandlers(element.tag, prop);
+    const allSpreadHandlers = getSpreadHandlers(element.tag, prop);
+    const keptProperties = allSpreadHandlers?.properties.filter(
+      (property) => !overridden.has(property.key),
+    );
+    const spreadHandlers: ObjectExpressionValue | null =
+      keptProperties && keptProperties.length > 0
+        ? { kind: "ObjectExpression", properties: keptProperties, spreads: [] }
+        : null;
     const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
     if (spreadHandlers && spreadHandlerKey)
       this.#plan(spreadHandlerKey, {
