@@ -339,6 +339,7 @@ export interface ComponentAnalysis {
   providedContexts: ProvidedContext[];
   contextSamples: Map<string, Sample>;
   untypedContextBindingIds: Map<string, number>;
+  readContextKeys: string[];
   placeDomains: PlaceMap<Domain>;
   unionMemberValues: PlaceMap<AbstractValue[][]>;
   render: SymbolicValue;

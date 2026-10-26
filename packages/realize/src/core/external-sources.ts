@@ -59,6 +59,7 @@ export class ExternalSources {
   readonly #actionsByStoreBinding = new Map<number, StoreActions>();
   readonly contextSamples = new Map<string, Sample>();
   readonly untypedContextBindingIds = new Map<string, number>();
+  readonly readContextKeys = new Set<string>();
 
   constructor(contextSetterFields: ContextSetterFields, modelsByStore: Map<string, StoreModel>) {
     this.#contextSetterFields = contextSetterFields;
@@ -86,6 +87,7 @@ export class ExternalSources {
     if (isExternalStore) this.#externalStoreIds.add(binding.id);
     const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;
+    this.readContextKeys.add(contextKey);
     const setterFields = this.#contextSetterFields.get(contextKey);
     if (setterFields) this.#setterFieldsByBinding.set(binding.id, setterFields);
     if (binding.domain.kind === "Unknown") {
