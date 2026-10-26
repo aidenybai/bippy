@@ -1364,6 +1364,13 @@ export class Interpreter {
     if (isMutatingCall) this.#handlerEffects?.addOpaqueCall();
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
       this.#callBinding(callee, argumentValues, walkState);
+    if (
+      isMutatingCall &&
+      callee.kind === "Binding" &&
+      callee.binding.kind === "ref" &&
+      callee.path.length > 1
+    )
+      this.#handlerEffects?.addPossibleMutation(callee.binding);
     if (this.#handlerEffects || isMutatingCall)
       this.callbacks.passCallbacks(argumentValues, loc, walkState);
     if (this.#handlerEffects)
@@ -1772,6 +1779,7 @@ export class Interpreter {
     )
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
+    if (initial) this.collectInputPlaces(initial, inputPlaces);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
