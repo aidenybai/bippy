@@ -56,4 +56,29 @@ describe("prop witnesses", () => {
       },
     ]);
   });
+
+  it("samples a string or a number for a field a state needs truthy", () => {
+    expect(getWitnesses("PhotoDetails")).toEqual([
+      {
+        props: {
+          photo: {
+            kind: "Object",
+            fields: { make: { kind: "Value", value: "text" }, iso: { kind: "Value", value: null } },
+            isOpen: false,
+          },
+        },
+        states: [0],
+      },
+      {
+        props: {
+          photo: {
+            kind: "Object",
+            fields: { make: { kind: "Value", value: null }, iso: { kind: "Value", value: 1 } },
+            isOpen: false,
+          },
+        },
+        states: [2],
+      },
+    ]);
+  });
 });

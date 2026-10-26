@@ -43,3 +43,15 @@ export const Flags = ({
     {c && d === "z" ? <i>cz</i> : <b>other</b>}
   </div>
 );
+
+interface Photo {
+  make: string | null;
+  iso: number | null;
+}
+
+export const PhotoDetails = ({ photo }: { photo: Photo }) => (
+  <dl>
+    {photo.make ? <dt>make</dt> : null}
+    {photo.iso ? <dd>iso</dd> : null}
+  </dl>
+);

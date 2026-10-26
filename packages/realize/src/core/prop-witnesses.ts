@@ -10,10 +10,15 @@ import type {
   PropWitness,
   Sample,
 } from "./types";
+import { getStringSamples } from "./string-samples";
 import { getPlaceKey } from "./utils/get-place-key";
 
 const LENGTH_FIELD = "length";
 const LENGTH_CANDIDATES = [0, 1, 2, 3];
+const NUMBER_CANDIDATES: Sample[] = [
+  { kind: "Value", value: 1 },
+  { kind: "Value", value: 0 },
+];
 const UNDEFINED_SAMPLE: Sample = { kind: "Undefined" };
 
 interface PropBinding {
@@ -90,11 +95,17 @@ const assumeSample = (
   );
 };
 
-const getLiteralCases = (values: AbstractValue[] | undefined): PrimitiveValue[] =>
-  (values ?? []).flatMap((value) => (value.kind === "Literal" ? [value.value] : []));
+const getCaseSamples = (value: AbstractValue, name: string | null): Sample[] => {
+  if (value.kind === "Literal") return [toSample(value.value)];
+  if (value.kind !== "Type") return [];
+  if (value.primitive === "string") return getStringSamples(name);
+  return value.primitive === "number" ? NUMBER_CANDIDATES : [];
+};
 
 const getCandidates = (binding: Binding, path: string[], constraints: Constraints): Sample[] => [
-  ...getLiteralCases(constraints.possibleValues.get({ bindingId: binding.id, path })).map(toSample),
+  ...(constraints.possibleValues.get({ bindingId: binding.id, path }) ?? []).flatMap((value) =>
+    getCaseSamples(value, path.at(-1) ?? binding.propName),
+  ),
   ...(path.length === 0 ? binding.samples : []),
   ...(path.at(-1) === LENGTH_FIELD ? LENGTH_CANDIDATES.map(toSample) : []),
 ];
