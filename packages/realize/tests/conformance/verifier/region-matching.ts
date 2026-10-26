@@ -3,6 +3,7 @@ import type {
   Binding,
   BindingKind,
   ComponentAnalysis,
+  Region,
 } from "../../../src/core/types";
 import { isStateBinding } from "../../../src/core/utils/is-state-binding";
 import type { Observation } from "./driver";
@@ -125,3 +126,43 @@ export const isExternalRegion = (context: ScoringContext, regionIndex: number): 
   context.report.regions[regionIndex]?.bindingIds.some((bindingId) =>
     context.externalBindingIds.has(bindingId),
   ) ?? false;
+
+export type RegionData = "local" | "store" | "external";
+
+const DATA_ORDER: RegionData[] = ["local", "store", "external"];
+
+const combineData = (kinds: RegionData[]): RegionData =>
+  kinds.reduce<RegionData>(
+    (combined, kind) => (DATA_ORDER.indexOf(kind) > DATA_ORDER.indexOf(combined) ? kind : combined),
+    "local",
+  );
+
+const getBindingData = (
+  binding: Binding,
+  bindingsById: Map<number, Binding>,
+  visitedIds: Set<number>,
+): RegionData => {
+  if (binding.kind === "module") return "store";
+  if (binding.kind === "hook")
+    return binding.hookKind === "Custom" && binding.initial !== null ? "store" : "external";
+  if (binding.kind === "context" || binding.kind === "suspense") return "external";
+  if (binding.kind !== "call") return "local";
+  if (binding.inputPlaces.length === 0 || visitedIds.has(binding.id)) return "external";
+  visitedIds.add(binding.id);
+  return combineData(
+    binding.inputPlaces.map(({ bindingId }) => {
+      const input = bindingsById.get(bindingId);
+      return input ? getBindingData(input, bindingsById, visitedIds) : "external";
+    }),
+  );
+};
+
+export const getRegionData = (analysis: ComponentAnalysis, region: Region): RegionData => {
+  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
+  return combineData(
+    region.bindingIds.map((bindingId) => {
+      const binding = bindingsById.get(bindingId);
+      return binding ? getBindingData(binding, bindingsById, new Set()) : "external";
+    }),
+  );
+};

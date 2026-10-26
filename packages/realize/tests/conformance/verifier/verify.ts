@@ -10,6 +10,7 @@ import { exploreComponent } from "./driver";
 import { collectHandlerProbes } from "./handler-probes";
 import { collectMutationProbes } from "./mutation";
 import { collectProbes } from "./branch-probes";
+import { getRegionData } from "./region-matching";
 import { scoreComponent } from "./score";
 import { createEmptyVerdict } from "./verdicts";
 import type { ComponentVerdict } from "./verdicts";
@@ -167,6 +168,7 @@ const verifyComponent = async (
   component: AnalyzedComponent,
   harness: ProjectHarness,
   budgetMs: number,
+  isOnFreshPage: boolean,
 ): Promise<ComponentVerification> => {
   try {
     const observations = component.analysis.exportName
@@ -186,6 +188,7 @@ const verifyComponent = async (
         component.report,
         observations,
         harness.knownComponents,
+        isOnFreshPage,
       ),
       isPageBroken: false,
     };
@@ -213,6 +216,7 @@ class HarnessPage {
   readonly #harness: ProjectHarness;
   #page: Page;
   #dependencyHash: string;
+  #isFresh = true;
 
   private constructor(browser: Browser, harness: ProjectHarness, page: Page) {
     this.#browser = browser;
@@ -233,10 +237,21 @@ class HarnessPage {
     return this.#harness.getDependencyHash() !== this.#dependencyHash;
   }
 
+  get isFresh(): boolean {
+    return this.#isFresh;
+  }
+
   async reopen(): Promise<void> {
     await this.close();
     this.#page = await openPage(this.#browser, this.#harness.url);
     this.#dependencyHash = this.#harness.getDependencyHash();
+    this.#isFresh = true;
+  }
+
+  async verify(component: AnalyzedComponent, budgetMs: number): Promise<ComponentVerification> {
+    const isOnFreshPage = this.#isFresh;
+    this.#isFresh = false;
+    return verifyComponent(this.#page, component, this.#harness, budgetMs, isOnFreshPage);
   }
 
   async close(): Promise<void> {
@@ -244,18 +259,21 @@ class HarnessPage {
   }
 }
 
+const readsStoreData = ({ analysis, report }: AnalyzedComponent): boolean =>
+  report.regions.some((region) => getRegionData(analysis, region) === "store");
+
 const verifyOnFreshPage = async (
   harnessPage: HarnessPage,
   component: AnalyzedComponent,
-  harness: ProjectHarness,
   budgetMs: number,
 ): Promise<ComponentVerdict> => {
   const startTime = performance.now();
-  if (harnessPage.isStale) await harnessPage.reopen();
-  let verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
+  if (harnessPage.isStale || (!harnessPage.isFresh && readsStoreData(component)))
+    await harnessPage.reopen();
+  let verification = await harnessPage.verify(component, budgetMs);
   if (harnessPage.isStale) {
     await harnessPage.reopen();
-    verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
+    verification = await harnessPage.verify(component, budgetMs);
   }
   if (verification.isPageBroken) await harnessPage.reopen();
   return { ...verification.verdict, durationMs: Math.round(performance.now() - startTime) };
@@ -280,7 +298,7 @@ const verifyOnPages = async (
         const component = components[index];
         if (!component) continue;
         options.onStart?.(component.analysis.name);
-        const verdict = await verifyOnFreshPage(harnessPage, component, harness, budgetMs);
+        const verdict = await verifyOnFreshPage(harnessPage, component, budgetMs);
         verdicts[index] = verdict;
         options.onComponent?.(verdict);
       }

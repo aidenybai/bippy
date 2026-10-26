@@ -23,12 +23,13 @@ import {
   getRegionsMatchedOnBothSides,
   getStateBindings,
   getStatesInRegion,
+  getRegionData,
   isEveryRegionMatched,
-  isExternalRegion,
   isPredictedValue,
   isRegionUnchanged,
   readPath,
 } from "./region-matching";
+import type { RegionData } from "./region-matching";
 import {
   getTargetStates,
   getTransitions,
@@ -56,6 +57,8 @@ export interface ScoringContext {
   beforeCapturesByPathKey: Map<string, Capture>;
   coveredStates: Set<number>;
   matchedStatesCache: Map<string, number[]>;
+  regionData: RegionData[];
+  freshObservation: Observation | null;
 }
 
 const scoreRender = (
@@ -80,37 +83,45 @@ const scoreRender = (
   return matchedStates;
 };
 
-const readsSharedData = (context: ScoringContext, regionIndex: number): boolean =>
-  isExternalRegion(context, regionIndex) ||
-  (context.report.regions[regionIndex]?.bindingIds.some(
-    (bindingId) => context.analysis.bindings[bindingId]?.kind === "module",
-  ) ??
-    false);
+const isFirstRenderChecked = (
+  context: ScoringContext,
+  observation: Observation,
+  regionIndex: number,
+): boolean => {
+  const regionData = context.regionData[regionIndex];
+  return (
+    regionData === "local" || (regionData === "store" && observation === context.freshObservation)
+  );
+};
 
-const getUnpredictedFirstStates = (context: ScoringContext, firstMatches: number[]): number[] =>
+const getUnpredictedFirstStates = (
+  context: ScoringContext,
+  observation: Observation,
+  firstMatches: number[],
+): number[] =>
   context.report.regions.flatMap((region, regionIndex) => {
     const matchedStates = getStatesInRegion(context, firstMatches, regionIndex);
     const isPredicted =
       region.possibleFirstRenderStates.length === 0 ||
-      readsSharedData(context, regionIndex) ||
+      !isFirstRenderChecked(context, observation, regionIndex) ||
       matchedStates.some((stateIndex) => region.possibleFirstRenderStates.includes(stateIndex));
     return isPredicted ? [] : matchedStates;
   });
 
 const scoreFirstRenderStates = (
   context: ScoringContext,
-  props: Record<string, Sample>,
+  observation: Observation,
   firstCommitShapes: Shape[],
   firstMatches: number[],
 ): void => {
-  const unpredictedStates = getUnpredictedFirstStates(context, firstMatches);
+  const unpredictedStates = getUnpredictedFirstStates(context, observation, firstMatches);
   const [closestState] = unpredictedStates;
   if (closestState === undefined) return;
   const predictedStates = context.report.regions.flatMap(
     (region) => region.possibleFirstRenderStates,
   );
   context.verdict.stateCounterexamples.push({
-    props,
+    props: observation.props,
     path: [FIRST_COMMIT],
     rendered: formatShapes(normalizeShapes(firstCommitShapes)).slice(0, MAX_RENDERED_LENGTH),
     closestState,
@@ -126,7 +137,7 @@ const scoreFirstCommit = (
   const { firstCommitShapes } = observation.after;
   if (observation.action || !firstCommitShapes) return;
   const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
-  scoreFirstRenderStates(context, observation.props, firstCommitShapes, firstMatches);
+  scoreFirstRenderStates(context, observation, firstCommitShapes, firstMatches);
   if (context.externalBindingIds.size > 0) return;
   const isUnexplained = getRegionsMatchedOnBothSides(context, firstMatches, settledMatches).some(
     (regionIndex) =>
@@ -176,6 +187,7 @@ const createScoringContext = (
   verdict: ComponentVerdict,
   observations: Observation[],
   knownComponents: Map<string, string>,
+  isOnFreshPage: boolean,
 ): ScoringContext => ({
   analysis,
   report,
@@ -211,6 +223,8 @@ const createScoringContext = (
   ),
   coveredStates: new Set(),
   matchedStatesCache: new Map(),
+  regionData: report.regions.map((region) => getRegionData(analysis, region)),
+  freshObservation: isOnFreshPage ? (observations[0] ?? null) : null,
 });
 
 const getReachedUnreachableBranches = (report: StateReport, coveredSides: Set<string>): string[] =>
@@ -257,6 +271,7 @@ export const scoreComponent = (
   report: StateReport,
   observations: Observation[],
   knownComponents: Map<string, string>,
+  isOnFreshPage = false,
 ): ComponentVerdict => {
   const verdict: ComponentVerdict = {
     ...createEmptyVerdict(analysis, report),
@@ -265,7 +280,14 @@ export const scoreComponent = (
   if (!analysis.exportName) return verdict;
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
-  const context = createScoringContext(analysis, report, verdict, observations, knownComponents);
+  const context = createScoringContext(
+    analysis,
+    report,
+    verdict,
+    observations,
+    knownComponents,
+    isOnFreshPage,
+  );
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
   const coveredSides = new Set<string>();
