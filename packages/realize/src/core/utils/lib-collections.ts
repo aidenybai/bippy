@@ -12,7 +12,8 @@ const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
 ]);
 
 export const getCollectionName = (checker: Checker, type: Type): MutableCollection | null => {
-  if (checker.isArrayType(type) || checker.isTupleType(type)) return "Array";
+  if (type.isTypeReference() && (checker.isArrayType(type) || checker.isTupleType(type)))
+    return "Array";
   const symbol = type.getSymbol();
   const isLibDeclared = symbol?.declarations.some((declaration) =>
     LIBRARY_DECLARATION_PATTERN.test(declaration.path),
