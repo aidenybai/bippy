@@ -193,11 +193,15 @@ const createReportLoader = (tracer: Tracer): ReportLoader => {
   };
 };
 
-export const analyzeProject = (
+export interface InterpretedProject {
+  analyses: ComponentAnalysis[];
+  fileCount: number;
+}
+
+export const interpretProject = (
   configPath: string,
-  fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
-): ProjectAnalysis =>
+): InterpretedProject =>
   withProject(
     configPath,
     (project) => {
@@ -212,18 +216,32 @@ export const analyzeProject = (
       const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
         withContextFileNames(analysis, fileNamesByPath),
       );
-      const isSelected = (analysis: ComponentAnalysis): boolean =>
-        fileFilter === null || analysis.file.includes(fileFilter);
-      const loadReport = createReportLoader(tracer);
-      const linked = tracer.span("link", "link components", () =>
-        linkComponents(analyses, loadReport, isSelected),
-      );
-      const components = analyses.filter(isSelected).map((analysis) => ({
-        analysis,
-        report: loadReport(analysis),
-        ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
-      }));
-      return { components, fileCount: fileNames.length };
+      return { analyses, fileCount: fileNames.length };
     },
     tracer,
   );
+
+export const reportProject = (
+  { analyses, fileCount }: InterpretedProject,
+  fileFilter: string | null = null,
+  tracer: Tracer = NO_TRACER,
+): ProjectAnalysis => {
+  const isSelected = (analysis: ComponentAnalysis): boolean =>
+    fileFilter === null || analysis.file.includes(fileFilter);
+  const loadReport = createReportLoader(tracer);
+  const linked = tracer.span("link", "link components", () =>
+    linkComponents(analyses, loadReport, isSelected),
+  );
+  const components = analyses.filter(isSelected).map((analysis) => ({
+    analysis,
+    report: loadReport(analysis),
+    ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+  }));
+  return { components, fileCount };
+};
+
+export const analyzeProject = (
+  configPath: string,
+  fileFilter: string | null = null,
+  tracer: Tracer = NO_TRACER,
+): ProjectAnalysis => reportProject(interpretProject(configPath, tracer), fileFilter, tracer);
