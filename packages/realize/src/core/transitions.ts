@@ -17,6 +17,7 @@ import { getIntervalBounds } from "./reachable-ranges";
 import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
 import type {
+  AbstractValue,
   Binding,
   BindingPlace,
   ConditionalValue,
@@ -28,6 +29,7 @@ import type {
 import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
+import type { PlaceMap } from "./utils/place-map";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
@@ -77,7 +79,6 @@ const applyUpdates = (
   maybeUpdates = NO_MAYBE_UPDATES,
 ): Constraints => {
   const updated = cloneConstraints(constraints);
-  const placesByBinding = groupPlacesByBinding(constraints.possibleValues.places());
   const updatedBindingIds = new Set<number>();
   const sequenceBindingIds = new Set(
     updates.flatMap((update) => [
@@ -85,6 +86,7 @@ const applyUpdates = (
       ...(dependentsByBinding.get(update.binding.id) ?? []),
     ]),
   );
+  const placesByBinding = groupPlacesByBinding(constraints.possibleValues, sequenceBindingIds);
   for (const update of updates) {
     const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
@@ -162,9 +164,13 @@ const addPlace = (placesByBinding: Map<number, BindingPlace[]>, place: BindingPl
   placesByBinding.set(place.bindingId, places);
 };
 
-const groupPlacesByBinding = (places: BindingPlace[]): Map<number, BindingPlace[]> => {
+const groupPlacesByBinding = (
+  possibleValues: PlaceMap<AbstractValue[]>,
+  bindingIds: ReadonlySet<number>,
+): Map<number, BindingPlace[]> => {
   const placesByBinding = new Map<number, BindingPlace[]>();
-  for (const place of places) addPlace(placesByBinding, place);
+  for (const [place] of possibleValues)
+    if (bindingIds.has(place.bindingId)) addPlace(placesByBinding, place);
   return placesByBinding;
 };
 
