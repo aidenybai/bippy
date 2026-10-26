@@ -76,6 +76,10 @@ export class SourceFileResolver {
     return this.#sourceFile.fileName;
   }
 
+  get path(): string {
+    return this.#sourceFile.path;
+  }
+
   #findNode(loc: SourceLocation): Node | null {
     return findNodeAtLocation(this.#sourceFile, loc);
   }

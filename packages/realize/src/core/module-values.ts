@@ -17,6 +17,18 @@ export interface ModuleVariableLoader {
   (variableName: string): ModuleVariable | null;
 }
 
+export interface ModuleDeclaration extends ModuleVariable {
+  isWritten: boolean;
+}
+
+export interface ModuleDeclarationLoader {
+  (variableName: string): ModuleDeclaration | null;
+}
+
+export interface WrittenImportLoader {
+  (localName: string): boolean;
+}
+
 const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
   ["Set", "Set"],
   ["Map", "Map"],
@@ -326,8 +338,8 @@ const isReadThroughState = (references: NodePath[], value: SymbolicValue): boole
   references.some((reference) => isSharedStateReference(reference, value)) &&
   references.some((reference) => !isStateValueReference(reference));
 
-export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
-  const variables = new Map<string, ModuleVariable>();
+export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclarationLoader => {
+  const declarations = new Map<string, ModuleDeclaration>();
   traverse(ast, {
     VariableDeclarator(path) {
       const declaration = path.parentPath;
@@ -346,14 +358,35 @@ export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoade
         (binding.constantViolations.length > 0 ||
           binding.referencePaths.some(isMemberWrite) ||
           (value !== null && isReadThroughState(binding.referencePaths, value)));
-      if (isWritten)
-        variables.set(id.name, {
-          initial: init ? value : { kind: "Primitive", value: undefined },
-          loc: id.loc,
-        });
+      declarations.set(id.name, {
+        initial: init ? value : { kind: "Primitive", value: undefined },
+        loc: id.loc,
+        isWritten,
+      });
     },
   });
-  return (variableName) => variables.get(variableName) ?? null;
+  return (variableName) => declarations.get(variableName) ?? null;
+};
+
+export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
+  const loadDeclaration = createModuleDeclarationLoader(ast);
+  return (variableName) => {
+    const declaration = loadDeclaration(variableName);
+    return declaration?.isWritten ? declaration : null;
+  };
+};
+
+export const createWrittenImportLoader = (ast: types.File): WrittenImportLoader => {
+  const writtenImports = new Set<string>();
+  traverse(ast, {
+    ImportDeclaration(path) {
+      for (const specifier of path.node.specifiers) {
+        const binding = path.scope.getBinding(specifier.local.name);
+        if (binding?.referencePaths.some(isMemberWrite)) writtenImports.add(specifier.local.name);
+      }
+    },
+  });
+  return (localName) => writtenImports.has(localName);
 };
 
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {

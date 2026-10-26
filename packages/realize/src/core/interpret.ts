@@ -72,6 +72,7 @@ import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { createDeclarationKey } from "./utils/declaration-key";
 import { getMemoRanges } from "./utils/get-memo-ranges";
 import { getLocationKey } from "./utils/get-location-key";
 import { isSameValueZero } from "./utils/is-same-value-zero";
@@ -121,7 +122,11 @@ import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
-import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-values";
+import type {
+  ModuleConstantLoader,
+  ModuleDeclaration,
+  ModuleVariableLoader,
+} from "./module-values";
 import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./utils/get-identifier-name";
@@ -189,10 +194,17 @@ export interface ProjectHookLoader {
   (declarationKey: string): ProjectHook | null;
 }
 
+export interface ProjectModuleDeclaration extends ModuleDeclaration {
+  name: string;
+  resolver: SourceFileResolver;
+}
+
 export interface ProjectLoaders {
   loadProjectHook: ProjectHookLoader;
   loadProjectFunction: ProjectHookLoader;
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
+  loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
+  isWrittenImport: (declarationKey: string) => boolean;
 }
 
 const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
@@ -969,11 +981,36 @@ export class Interpreter {
   }
 
   #getModuleBinding(name: string): Binding | null {
-    const variable =
-      this.#resolver === this.#componentResolver ? this.#loadModuleVariable(name) : null;
+    if (this.#resolver !== this.#componentResolver) {
+      const declaration = this.#projectLoaders.loadModuleDeclaration(
+        createDeclarationKey(this.#resolver.path, name),
+      );
+      return declaration?.isWritten ? this.#createModuleBinding(declaration) : null;
+    }
+    const variable = this.#loadModuleVariable(name);
     return variable
-      ? this.createBinding(name, "module", variable.loc, { initial: variable.initial, scope: "" })
+      ? this.#createModuleBinding({ ...variable, isWritten: true, name, resolver: this.#resolver })
       : null;
+  }
+
+  #getImportedModuleBinding(localName: string, loc: SourceLocation): Binding | null {
+    const declarationKey = this.#resolver.getDeclarationKey(loc);
+    const declaration = declarationKey
+      ? this.#projectLoaders.loadModuleDeclaration(declarationKey)
+      : null;
+    if (!declaration) return null;
+    const isWrittenHere = this.#projectLoaders.isWrittenImport(
+      createDeclarationKey(this.#resolver.path, localName),
+    );
+    return declaration.isWritten || isWrittenHere ? this.#createModuleBinding(declaration) : null;
+  }
+
+  #createModuleBinding(declaration: ProjectModuleDeclaration): Binding {
+    return this.createBinding(declaration.name, "module", declaration.loc, {
+      initial: declaration.initial,
+      scope: "",
+      resolver: declaration.resolver,
+    });
   }
 
   #evaluateCallee(
@@ -2244,7 +2281,13 @@ export class Interpreter {
         return this.read(value.value);
       case "LoadGlobal": {
         const isModuleLocal = value.binding.kind === "ModuleLocal";
-        const variable = isModuleLocal ? this.#getModuleBinding(value.binding.name) : null;
+        const isImport =
+          value.binding.kind === "ImportSpecifier" || value.binding.kind === "ImportDefault";
+        const variable = isModuleLocal
+          ? this.#getModuleBinding(value.binding.name)
+          : isImport
+            ? this.#getImportedModuleBinding(value.binding.name, value.loc)
+            : null;
         if (variable) return createBindingValue(variable);
         const constant =
           isModuleLocal || value.binding.kind === "Global"
