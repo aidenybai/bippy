@@ -12,7 +12,7 @@ import type {
   StoreModel,
   SymbolicValue,
 } from "./types";
-import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
+import { UNDEFINED_VALUE, createUnknown } from "./symbolic-values";
 
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);

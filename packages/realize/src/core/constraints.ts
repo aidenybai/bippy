@@ -158,13 +158,12 @@ const formatUnionMemberValues = memoizeByIdentity(
 const formatRelevantValues = (
   possibleValues: PlaceMap<AbstractValue[]>,
   bindingIds: ReadonlySet<number>,
-): string =>
-  Int32Array.from(
-    [...possibleValues].filter(([place]) => bindingIds.has(place.bindingId)),
-    getPossibleValueId,
-  )
-    .sort()
-    .join(",");
+): string => {
+  const valueIds: number[] = [];
+  for (const entry of possibleValues)
+    if (bindingIds.has(entry[0].bindingId)) valueIds.push(getPossibleValueId(entry));
+  return Int32Array.from(valueIds).sort().join(",");
+};
 
 const formatAssumptions = (assumptions: Iterable<[string, Assumption]>): string =>
   [...assumptions].map(formatAssumption).sort().join(";");
