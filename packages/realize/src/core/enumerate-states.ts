@@ -75,6 +75,7 @@ const getRegionHandlers = (
 const isSettled = (alternative: Alternative, renderUpdates: StateUpdate[]): boolean =>
   !renderUpdates.some(
     (update) =>
+      !update.isMemoized &&
       update.guards.length > 0 &&
       update.guards.every((guard) => evaluateCondition(guard, alternative.constraints) === true),
   );

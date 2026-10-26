@@ -72,6 +72,7 @@ import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { getMemoRanges } from "./utils/get-memo-ranges";
 import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getPropertyKeyForms } from "./utils/get-property-key-forms";
 import { hasUnknownPart } from "./constraints";
@@ -455,6 +456,8 @@ export class Interpreter {
   readonly callbacks = new CallbackPasser(this);
   cells = new Cells();
   readonly #memoDependencies = new Map<number, Array<ManualMemoDependency> | null>();
+  #componentFunction: HIRFunction | null = null;
+  #isInMemo = false;
   readonly iteration = new ArrayIteration(this);
   readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
@@ -521,6 +524,7 @@ export class Interpreter {
 
   evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
     this.walker.blockVisits = 0;
+    this.#componentFunction = hirFunction;
     return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
@@ -1024,11 +1028,12 @@ export class Interpreter {
     );
     const isRepeated =
       !this.#handlerEffects || (this.walker.loopDepth > 0 && setterArgument?.kind === "Function");
-    collector.recordSetterCall(
-      setter.binding,
-      nextValue,
-      isRepeated ? { ...walkState, isRepeated } : walkState,
-    );
+    const isMemoized = !this.#handlerEffects && this.#isInMemo;
+    collector.recordSetterCall(setter.binding, nextValue, {
+      ...walkState,
+      ...(isRepeated && { isRepeated }),
+      ...(isMemoized && { isMemoized }),
+    });
   }
 
   #applyDispatch(
@@ -2166,6 +2171,11 @@ export class Interpreter {
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
     const { value } = instruction;
+    const componentFunction = this.#componentFunction;
+    if (componentFunction && this.#currentFunction === componentFunction)
+      this.#isInMemo = getMemoRanges(componentFunction).some(
+        (range) => instruction.id > range.start && instruction.id < range.finish,
+      );
     this.#recordLoadedProperty(instruction);
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, walkState);

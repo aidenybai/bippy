@@ -18,6 +18,7 @@ export interface UpdateCondition {
   guards: SymbolicValue[];
   isAsync: boolean;
   isRepeated?: boolean;
+  isMemoized?: boolean;
 }
 
 const UNCONDITIONAL_UPDATE: UpdateCondition = { guards: [], isAsync: false };
@@ -150,6 +151,7 @@ export class EffectCollector {
       guards,
       isAsync: condition.isAsync,
       ...(condition.isRepeated && { isRepeated: true }),
+      ...(condition.isMemoized && { isMemoized: true }),
     });
   }
 
