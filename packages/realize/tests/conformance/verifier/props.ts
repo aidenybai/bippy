@@ -1,7 +1,6 @@
 import type { ComponentAnalysis, PropWitness, Sample, StateReport } from "../../../src/core/types";
 
 const MAX_PROP_COMBINATIONS = 12;
-const MAX_WITNESS_PROPS = 48;
 
 interface PropSamples {
   name: string;
@@ -61,6 +60,5 @@ export const getWitnessProps = (
       if (seenKeys.has(key)) return false;
       seenKeys.add(key);
       return true;
-    })
-    .slice(0, MAX_WITNESS_PROPS);
+    });
 };

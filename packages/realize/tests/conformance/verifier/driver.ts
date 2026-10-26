@@ -29,6 +29,7 @@ const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 8;
 const MAX_MOUNT_ATTEMPTS = 24;
+const MAX_WITNESS_MOUNTS = 48;
 const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 const REDUNDANT_PARENT_FAILURES = new Set<MountFailure>(["missing-data", "other"]);
@@ -356,7 +357,7 @@ const mountWitnesses = async (
   for (const observation of observations) coverage.add(observation.after);
   const witnessObservations: Observation[] = [];
   for (const { props, states } of witnesses) {
-    if (performance.now() >= deadline) break;
+    if (performance.now() >= deadline || witnessObservations.length >= MAX_WITNESS_MOUNTS) break;
     if (coverage.covers(states)) continue;
     const after = await mountInPage(page, { ...request, props });
     coverage.add(after);
