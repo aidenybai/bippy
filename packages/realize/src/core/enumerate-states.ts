@@ -1,6 +1,6 @@
 import { evaluateClaims } from "./claims";
 import { isEffectHandler, isRenderHandler } from "./collect-handlers";
-import { evaluateCondition, joinConstraints } from "./constraints";
+import { cloneConstraints, evaluateCondition, joinConstraints } from "./constraints";
 import type { Constraints } from "./constraints";
 import { findRegions } from "./regions";
 import type { RegionBranches } from "./regions";
@@ -17,6 +17,7 @@ import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
 import { collectHandlerIds } from "./utils/collect-handler-ids";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
   createFirstRenderConstraints,
@@ -88,6 +89,39 @@ const isMountOnlyEffect = (handler: Handler): boolean =>
   handler.trigger.dependencyPlaces !== null &&
   handler.trigger.dependencyPlaces.length === 0 &&
   !handler.updates.some((update) => update.isAsync);
+
+const getCommittedRefIds = (analysis: ComponentAnalysis): Set<number> | null => {
+  const refIds = new Set<number>();
+  let hasCallbackRef = false;
+  forEachJsxElement(analysis.render, (element) => {
+    for (const prop of element.props) {
+      if (prop.kind === "JsxAttribute" && prop.name === "ref" && prop.value.kind === "Function")
+        hasCallbackRef = true;
+      forEachSymbolicValue(prop.value, (part) => {
+        if (part.kind === "Binding" && part.binding.kind === "ref") refIds.add(part.binding.id);
+      });
+    }
+  });
+  for (const handler of analysis.handlers)
+    for (const update of handler.updates)
+      if (update.binding.kind === "ref") refIds.add(update.binding.id);
+  return hasCallbackRef ? null : refIds;
+};
+
+const getMountEffectConstraints = (
+  analysis: ComponentAnalysis,
+  firstRenderConstraints: Constraints,
+): Constraints => {
+  const refIds = getCommittedRefIds(analysis);
+  const committedPlaces = firstRenderConstraints.possibleValues.places().filter((place) => {
+    const binding = analysis.bindings[place.bindingId];
+    return binding?.kind === "ref" && (refIds === null || refIds.has(place.bindingId));
+  });
+  if (committedPlaces.length === 0) return firstRenderConstraints;
+  const constraints = cloneConstraints(firstRenderConstraints);
+  for (const place of committedPlaces) constraints.possibleValues.delete(place);
+  return constraints;
+};
 
 const isPossibleFirstRender = (
   alternative: Alternative,
@@ -165,6 +199,10 @@ const enumerateRegion = (
   const renderedHandlerIds = alternatives.map((alternative) =>
     collectHandlerIds(alternative.render, alternative.constraints),
   );
+  const mountEffectConstraints = getMountEffectConstraints(
+    analysis,
+    context.firstRender.constraints,
+  );
   const getTransitions = (alternative: Alternative, index: number): Transition[] => {
     const runnableEffectIds = analysis.handlers
       .filter(
@@ -182,7 +220,7 @@ const enumerateRegion = (
         getTransition(
           handler,
           isMountOnlyEffect(handler)
-            ? { ...alternative, constraints: context.firstRender.constraints }
+            ? { ...alternative, constraints: mountEffectConstraints }
             : alternative,
           transitionContext,
         ),
