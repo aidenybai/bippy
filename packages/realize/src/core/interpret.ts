@@ -444,6 +444,7 @@ export class Interpreter {
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
   readonly #constantContextIds = new Set<IdentifierId>();
+  readonly localRenders: SymbolicValue[] = [];
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
   readonly #itemSources = new Map<number, PlaceMap<true>>();
@@ -550,6 +551,7 @@ export class Interpreter {
     try {
       const callbacks = getContainedValues(callback);
       const walkState = { ...ROOT_WALK_STATE, renderGuards, guards };
+      const results: SymbolicValue[] = [];
       for (const handlerCallback of callbacks) {
         const returned = runsCleanup
           ? this.#getReturnedValue(handlerCallback, argumentValues, walkState)
@@ -566,7 +568,8 @@ export class Interpreter {
         for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupWalkState);
         handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
         if (cleanups.length > 0) this.cells = new Cells();
-        this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
+        const result = this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
+        if (result) results.push(result);
       }
       this.forgetHandlerWrites(callback);
       if (handlerEffects.callsOutside && !handlerEffects.mutatesModule)
@@ -579,7 +582,7 @@ export class Interpreter {
               createBindingValue(binding),
               ROOT_WALK_STATE,
             );
-      return handlerEffects.finish();
+      return { ...handlerEffects.finish(), returned: results };
     } finally {
       this.#handlerEffects = previousEffects;
       this.walker.blockVisits = previousBlockVisits;

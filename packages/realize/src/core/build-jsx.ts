@@ -1,7 +1,9 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { FunctionValue, JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "./types";
 
-const DYNAMIC_TAG_NAME = "Dynamic";
+export const DYNAMIC_TAG_NAME = "Dynamic";
+
+export const LOCAL_RENDER_PROP = "render";
 
 interface JsxElementParts {
   declaration: string | null;
@@ -48,7 +50,9 @@ const getRenderFunctionProps = (
   const renderFunctions = tag.kind === "Function" ? [tag] : [];
   return [
     ...renderPropChildren.map((value) => createFunctionProp("children", value, elementParts.file)),
-    ...renderFunctions.map((value) => createFunctionProp("render", value, elementParts.file)),
+    ...renderFunctions.map((value) =>
+      createFunctionProp(LOCAL_RENDER_PROP, value, elementParts.file),
+    ),
   ];
 };
 

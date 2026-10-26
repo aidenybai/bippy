@@ -56,12 +56,13 @@ const collectChildElements = (
   declarations: Set<string>,
 ): Array<[string, JsxExpressionValue]> => {
   const elements: Array<[string, JsxExpressionValue]> = [];
-  forEachJsxElement(parent.render, (element) => {
-    if (element.tag.kind !== "Component" || element.tag.declaration === null) return;
-    const { declaration } = element.tag;
-    if (declaration !== parent.declaration && declarations.has(declaration))
-      elements.push([declaration, element]);
-  });
+  for (const rendered of [parent.render, ...parent.localRenders])
+    forEachJsxElement(rendered, (element) => {
+      if (element.tag.kind !== "Component" || element.tag.declaration === null) return;
+      const { declaration } = element.tag;
+      if (declaration !== parent.declaration && declarations.has(declaration))
+        elements.push([declaration, element]);
+    });
   return elements;
 };
 

@@ -29,6 +29,7 @@ import {
 } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
+import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "./build-jsx";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 const CAPTURE_SUFFIX = "Capture";
@@ -356,18 +357,19 @@ class HandlerCollector {
   ): string | null {
     const runsCleanup =
       trigger.kind === "Effect" && trigger.hookKind !== "Custom" && trigger.dependencies !== "[]";
-    return this.addCollectedHandler(
-      trigger,
-      this.#interpreter.collectEffects(
-        callback,
-        callbackArguments,
-        guards,
-        callbackGuards,
-        runsCleanup,
-      ),
-      loc,
+    const effects = this.#interpreter.collectEffects(
+      callback,
+      callbackArguments,
       guards,
+      callbackGuards,
+      runsCleanup,
     );
+    const isLocalRender =
+      trigger.kind === "Event" &&
+      trigger.tag === DYNAMIC_TAG_NAME &&
+      trigger.event === LOCAL_RENDER_PROP;
+    if (isLocalRender) this.#interpreter.localRenders.push(...(effects.returned ?? []));
+    return this.addCollectedHandler(trigger, effects, loc, guards);
   }
 
   addCollectedHandler(
