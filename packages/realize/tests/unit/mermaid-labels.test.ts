@@ -49,4 +49,13 @@ describe("Mermaid state labels", () => {
     expect(tree).toContain("#quot;say #quot;hi#quot; \\ now#quot;");
     expect(tree).not.toContain("\\\\");
   });
+
+  it("does not label buttons a loop pushes with the first iteration's text", () => {
+    const diagram = formatMermaid(getComponent(project, "LoopPickedOption"), {
+      rootDirectory,
+      maxStates: DEFAULT_MAX_STATES,
+    });
+    expect(diagram).toContain("setPicked(index) · from any state");
+    expect(diagram).not.toContain('"first" · from any state');
+  });
 });

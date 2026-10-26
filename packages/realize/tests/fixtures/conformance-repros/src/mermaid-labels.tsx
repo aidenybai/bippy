@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import type { ReactNode } from "react";
 
 export const ColonText = () => {
   const [label, setLabel] = useState("start");
@@ -48,6 +49,23 @@ export const SizeSelect = () => {
         <option value="large">large</option>
       </select>
       {size === "large" ? <p>big</p> : <p>little</p>}
+    </div>
+  );
+};
+
+export const LoopPickedOption = () => {
+  const [picked, setPicked] = useState(-1);
+  const options: ReactNode[] = [];
+  for (let index = 0; index < 2; index++)
+    options.push(
+      <button key={index} onClick={() => setPicked(index)}>
+        {index === 0 ? "first" : "second"}
+      </button>,
+    );
+  return (
+    <div>
+      {picked === -1 ? <p>none</p> : picked === 0 ? <p>first</p> : <p>second</p>}
+      {options}
     </div>
   );
 };
