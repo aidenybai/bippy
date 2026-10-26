@@ -290,10 +290,13 @@ const explorePropCombination = async (
   for (const currentPath of pendingPaths) {
     if (!hasBudget()) break;
     if (currentPath.length >= MAX_ACTION_DEPTH) continue;
-    if (currentPath.length > 0 && !(await replayPath(page, request, currentPath))) continue;
+    let replayed =
+      currentPath.length > 0 ? await replayPath(page, request, currentPath) : initialCapture;
+    if (!replayed) continue;
     for (const action of await listActionsInPage(page)) {
       if (!hasBudget()) break;
-      const before = await replayPath(page, request, currentPath);
+      const before = replayed ?? (await replayPath(page, request, currentPath));
+      replayed = null;
       if (!before) continue;
       const after = await performInPage(page, action.key);
       if (!after) continue;
