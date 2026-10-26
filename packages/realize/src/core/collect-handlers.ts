@@ -718,6 +718,18 @@ const getRenderedBindingIds = (render: SymbolicValue): Set<number> => {
   return bindingIds;
 };
 
+const getInputClosure = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
+  const closure = new Set(bindingIds);
+  const pending = [...bindingIds];
+  for (let bindingId = pending.pop(); bindingId !== undefined; bindingId = pending.pop())
+    for (const place of bindings[bindingId]?.inputPlaces ?? [])
+      if (!closure.has(place.bindingId)) {
+        closure.add(place.bindingId);
+        pending.push(place.bindingId);
+      }
+  return closure;
+};
+
 const getDependentIds = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
   const dependentIds = new Set(bindingIds);
   let previousSize = 0;
@@ -824,7 +836,10 @@ const collectHandlersOnce = (
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
-  const renderedIds = getRenderedBindingIds(render);
+  const renderedIds = getInputClosure(
+    getRenderedBindingIds(render),
+    interpreter.bindingTable.bindings,
+  );
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
   const { bindings } = interpreter.bindingTable;

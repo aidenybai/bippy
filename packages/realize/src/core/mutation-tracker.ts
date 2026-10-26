@@ -156,6 +156,8 @@ export class MutationTracker {
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
+      if (mutatedValue.kind === "Binding" && mutatedValue.binding.kind === "module")
+        this.#trackModuleMutation(mutatedValue, mutatedPlace.loc);
       if (
         mutatedValue.kind === "Binding" &&
         mutatedValue.binding.kind === "call" &&
@@ -352,6 +354,21 @@ export class MutationTracker {
     for (const binding of this.#interpreter.bindingTable.bindings)
       if (isStateBinding(binding) && this.#isInitializedFrom(binding, mutatedGlobal))
         this.#interpreter.handlerEffects.addMutation(binding, loc);
+  }
+
+  #trackModuleMutation(mutatedValue: BindingValue, loc: SourceLocation): void {
+    const handlerEffects = this.#interpreter.handlerEffects;
+    if (!handlerEffects) return;
+    handlerEffects.addPossibleMutation(mutatedValue.binding);
+    for (const binding of this.#interpreter.bindingTable.bindings) {
+      const { initial } = binding;
+      const isInitializedFromMutated =
+        isStateBinding(binding) &&
+        initial?.kind === "Binding" &&
+        initial.binding.id === mutatedValue.binding.id &&
+        initial.path.every((key, index) => mutatedValue.path[index] === key);
+      if (isInitializedFromMutated) handlerEffects.addMutation(binding, loc);
+    }
   }
 
   #isInitializedFrom(binding: Binding, mutatedGlobal: GlobalValue): boolean {

@@ -243,6 +243,35 @@ const isReadOfPrimitive = (
   return !isCallee || receiverValues.every(isPrimitive);
 };
 
+const MUTATING_METHODS = new Set([
+  "push",
+  "pop",
+  "shift",
+  "unshift",
+  "splice",
+  "sort",
+  "reverse",
+  "fill",
+  "copyWithin",
+  "set",
+  "delete",
+  "add",
+  "clear",
+]);
+
+const isMutatingMethodCallee = (path: NodePath): boolean => {
+  const { node, parentPath } = path;
+  const isMember = types.isMemberExpression(node) || types.isOptionalMemberExpression(node);
+  return (
+    isMember &&
+    !node.computed &&
+    types.isIdentifier(node.property) &&
+    MUTATING_METHODS.has(node.property.name) &&
+    (parentPath?.isCallExpression({ callee: node }) === true ||
+      parentPath?.isOptionalCallExpression({ callee: node }) === true)
+  );
+};
+
 const isMemberWrite = (path: NodePath): boolean => {
   const { parentPath } = path;
   const member = parentPath?.node;
@@ -252,7 +281,7 @@ const isMemberWrite = (path: NodePath): boolean => {
   return (
     parentPath !== null &&
     isMemberObject &&
-    (isWriteTarget(parentPath) || isMemberWrite(parentPath))
+    (isWriteTarget(parentPath) || isMutatingMethodCallee(parentPath) || isMemberWrite(parentPath))
   );
 };
 
