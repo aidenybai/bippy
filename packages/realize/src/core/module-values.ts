@@ -313,6 +313,28 @@ const isHookInitialArgument = (path: NodePath): boolean => {
   );
 };
 
+const isUnmutatedStateSetterArgument = (path: NodePath): boolean => {
+  const call = path.parentPath;
+  if (!call?.isCallExpression() || call.node.arguments[0] !== path.node) return false;
+  const { callee } = call.node;
+  if (!types.isIdentifier(callee)) return false;
+  const declarator = call.scope.getBinding(callee.name)?.path;
+  if (!declarator?.isVariableDeclarator() || !types.isArrayPattern(declarator.node.id))
+    return false;
+  const { init } = declarator.node;
+  const hookCallee = types.isCallExpression(init) ? init.callee : null;
+  const hook = types.isMemberExpression(hookCallee) ? hookCallee.property : hookCallee;
+  const [stateElement, setterElement] = declarator.node.id.elements;
+  if (
+    !types.isIdentifier(hook, { name: "useState" }) ||
+    !types.isIdentifier(setterElement, { name: callee.name }) ||
+    !types.isIdentifier(stateElement)
+  )
+    return false;
+  const stateBinding = declarator.scope.getBinding(stateElement.name);
+  return stateBinding !== undefined && !stateBinding.referencePaths.some(isMemberWrite);
+};
+
 const isStateValueReference = (path: NodePath): boolean => {
   const { parentPath } = path;
   if (!parentPath) return false;
@@ -320,7 +342,7 @@ const isStateValueReference = (path: NodePath): boolean => {
   if (parentPath.isArrowFunctionExpression()) return parentPath.node.body === path.node;
   if (parentPath.isConditionalExpression())
     return parentPath.node.test !== path.node && isStateValueReference(parentPath);
-  return isHookInitialArgument(path);
+  return isHookInitialArgument(path) || isUnmutatedStateSetterArgument(path);
 };
 
 const getFieldValues = (value: SymbolicValue): SymbolicValue[] => {

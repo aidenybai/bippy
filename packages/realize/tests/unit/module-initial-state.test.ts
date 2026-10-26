@@ -13,4 +13,12 @@ describe("a state whose initial value is a module object constant", () => {
   it("has a first render when a lazy initializer returns it", () => {
     expect(getFirstRenders("StateFromModuleObject")).not.toContain(null);
   });
+
+  it("has a first render when a setter resets to it", () => {
+    expect(getFirstRenders("ResetToModuleObject")).not.toContain(null);
+  });
+
+  it("stays open when the state is mutated in place before a reset", () => {
+    expect(getFirstRenders("MutatedBeforeReset")).toContain(null);
+  });
 });
