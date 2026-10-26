@@ -248,6 +248,7 @@ const verifyOnFreshPage = async (
   harness: ProjectHarness,
   budgetMs: number,
 ): Promise<ComponentVerdict> => {
+  const startTime = performance.now();
   if (harnessPage.isStale) await harnessPage.reopen();
   let verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
   if (harnessPage.isStale) {
@@ -255,7 +256,7 @@ const verifyOnFreshPage = async (
     verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
   }
   if (verification.isPageBroken) await harnessPage.reopen();
-  return verification.verdict;
+  return { ...verification.verdict, durationMs: Math.round(performance.now() - startTime) };
 };
 
 const verifyOnPages = async (

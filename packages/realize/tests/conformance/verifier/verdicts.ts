@@ -51,6 +51,7 @@ export interface ComponentVerdict {
   coveredWarningCount: number;
   refutedWarnings: string[];
   unwarnedMutations: string[];
+  durationMs: number;
 }
 
 export interface VerificationSummary {
@@ -94,6 +95,7 @@ export const createEmptyVerdict = (
   coveredWarningCount: 0,
   refutedWarnings: [],
   unwarnedMutations: [],
+  durationMs: 0,
 });
 
 export const getMountFailedVerdict = (
