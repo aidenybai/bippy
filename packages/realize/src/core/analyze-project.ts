@@ -169,7 +169,7 @@ const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): Compone
     initialAnalyses.map((initial) => initial.analysis),
   );
   const analyses = initialAnalyses.map((initial) =>
-    initial.analysis.bindings.some((binding) => binding.kind === "context")
+    initial.analysis.readContextKeys.some((contextKey) => contextSetterFields.has(contextKey))
       ? analyzeCompiledComponent(initial.component, contextSetterFields, tracer)
       : initial.analysis,
   );
