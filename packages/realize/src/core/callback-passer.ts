@@ -141,14 +141,22 @@ export class CallbackPasser {
     });
   }
 
-  addDeferredCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation): void {
+  addDeferredCallbacks(
+    argumentValues: SymbolicValue[],
+    loc: SourceLocation,
+    isHookArgument = false,
+  ): void {
     for (const callback of getPassedCallbacks(argumentValues)) {
-      if (callback.kind !== "Function") continue;
-      const parameters = this.#interpreter.functions.get(callback.functionId)?.params ?? [];
+      const isUpdate = callback.kind === "Setter" || callback.kind === "Dispatch";
+      if (callback.kind !== "Function" && !(isHookArgument && isUpdate)) continue;
+      const parameters =
+        callback.kind === "Function"
+          ? (this.#interpreter.functions.get(callback.functionId)?.params ?? [])
+          : [null];
       this.#interpreter.effectCalls.push({
         hookKind: "Custom",
         callback,
-        callbackArguments: parameters.map(() => createUnknown("callback-argument", callback.loc)),
+        callbackArguments: parameters.map(() => createUnknown("callback-argument", loc)),
         dependencies: null,
         dependencyPlaces: null,
         loc,
