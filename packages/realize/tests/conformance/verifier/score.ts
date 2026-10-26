@@ -24,6 +24,7 @@ import {
   getStateBindings,
   getStatesInRegion,
   isEveryRegionMatched,
+  isExternalRegion,
   isPredictedValue,
   isRegionUnchanged,
   readPath,
@@ -79,11 +80,19 @@ const scoreRender = (
   return matchedStates;
 };
 
+const readsSharedData = (context: ScoringContext, regionIndex: number): boolean =>
+  isExternalRegion(context, regionIndex) ||
+  (context.report.regions[regionIndex]?.bindingIds.some(
+    (bindingId) => context.analysis.bindings[bindingId]?.kind === "module",
+  ) ??
+    false);
+
 const getUnpredictedFirstStates = (context: ScoringContext, firstMatches: number[]): number[] =>
   context.report.regions.flatMap((region, regionIndex) => {
     const matchedStates = getStatesInRegion(context, firstMatches, regionIndex);
     const isPredicted =
       region.possibleFirstRenderStates.length === 0 ||
+      readsSharedData(context, regionIndex) ||
       matchedStates.some((stateIndex) => region.possibleFirstRenderStates.includes(stateIndex));
     return isPredicted ? [] : matchedStates;
   });
