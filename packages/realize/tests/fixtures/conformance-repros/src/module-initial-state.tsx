@@ -26,3 +26,36 @@ export const StateFromModuleObject = () => {
     </button>
   );
 };
+
+const INITIAL_SCORE = { points: 0, isLocked: false };
+
+export const ResetToModuleObject = () => {
+  const [score, setScore] = useState(INITIAL_SCORE);
+  return (
+    <div>
+      <button onClick={() => setScore({ ...score, points: score.points + 1 })}>add</button>
+      <button onClick={() => setScore(INITIAL_SCORE)}>reset</button>
+      {score.points === 0 ? <i>empty</i> : <i>scored</i>}
+    </div>
+  );
+};
+
+const INITIAL_TALLY = { points: 0 };
+
+export const MutatedBeforeReset = () => {
+  const [tally, setTally] = useState(INITIAL_TALLY);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          tally.points = 2;
+          setTally({ ...tally });
+        }}
+      >
+        bump
+      </button>
+      <button onClick={() => setTally(INITIAL_TALLY)}>reset</button>
+      {tally.points === 0 ? <i>empty</i> : <i>scored</i>}
+    </div>
+  );
+};
