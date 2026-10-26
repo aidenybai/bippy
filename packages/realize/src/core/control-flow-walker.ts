@@ -171,6 +171,7 @@ export class ControlFlowWalker {
   #walkDepth = 0;
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
+  readonly #loopContextPlaces = new Map<BlockId, Place[]>();
   readonly #unrolledLoopHeaders = new Set<BlockId>();
   readonly #trackedContextPlaces = new WeakMap<HIRFunction, Place[]>();
   #functionScope = createFunctionScope();
@@ -450,6 +451,10 @@ export class ControlFlowWalker {
         this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     }
     const [loopEntry = terminal.fallthrough] = loopHeaders;
+    const storedContextPlaces = this.#getStoredContextPlaces(loopEntry, terminal.fallthrough);
+    for (const loopHeader of loopHeaders)
+      if (!("init" in terminal) || loopHeader !== terminal.init)
+        this.#loopContextPlaces.set(loopHeader, storedContextPlaces);
     this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
     const headerBindingCount = loopBindings.length;
     const awaitCountBefore = this.#awaitCount;
@@ -465,7 +470,10 @@ export class ControlFlowWalker {
       );
     } finally {
       this.#loopDepth--;
-      for (const loopHeader of loopHeaders) this.#enteredLoopHeaders.delete(loopHeader);
+      for (const loopHeader of loopHeaders) {
+        this.#enteredLoopHeaders.delete(loopHeader);
+        this.#loopContextPlaces.delete(loopHeader);
+      }
     }
     const loopExit: Outcome = {
       kind: "Fallthrough",
@@ -502,7 +510,7 @@ export class ControlFlowWalker {
       loopEntry,
       terminal.fallthrough,
     );
-    for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
+    for (const place of storedContextPlaces)
       this.#interpreter.write(place, createUnknown("loop", place.loc));
     const afterWalkState =
       this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
@@ -746,6 +754,8 @@ export class ControlFlowWalker {
         if (this.#enteredLoopHeaders.get(currentId))
           return { kind: "Fallthrough", from: previousId, to: currentId };
         this.#enteredLoopHeaders.set(currentId, true);
+        for (const place of this.#loopContextPlaces.get(currentId) ?? [])
+          this.#interpreter.write(place, createUnknown("loop", place.loc));
       }
       const block = this.#getBlock(currentId);
       if (!isPhiResolved && (!isLoopHeader || this.#unrolledLoopHeaders.has(currentId)))
