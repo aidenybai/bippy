@@ -12,6 +12,7 @@ import type { WalkState } from "./walk-state";
 
 export class CallbackPasser {
   readonly #interpreter: Interpreter;
+  #nextFrame = 1;
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -85,7 +86,7 @@ export class CallbackPasser {
           argument,
           this.getUnknownArguments(argument, argumentOrigin),
           argument.loc,
-          asyncWalkState,
+          { ...asyncWalkState, frame: this.#nextFrame++ },
         ),
       );
   }

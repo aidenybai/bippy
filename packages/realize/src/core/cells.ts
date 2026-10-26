@@ -12,6 +12,7 @@ interface CellStore {
 
 const isDominatedBy = (walkState: WalkState, store: CellStore): boolean =>
   store.walkState.isAsync === walkState.isAsync &&
+  store.walkState.frame === walkState.frame &&
   store.walkState.guards.every((guard, index) => walkState.guards[index] === guard);
 
 const isNestedIn = (store: CellStore, walkState: WalkState): boolean =>
