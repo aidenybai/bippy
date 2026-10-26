@@ -25,10 +25,12 @@ import {
 } from "./utils/literal-receivers";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
+import { getCommittedRefIds } from "./utils/get-committed-ref-ids";
 import { getTruthiness } from "./utils/get-truthiness";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getValuePlace } from "./utils/get-value-place";
 import { isNullish } from "./utils/is-nullish";
+import { isNullishCase } from "./utils/is-nullish-case";
 import { isSamePlace } from "./utils/is-same-place";
 import { isStateBinding } from "./utils/is-state-binding";
 import { isWholeBinding } from "./utils/is-whole-binding";
@@ -368,11 +370,24 @@ const createEmptyConstraints = (
   possibleMembers: new Map(),
 });
 
+const isCommittedNullRef = (
+  binding: Binding,
+  place: BindingPlace,
+  cases: AbstractValue[],
+  committedRefIds: Set<number> | null,
+): boolean =>
+  binding.kind === "ref" &&
+  place.path.length === 1 &&
+  place.path[0] === "current" &&
+  (committedRefIds === null || committedRefIds.has(binding.id)) &&
+  cases.every(isNullishCase);
+
 export const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
   const reachableRanges = getReachableRanges(analysis);
   const reachable = createEmptyConstraints(analysis, reachableRanges);
   const mount = createEmptyConstraints(analysis, reachableRanges);
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
+  const committedRefIds = getCommittedRefIds(analysis);
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
     const cases =
@@ -381,10 +396,10 @@ export const createInitialConstraints = (analysis: ComponentAnalysis): Constrain
         : domain.kind === "Cases"
           ? domain.cases
           : null;
-    if (cases) {
-      reachable.possibleValues.set(place, cases);
-      if (!mount.possibleValues.has(place)) mount.possibleValues.set(place, cases);
-    }
+    if (!cases) continue;
+    if (!mount.possibleValues.has(place)) mount.possibleValues.set(place, cases);
+    if (binding && isCommittedNullRef(binding, place, cases, committedRefIds)) continue;
+    reachable.possibleValues.set(place, cases);
   }
   for (const place of analysis.placeDomains.places()) {
     const binding = bindingsById.get(place.bindingId);

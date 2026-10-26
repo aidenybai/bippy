@@ -29,12 +29,8 @@ jobs:
             command: pnpm run typecheck
           - task: test bippy
             command: pnpm --filter bippy test
-          - task: test realize 1/3
-            command: pnpm --filter realize exec vp test run --shard=1/3
-          - task: test realize 2/3
-            command: pnpm --filter realize exec vp test run --shard=2/3
-          - task: test realize 3/3
-            command: pnpm --filter realize exec vp test run --shard=3/3
+          - task: test realize
+            command: pnpm --filter realize exec vp test run
 
     steps:
       - uses: actions/checkout@v4

@@ -52,6 +52,7 @@ export interface ScoringContext {
   backgroundHandlerIds: Set<string>;
   spontaneousIds: Set<string>;
   capturesByPathKey: Map<string, Capture>;
+  beforeCapturesByPathKey: Map<string, Capture>;
   coveredStates: Set<number>;
   matchedStatesCache: Map<string, number[]>;
 }
@@ -159,6 +160,13 @@ const createScoringContext = (
   capturesByPathKey: new Map(
     observations.flatMap((observation) =>
       observation.action ? [[getPathKey(observation.path), observation.after]] : [],
+    ),
+  ),
+  beforeCapturesByPathKey: new Map(
+    observations.flatMap((observation) =>
+      observation.action && observation.before
+        ? [[getPathKey(observation.path), observation.before]]
+        : [],
     ),
   ),
   coveredStates: new Set(),
