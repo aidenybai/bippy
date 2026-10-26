@@ -113,6 +113,24 @@ const getBranchTest = (operator: BranchOperator, testedValue: SymbolicValue): Br
   return { test, testKind, knownOutcome };
 };
 
+const getReachTest = (
+  outcome: Outcome,
+  block: BlockId,
+  guards: SymbolicValue[] = [],
+): SymbolicValue => {
+  if (outcome.kind !== "Split")
+    return { kind: "Primitive", value: outcome.kind === "Fallthrough" && outcome.to === block };
+  const conditional = createConditional(outcome, guards, (arm, armGuards) =>
+    getReachTest(arm, block, armGuards),
+  );
+  const { consequent, alternate } = conditional;
+  const isUndecided =
+    consequent.kind !== "Primitive" ||
+    alternate.kind !== "Primitive" ||
+    consequent.value !== alternate.value;
+  return isUndecided ? conditional : consequent;
+};
+
 const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
   if (terminal.kind === "logical") return terminal.operator;
   if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
@@ -370,7 +388,12 @@ export class ControlFlowWalker {
     if (predecessors.size < 2) return this.#continueAfter(outcome, block, stops, walkState);
     for (const phi of this.#getBlock(block).phis)
       this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
-    const blockOutcome = this.walk(block, stops, null, walkState, "resolved");
+    const reachTest = getReachTest(outcome, block);
+    const caseWalkState =
+      reachTest.kind === "Primitive"
+        ? walkState
+        : { ...walkState, guards: [...walkState.guards, reachTest] };
+    const blockOutcome = this.walk(block, stops, null, caseWalkState, "resolved");
     return mapFallthroughs(outcome, (fallthrough) =>
       fallthrough.to === block ? blockOutcome : fallthrough,
     );
