@@ -79,6 +79,36 @@ const scoreRender = (
   return matchedStates;
 };
 
+const getUnpredictedFirstStates = (context: ScoringContext, firstMatches: number[]): number[] =>
+  context.report.regions.flatMap((region, regionIndex) => {
+    const matchedStates = getStatesInRegion(context, firstMatches, regionIndex);
+    const isPredicted =
+      region.possibleFirstRenderStates.length === 0 ||
+      matchedStates.some((stateIndex) => region.possibleFirstRenderStates.includes(stateIndex));
+    return isPredicted ? [] : matchedStates;
+  });
+
+const scoreFirstRenderStates = (
+  context: ScoringContext,
+  props: Record<string, Sample>,
+  firstCommitShapes: Shape[],
+  firstMatches: number[],
+): void => {
+  const unpredictedStates = getUnpredictedFirstStates(context, firstMatches);
+  const [closestState] = unpredictedStates;
+  if (closestState === undefined) return;
+  const predictedStates = context.report.regions.flatMap(
+    (region) => region.possibleFirstRenderStates,
+  );
+  context.verdict.stateCounterexamples.push({
+    props,
+    path: [FIRST_COMMIT],
+    rendered: formatShapes(normalizeShapes(firstCommitShapes)).slice(0, MAX_RENDERED_LENGTH),
+    closestState,
+    reason: `first rendered state ${unpredictedStates.join(", ")}, predicted a first render in ${predictedStates.join(", ")}`,
+  });
+};
+
 const scoreFirstCommit = (
   context: ScoringContext,
   observation: Observation,
@@ -87,6 +117,7 @@ const scoreFirstCommit = (
   const { firstCommitShapes } = observation.after;
   if (observation.action || !firstCommitShapes) return;
   const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
+  scoreFirstRenderStates(context, observation.props, firstCommitShapes, firstMatches);
   if (context.externalBindingIds.size > 0) return;
   const isUnexplained = getRegionsMatchedOnBothSides(context, firstMatches, settledMatches).some(
     (regionIndex) =>
