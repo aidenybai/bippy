@@ -482,18 +482,34 @@ const isConsistent = (graph: BoundGraph): boolean =>
     return !(cycle.weight < 0 || (cycle.weight === 0 && cycle.isStrict));
   });
 
+const getSubgraph = (graph: BoundGraph, bounds: Bound[]): BoundGraph => {
+  const atomKeys = new Set([CONSTANT_KEY]);
+  for (const bound of bounds) {
+    atomKeys.add(getAtomKey(bound.left));
+    atomKeys.add(getAtomKey(bound.right));
+  }
+  const indices = [...atomKeys].flatMap((atomKey): [string, number][] => {
+    const index = graph.indicesByAtomKey.get(atomKey);
+    return index === undefined ? [] : [[atomKey, index]];
+  });
+  return {
+    indicesByAtomKey: new Map(indices.map(([atomKey], position) => [atomKey, position])),
+    distances: indices.map(([, fromIndex]) =>
+      indices.map(([, toIndex]) => graph.distances[fromIndex][toIndex]),
+    ),
+  };
+};
+
 const isConsistentWith = (graph: BoundGraph, bounds: Bound[]): boolean => {
+  if (!isConsistent(graph)) return false;
   const [bound] = bounds;
   const from = bound && graph.indicesByAtomKey.get(getAtomKey(bound.right));
   const to = bound && graph.indicesByAtomKey.get(getAtomKey(bound.left));
   if (bounds.length !== 1 || !bound || from === undefined || to === undefined)
-    return isConsistent(bounds.reduce(withBound, graph));
+    return isConsistent(bounds.reduce(withBound, getSubgraph(graph, bounds)));
   const back = graph.distances[to][from];
   const cycleWeight = back.weight + bound.maxDifference;
-  return (
-    isConsistent(graph) &&
-    !(cycleWeight < 0 || (cycleWeight === 0 && (back.isStrict || bound.isStrict)))
-  );
+  return !(cycleWeight < 0 || (cycleWeight === 0 && (back.isStrict || bound.isStrict)));
 };
 
 const getInvariantGraph = memoizeByIdentity((invariants: Bound[]): BoundGraph =>
