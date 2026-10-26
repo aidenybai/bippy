@@ -1005,12 +1005,13 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue {
-    if (setterArgument?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
+    const updaterValue = setterArgument && this.resolveModuleFunction(setterArgument);
+    if (updaterValue?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
     const reassignedIds = getReassignedIds(this.getCurrentFunction());
-    const updater = this.#functions.get(setterArgument.functionId);
+    const updater = this.#functions.get(updaterValue.functionId);
     return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
       ? createUnknown("deferred-updater", loc)
-      : this.callFunction(setterArgument, [previousValue], loc, walkState);
+      : this.callFunction(updaterValue, [previousValue], loc, walkState);
   }
 
   #applySetter(
@@ -1841,16 +1842,18 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue[] {
     const { argumentValues, loc } = callSite;
-    const [initializer, initialArgument, init] = argumentValues;
+    const [initializer, initialArgument, init] = argumentValues.map((argument) =>
+      this.resolveModuleFunction(argument),
+    );
     if (hookKind === "useState" && initializer?.kind === "Function")
       return [this.callFunction(initializer, [], loc, walkState), ...argumentValues.slice(1)];
-    if (hookKind === "useReducer" && init?.kind === "Function" && initializer && initialArgument)
-      return [
-        initializer,
-        this.callFunction(init, [initialArgument], loc, walkState),
-        ...argumentValues.slice(3),
-      ];
-    return argumentValues;
+    if (hookKind !== "useReducer" || !init || !initializer || !initialArgument)
+      return argumentValues;
+    const initialState =
+      init.kind === "Function"
+        ? this.callFunction(init, [initialArgument], loc, walkState)
+        : createUnknown("call", loc);
+    return [initializer, initialState, ...argumentValues.slice(3)];
   }
 
   #getCollectionLookup(
