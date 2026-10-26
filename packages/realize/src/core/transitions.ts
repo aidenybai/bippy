@@ -117,7 +117,12 @@ const applyUpdates = (
     const shiftedBounds = update.isRepeated
       ? []
       : [
-          ...getShiftedBounds(update.value, update.binding, constraints.bounds, sequenceBindingIds),
+          ...getShiftedBounds(
+            update.value,
+            update.binding,
+            [...constraints.bounds, ...constraints.invariants],
+            sequenceBindingIds,
+          ),
           ...getIntervalBounds(update, constraints),
           ...getAppendedLengthBounds(update.value, update.binding, constraints.bounds),
         ];
