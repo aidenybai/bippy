@@ -17,7 +17,7 @@ import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
 import { collectHandlerIds } from "./utils/collect-handler-ids";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
-import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { getCommittedRefIds } from "./utils/get-committed-ref-ids";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
   createFirstRenderConstraints,
@@ -89,24 +89,6 @@ const isMountOnlyEffect = (handler: Handler): boolean =>
   handler.trigger.dependencyPlaces !== null &&
   handler.trigger.dependencyPlaces.length === 0 &&
   !handler.updates.some((update) => update.isAsync);
-
-const getCommittedRefIds = (analysis: ComponentAnalysis): Set<number> | null => {
-  const refIds = new Set<number>();
-  let hasCallbackRef = false;
-  forEachJsxElement(analysis.render, (element) => {
-    for (const prop of element.props) {
-      if (prop.kind === "JsxAttribute" && prop.name === "ref" && prop.value.kind === "Function")
-        hasCallbackRef = true;
-      forEachSymbolicValue(prop.value, (part) => {
-        if (part.kind === "Binding" && part.binding.kind === "ref") refIds.add(part.binding.id);
-      });
-    }
-  });
-  for (const handler of analysis.handlers)
-    for (const update of handler.updates)
-      if (update.binding.kind === "ref") refIds.add(update.binding.id);
-  return hasCallbackRef ? null : refIds;
-};
 
 const getMountEffectConstraints = (
   analysis: ComponentAnalysis,
