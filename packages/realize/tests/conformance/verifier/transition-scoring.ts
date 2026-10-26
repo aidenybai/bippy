@@ -73,6 +73,7 @@ interface ObservedEdge {
   triggeredIds: Set<string>;
   maybeTriggeredIds: Set<string>;
   earlierTriggeredIds: Set<string>;
+  earlierAsyncTargets: Set<number>;
 }
 
 const getEdgeTargets = (
@@ -129,6 +130,21 @@ const getTriggeredHandlerIds = (context: ScoringContext, after: Capture): EdgeHa
   return edgeIds;
 };
 
+const getEarlierAsyncTargets = (context: ScoringContext, path: string[]): Set<number> =>
+  new Set(
+    path.slice(0, -1).flatMap((_actionKey, actionIndex) => {
+      const stepKey = getPathKey(path.slice(0, actionIndex + 1));
+      const before = context.beforeCapturesByPathKey.get(stepKey);
+      const after = context.capturesByPathKey.get(stepKey);
+      if (!before || !after) return [];
+      return getTransitions(
+        context,
+        getMatchedStates(context, before.shapes),
+        getTriggeredHandlerIds(context, after).triggeredIds,
+      ).flatMap((transition) => (transition.isAsync ? transition.targets : []));
+    }),
+  );
+
 const canChildActionChange = (
   context: ScoringContext,
   edge: ObservedEdge,
@@ -169,6 +185,9 @@ const canBackgroundChange = (
     getStatesInRegion(context, edge.beforeMatches, regionIndex),
     new Set([...context.backgroundHandlerIds, ...edge.earlierTriggeredIds]),
     edge.afterMatches,
+  ) ||
+  getStatesInRegion(context, edge.afterMatches, regionIndex).some((stateIndex) =>
+    edge.earlierAsyncTargets.has(stateIndex),
   );
 
 const isRegionEdgePredicted = (
@@ -233,6 +252,7 @@ export const scoreTransition = (
     afterMatches,
     ...getTriggeredHandlerIds(context, observation.after),
     earlierTriggeredIds: getEarlierTriggeredIds(context, observation.path),
+    earlierAsyncTargets: getEarlierAsyncTargets(context, observation.path),
   };
   if (edge.triggeredIds.size === 0) {
     const isExplained = regions.every(
