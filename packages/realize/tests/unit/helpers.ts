@@ -4,7 +4,8 @@ import { CompilerTypeProvider } from "../../src/core/type-provider";
 import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
 import { withProject } from "../../src/core/utils/with-project";
 import { compileFile } from "../../src/core/compile";
-import { analyzeProject } from "../../src/core/analyze-project";
+import { interpretProject, reportProject } from "../../src/core/analyze-project";
+import type { InterpretedProject } from "../../src/core/analyze-project";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
@@ -26,10 +27,17 @@ import type { Capture } from "../conformance/verifier/types";
 export const getFixtureConfig = (fixture: string): string =>
   resolve(import.meta.dirname, "../fixtures", fixture, "tsconfig.json");
 
+const interpretedFixtures = new Map<string, InterpretedProject>();
+
 export const analyzeFixture = (
   fixture: string,
   fileFilter: string | null = null,
-): ProjectAnalysis => analyzeProject(getFixtureConfig(fixture), fileFilter);
+): ProjectAnalysis => {
+  const interpreted =
+    interpretedFixtures.get(fixture) ?? interpretProject(getFixtureConfig(fixture));
+  interpretedFixtures.set(fixture, interpreted);
+  return reportProject(interpreted, fileFilter);
+};
 
 export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
   id: 0,
