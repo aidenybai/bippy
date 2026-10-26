@@ -81,4 +81,20 @@ describe("prop witnesses", () => {
       },
     ]);
   });
+
+  it("empties a string field that the type allows but the default sample fills", () => {
+    expect(getWitnesses("ReplyCard")).toContainEqual({
+      props: {
+        reply: {
+          kind: "Object",
+          fields: {
+            message: { kind: "Value", value: "" },
+            isLoading: { kind: "Value", value: true },
+          },
+          isOpen: false,
+        },
+      },
+      states: [1],
+    });
+  });
 });

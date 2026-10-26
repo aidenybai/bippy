@@ -102,10 +102,28 @@ const getCaseSamples = (value: AbstractValue, name: string | null): Sample[] => 
   return value.primitive === "number" ? NUMBER_CANDIDATES : [];
 };
 
-const getCandidates = (binding: Binding, path: string[], constraints: Constraints): Sample[] => [
+const BOOLEAN_CANDIDATES: Sample[] = [
+  { kind: "Value", value: true },
+  { kind: "Value", value: false },
+];
+
+const getSameTypeSamples = (sample: Sample | null, name: string | null): Sample[] => {
+  if (sample?.kind !== "Value") return [];
+  if (typeof sample.value === "string") return getStringSamples(name);
+  if (typeof sample.value === "number") return NUMBER_CANDIDATES;
+  return typeof sample.value === "boolean" ? BOOLEAN_CANDIDATES : [];
+};
+
+const getCandidates = (
+  binding: Binding,
+  path: string[],
+  currentSample: Sample | null,
+  constraints: Constraints,
+): Sample[] => [
   ...(constraints.possibleValues.get({ bindingId: binding.id, path }) ?? []).flatMap((value) =>
     getCaseSamples(value, path.at(-1) ?? binding.propName),
   ),
+  ...getSameTypeSamples(currentSample, path.at(-1) ?? binding.propName),
   ...(path.length === 0 ? binding.samples : []),
   ...(path.at(-1) === LENGTH_FIELD ? LENGTH_CANDIDATES.map(toSample) : []),
 ];
@@ -150,7 +168,7 @@ const findWitness = (
       constraints = kept;
       continue;
     }
-    for (const candidate of getCandidates(prop.binding, place.path, constraints)) {
+    for (const candidate of getCandidates(prop.binding, place.path, currentSample, constraints)) {
       const assumed = assumeSample(prop.binding, place.path, candidate, constraints);
       const fallbackItem = place.path.length === 1 ? getArrayItem(prop.binding.samples) : undefined;
       const written = assumed && writeSample(current, place.path, candidate, fallbackItem);

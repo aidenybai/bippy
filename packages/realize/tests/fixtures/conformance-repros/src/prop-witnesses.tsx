@@ -55,3 +55,11 @@ export const PhotoDetails = ({ photo }: { photo: Photo }) => (
     {photo.iso ? <dd>iso</dd> : null}
   </dl>
 );
+
+interface Reply {
+  message: string;
+  isLoading: boolean;
+}
+
+export const ReplyCard = ({ reply }: { reply: Reply }) =>
+  reply.message ? <p>message</p> : reply.isLoading ? <i>loading</i> : <b>empty</b>;
