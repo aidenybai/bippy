@@ -4,6 +4,7 @@ export interface WalkState {
   guards: SymbolicValue[];
   renderGuards: SymbolicValue[];
   isAsync: boolean;
+  frame?: number;
 }
 
 export const ROOT_WALK_STATE: WalkState = { guards: [], renderGuards: [], isAsync: false };
