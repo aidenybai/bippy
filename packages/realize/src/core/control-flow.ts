@@ -1,4 +1,10 @@
-import type { BlockId, SourceLocation, Terminal } from "../react-compiler/HIR/HIR";
+import type {
+  BlockId,
+  IdentifierId,
+  Place,
+  SourceLocation,
+  Terminal,
+} from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { Binding, Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
 import { createUnknown } from "./symbolic-values";
@@ -13,15 +19,21 @@ interface ReturnOutcome {
   value: SymbolicValue;
 }
 
-interface FallthroughOutcome {
+export interface FallthroughOutcome {
   kind: "Fallthrough";
   from: BlockId | null;
   to: BlockId;
+  contextValues?: ReadonlyMap<IdentifierId, ContextValue>;
+}
+
+export interface ContextValue {
+  place: Place;
+  value: SymbolicValue;
 }
 
 export type Outcome = ReturnOutcome | FallthroughOutcome | SplitOutcome;
 
-interface SplitOutcome {
+export interface SplitOutcome {
   kind: "Split";
   test: SymbolicValue;
   testKind: TestKind;

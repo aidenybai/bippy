@@ -1,6 +1,8 @@
 import type {
   BasicBlock,
   BlockId,
+  HIRFunction,
+  IdentifierId,
   InstructionValue,
   Phi,
   Place,
@@ -27,8 +29,17 @@ import {
   collapseLoopSplits,
   mapFallthroughs,
 } from "./control-flow";
-import type { BranchTerminal, LoopTerminal, Outcome, SwitchTerminal } from "./control-flow";
+import type {
+  BranchTerminal,
+  ContextValue,
+  FallthroughOutcome,
+  LoopTerminal,
+  Outcome,
+  SplitOutcome,
+  SwitchTerminal,
+} from "./control-flow";
 import {
+  UNDEFINED_VALUE,
   createBindingValue,
   createUnknown,
   foldBinary,
@@ -161,6 +172,7 @@ export class ControlFlowWalker {
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
   readonly #unrolledLoopHeaders = new Set<BlockId>();
+  readonly #trackedContextPlaces = new WeakMap<HIRFunction, Place[]>();
   #functionScope = createFunctionScope();
   readonly #throwingCatches = new Set<BlockId>();
   #awaitCount = 0;
@@ -228,6 +240,7 @@ export class ControlFlowWalker {
       if (joinPhiState === "unresolved")
         for (const phi of block.phis)
           this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
+      this.#mergeContextValues(outcome, join, walkState.guards);
       return this.walk(join, stops, null, walkState, "resolved");
     }
     const resumeAtJoin = (arm: Outcome, guards: SymbolicValue[]): Outcome => {
@@ -235,9 +248,9 @@ export class ControlFlowWalker {
         case "Return":
           return arm;
         case "Fallthrough":
-          return arm.to === join
-            ? this.walk(join, stops, arm.from, { ...walkState, guards }, joinPhiState)
-            : arm;
+          if (arm.to !== join) return arm;
+          this.#restoreContextValues(arm);
+          return this.walk(join, stops, arm.from, { ...walkState, guards }, joinPhiState);
         case "Split":
           return this.#nestWalk(() => ({
             ...arm,
@@ -289,9 +302,13 @@ export class ControlFlowWalker {
         walkState,
       );
     }
+    const storedPlaces = this.#getArmStoredContextPlaces([consequent, alternate], fallthrough);
+    const valuesBefore = storedPlaces.map((place) => this.#interpreter.read(place));
     const consequentOutcome = walkConsequent();
+    const consequentValues = storedPlaces.map((place) => this.#interpreter.read(place));
+    storedPlaces.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
     const alternateOutcome = walkAlternate();
-    const splitOutcome: Outcome = {
+    const splitOutcome: SplitOutcome = {
       kind: "Split",
       test: branchTest.test,
       testKind: branchTest.testKind,
@@ -299,6 +316,23 @@ export class ControlFlowWalker {
       consequent: isSwapped ? alternateOutcome : consequentOutcome,
       alternate: isSwapped ? consequentOutcome : alternateOutcome,
     };
+    storedPlaces.forEach((place, index) => {
+      const consequentValue = consequentValues[index] ?? UNDEFINED_VALUE;
+      const alternateValue = this.#interpreter.read(place);
+      if (consequentValue === alternateValue) return;
+      const valuesByArm = new Map<Outcome, SymbolicValue>([
+        [consequentOutcome, consequentValue],
+        [alternateOutcome, alternateValue],
+      ]);
+      this.#interpreter.write(
+        place,
+        createConditional(
+          splitOutcome,
+          walkState.guards,
+          (arm) => valuesByArm.get(arm) ?? alternateValue,
+        ),
+      );
+    });
     return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
   }
 
@@ -316,7 +350,7 @@ export class ControlFlowWalker {
     walkState: WalkState,
     guard: SymbolicValue | null,
   ): Outcome {
-    if (armStops.has(armBlock)) return { kind: "Fallthrough", from, to: armBlock };
+    if (armStops.has(armBlock)) return this.#fallthrough(from, armBlock);
     const guards = guard ? [...walkState.guards, guard] : walkState.guards;
     return this.walk(armBlock, armStops, from, { ...walkState, guards }, "unresolved");
   }
@@ -357,11 +391,11 @@ export class ControlFlowWalker {
     const switchCase = terminal.cases[caseIndex];
     if (!switchCase) {
       const defaultCase = terminal.cases.find((candidate) => candidate.test === null);
-      return { kind: "Fallthrough", from, to: defaultCase?.block ?? terminal.fallthrough };
+      return this.#fallthrough(from, defaultCase?.block ?? terminal.fallthrough);
     }
     if (switchCase.test === null) return this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
     const caseTest = foldBinary("===", discriminant, this.#interpreter.read(switchCase.test));
-    const matched: Outcome = { kind: "Fallthrough", from, to: switchCase.block };
+    const matched: Outcome = this.#fallthrough(from, switchCase.block);
     if (caseTest.kind === "Primitive")
       return caseTest.value ? matched : this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
     return {
@@ -388,6 +422,7 @@ export class ControlFlowWalker {
     if (predecessors.size < 2) return this.#continueAfter(outcome, block, stops, walkState);
     for (const phi of this.#getBlock(block).phis)
       this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
+    this.#mergeContextValues(outcome, block, walkState.guards);
     const reachTest = getReachTest(outcome, block);
     const caseWalkState =
       reachTest.kind === "Primitive"
@@ -532,6 +567,72 @@ export class ControlFlowWalker {
         loopBlocks.push(this.#getBlock(successor));
       }
     return loopBlocks;
+  }
+
+  #getTrackedContextPlaces(): Place[] {
+    const hirFunction = this.#interpreter.getCurrentFunction();
+    const cached = this.#trackedContextPlaces.get(hirFunction);
+    if (cached) return cached;
+    const placesById = new Map<IdentifierId, Place>();
+    for (const block of hirFunction.body.blocks.values())
+      for (const { value } of block.instructions) {
+        if (value.kind === "StoreContext")
+          placesById.set(value.lvalue.place.identifier.id, value.lvalue.place);
+        if (value.kind === "PostfixUpdateContext" || value.kind === "PrefixUpdateContext")
+          placesById.set(value.lvalue.identifier.id, value.lvalue);
+      }
+    const places = [...placesById.values()];
+    this.#trackedContextPlaces.set(hirFunction, places);
+    return places;
+  }
+
+  #fallthrough(from: BlockId | null, to: BlockId): FallthroughOutcome {
+    const places = this.#getTrackedContextPlaces();
+    if (places.length === 0) return { kind: "Fallthrough", from, to };
+    const contextValues = new Map(
+      places.map((place): [IdentifierId, ContextValue] => [
+        place.identifier.id,
+        { place, value: this.#interpreter.read(place) },
+      ]),
+    );
+    return { kind: "Fallthrough", from, to, contextValues };
+  }
+
+  #restoreContextValues(fallthrough: FallthroughOutcome): void {
+    for (const { place, value } of fallthrough.contextValues?.values() ?? [])
+      this.#interpreter.write(place, value);
+  }
+
+  #mergeContextValues(outcome: Outcome, join: BlockId, guards: SymbolicValue[]): void {
+    for (const place of this.#getTrackedContextPlaces()) {
+      const merged = this.#getJoinedContextValue(outcome, join, place.identifier.id, guards);
+      if (merged) this.#interpreter.write(place, merged);
+    }
+  }
+
+  #getJoinedContextValue(
+    outcome: Outcome,
+    join: BlockId,
+    id: IdentifierId,
+    guards: SymbolicValue[],
+  ): SymbolicValue | null {
+    if (outcome.kind === "Return") return null;
+    if (outcome.kind === "Fallthrough")
+      return outcome.to === join ? (outcome.contextValues?.get(id)?.value ?? null) : null;
+    const consequent = this.#getJoinedContextValue(outcome.consequent, join, id, guards);
+    const alternate = this.#getJoinedContextValue(outcome.alternate, join, id, guards);
+    if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
+    return createConditional(outcome, guards, (arm) =>
+      arm === outcome.consequent ? consequent : alternate,
+    );
+  }
+
+  #getArmStoredContextPlaces(entries: BlockId[], exit: BlockId): Place[] {
+    const placesById = new Map<IdentifierId, Place>();
+    for (const entry of entries)
+      for (const place of this.#getStoredContextPlaces(entry, exit))
+        placesById.set(place.identifier.id, place);
+    return [...placesById.values()];
   }
 
   #getStoredContextPlaces(entry: BlockId, exit: BlockId): Place[] {
@@ -685,7 +786,7 @@ export class ControlFlowWalker {
         return { kind: "Return", value: createUnknown(terminal.kind, terminal.loc) };
       case "goto":
         return stops.has(terminal.block)
-          ? { kind: "Fallthrough", from: blockId, to: terminal.block }
+          ? this.#fallthrough(blockId, terminal.block)
           : { kind: "Next", block: terminal.block };
       case "if":
       case "branch":
@@ -772,7 +873,7 @@ export class ControlFlowWalker {
     const handlerBinding = this.#functionScope.catchBindings.get(handler);
     if (handlerBinding) this.#interpreter.write(handlerBinding, this.#interpreter.read(value));
     return stops.has(handler)
-      ? { kind: "Fallthrough", from: blockId, to: handler }
+      ? this.#fallthrough(blockId, handler)
       : { kind: "Next", block: handler };
   }
 
