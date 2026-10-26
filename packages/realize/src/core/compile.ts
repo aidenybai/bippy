@@ -15,8 +15,18 @@ import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { ModuleFunctionLoader } from "./function-registry";
-import { createModuleConstantLoader, createModuleVariableLoader } from "./module-values";
-import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-values";
+import {
+  createModuleConstantLoader,
+  createModuleDeclarationLoader,
+  createModuleVariableLoader,
+  createWrittenImportLoader,
+} from "./module-values";
+import type {
+  ModuleConstantLoader,
+  ModuleDeclarationLoader,
+  ModuleVariableLoader,
+  WrittenImportLoader,
+} from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
 import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
 
@@ -40,6 +50,8 @@ export interface CompiledFile {
   lowerModuleFunction: ModuleFunctionLoader;
   loadModuleConstant: ModuleConstantLoader;
   loadModuleVariable: ModuleVariableLoader;
+  loadModuleDeclaration: ModuleDeclarationLoader;
+  isWrittenImport: WrittenImportLoader;
 }
 
 const STOP = Symbol("stop");
@@ -97,6 +109,8 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   lowerModuleFunction: () => null,
   loadModuleConstant: () => null,
   loadModuleVariable: () => null,
+  loadModuleDeclaration: () => null,
+  isWrittenImport: () => false,
 };
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
@@ -362,5 +376,7 @@ export const compileFile = (
     lowerModuleFunction: lower,
     loadModuleConstant: createModuleConstantLoader(ast),
     loadModuleVariable: createModuleVariableLoader(ast),
+    loadModuleDeclaration: createModuleDeclarationLoader(ast),
+    isWrittenImport: createWrittenImportLoader(ast),
   };
 };
