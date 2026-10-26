@@ -8,6 +8,7 @@ import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { createBindingValue, createUnknown } from "./symbolic-values";
 
 export interface CollectedEffects {
+  returned?: SymbolicValue[];
   updates: StateUpdate[];
   delegates: string[];
   pendingMutations: Binding[];

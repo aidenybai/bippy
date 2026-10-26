@@ -341,6 +341,7 @@ export interface ComponentAnalysis {
   placeDomains: PlaceMap<Domain>;
   unionMemberValues: PlaceMap<AbstractValue[][]>;
   render: SymbolicValue;
+  localRenders: SymbolicValue[];
   handlers: Handler[];
   renders: string[];
   claims: Claim[];
