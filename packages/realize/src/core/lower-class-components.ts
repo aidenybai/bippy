@@ -182,15 +182,48 @@ const isClassMember = (path: NodePath | null, classBody: types.ClassBody): boole
   (path.parent === classBody ||
     (path.parentPath?.isClassProperty() === true && path.parentPath.parent === classBody));
 
+const isNullishNode = (node: types.Expression): boolean =>
+  types.isNullLiteral(node) || types.isIdentifier(node, { name: "undefined" });
+
+const mergeUpdaterResult = (
+  result: types.Expression,
+  previous: types.Identifier,
+): types.Expression | null => {
+  if (types.isConditionalExpression(result)) {
+    const consequent = mergeUpdaterResult(result.consequent, previous);
+    const alternate = mergeUpdaterResult(result.alternate, previous);
+    return consequent && alternate
+      ? types.conditionalExpression(result.test, consequent, alternate)
+      : null;
+  }
+  if (isNullishNode(result)) return previous;
+  return types.isObjectExpression(result)
+    ? types.objectExpression([types.spreadElement(previous), ...result.properties])
+    : null;
+};
+
 const createMergedState = (
   argument: types.Expression,
   previous: types.Identifier,
   props: types.Identifier,
-): types.ObjectExpression => {
+): types.Expression => {
   if (types.isObjectExpression(argument))
     return types.objectExpression([types.spreadElement(previous), ...argument.properties]);
   const isUpdater =
     types.isArrowFunctionExpression(argument) || types.isFunctionExpression(argument);
+  const [updaterPrevious] = isUpdater ? argument.params : [];
+  const mergedResult =
+    isUpdater &&
+    types.isArrowFunctionExpression(argument) &&
+    types.isIdentifier(updaterPrevious) &&
+    types.isExpression(argument.body)
+      ? mergeUpdaterResult(argument.body, updaterPrevious)
+      : null;
+  if (mergedResult && types.isArrowFunctionExpression(argument))
+    return types.callExpression(types.arrowFunctionExpression(argument.params, mergedResult), [
+      previous,
+      props,
+    ]);
   const partial = isUpdater ? types.callExpression(argument, [previous, props]) : argument;
   return types.objectExpression([types.spreadElement(previous), types.spreadElement(partial)]);
 };
