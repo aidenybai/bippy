@@ -1,6 +1,6 @@
 import type { SymbolicValue } from "../types";
 
-const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
+export const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
   switch (value.kind) {
     case "BinaryExpression":
       return [value.left, value.right];

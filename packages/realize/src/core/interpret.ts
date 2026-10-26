@@ -73,6 +73,7 @@ import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/deri
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { getMemoRanges } from "./utils/get-memo-ranges";
+import { getLocationKey } from "./utils/get-location-key";
 import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getPropertyKeyForms } from "./utils/get-property-key-forms";
 import { hasUnknownPart } from "./constraints";
@@ -291,6 +292,8 @@ const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
 const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
 
 const getContextCellKey = (place: Place): string => `context:${place.identifier.id}`;
+
+const MAX_CALL_NAME_LENGTH = 200;
 
 const CONSTANT_DECLARATION_KINDS = new Set([
   InstructionKind.Const,
@@ -1718,6 +1721,11 @@ export class Interpreter {
     };
   }
 
+  #getLongCallKey(callSite: CallSite): string {
+    const valueKeys = [callSite.callee, ...callSite.argumentValues].map(getValueKey);
+    return [getLocationKey(callSite.loc), ...valueKeys].join(",");
+  }
+
   #getRepeatableCallKey(callSite: CallSite): string | undefined {
     const isRepeatable =
       this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc) &&
@@ -1764,18 +1772,27 @@ export class Interpreter {
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
+    const callText = `${calleeText}(${argumentText})`;
+    const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
     const domain = derived && "operands" in derived ? getDerivedDomain(derived) : null;
     return createBindingValue(
-      this.createBinding(`${calleeText}(${argumentText})`, "call", callSite.loc, {
-        inputPlaces: inputPlaces.places(),
-        lengthLimit,
-        identityKey: this.#getRepeatableCallKey(callSite),
-        derived,
-        range,
-        initial,
-        ...(domain && { domain }),
-        ...(firstRender && { firstRender }),
-      }),
+      this.createBinding(
+        isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
+        "call",
+        callSite.loc,
+        {
+          inputPlaces: inputPlaces.places(),
+          lengthLimit,
+          identityKey:
+            this.#getRepeatableCallKey(callSite) ??
+            (isLongName ? this.#getLongCallKey(callSite) : undefined),
+          derived,
+          range,
+          initial,
+          ...(domain && { domain }),
+          ...(firstRender && { firstRender }),
+        },
+      ),
     );
   }
 

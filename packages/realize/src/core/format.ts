@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getValueKey } from "./utils/get-value-key";
+import { isTreeLargerThan } from "./utils/is-tree-larger-than";
 
 const BINARY_PRECEDENCE = new Map<string, number>([
   ["??", 1],
@@ -36,6 +37,8 @@ const ATOMIC_PRECEDENCE = 10;
 const COMPARED_OPERAND_PRECEDENCE = 5;
 const TERNARY_TEST_PRECEDENCE = 1;
 const WORD_OPERATOR_PATTERN = /^[a-z]/;
+const MAX_FORMATTED_NODES = 200;
+const ELIDED_TEXT = "…";
 
 export const CONDITION_SEPARATOR = " ∧ ";
 export const UNCONDITIONAL_LABEL = "always";
@@ -108,6 +111,7 @@ const formatOptionalChain = (value: ConditionalValue): string | null => {
 };
 
 export const formatSymbolicValue = (value: SymbolicValue): string => {
+  if (isTreeLargerThan(value, MAX_FORMATTED_NODES)) return ELIDED_TEXT;
   switch (value.kind) {
     case "Primitive":
       return formatPrimitive(value.value);
