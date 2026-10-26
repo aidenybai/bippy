@@ -1781,7 +1781,7 @@ export class Interpreter {
     }
     if (this.#resolver.getReactExportName(loc) === "useDeferredValue")
       return firstArgument ?? UNDEFINED_VALUE;
-    if (hookKind === "Custom") this.callbacks.addDeferredCallbacks(argumentValues, loc);
+    if (hookKind === "Custom") this.callbacks.addDeferredCallbacks(argumentValues, loc, true);
     if (hookKind === "useImperativeHandle" && secondArgument?.kind === "Function")
       this.callbacks.addDeferredCallbacks(
         [this.callFunction(secondArgument, [], loc, walkState)],
