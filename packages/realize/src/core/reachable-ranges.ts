@@ -3,12 +3,12 @@ import type { Bound, Constraints } from "./constraints";
 import type {
   AbstractValue,
   Binding,
+  BindingValue,
   Handler,
   NumberRange,
   StateUpdate,
   SymbolicValue,
 } from "./types";
-import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isWholeBinding } from "./utils/is-whole-binding";
@@ -32,6 +32,23 @@ interface ReachableInterval {
 const MAX_ROUNDS = 8;
 
 const MAX_INTEGER_CASES = 16;
+
+const INTEGER_CALLEES = new Set(["Math.floor", "Math.ceil", "Math.round", "Math.trunc"]);
+
+const INTEGER_PRESERVING_CALLEES = new Set(["Math.min", "Math.max", "Math.abs"]);
+
+const COMPARISON_OPERATORS = new Set([
+  "===",
+  "!==",
+  "==",
+  "!=",
+  "<",
+  "<=",
+  ">",
+  ">=",
+  "in",
+  "instanceof",
+]);
 
 const EXTREMES = new Map<string, (...values: number[]) => number>([
   ["Math.min", Math.min],
@@ -58,16 +75,43 @@ const getGuardedUpdates = (binding: Binding, handlers: Handler[]): GuardedUpdate
       .map((update) => ({ update, guards: [...handler.guards, ...update.guards] })),
   );
 
-const isIntegerOnly = (updates: GuardedUpdate[]): boolean => {
-  let isInteger = true;
-  for (const { update } of updates)
-    forEachSymbolicValue(update.value, (part) => {
-      const literal = getNumber(part);
-      if (literal !== null && !Number.isInteger(literal)) isInteger = false;
-      if (part.kind === "BinaryExpression" && part.operator === "/") isInteger = false;
-    });
-  return isInteger;
+const isIntegerBinding = (value: BindingValue, binding: Binding): boolean => {
+  if (value.path.at(-1) === "length") return true;
+  if (value.binding.id === binding.id && value.path.length === 0) return true;
+  const { derived, range } = value.binding;
+  if (derived && "callee" in derived)
+    return (
+      INTEGER_CALLEES.has(derived.callee) ||
+      (INTEGER_PRESERVING_CALLEES.has(derived.callee) &&
+        derived.operands.every((operand) => isIntegerValue(operand, binding)))
+    );
+  return range?.inner ? isIntegerValue(range.inner, binding) : false;
 };
+
+const isIntegerValue = (value: SymbolicValue, binding: Binding): boolean => {
+  switch (value.kind) {
+    case "Primitive":
+      return typeof value.value !== "number" || Number.isInteger(value.value);
+    case "Conditional":
+      return isIntegerValue(value.consequent, binding) && isIntegerValue(value.alternate, binding);
+    case "UnaryExpression":
+      return isIntegerValue(value.value, binding);
+    case "BinaryExpression":
+      return (
+        COMPARISON_OPERATORS.has(value.operator) ||
+        (value.operator !== "/" &&
+          isIntegerValue(value.left, binding) &&
+          isIntegerValue(value.right, binding))
+      );
+    case "Binding":
+      return isIntegerBinding(value, binding);
+    default:
+      return false;
+  }
+};
+
+const isIntegerOnly = (updates: GuardedUpdate[], binding: Binding): boolean =>
+  updates.every(({ update }) => isIntegerValue(update.value, binding));
 
 const getBoundLimit = (bound: Bound, binding: Binding, isInteger: boolean): Partial<Interval> => {
   const strictness = bound.isStrict && isInteger ? 1 : 0;
@@ -263,7 +307,7 @@ const getReachableInterval = (binding: Binding, handlers: Handler[]): ReachableI
   const initial = binding.initial ? getNumber(binding.initial) : null;
   if (initial === null) return null;
   const updates = getGuardedUpdates(binding, handlers);
-  const isInteger = Number.isInteger(initial) && isIntegerOnly(updates);
+  const isInteger = Number.isInteger(initial) && isIntegerOnly(updates, binding);
   let hypothesis: Interval = { min: initial, max: initial };
   for (let round = 0; round <= MAX_ROUNDS + 1; round++) {
     let next = hypothesis;
