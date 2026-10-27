@@ -521,3 +521,41 @@ export const ScrollStaysOnTarget = () => {
     </div>
   );
 };
+
+export const LabelClicksField = () => {
+  const [isLabelClicked, setIsLabelClicked] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  return (
+    <div>
+      <label htmlFor="email" onClick={() => setIsLabelClicked(true)}>
+        email
+      </label>
+      <input id="email" onClick={() => setIsClicked(isLabelClicked)} />
+      {isClicked ? <i>clicked</i> : <i>idle</i>}
+    </div>
+  );
+};
+
+export const CaptureAboveStop = () => {
+  const [captures, setCaptures] = useState(0);
+  const [isOpened, setIsOpened] = useState(false);
+  return (
+    <div onClickCapture={() => setCaptures(captures + 1)} onClick={() => setIsOpened(true)}>
+      <span onClickCapture={(event) => event.stopPropagation()}>inner</span>
+      {isOpened ? <i>opened</i> : <i>closed</i>}
+    </div>
+  );
+};
+
+export const ClickInsideLabel = () => {
+  const [clicks, setClicks] = useState(0);
+  const [isOn, setIsOn] = useState(false);
+  return (
+    <label>
+      <input type="checkbox" aria-label="toggle" checked={isOn} onChange={() => setIsOn(!isOn)} />
+      <div onClick={() => setClicks(clicks + 1)}>
+        <input aria-label="name" />
+      </div>
+    </label>
+  );
+};
