@@ -1377,6 +1377,17 @@ const collectHandlersOnce = (
       [createUnknown("callback-argument", commitCallback.loc)],
       commitCallback.loc,
     );
+  const suspenseUpdates = interpreter.bindingTable.bindings.flatMap((binding): StateUpdate[] =>
+    binding.kind === "suspense"
+      ? [{ binding, value: createUnknown("suspense", binding.loc), guards: [], isAsync: true }]
+      : [],
+  );
+  if (suspenseUpdates.length > 0)
+    collector.addCollectedHandler(
+      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
+      { updates: suspenseUpdates, delegates: [], pendingMutations: [], claims: [] },
+      GeneratedSource,
+    );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
