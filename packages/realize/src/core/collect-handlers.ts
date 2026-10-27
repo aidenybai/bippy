@@ -1024,9 +1024,10 @@ class HandlerCollector {
       owner: JsxExpressionValue | undefined,
       control: "always" | "maybe" | null,
       event: string,
+      extra: SymbolicValue[] = [],
     ): SymbolicValue[] => {
       if (owner === undefined || control === null) return [];
-      const callbacks = this.#getAncestorCallbacks(owner, event);
+      const callbacks = [...this.#getAncestorCallbacks(owner, event), ...extra];
       return prevents.includes("maybe") || control === "maybe"
         ? guardCallbacks(callbacks, `default ${event} ${getLocationKey(owner.loc)}`, prop)
         : callbacks;
@@ -1043,10 +1044,36 @@ class HandlerCollector {
     const details = activator.tag.name === "summary" ? path[activatorIndex - 1] : undefined;
     const isToggled = details?.tag.kind === "BuiltinTag" && details.tag.name === "details";
     return [
-      ...getDefaultCallbacks(form, getSubmitControl(activator), "onSubmit"),
+      ...getDefaultCallbacks(
+        form,
+        getSubmitControl(activator),
+        "onSubmit",
+        this.#getFormActions(form, activator),
+      ),
       ...getDefaultCallbacks(form, getResetControl(activator), "onReset"),
       ...getDefaultCallbacks(isToggled ? details : undefined, "maybe", "onToggle"),
     ];
+  }
+
+  #getFormActions(
+    form: JsxExpressionValue | undefined,
+    submitter: JsxExpressionValue,
+  ): SymbolicValue[] {
+    if (!form) return [];
+    const submitterActions = this.#getAncestorCallbacks(submitter, "formAction");
+    const actions =
+      submitterActions.length > 0 ? submitterActions : this.#getAncestorCallbacks(form, "action");
+    const prevents = this.#getAncestorCallbacks(form, "onSubmit").map((callback) =>
+      this.#getPropertyLoad(callback, "preventDefault"),
+    );
+    if (prevents.includes("always")) return [];
+    return prevents.includes("maybe")
+      ? guardCallbacks(
+          actions,
+          `action ${getLocationKey(form.loc)}`,
+          this.#getEventProp(form, "requestSubmit"),
+        )
+      : actions;
   }
 
   #getOwnerForm(
