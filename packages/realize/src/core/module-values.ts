@@ -19,6 +19,7 @@ export interface ModuleVariableLoader {
 
 export interface ModuleDeclaration extends ModuleVariable {
   isWritten: boolean;
+  isReadOnly: boolean;
 }
 
 export interface ModuleDeclarationLoader {
@@ -29,6 +30,18 @@ export type ImportUse = "written" | "state" | "read";
 
 export interface ImportUseLoader {
   (localName: string): ImportUse;
+}
+
+export interface ImportedName {
+  localName: string;
+  loc: SourceLocation;
+}
+
+export interface ImportedNames {
+  specifiers: ImportedName[];
+  namespaceSources: SourceLocation[];
+  reexportSources: SourceLocation[];
+  isReadOnly: (localName: string, value: SymbolicValue) => boolean;
 }
 
 const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
@@ -362,6 +375,12 @@ const isReadThroughState = (references: NodePath[], value: SymbolicValue): boole
   references.some((reference) => isSharedStateReference(reference, value)) &&
   references.some((reference) => !isStateValueReference(reference));
 
+const isOnlyReadOfPrimitives = (references: NodePath[], value: SymbolicValue): boolean =>
+  !isReadThroughState(references, value) &&
+  references.every(
+    (reference) => isStateValueReference(reference) || isReadOfPrimitive(reference, [value], []),
+  );
+
 export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclarationLoader => {
   const declarations = new Map<string, ModuleDeclaration>();
   traverse(ast, {
@@ -382,10 +401,20 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
         (binding.constantViolations.length > 0 ||
           binding.referencePaths.some(isMemberWrite) ||
           (value !== null && isReadThroughState(binding.referencePaths, value)));
+      const isReadOnly =
+        declaration.node.kind === "const" &&
+        value !== null &&
+        binding !== undefined &&
+        binding.constantViolations.length === 0 &&
+        isOnlyReadOfPrimitives(
+          binding.referencePaths.filter((reference) => !reference.isExportNamedDeclaration()),
+          value,
+        );
       declarations.set(id.name, {
         initial: init ? value : { kind: "Primitive", value: undefined },
         loc: id.loc,
         isWritten,
+        isReadOnly,
       });
     },
   });
@@ -413,6 +442,41 @@ export const createImportUseLoader = (ast: types.File): ImportUseLoader => {
     },
   });
   return (localName) => uses.get(localName) ?? "read";
+};
+
+export const collectImportedNames = (ast: types.File): ImportedNames => {
+  const specifiers: ImportedName[] = [];
+  const namespaceSources: SourceLocation[] = [];
+  const reexportSources: SourceLocation[] = [];
+  const referencesByName = new Map<string, NodePath[]>();
+  traverse(ast, {
+    ImportDeclaration(path) {
+      for (const specifier of path.node.specifiers) {
+        const { loc } = specifier.local;
+        if (types.isImportNamespaceSpecifier(specifier) && path.node.source.loc)
+          namespaceSources.push(path.node.source.loc);
+        if (types.isImportNamespaceSpecifier(specifier) || !loc) continue;
+        specifiers.push({ localName: specifier.local.name, loc });
+        referencesByName.set(
+          specifier.local.name,
+          path.scope.getBinding(specifier.local.name)?.referencePaths ?? [],
+        );
+      }
+    },
+    ExportNamedDeclaration(path) {
+      if (path.node.source?.loc) reexportSources.push(path.node.source.loc);
+    },
+    ExportAllDeclaration(path) {
+      if (path.node.source.loc) reexportSources.push(path.node.source.loc);
+    },
+  });
+  return {
+    specifiers,
+    namespaceSources,
+    reexportSources,
+    isReadOnly: (localName, value) =>
+      isOnlyReadOfPrimitives(referencesByName.get(localName) ?? [], value),
+  };
 };
 
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
