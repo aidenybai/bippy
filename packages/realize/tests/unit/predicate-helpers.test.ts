@@ -23,4 +23,8 @@ describe("a pure project helper called with state", () => {
       ['(isOn ? "on" : "off") !== "on"', [0]],
     ]);
   });
+
+  it("keeps a helper that reads its own call result as one value", () => {
+    expect(getComponent(project, "ManyLabels").report.states).toHaveLength(2);
+  });
 });
