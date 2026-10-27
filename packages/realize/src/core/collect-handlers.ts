@@ -31,6 +31,7 @@ import {
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
 import { mayCallPropsOutsideEvents } from "./utils/may-call-props-outside-events";
+import { getTargetMethodCalls } from "./utils/get-target-method-calls";
 import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "./build-jsx";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -222,6 +223,89 @@ const getBubblingEvent = (prop: JsxProp | JsxSpreadProp): string[] => {
   return NON_BUBBLING_EVENTS.has(event) ? [] : [event];
 };
 
+const ENTER_EVENTS = new Set(["onMouseEnter", "onPointerEnter"]);
+
+const LEAVE_EVENTS = new Set(["onMouseLeave", "onPointerLeave"]);
+
+const TEXT_INPUT_TYPES = new Set([
+  "color",
+  "date",
+  "datetime",
+  "datetime-local",
+  "email",
+  "month",
+  "number",
+  "password",
+  "range",
+  "search",
+  "tel",
+  "text",
+  "time",
+  "url",
+  "week",
+]);
+
+const INPUT_EVENTS = new Set(["onInput", "onChange"]);
+
+const isTextInput = (element: JsxExpressionValue): boolean => {
+  if (element.tag.kind !== "BuiltinTag") return false;
+  if (element.tag.name === "textarea") return true;
+  if (element.tag.name !== "input") return false;
+  const type = getAttribute(element, "type")?.value;
+  if (type === undefined) return true;
+  return (
+    type.kind !== "Primitive" ||
+    (typeof type.value === "string" && TEXT_INPUT_TYPES.has(type.value))
+  );
+};
+
+const getDispatchedEvents = (element: JsxExpressionValue, prop: JsxProp): string[] => {
+  if (prop.name === "onChange" && getCheckableType(element) !== null)
+    return ["onClick", "onChange"];
+  if (INPUT_EVENTS.has(prop.name) && isTextInput(element)) return ["onInput", "onChange"];
+  return [prop.name];
+};
+
+const REF_METHOD_EVENTS = new Map([
+  ["focus", "onFocus"],
+  ["blur", "onBlur"],
+  ["click", "onClick"],
+  ["requestSubmit", "onSubmit"],
+  ["reset", "onReset"],
+]);
+
+const ACTIVATABLE_TAGS = new Set([
+  "a",
+  "button",
+  "input",
+  "label",
+  "select",
+  "summary",
+  "textarea",
+]);
+
+const LABELABLE_TAGS = new Set([
+  "button",
+  "input",
+  "meter",
+  "output",
+  "progress",
+  "select",
+  "textarea",
+]);
+
+const isLabelable = (element: JsxExpressionValue): boolean => {
+  if (element.tag.kind !== "BuiltinTag" || !LABELABLE_TAGS.has(element.tag.name)) return false;
+  const type = getAttribute(element, "type")?.value;
+  return !(type?.kind === "Primitive" && type.value === "hidden");
+};
+
+const getActivationEvents = (control: JsxExpressionValue): string[] => {
+  if (getCheckableType(control) !== null) return ["onClick", "onChange"];
+  if (control.tag.name === "button" || getSubmitControl(control) === "always") return ["onClick"];
+  return ["onFocus"];
+};
+
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
     case "Function":
@@ -366,6 +450,14 @@ const SUBMIT_TYPES = new Set(["submit", "image"]);
 
 const NON_SUBMIT_BUTTON_TYPES = new Set(["button", "reset"]);
 
+const getResetControl = (element: JsxExpressionValue): "always" | "maybe" | null => {
+  if (element.tag.kind !== "BuiltinTag") return null;
+  if (element.tag.name !== "button" && element.tag.name !== "input") return null;
+  const typeValue = getAttribute(element, "type")?.value;
+  if (typeValue && typeValue.kind !== "Primitive") return "maybe";
+  return typeValue?.value === "reset" ? "always" : null;
+};
+
 const getSubmitControl = (element: JsxExpressionValue): "always" | "maybe" | null => {
   if (element.tag.kind !== "BuiltinTag") return null;
   const isButton = element.tag.name === "button";
@@ -421,6 +513,7 @@ class HandlerCollector {
   readonly childCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
 
   readonly #consumerCallbacks: Map<JsxExpressionValue, SymbolicValue[]>;
+  readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
 
   constructor(
     interpreter: Interpreter,
@@ -428,6 +521,9 @@ class HandlerCollector {
   ) {
     this.#interpreter = interpreter;
     this.#consumerCallbacks = this.#getConsumerCallbacks(ancestorsByElement);
+    this.#ancestorsByElement = ancestorsByElement;
+    interpreter.refEventDispatcher = (refId, methodName) =>
+      this.#getRefEventCallbacks(refId, methodName);
   }
 
   #getConsumerCallbacks(
@@ -626,10 +722,11 @@ class HandlerCollector {
       element.tag.kind === "Component"
         ? this.#getBubbledCallbacks(prop, callback, ancestors)
         : this.#getPropagatedCallbacks(element, prop, callback, ancestors);
+    const targeted =
+      element.tag.kind === "BuiltinTag" ? this.#getTargetEventCallbacks(element, callback) : [];
+    const sequence = [...(propagated.length > 0 ? propagated : [callback]), ...targeted];
     const handled: SymbolicValue =
-      propagated.length > 0
-        ? { kind: "ArrayExpression", elements: propagated, spreads: [] }
-        : callback;
+      sequence.length > 1 ? { kind: "ArrayExpression", elements: sequence, spreads: [] } : callback;
     const handlerKey = getHandlerKey(handled);
     if (handlerKey === null) return;
     const isWrapped = callback !== prop.value;
@@ -655,37 +752,155 @@ class HandlerCollector {
     callback: SymbolicValue,
     ancestors: JsxExpressionValue[],
   ): SymbolicValue[] {
-    const isBubbling =
-      element.tag.kind === "BuiltinTag" &&
-      EVENT_HANDLER_PATTERN.test(prop.name) &&
-      !NON_BUBBLING_EVENTS.has(prop.name) &&
-      !prop.name.endsWith(CAPTURE_SUFFIX);
-    if (!isBubbling) return [];
-    const isCheckChange = prop.name === "onChange" && getCheckableType(element) !== null;
-    const clickChain = isCheckChange
-      ? this.#getChain("onClick", this.#getAncestorCallbacks(element, "onClick"), ancestors, prop)
-      : [];
-    const clicked = [
-      ...this.#getReachedCallbacks(clickChain, prop),
-      ...this.#getReachedCallbacks(
-        this.#getChain(
-          prop.name,
-          [
-            ...guardCallbacks(
-              this.#consumerCallbacks.get(element) ?? [],
-              `consumer ${prop.name} ${getLocationKey(element.loc)}`,
+    if (element.tag.kind !== "BuiltinTag" || !EVENT_HANDLER_PATTERN.test(prop.name)) return [];
+    if (ENTER_EVENTS.has(prop.name) || LEAVE_EVENTS.has(prop.name)) {
+      const entered = ancestors.flatMap((ancestor) =>
+        ancestor.tag.kind === "BuiltinTag"
+          ? guardCallbacks(
+              this.#getAncestorCallbacks(ancestor, prop.name),
+              `crossed ${prop.name} ${getLocationKey(ancestor.loc)}`,
               prop,
-            ),
-            callback,
-          ],
+            )
+          : [],
+      );
+      if (entered.length === 0) return [];
+      return ENTER_EVENTS.has(prop.name)
+        ? [...entered, callback]
+        : [callback, ...entered.reverse()];
+    }
+    if (NON_BUBBLING_EVENTS.has(prop.name) || prop.name.endsWith(CAPTURE_SUFFIX)) return [];
+    const clicked = getDispatchedEvents(element, prop).flatMap((event) =>
+      this.#getReachedCallbacks(
+        this.#getChain(
+          event,
+          event === prop.name
+            ? [
+                ...guardCallbacks(
+                  this.#consumerCallbacks.get(element) ?? [],
+                  `consumer ${prop.name} ${getLocationKey(element.loc)}`,
+                  prop,
+                ),
+                callback,
+              ]
+            : this.#getAncestorCallbacks(element, event),
           ancestors,
           prop,
         ),
         prop,
       ),
+    );
+    const propagated = [
+      ...clicked,
+      ...this.#getDefaultActionCallbacks(element, prop, ancestors, clicked),
     ];
-    const propagated = [...clicked, ...this.#getSubmitCallbacks(element, prop, ancestors, clicked)];
     return propagated.length === 1 ? [] : propagated;
+  }
+
+  #getRefEventCallbacks(refId: number, methodName: string): SymbolicValue[] {
+    const element = [...this.#ancestorsByElement.keys()].find((candidate) =>
+      candidate.props.some(
+        (prop) =>
+          prop.kind === "JsxAttribute" &&
+          prop.name === "ref" &&
+          prop.value.kind === "Binding" &&
+          prop.value.path.length === 0 &&
+          prop.value.binding.id === refId,
+      ),
+    );
+    return element ? this.#getElementEventCallbacks(element, methodName) : [];
+  }
+
+  #getTargetEventCallbacks(element: JsxExpressionValue, callback: SymbolicValue): SymbolicValue[] {
+    if (callback.kind !== "Function") return [];
+    const hirFunction = this.#interpreter.functions.get(callback.functionId);
+    if (!hirFunction) return [];
+    const ancestors = this.#ancestorsByElement.get(element) ?? [];
+    return getTargetMethodCalls(hirFunction).flatMap((call) => {
+      const target = call.isForm ? this.#getOwnerForm(element, ancestors) : element;
+      if (!target) return [];
+      return guardCallbacks(
+        this.#getElementEventCallbacks(target, call.methodName),
+        `target ${call.methodName} ${getLocationKey(element.loc)}`,
+        this.#getEventProp(target, call.methodName),
+      );
+    });
+  }
+
+  #getEventProp(element: JsxExpressionValue, methodName: string): JsxProp {
+    return {
+      kind: "JsxAttribute",
+      name: REF_METHOD_EVENTS.get(methodName) ?? methodName,
+      value: UNDEFINED_VALUE,
+      handlerId: null,
+      loc: element.loc,
+      file: this.#interpreter.resolver.fileName,
+    };
+  }
+
+  #getElementEventCallbacks(element: JsxExpressionValue, methodName: string): SymbolicValue[] {
+    const event = REF_METHOD_EVENTS.get(methodName);
+    if (!event || element.tag.kind !== "BuiltinTag") return [];
+    const ancestors = this.#ancestorsByElement.get(element) ?? [];
+    const prop = this.#getEventProp(element, methodName);
+    const [callback = UNDEFINED_VALUE] = this.#getAncestorCallbacks(element, event);
+    const propagated = this.#getPropagatedCallbacks(element, prop, callback, ancestors);
+    const callbacks = propagated.length > 0 ? propagated : [callback];
+    return event === "onFocus" || event === "onBlur"
+      ? guardCallbacks(callbacks, `${methodName} ${getLocationKey(element.loc)}`, prop)
+      : callbacks;
+  }
+
+  #getActivationCallbacks(
+    label: JsxExpressionValue,
+    clicked: SymbolicValue[],
+    prop: JsxProp,
+  ): SymbolicValue[] {
+    const control = this.#getLabelControl(label);
+    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
+    if (!control || prevents.includes("always")) return [];
+    const ancestors = this.#ancestorsByElement.get(control) ?? [];
+    const isRadio = getCheckableType(control) === "radio";
+    const activated = getActivationEvents(control).flatMap((event) => {
+      const reached = this.#getReachedCallbacks(
+        this.#getChain(event, this.#getAncestorCallbacks(control, event), ancestors, prop),
+        prop,
+      );
+      const isMaybe = event === "onFocus" || (isRadio && event === "onChange");
+      return isMaybe
+        ? guardCallbacks(reached, `activated ${event} ${getLocationKey(control.loc)}`, prop)
+        : reached;
+    });
+    const sequence = [
+      ...activated,
+      ...this.#getDefaultActionCallbacks(
+        control,
+        { ...prop, name: "onClick" },
+        ancestors,
+        activated,
+      ),
+    ];
+    return prevents.includes("maybe")
+      ? guardCallbacks(sequence, `activated ${getLocationKey(label.loc)}`, prop)
+      : sequence;
+  }
+
+  #getLabelControl(label: JsxExpressionValue): JsxExpressionValue | null {
+    const target = getAttribute(label, "htmlFor")?.value;
+    const elements = [...this.#ancestorsByElement.keys()];
+    if (target?.kind === "Primitive")
+      return (
+        elements.find((element) => {
+          const id = getAttribute(element, "id")?.value;
+          return id?.kind === "Primitive" && id.value === target.value;
+        }) ?? null
+      );
+    if (target) return null;
+    return (
+      elements.find(
+        (element) =>
+          isLabelable(element) && (this.#ancestorsByElement.get(element) ?? []).includes(label),
+      ) ?? null
+    );
   }
 
   #getChain(
@@ -779,23 +994,63 @@ class HandlerCollector {
         ];
   }
 
-  #getSubmitCallbacks(
+  #getDefaultActionCallbacks(
     element: JsxExpressionValue,
     prop: JsxProp,
     ancestors: JsxExpressionValue[],
     clicked: SymbolicValue[],
   ): SymbolicValue[] {
-    const form = ancestors.findLast(
-      (ancestor) => ancestor.tag.kind === "BuiltinTag" && ancestor.tag.name === "form",
-    );
-    const submitControl = getSubmitControl(element);
-    if (form === undefined || prop.name !== "onClick" || submitControl === null) return [];
+    if (prop.name !== "onClick") return [];
     const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
-    const submitted = this.#getAncestorCallbacks(form, "onSubmit");
     if (prevents.includes("always")) return [];
-    return prevents.includes("maybe") || submitControl === "maybe"
-      ? guardCallbacks(submitted, "submitted", prop)
-      : submitted;
+    const getDefaultCallbacks = (
+      owner: JsxExpressionValue | undefined,
+      control: "always" | "maybe" | null,
+      event: string,
+    ): SymbolicValue[] => {
+      if (owner === undefined || control === null) return [];
+      const callbacks = this.#getAncestorCallbacks(owner, event);
+      return prevents.includes("maybe") || control === "maybe"
+        ? guardCallbacks(callbacks, `default ${event} ${getLocationKey(owner.loc)}`, prop)
+        : callbacks;
+    };
+    const path = [...ancestors, element];
+    const activatorIndex = path.findLastIndex(
+      (ancestor) => ancestor.tag.kind === "BuiltinTag" && ACTIVATABLE_TAGS.has(ancestor.tag.name),
+    );
+    const activator = path[activatorIndex];
+    if (!activator) return [];
+    if (activator.tag.name === "label")
+      return this.#getActivationCallbacks(activator, clicked, prop);
+    const form = this.#getOwnerForm(activator, path.slice(0, activatorIndex));
+    const details = activator.tag.name === "summary" ? path[activatorIndex - 1] : undefined;
+    const isToggled = details?.tag.kind === "BuiltinTag" && details.tag.name === "details";
+    return [
+      ...getDefaultCallbacks(form, getSubmitControl(activator), "onSubmit"),
+      ...getDefaultCallbacks(form, getResetControl(activator), "onReset"),
+      ...getDefaultCallbacks(isToggled ? details : undefined, "maybe", "onToggle"),
+    ];
+  }
+
+  #getOwnerForm(
+    element: JsxExpressionValue,
+    ancestors: JsxExpressionValue[],
+  ): JsxExpressionValue | undefined {
+    const formId = getAttribute(element, "form")?.value;
+    if (formId === undefined)
+      return ancestors.findLast(
+        (ancestor) => ancestor.tag.kind === "BuiltinTag" && ancestor.tag.name === "form",
+      );
+    if (formId.kind !== "Primitive") return undefined;
+    return [...this.#ancestorsByElement.keys()].find((candidate) => {
+      const id = getAttribute(candidate, "id")?.value;
+      return (
+        candidate.tag.kind === "BuiltinTag" &&
+        candidate.tag.name === "form" &&
+        id?.kind === "Primitive" &&
+        id.value === formId.value
+      );
+    });
   }
 
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {
