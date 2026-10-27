@@ -3,7 +3,7 @@ import type { CompiledFunction } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
 import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook, ProjectLoaders, ProjectModuleDeclaration } from "./interpret";
-import type { ModuleDeclarationLoader, WrittenImportLoader } from "./module-values";
+import type { ImportUse, ImportUseLoader, ModuleDeclarationLoader } from "./module-values";
 import type { ModuleFunctionLoader } from "./function-registry";
 import { getMutatedParameters } from "./utils/get-mutated-parameters";
 import { collectStoreModels } from "./store-actions";
@@ -58,7 +58,7 @@ const compileProjectFiles = (
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
-  const writtenImportLoadersByPath = new Map<string, WrittenImportLoader>();
+  const importUseLoadersByPath = new Map<string, ImportUseLoader>();
   const lowerersByPath = new Map<string, ModuleFunctionLoader>();
   const mutatedParametersByDeclaration = new Map<string, Map<number, boolean>>();
   const modelsByStore = new Map<string, StoreModel>();
@@ -93,16 +93,16 @@ const compileProjectFiles = (
     const declaration = declarationLoadersByPath.get(path)?.(name);
     return resolver && declaration ? { ...declaration, name, resolver } : null;
   };
-  const isWrittenImport = (declarationKey: string): boolean => {
+  const loadImportUse = (declarationKey: string): ImportUse => {
     const { path, name } = parseDeclarationKey(declarationKey);
-    return writtenImportLoadersByPath.get(path)?.(name) ?? false;
+    return importUseLoadersByPath.get(path)?.(name) ?? "read";
   };
   const projectLoaders: ProjectLoaders = {
     loadProjectHook,
     loadProjectFunction,
     loadMutatedParameters,
     loadModuleDeclaration,
-    isWrittenImport,
+    loadImportUse,
   };
   return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
@@ -121,7 +121,7 @@ const compileProjectFiles = (
     });
     lowerersByPath.set(sourceFile.path, compiled.lowerModuleFunction);
     declarationLoadersByPath.set(sourceFile.path, compiled.loadModuleDeclaration);
-    writtenImportLoadersByPath.set(sourceFile.path, compiled.isWrittenImport);
+    importUseLoadersByPath.set(sourceFile.path, compiled.loadImportUse);
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Hook" && hir)
         projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
