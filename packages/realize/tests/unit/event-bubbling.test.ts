@@ -79,4 +79,89 @@ describe("a click that bubbles to an ancestor's handler", () => {
       ["isPrimary = true", "isSent = true"],
     ]);
   });
+
+  it("enters every ancestor the pointer crosses, outer first, and leaves them inner first", () => {
+    expect(getUpdateSequences("EnteredTogether")).toEqual(
+      expect.arrayContaining([
+        ["isOuter = true", "isInner = true"],
+        ["isInner = false", "isOuter = false"],
+      ]),
+    );
+  });
+
+  it("runs the input listeners and then the change listeners for one text input event", () => {
+    expect(getUpdateSequences("InputThenChange")).toContainEqual([
+      "isInput = true",
+      "isChanged = true",
+    ]);
+  });
+
+  it("clicks a label's control after the label, so the control's click bubbles to the label again", () => {
+    const names = getComponent(project, "LabelAroundCheckbox").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toContainEqual(["labelClicks", "labelClicks", "isOn"]);
+  });
+
+  it("focuses the control a label points to after the label's click", () => {
+    const names = getComponent(project, "LabelForField").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toContainEqual(["isLabelClicked", "isFocused"]);
+  });
+
+  it("runs a form's reset, a remote form's submit and a details toggle after the click", () => {
+    const names = getComponent(project, "FormDefaults").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["clicks", "isReset"],
+        ["clicks", "isSent"],
+        ["clicks", "isToggled"],
+      ]),
+    );
+  });
+
+  it("runs the default action of the nearest button or label above the clicked element", () => {
+    const names = getComponent(project, "NestedActivators").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["clicks", "isSent"],
+        ["clicks", "isOn"],
+      ]),
+    );
+  });
+
+  it("runs the handlers of events a handler dispatches through a ref or the event target", () => {
+    const names = getComponent(project, "DispatchedFromHandlers").analysis.handlers.map((handler) =>
+      handler.updates
+        .filter((update) => update.binding.kind === "state")
+        .map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["clicks", "isFocused"],
+        ["clicks", "isReset"],
+      ]),
+    );
+  });
+
+  it("runs an autoFocus input's focus handler after the commit that mounts it", () => {
+    const effectUpdates = getComponent(project, "AutoFocused")
+      .analysis.handlers.filter((handler) => handler.trigger.kind === "Effect")
+      .flatMap((handler) => handler.updates.map((update) => update.binding.name));
+    expect(effectUpdates).toContain("isFocused");
+  });
+
+  it("runs a child's callback props when a ref the child holds dispatches an event", () => {
+    const names = getComponent(project, "FocusThroughChild").analysis.handlers.map((handler) =>
+      handler.updates
+        .filter((update) => update.binding.kind === "state")
+        .map((update) => update.binding.name),
+    );
+    expect(names).toContainEqual(["clicks", "isFocused"]);
+  });
 });

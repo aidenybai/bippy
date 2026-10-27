@@ -501,6 +501,8 @@ export class Interpreter {
   readonly externalSources: ExternalSources;
   readonly diagnostics = new Diagnostics();
   readonly effectCalls: EffectCall[] = [];
+  refEventDispatcher: ((refId: number, methodName: string) => SymbolicValue[]) | null = null;
+  readonly #dispatchingRefEvents = new Set<string>();
   readonly decidedBranchOutcomes = new Map<string, boolean[]>();
   readonly #renderPhaseEffects = new EffectCollector((kind, message, loc) =>
     this.warn(kind, message, loc),
@@ -2061,6 +2063,8 @@ export class Interpreter {
     const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
     if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
       for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
+    if (isRefContents(receiver) && receiver.path.length === 1)
+      this.#dispatchRefEvent(receiver.binding, methodName, walkState);
     const storedFunctions = this.getStoredFunctions(receiver);
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
@@ -2069,6 +2073,19 @@ export class Interpreter {
     if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
+  }
+
+  #dispatchRefEvent(binding: Binding, methodName: string, walkState: WalkState): void {
+    const key = `${binding.id}:${methodName}`;
+    if (this.#dispatchingRefEvents.has(key)) return;
+    const callbacks = this.refEventDispatcher?.(binding.id, methodName) ?? [];
+    this.#dispatchingRefEvents.add(key);
+    try {
+      for (const callback of callbacks)
+        this.#runCallback(callback, [EVENT_ARGUMENT], new Set(), walkState);
+    } finally {
+      this.#dispatchingRefEvents.delete(key);
+    }
   }
 
   #getStoredContainer(
