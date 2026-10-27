@@ -17,8 +17,6 @@ import { getIntervalBounds } from "./reachable-ranges";
 import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
 import type {
-  AbstractValue,
-  Binding,
   BindingPlace,
   ConditionalValue,
   Handler,
@@ -28,8 +26,8 @@ import type {
 } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { addReadBindings, createBindingInputsAdder } from "./utils/binding-inputs";
 import { getBindingPlace } from "./utils/get-binding-place";
-import type { PlaceMap } from "./utils/place-map";
 import { isSamePlace } from "./utils/is-same-place";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
@@ -70,6 +68,7 @@ interface TransitionContext extends ReachabilityContext {
   addBindingInputs: (bindingIds: Set<number>) => void;
   relevantKeys: WeakMap<Constraints, string>;
   replayedOutcomes: WeakMap<Constraints, Map<ConditionalValue, Map<boolean, Constraints | null>>>;
+  guardOutcomes: WeakMap<Constraints, Map<string, boolean | null>>;
   firstStateIndex: number;
 }
 
@@ -89,7 +88,9 @@ const applyUpdates = (
       ...(dependentsByBinding.get(update.binding.id) ?? []),
     ]),
   );
-  const placesByBinding = groupPlacesByBinding(constraints.possibleValues, sequenceBindingIds);
+  const placesByBinding = groupPlacesByBinding(
+    constraints.possibleValues.placesOf(sequenceBindingIds),
+  );
   for (const update of updates) {
     const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
@@ -193,13 +194,9 @@ const addPlace = (placesByBinding: Map<number, BindingPlace[]>, place: BindingPl
   placesByBinding.set(place.bindingId, places);
 };
 
-const groupPlacesByBinding = (
-  possibleValues: PlaceMap<AbstractValue[]>,
-  bindingIds: ReadonlySet<number>,
-): Map<number, BindingPlace[]> => {
+const groupPlacesByBinding = (places: BindingPlace[]): Map<number, BindingPlace[]> => {
   const placesByBinding = new Map<number, BindingPlace[]>();
-  for (const [place] of possibleValues)
-    if (bindingIds.has(place.bindingId)) addPlace(placesByBinding, place);
+  for (const place of places) addPlace(placesByBinding, place);
   return placesByBinding;
 };
 
@@ -257,14 +254,28 @@ const getGuardChoices = (update: StateUpdate): GuardChoice[] => {
   return choices;
 };
 
+const evaluateGuard = (
+  choice: GuardChoice,
+  constraints: Constraints,
+  context: TransitionContext,
+): boolean | null => {
+  const outcomes = context.guardOutcomes.get(constraints) ?? new Map<string, boolean | null>();
+  context.guardOutcomes.set(constraints, outcomes);
+  if (outcomes.has(choice.key)) return outcomes.get(choice.key) ?? null;
+  const outcome = evaluateCondition(choice.test, constraints);
+  outcomes.set(choice.key, outcome);
+  return outcome;
+};
+
 const getOpenChoice = (
   update: StateUpdate,
   constraints: Constraints,
   outcomes: Map<string, boolean>,
+  context: TransitionContext,
 ): GuardChoice | "applied" | "skipped" => {
   let openChoice: GuardChoice | null = null;
   for (const choice of getGuardChoices(update)) {
-    const outcome = outcomes.get(choice.key) ?? evaluateCondition(choice.test, constraints);
+    const outcome = outcomes.get(choice.key) ?? evaluateGuard(choice, constraints, context);
     if (outcome === null) {
       openChoice ??= choice;
       continue;
@@ -278,6 +289,7 @@ const getOpenChoice = (
 const getGuardedSequences = (
   updates: StateUpdate[],
   constraints: Constraints,
+  context: TransitionContext,
 ): GuardedSequence[] => {
   const sequences: GuardedSequence[] = [];
   const included: StateUpdate[] = [];
@@ -285,7 +297,7 @@ const getGuardedSequences = (
     const includedLength = included.length;
     for (const [index, update] of updates.entries()) {
       if (index < start) continue;
-      const openChoice = getOpenChoice(update, current, outcomes);
+      const openChoice = getOpenChoice(update, current, outcomes, context);
       if (typeof openChoice !== "string") {
         for (const outcome of [true, false]) {
           const assumed = openChoice.readsBinding
@@ -315,17 +327,21 @@ const getGuardedSequences = (
   visit(0, constraints, new Map());
   return sequences.length <= MAX_UPDATE_SEQUENCES
     ? sequences
-    : [getWidenedSequence(updates, constraints)];
+    : [getWidenedSequence(updates, constraints, context)];
 };
 
-const getWidenedSequence = (updates: StateUpdate[], constraints: Constraints): GuardedSequence => {
+const getWidenedSequence = (
+  updates: StateUpdate[],
+  constraints: Constraints,
+  context: TransitionContext,
+): GuardedSequence => {
   const included: StateUpdate[] = [];
   const maybeUpdates = new Set<StateUpdate>();
   const maybeValueKeys = new Map<number, Set<string>>();
   const firstAsyncIndex = updates.findIndex((update) => update.isAsync);
   for (const [index, update] of updates.entries()) {
     const outcomes = getGuardChoices(update).map((choice) => {
-      const outcome = evaluateCondition(choice.test, constraints);
+      const outcome = evaluateGuard(choice, constraints, context);
       return outcome === null ? null : outcome === choice.isTrue;
     });
     if (outcomes.includes(false)) continue;
@@ -390,6 +406,16 @@ const assumeReplayedOutcome = (
   return assumed;
 };
 
+const outcomeBranchesByKey = new Map<string, [string, string]>();
+
+const getOutcomeBranches = (branchKey: string): [string, string] => {
+  const cached = outcomeBranchesByKey.get(branchKey);
+  if (cached) return cached;
+  const outcomeBranches: [string, string] = [`${branchKey}:true`, `${branchKey}:false`];
+  outcomeBranchesByKey.set(branchKey, outcomeBranches);
+  return outcomeBranches;
+};
+
 const replayBranches = (
   value: SymbolicValue,
   branches: ReadonlySet<string>,
@@ -405,12 +431,19 @@ const replayBranches = (
   if (value.kind !== "Conditional") return paths;
   const branchKey = getBranchKey(value.branch);
   if (!context.regionBranches.branchKeys.has(branchKey)) return paths;
+  const outcomeBranches = getOutcomeBranches(branchKey);
   return [true, false].flatMap((outcome) => {
-    const branch = `${branchKey}:${outcome}`;
+    const branch = outcome ? outcomeBranches[0] : outcomeBranches[1];
     if (!branches.has(branch)) return [];
     const assumed = paths.flatMap(({ constraints, visited }): ReplayedPath[] => {
       const next = assumeReplayedOutcome(value, outcome, constraints, context);
-      return next ? [{ constraints: next, visited: new Set([...visited, branch]) }] : [];
+      if (!next) return [];
+      return [
+        {
+          constraints: next,
+          visited: visited.has(branch) ? visited : new Set(visited).add(branch),
+        },
+      ];
     });
     return replayBranches(outcome ? value.consequent : value.alternate, branches, assumed, context);
   });
@@ -483,8 +516,8 @@ const getTargetStateIndices = (
   for (const updates of getCandidateUpdateLists(handler)) {
     const sequences =
       context.budget.remainingTargetEnumerations > 0
-        ? getGuardedSequences(updates, constraints)
-        : [getWidenedSequence(updates, constraints)];
+        ? getGuardedSequences(updates, constraints, context)
+        : [getWidenedSequence(updates, constraints, context)];
     for (const sequence of sequences) {
       const isReplayed = context.budget.remainingTargetEnumerations > 0;
       context.budget.remainingTargetEnumerations--;
@@ -565,31 +598,6 @@ const getBranchContext = (
   stateBranches: alternatives.map(getStateBranches),
 });
 
-const addReadBindings = (bindingIds: Set<number>, value: SymbolicValue | null): void => {
-  if (value)
-    forEachSymbolicValue(value, (part) => {
-      if (part.kind === "Binding") bindingIds.add(part.binding.id);
-    });
-};
-
-const createBindingInputsAdder = (bindings: Binding[]): ((bindingIds: Set<number>) => void) => {
-  const bindingsById = new Map(bindings.map((binding) => [binding.id, binding]));
-  return (bindingIds) => {
-    for (const bindingId of bindingIds) {
-      const binding = bindingsById.get(bindingId);
-      if (!binding) continue;
-      for (const place of binding.inputPlaces) bindingIds.add(place.bindingId);
-      if (binding.lengthLimit) bindingIds.add(binding.lengthLimit.arrayLength.bindingId);
-      addReadBindings(bindingIds, binding.alias);
-      addReadBindings(bindingIds, binding.range?.inner ?? null);
-      if (binding.derived && "operands" in binding.derived)
-        binding.derived.operands.forEach((operand) => addReadBindings(bindingIds, operand));
-      if (binding.derived && "receiver" in binding.derived)
-        addReadBindings(bindingIds, binding.derived.receiver);
-    }
-  };
-};
-
 const getRelevantBindingIds = (
   render: SymbolicValue,
   regionBranches: RegionBranches,
@@ -639,6 +647,7 @@ export const createTransitionContext = (
     addBindingInputs,
     relevantKeys: new WeakMap(),
     replayedOutcomes: new WeakMap(),
+    guardOutcomes: new WeakMap(),
     firstStateIndex,
     budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS },
   };

@@ -4,6 +4,7 @@ import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue } from ".
 import { formatAbstractValue } from "./format";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
 import { getUnionMembers } from "./utils/get-union-members";
+import { getTypeText } from "./utils/checker-queries";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 
@@ -19,10 +20,10 @@ export const getAbstractValue = (checker: Checker, type: Type): AbstractValue =>
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return { kind: "Literal", value: type.value };
   if (type.isBooleanLiteralType())
-    return { kind: "Literal", value: checker.typeToString(type) === "true" };
+    return { kind: "Literal", value: getTypeText(checker, type) === "true" };
   if (type.flags & TypeFlags.Null) return { kind: "Literal", value: null };
   if (type.flags & TypeFlags.Undefined) return UNDEFINED_CASE;
-  return { kind: "Type", text: checker.typeToString(type), primitive: getPrimitiveTypeName(type) };
+  return { kind: "Type", text: getTypeText(checker, type), primitive: getPrimitiveTypeName(type) };
 };
 
 export const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
@@ -42,7 +43,7 @@ export const getDomainOfType = (checker: Checker, type: Type | undefined): Domai
   if (type.isLiteralType() || type.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
     return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
   }
-  return { kind: "Opaque", typeText: checker.typeToString(type) };
+  return { kind: "Opaque", typeText: getTypeText(checker, type) };
 };
 
 export const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {

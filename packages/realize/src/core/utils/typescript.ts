@@ -21,7 +21,16 @@ export const isReactType = (type: Type, namePattern: RegExp): boolean =>
 export const isLibraryType = (type: Type, namePattern: RegExp): boolean =>
   isDeclaredType(type, namePattern, LIBRARY_DECLARATION_PATTERN);
 
+const symbolsByNode = new WeakMap<Node, Symbol | null>();
+
 const resolveSymbol = (checker: Checker, node: Node): Symbol | null => {
+  if (symbolsByNode.has(node)) return symbolsByNode.get(node) ?? null;
+  const symbol = resolveUncachedSymbol(checker, node);
+  symbolsByNode.set(node, symbol);
+  return symbol;
+};
+
+const resolveUncachedSymbol = (checker: Checker, node: Node): Symbol | null => {
   const nameNode = isPropertyAccessExpression(node) ? node.name : node;
   if (!isIdentifier(nameNode)) return null;
   const symbol = checker.getSymbolAtLocation(nameNode);

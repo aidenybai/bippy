@@ -3,6 +3,7 @@ import {
   assumeCondition,
   assumeGuards,
   evaluateCondition,
+  getRelevantConstraintsKey,
   getValueCases,
   type Constraints,
 } from "./constraints";
@@ -26,6 +27,7 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "./types";
+import { createBindingInputsAdder } from "./utils/binding-inputs";
 import { findStatePath } from "./utils/find-state-path";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getPlaceKey } from "./utils/get-place-key";
@@ -42,6 +44,7 @@ interface ClaimContext {
   constraintsByState: Constraints[];
   reachable: Constraints;
   renderedHandlerIds: Set<string>[];
+  addBindingInputs: (bindingIds: Set<number>) => void;
 }
 
 interface Check {
@@ -196,14 +199,29 @@ const checkInStates = (
   stateIndexes: number[] | null,
   context: ClaimContext,
   check: (constraints: Constraints) => Check | null,
+  readValues: SymbolicValue[] | null = null,
 ): StateCheck[] => {
   if (stateIndexes === null) {
     const reachableCheck = check(context.reachable);
     return reachableCheck ? [{ stateIndex: null, check: reachableCheck }] : [];
   }
+  const bindingIds = readValues && collectBindingIds(readValues);
+  const checksByKey = new Map<string, Check | null>();
+  const checkOnce = (constraints: Constraints): Check | null => {
+    if (!bindingIds) return check(constraints);
+    const constraintsKey = getRelevantConstraintsKey(
+      constraints,
+      bindingIds,
+      context.addBindingInputs,
+    );
+    if (checksByKey.has(constraintsKey)) return checksByKey.get(constraintsKey) ?? null;
+    const stateCheck = check(constraints);
+    checksByKey.set(constraintsKey, stateCheck);
+    return stateCheck;
+  };
   return stateIndexes.flatMap((stateIndex): StateCheck[] => {
     const constraints = context.constraintsByState[stateIndex];
-    const stateCheck = constraints ? check(constraints) : null;
+    const stateCheck = constraints ? checkOnce(constraints) : null;
     return stateCheck ? [{ stateIndex, check: stateCheck }] : [];
   });
 };
@@ -239,8 +257,11 @@ const evaluateClaim = (
 ): ClaimOutcome =>
   toOutcome(
     claim,
-    checkInStates(getClaimStates(claim, handler, context), context, (constraints) =>
-      checkClaim(claim, constraints),
+    checkInStates(
+      getClaimStates(claim, handler, context),
+      context,
+      (constraints) => checkClaim(claim, constraints),
+      [claim.subject, ...claim.guards, ...(claim.test ? [claim.test] : [])],
     ),
     context,
   );
@@ -310,8 +331,11 @@ const checkStateClaim = (
     handler.updates
       .filter((update) => update.binding.id === binding.id)
       .flatMap((update) =>
-        checkInStates(getHandlerStates(handler, context), context, (constraints) =>
-          checkUpdate(cases, update, constraints),
+        checkInStates(
+          getHandlerStates(handler, context),
+          context,
+          (constraints) => checkUpdate(cases, update, constraints),
+          [{ kind: "Binding", binding, path: [] }, update.value, ...update.guards],
         ),
       ),
   );
@@ -342,6 +366,7 @@ export const evaluateClaims = (
     constraintsByState,
     reachable,
     renderedHandlerIds,
+    addBindingInputs: createBindingInputsAdder(analysis.bindings),
   };
   return [
     ...analysis.claims.map((claim) => evaluateClaim(claim, null, context)),

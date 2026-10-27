@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type {
   AbstractValue,
   BinaryExpressionValue,
@@ -98,7 +97,7 @@ export interface Constraints {
 export const cloneConstraints = (constraints: Constraints): Constraints => ({
   possibleValues: constraints.possibleValues.clone(),
   assumptions: new Map(constraints.assumptions),
-  bounds: [...constraints.bounds],
+  bounds: constraints.bounds,
   boundGraph: constraints.boundGraph,
   invariants: constraints.invariants,
   finitePlaces: constraints.finitePlaces,
@@ -143,9 +142,9 @@ const formatPossibleValues = (possibleValues: PlaceMap<AbstractValue[]>): string
 const formatBound = (bound: Bound): string =>
   `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}`;
 
-const formatBounds = (bounds: Bound[]): string => bounds.map(formatBound).sort().join(";");
-
-const formatInvariants = memoizeByIdentity(formatBounds);
+const formatBounds = memoizeByIdentity((bounds: Bound[]): string =>
+  bounds.map(formatBound).sort().join(";"),
+);
 
 const formatAssumption = ([key, assumption]: [string, Assumption]): string =>
   `${key}=${assumption.isTrue}:${assumption.places.map(getPlaceKey).join(",")}`;
@@ -158,12 +157,8 @@ const formatUnionMemberValues = memoizeByIdentity(
 const formatRelevantValues = (
   possibleValues: PlaceMap<AbstractValue[]>,
   bindingIds: ReadonlySet<number>,
-): string => {
-  const valueIds: number[] = [];
-  for (const entry of possibleValues)
-    if (bindingIds.has(entry[0].bindingId)) valueIds.push(getPossibleValueId(entry));
-  return Int32Array.from(valueIds).sort().join(",");
-};
+): string =>
+  Int32Array.from(possibleValues.entriesOf(bindingIds), getPossibleValueId).sort().join(",");
 
 const formatAssumptions = (assumptions: Iterable<[string, Assumption]>): string =>
   [...assumptions].map(formatAssumption).sort().join(";");
@@ -177,7 +172,7 @@ const serializeConstraints = (
     possibleValuesText,
     assumptionsText,
     formatBounds(constraints.bounds),
-    formatInvariants(constraints.invariants),
+    formatBounds(constraints.invariants),
     formatUnionMemberValues(constraints.unionMemberValues),
     [...constraints.possibleMembers]
       .map(([bindingId, members]) => `${bindingId}=${members.join(",")}`)
@@ -186,15 +181,11 @@ const serializeConstraints = (
   ].join("\n");
 
 export const getConstraintsKey = (constraints: Constraints): string =>
-  createHash("sha256")
-    .update(
-      serializeConstraints(
-        constraints,
-        formatPossibleValues(constraints.possibleValues),
-        formatAssumptions(constraints.assumptions),
-      ),
-    )
-    .digest("base64");
+  serializeConstraints(
+    constraints,
+    formatPossibleValues(constraints.possibleValues),
+    formatAssumptions(constraints.assumptions),
+  );
 
 const touchesBindings = (assumption: Assumption, bindingIds: ReadonlySet<number>): boolean =>
   assumption.places.some((place) => bindingIds.has(place.bindingId));
@@ -223,14 +214,13 @@ export const projectRelevantConstraints = (
   addInputs: (bindingIds: Set<number>) => void,
 ): Constraints => {
   const assumedIds = getAssumedBindingIds(constraints, bindingIds, addInputs);
-  const possibleValues = new PlaceMap<AbstractValue[]>();
-  for (const [place, values] of constraints.possibleValues)
-    if (assumedIds.has(place.bindingId)) possibleValues.set(place, values);
+  const possibleValues = new PlaceMap<AbstractValue[]>(
+    constraints.possibleValues.entriesOf(assumedIds),
+  );
   return {
     ...constraints,
     possibleValues,
     assumptions: new Map(constraints.assumptions),
-    bounds: [...constraints.bounds],
     possibleMembers: new Map(constraints.possibleMembers),
   };
 };
@@ -241,20 +231,16 @@ export const getRelevantConstraintsKey = (
   addInputs: (bindingIds: Set<number>) => void,
 ): string => {
   const assumedIds = getAssumedBindingIds(constraints, bindingIds, addInputs);
-  return createHash("sha256")
-    .update(
-      serializeConstraints(
-        constraints,
-        formatRelevantValues(constraints.possibleValues, assumedIds),
-        formatAssumptions(
-          [...constraints.assumptions].filter(
-            ([, assumption]) =>
-              assumption.places.length === 0 || touchesBindings(assumption, assumedIds),
-          ),
-        ),
+  return serializeConstraints(
+    constraints,
+    formatRelevantValues(constraints.possibleValues, assumedIds),
+    formatAssumptions(
+      [...constraints.assumptions].filter(
+        ([, assumption]) =>
+          assumption.places.length === 0 || touchesBindings(assumption, assumedIds),
       ),
-    )
-    .digest("base64");
+    ),
+  );
 };
 
 const collectPlaces = memoizeByIdentity((value: SymbolicValue): BindingPlace[] => {
@@ -732,7 +718,17 @@ const getConcatenation = (value: SymbolicValue): Concatenation | null => {
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
-const distributeComparison = memoizeByIdentity((value: SymbolicValue): ConditionalValue | null => {
+const distributedByKey = new Map<string, ConditionalValue | null>();
+
+const distributeComparison = (value: SymbolicValue): ConditionalValue | null => {
+  const valueKey = getValueKey(value);
+  if (distributedByKey.has(valueKey)) return distributedByKey.get(valueKey) ?? null;
+  const distributed = distributeUncachedComparison(value);
+  distributedByKey.set(valueKey, distributed);
+  return distributed;
+};
+
+const distributeUncachedComparison = (value: SymbolicValue): ConditionalValue | null => {
   if (value.kind !== "BinaryExpression" || !COMPARISON_OPERATORS.has(value.operator)) return null;
   const { operator, left, right } = value;
   if (left.kind === "Conditional" && right.kind === "Primitive")
@@ -748,7 +744,7 @@ const distributeComparison = memoizeByIdentity((value: SymbolicValue): Condition
       alternate: foldBinary(operator, left, right.alternate),
     };
   return null;
-});
+};
 
 interface TypeofTest {
   operand: SymbolicValue;
@@ -1085,7 +1081,33 @@ const narrowByCase = (
   return outcome === null || outcome === isTrue ? [candidate] : [];
 };
 
+interface ConditionMemo {
+  constraints: Constraints;
+  outcomes: Map<string, boolean | null>;
+}
+
+let activeConditionMemo: ConditionMemo | null = null;
+
 export const evaluateCondition = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): boolean | null => {
+  const outerMemo = activeConditionMemo;
+  const memo =
+    outerMemo?.constraints === constraints ? outerMemo : { constraints, outcomes: new Map() };
+  const valueKey = getValueKey(value);
+  if (memo.outcomes.has(valueKey)) return memo.outcomes.get(valueKey) ?? null;
+  activeConditionMemo = memo;
+  try {
+    const outcome = evaluateUncachedCondition(value, constraints);
+    memo.outcomes.set(valueKey, outcome);
+    return outcome;
+  } finally {
+    activeConditionMemo = outerMemo;
+  }
+};
+
+const evaluateUncachedCondition = (
   value: SymbolicValue,
   constraints: Constraints,
 ): boolean | null => {
@@ -1124,7 +1146,9 @@ export const evaluateCondition = (
     case "Conditional": {
       const test = evaluateCondition(getTestExpression(value), constraints);
       if (test === null) return null;
-      return evaluateCondition(test ? value.consequent : value.alternate, constraints);
+      const arm = test ? value.consequent : value.alternate;
+      if (value.testKind === "truthy" && arm === value.test) return test;
+      return evaluateCondition(arm, constraints);
     }
     default:
       return getKnownTruthiness(value);
@@ -1540,7 +1564,7 @@ const assumeOpaqueCondition = (
 export const addBounds = (constraints: Constraints, bounds: Bound[]): void => {
   if (bounds.length === 0) return;
   constraints.boundGraph = bounds.reduce(withBound, getBoundGraph(constraints));
-  constraints.bounds.push(...bounds);
+  constraints.bounds = [...constraints.bounds, ...bounds];
 };
 
 const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
