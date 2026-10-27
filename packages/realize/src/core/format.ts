@@ -176,6 +176,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return `${formatWithPrecedence(value.callee, ATOMIC_PRECEDENCE)}.bind(…)`;
     case "Props":
       return "props";
+    case "RegExp":
+      return `/${value.pattern}/${value.flags}`;
     case "HookResult":
       return `${value.name}()`;
     case "Global":

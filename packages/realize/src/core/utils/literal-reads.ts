@@ -1,6 +1,7 @@
 import { SETTER_KEY_PREFIX } from "../../react-compiler/HIR/HIR";
 import { UNDEFINED_VALUE } from "../symbolic-values";
 import type { SymbolicValue } from "../types";
+import { isStatelessRegExp } from "./is-stateless-regexp";
 
 const OBJECT_READS = new Set(["keys", "values", "entries"]);
 
@@ -54,6 +55,26 @@ const hasOwnKey = (target: SymbolicValue, key: SymbolicValue | undefined): Symbo
     : null;
 };
 
+const createRegExp = (pattern: string, flags: string): RegExp | null => {
+  try {
+    return new RegExp(pattern, flags);
+  } catch {
+    return null;
+  }
+};
+
+const testRegExp = (
+  receiver: SymbolicValue,
+  argument: SymbolicValue | undefined,
+): SymbolicValue | null => {
+  const regExp = isStatelessRegExp(receiver)
+    ? createRegExp(receiver.pattern, receiver.flags)
+    : null;
+  return regExp && argument?.kind === "Primitive" && typeof argument.value === "string"
+    ? { kind: "Primitive", value: regExp.test(argument.value) }
+    : null;
+};
+
 const getConcatenatedCopy = (
   receiver: SymbolicValue,
   argumentValues: SymbolicValue[],
@@ -74,6 +95,7 @@ export const getLiteralRead = (
 ): SymbolicValue | null => {
   const [argument] = argumentValues;
   if (methodName === "concat") return getConcatenatedCopy(receiver, argumentValues);
+  if (methodName === "test") return testRegExp(receiver, argument);
   if (receiver.kind === "ArrayExpression" && receiver.spreads.length === 0 && methodName === "at")
     return argument?.kind === "Primitive" && Number.isInteger(argument.value)
       ? (receiver.elements.at(Number(argument.value)) ?? UNDEFINED_VALUE)

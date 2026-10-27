@@ -68,6 +68,8 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
       return [value.kind, getValueKey(value.callee), value.argumentValues.map(getValueKey)];
     case "Props":
       return [value.kind];
+    case "RegExp":
+      return [value.kind, value.pattern, value.flags];
     case "HookResult":
       return [
         value.kind,

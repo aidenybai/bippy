@@ -188,6 +188,7 @@ export type SymbolicValue =
   | { kind: "Dispatch"; binding: Binding; reducer: SymbolicValue; pending: Binding | null }
   | { kind: "Bound"; callee: SymbolicValue; argumentValues: SymbolicValue[]; loc: SourceLocation }
   | { kind: "Props" }
+  | { kind: "RegExp"; pattern: string; flags: string }
   | {
       kind: "HookResult";
       hookKind: HookKind;
