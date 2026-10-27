@@ -31,8 +31,8 @@ import {
 } from "./region-matching";
 import type { RegionData } from "./region-matching";
 import {
+  getReachableStates,
   getTargetStates,
-  getTransitions,
   isSpontaneousHandler,
   scoreTransition,
 } from "./transition-scoring";
@@ -142,11 +142,13 @@ const scoreFirstCommit = (
   const isUnexplained = getRegionsMatchedOnBothSides(context, firstMatches, settledMatches).some(
     (regionIndex) =>
       !isRegionUnchanged(context, firstMatches, settledMatches, regionIndex) &&
-      !getTransitions(
-        context,
-        getStatesInRegion(context, firstMatches, regionIndex),
-        context.backgroundHandlerIds,
-      ).some((transition) => transition.targets.some((target) => settledMatches.includes(target))),
+      ![
+        ...getReachableStates(
+          context,
+          getStatesInRegion(context, firstMatches, regionIndex),
+          context.backgroundHandlerIds,
+        ),
+      ].some((target) => settledMatches.includes(target)),
   );
   if (isUnexplained)
     context.verdict.transitionCounterexamples.push({
