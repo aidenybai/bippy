@@ -7,7 +7,7 @@ interface Status {
   error: string | null;
 }
 
-const useStatus = (): Status => ({ isSaving: false, error: null });
+declare const useStatus: () => Status;
 
 export const Toolbar = ({ role }: { role: Role }) => {
   const status = useStatus();
