@@ -1222,7 +1222,28 @@ const narrowPlace = (
   const place = getValuePlace(bindingValue);
   narrowed.possibleValues.set(place, narrowedValues);
   const withMembers = narrowUnionMembers(narrowed, place, narrowedValues);
-  return withMembers && narrowOwner(bindingValue, withMembers, narrowedValues);
+  const withOwner = withMembers && narrowOwner(bindingValue, withMembers, narrowedValues);
+  return withOwner && withLiteralLengths(withOwner, place, narrowedValues);
+};
+
+const withLiteralLengths = (
+  constraints: Constraints,
+  place: BindingPlace,
+  values: AbstractValue[],
+): Constraints | null => {
+  const length: BindingPlace = { bindingId: place.bindingId, path: [...place.path, LENGTH_FIELD] };
+  const isBounded = constraints.bounds.some(
+    (bound) => isAtomAt(bound.left, length) || isAtomAt(bound.right, length),
+  );
+  const lengths = values.flatMap((value) =>
+    value.kind === "Literal" && typeof value.value === "string" ? [value.value.length] : [],
+  );
+  if (!isBounded || lengths.length !== values.length) return constraints;
+  addBounds(constraints, [
+    { left: length, right: null, maxDifference: Math.max(...lengths), isStrict: false },
+    { left: null, right: length, maxDifference: -Math.min(...lengths), isStrict: false },
+  ]);
+  return isConsistent(getBoundGraph(constraints)) ? constraints : null;
 };
 
 export const hasUnknownPart = memoizeByIdentity((value: SymbolicValue): boolean => {
@@ -1505,10 +1526,12 @@ const withExactValue = (
   constraints: Constraints,
   bindingValue: BindingValue,
   literal: PrimitiveValue,
-): Constraints => {
+): Constraints | null => {
   const assumed = cloneConstraints(constraints);
-  assumed.possibleValues.set(getValuePlace(bindingValue), [{ kind: "Literal", value: literal }]);
-  return assumed;
+  const place = getValuePlace(bindingValue);
+  const values: AbstractValue[] = [{ kind: "Literal", value: literal }];
+  assumed.possibleValues.set(place, values);
+  return withLiteralLengths(assumed, place, values);
 };
 
 const assumeTypeof = (
