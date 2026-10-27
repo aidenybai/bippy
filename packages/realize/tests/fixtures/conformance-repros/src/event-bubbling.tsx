@@ -108,3 +108,81 @@ export const SubmitButton = () => {
     </form>
   );
 };
+
+export const MaybeStopped = () => {
+  const [isLocked, setIsLocked] = useState(false);
+  const [outer, setOuter] = useState(0);
+  return (
+    <div>
+      <section onClick={() => setOuter((current) => current + 1)}>
+        <button
+          onClick={(event) => {
+            if (isLocked) event.stopPropagation();
+            setIsLocked(true);
+          }}
+        >
+          go
+        </button>
+      </section>
+      {outer > 0 ? <i>reached</i> : <i>none</i>}
+    </div>
+  );
+};
+
+export const MaybeStoppedByCapture = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <section
+      onClickCapture={(event) => {
+        if (count >= 2) event.stopPropagation();
+      }}
+    >
+      <button onClick={() => setCount(count + 1)}>go</button>
+      {count >= 2 ? <i>many</i> : <i>few</i>}
+    </section>
+  );
+};
+
+export const MaybePrevented = () => {
+  const [isHeld, setIsHeld] = useState(true);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setIsSubmitted(true);
+      }}
+    >
+      <button
+        onClick={(event) => {
+          if (isHeld) event.preventDefault();
+          setIsHeld(false);
+        }}
+      >
+        send
+      </button>
+      {isSubmitted ? <i>submitted</i> : <i>none</i>}
+    </form>
+  );
+};
+
+export const SubmitByType = () => {
+  const [isPrimary, setIsPrimary] = useState(true);
+  const [isSent, setIsSent] = useState(false);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setIsSent(true);
+      }}
+    >
+      <button type={isPrimary ? "submit" : "button"} onClick={() => setIsPrimary(false)}>
+        send
+      </button>
+      <button type={undefined} onClick={() => setIsPrimary(true)}>
+        again
+      </button>
+      {isSent ? <i>sent</i> : <i>draft</i>}
+    </form>
+  );
+};

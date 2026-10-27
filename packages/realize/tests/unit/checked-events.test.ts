@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { formatSymbolicValue } from "../../src/core/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("a change on a controlled checkbox or radio", () => {
@@ -37,5 +38,20 @@ describe("a change on a controlled checkbox or radio", () => {
 
   it("reads checked as true from a radio", () => {
     expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+  it("fires a click on a radio that is already checked", () => {
+    const { states } = getComponent(project, "ClickedRadio").report;
+    const fresh = states.findIndex((state) => state.conditions.includes("count <= 0"));
+    const clicked = states.findIndex((state) => state.conditions.includes("count > 0"));
+    const targets = states[fresh]?.transitions.flatMap((transition) => transition.targets);
+    expect(targets).toContain(clicked);
+  });
+  it("runs the click handlers and then the change handlers in one click", () => {
+    const sequences = getComponent(project, "ClickThenChange").analysis.handlers.map((handler) =>
+      handler.updates.map(
+        (update) => `${update.binding.name} = ${formatSymbolicValue(update.value)}`,
+      ),
+    );
+    expect(sequences).toContainEqual(["isClicked = true", "isOn = !isOn"]);
   });
 });

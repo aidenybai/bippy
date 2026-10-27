@@ -25,10 +25,12 @@ import {
   createBindingValue,
   createUnknown,
   foldUnary,
+  getContainedValues,
   getPassedCallbacks,
 } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
+import { mayCallPropsOutsideEvents } from "./utils/may-call-props-outside-events";
 import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "./build-jsx";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -72,10 +74,27 @@ export const getBindingUpdates = (handlers: Handler[], binding: Binding): StateU
 const isFormActionProp = (tag: JsxTag, prop: JsxProp): boolean =>
   tag.kind === "BuiltinTag" && FORM_ACTION_PROPS.get(tag.name) === prop.name;
 
+const getIndependentCallbacks = (value: SymbolicValue): SymbolicValue =>
+  value.kind === "ArrayExpression" && value.spreads.length === 0
+    ? {
+        kind: "ObjectExpression",
+        properties: value.elements.map((element, index) => ({
+          key: String(index),
+          value: element,
+        })),
+        spreads: [],
+      }
+    : value;
+
+const getHeldValue = (value: SymbolicValue): SymbolicValue =>
+  value.kind === "Binding" && value.path.length === 0 && isStateBinding(value.binding)
+    ? (value.binding.initial ?? value)
+    : value;
+
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
   isFormActionProp(tag, prop) ||
-  (tag.kind !== "BuiltinTag" && getPassedCallbacks([prop.value]).length > 0);
+  (tag.kind !== "BuiltinTag" && getPassedCallbacks([getHeldValue(prop.value)]).length > 0);
 
 const getTriggerEvent = (prop: JsxProp): string => FORM_ACTION_EVENTS.get(prop.name) ?? prop.name;
 
@@ -174,6 +193,35 @@ const chooseSpreadHandler = (
   );
 };
 
+const guardCallbacks = (
+  callbacks: SymbolicValue[],
+  reason: string,
+  prop: JsxProp,
+): SymbolicValue[] =>
+  callbacks.map((callback, caseIndex) => ({
+    kind: "Conditional",
+    test: createUnknown(reason, prop.loc),
+    testKind: "truthy",
+    consequent: callback,
+    alternate: UNDEFINED_VALUE,
+    branch: {
+      terminalId: makeInstructionId(0),
+      probe: "none",
+      loc: prop.loc,
+      file: prop.file,
+      caseIndex,
+    },
+    guardKeys: [],
+  }));
+
+const getBubblingEvent = (prop: JsxProp | JsxSpreadProp): string[] => {
+  if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) return [];
+  const event = prop.name.endsWith(CAPTURE_SUFFIX)
+    ? prop.name.slice(0, -CAPTURE_SUFFIX.length)
+    : prop.name;
+  return NON_BUBBLING_EVENTS.has(event) ? [] : [event];
+};
+
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
     case "Function":
@@ -251,13 +299,20 @@ interface ControlEvent {
   guards: SymbolicValue[];
 }
 
-const getControlEvent = (element: JsxExpressionValue, prop: JsxProp): ControlEvent | null => {
+const getCheckableType = (element: JsxExpressionValue): string | null => {
   if (element.tag.kind !== "BuiltinTag" || element.tag.name !== "input") return null;
   const type = getAttribute(element, "type")?.value;
-  const isCheckable =
-    type?.kind === "Primitive" && typeof type.value === "string" && CHECKABLE_TYPES.has(type.value);
-  if (!isCheckable || !CHECK_EVENTS.has(prop.name)) return null;
-  const isRadio = type.value === "radio";
+  return type?.kind === "Primitive" &&
+    typeof type.value === "string" &&
+    CHECKABLE_TYPES.has(type.value)
+    ? type.value
+    : null;
+};
+
+const getControlEvent = (element: JsxExpressionValue, prop: JsxProp): ControlEvent | null => {
+  const type = getCheckableType(element);
+  if (type === null || !CHECK_EVENTS.has(prop.name)) return null;
+  const isRadio = type === "radio";
   const checked = getAttribute(element, "checked")?.value;
   const value = getAttribute(element, "value")?.value ?? { kind: "Primitive", value: "on" };
   const nextChecked: SymbolicValue | null = checked
@@ -275,7 +330,7 @@ const getControlEvent = (element: JsxExpressionValue, prop: JsxProp): ControlEve
   };
   return {
     argument: createTargetEvent(target),
-    guards: isRadio && checked ? [foldUnary("!", checked)] : [],
+    guards: isRadio && checked && prop.name !== "onClick" ? [foldUnary("!", checked)] : [],
   };
 };
 
@@ -309,15 +364,17 @@ const createTargetEvent = (target: SymbolicValue): SymbolicValue => ({
 
 const SUBMIT_TYPES = new Set(["submit", "image"]);
 
-const isSubmitControl = (element: JsxExpressionValue): boolean => {
-  if (element.tag.kind !== "BuiltinTag") return false;
-  const typeProp = element.props.find(
-    (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "type",
-  );
-  const type = typeProp?.value.kind === "Primitive" ? typeProp.value.value : undefined;
-  if (element.tag.name === "button")
-    return typeProp === undefined || (typeof type === "string" && SUBMIT_TYPES.has(type));
-  return element.tag.name === "input" && typeof type === "string" && SUBMIT_TYPES.has(type);
+const NON_SUBMIT_BUTTON_TYPES = new Set(["button", "reset"]);
+
+const getSubmitControl = (element: JsxExpressionValue): "always" | "maybe" | null => {
+  if (element.tag.kind !== "BuiltinTag") return null;
+  const isButton = element.tag.name === "button";
+  if (!isButton && element.tag.name !== "input") return null;
+  const typeValue = getAttribute(element, "type")?.value;
+  if (typeValue && typeValue.kind !== "Primitive") return "maybe";
+  const type = typeof typeValue?.value === "string" ? typeValue.value : "";
+  const isSubmit = isButton ? !NON_SUBMIT_BUTTON_TYPES.has(type) : SUBMIT_TYPES.has(type);
+  return isSubmit ? "always" : null;
 };
 
 const getValueKeys = (values: SymbolicValue[]): string => values.map(getValueKey).join(",");
@@ -361,9 +418,43 @@ class HandlerCollector {
   readonly #interpreter: Interpreter;
   readonly #plannedByKey = new Map<string | JsxSpreadProp, PlannedHandler>();
   readonly #idsByContent = new Map<string, string>();
+  readonly childCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
 
-  constructor(interpreter: Interpreter) {
+  readonly #consumerCallbacks: Map<JsxExpressionValue, SymbolicValue[]>;
+
+  constructor(
+    interpreter: Interpreter,
+    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]> = new Map(),
+  ) {
     this.#interpreter = interpreter;
+    this.#consumerCallbacks = this.#getConsumerCallbacks(ancestorsByElement);
+  }
+
+  #getConsumerCallbacks(
+    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>,
+  ): Map<JsxExpressionValue, SymbolicValue[]> {
+    const callbacksByAncestor = new Map<JsxExpressionValue, Set<SymbolicValue>>();
+    for (const [element, ancestors] of ancestorsByElement) {
+      if (element.tag.kind !== "Component" || element.tag.isContext) continue;
+      const provided = ancestors.flatMap((ancestor) =>
+        ancestor.tag.kind === "Component" && ancestor.tag.isContext
+          ? this.#getAncestorCallbacks(ancestor, "value").flatMap((value) =>
+              getContainedValues(getIndependentCallbacks(value)),
+            )
+          : [],
+      );
+      if (provided.length === 0) continue;
+      for (const ancestor of ancestors)
+        if (ancestor.tag.kind === "BuiltinTag")
+          for (const callback of provided)
+            callbacksByAncestor.set(
+              ancestor,
+              (callbacksByAncestor.get(ancestor) ?? new Set()).add(callback),
+            );
+    }
+    return new Map(
+      [...callbacksByAncestor].map(([ancestor, callbacks]) => [ancestor, [...callbacks]]),
+    );
   }
 
   addHandler(
@@ -524,9 +615,17 @@ class HandlerCollector {
     guards: SymbolicValue[],
     ancestors: JsxExpressionValue[],
   ): void {
-    const callback = this.#unwrapCallback(prop.value);
-    if (getHandlerKey(callback) === null) return;
-    const propagated = this.#getPropagatedCallbacks(element, prop, callback, ancestors);
+    const unwrapped = this.#unwrapCallback(prop.value);
+    const callback =
+      element.tag.kind === "BuiltinTag" ? unwrapped : getIndependentCallbacks(unwrapped);
+    const callbackKey = getHandlerKey(callback);
+    if (callbackKey === null) return;
+    if (element.tag.kind === "Component" && this.#mayCallOutsideEvents(element.tag.declaration))
+      this.childCallbacks.set(callbackKey, { callback, loc: prop.loc });
+    const propagated =
+      element.tag.kind === "Component"
+        ? this.#getBubbledCallbacks(prop, callback, ancestors)
+        : this.#getPropagatedCallbacks(element, prop, callback, ancestors);
     const handled: SymbolicValue =
       propagated.length > 0
         ? { kind: "ArrayExpression", elements: propagated, spreads: [] }
@@ -562,19 +661,122 @@ class HandlerCollector {
       !NON_BUBBLING_EVENTS.has(prop.name) &&
       !prop.name.endsWith(CAPTURE_SUFFIX);
     if (!isBubbling) return [];
-    const chain = [
-      ...ancestors.flatMap((ancestor) =>
-        this.#getAncestorCallbacks(ancestor, `${prop.name}${CAPTURE_SUFFIX}`),
+    const isCheckChange = prop.name === "onChange" && getCheckableType(element) !== null;
+    const clickChain = isCheckChange
+      ? this.#getChain("onClick", this.#getAncestorCallbacks(element, "onClick"), ancestors, prop)
+      : [];
+    const clicked = [
+      ...this.#getReachedCallbacks(clickChain, prop),
+      ...this.#getReachedCallbacks(
+        this.#getChain(
+          prop.name,
+          [
+            ...guardCallbacks(
+              this.#consumerCallbacks.get(element) ?? [],
+              `consumer ${prop.name} ${getLocationKey(element.loc)}`,
+              prop,
+            ),
+            callback,
+          ],
+          ancestors,
+          prop,
+        ),
+        prop,
       ),
-      callback,
-      ...[...ancestors]
-        .reverse()
-        .flatMap((ancestor) => this.#getAncestorCallbacks(ancestor, prop.name)),
     ];
-    const stopIndex = chain.findIndex((entry) => this.#loadsProperty(entry, "stopPropagation"));
-    const clicked = stopIndex === -1 ? chain : chain.slice(0, stopIndex + 1);
     const propagated = [...clicked, ...this.#getSubmitCallbacks(element, prop, ancestors, clicked)];
     return propagated.length === 1 ? [] : propagated;
+  }
+
+  #getChain(
+    name: string,
+    targetCallbacks: SymbolicValue[],
+    ancestors: JsxExpressionValue[],
+    prop: JsxProp,
+  ): SymbolicValue[] {
+    return [
+      ...ancestors.flatMap((ancestor) =>
+        ancestor.tag.kind === "BuiltinTag"
+          ? this.#getAncestorCallbacks(ancestor, `${name}${CAPTURE_SUFFIX}`)
+          : [],
+      ),
+      ...targetCallbacks,
+      ...[...ancestors]
+        .reverse()
+        .flatMap((ancestor) =>
+          ancestor.tag.kind === "BuiltinTag"
+            ? this.#getAncestorCallbacks(ancestor, name)
+            : guardCallbacks(
+                this.#getComponentCallbacks(ancestor),
+                `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
+                prop,
+              ),
+        ),
+    ];
+  }
+
+  #getComponentCallbacks(component: JsxExpressionValue): SymbolicValue[] {
+    const isWrapper =
+      component.tag.kind === "Component" &&
+      !component.tag.isContext &&
+      component.tag.reactExport === null;
+    if (!isWrapper) return [];
+    return component.props
+      .flatMap((prop) =>
+        prop.kind === "JsxAttribute" && isHandlerProp(component.tag, prop)
+          ? getContainedValues(getIndependentCallbacks(this.#unwrapCallback(prop.value)))
+          : [],
+      )
+      .filter((callback) => getHandlerKey(callback) !== null);
+  }
+
+  #getBubbledCallbacks(
+    prop: JsxProp,
+    callback: SymbolicValue,
+    ancestors: JsxExpressionValue[],
+  ): SymbolicValue[] {
+    if (callback.kind === "ObjectExpression") return [];
+    const events = new Set(
+      ancestors.flatMap((ancestor) =>
+        ancestor.tag.kind === "BuiltinTag" ? ancestor.props.flatMap(getBubblingEvent) : [],
+      ),
+    );
+    const groups = [...events].map((event) => {
+      const reached = this.#getReachedCallbacks(
+        this.#getChain(event, [callback], ancestors, prop),
+        prop,
+      );
+      const index = reached.indexOf(callback);
+      const reason = `bubbled ${event} ${getHandlerKey(callback)}`;
+      return index === -1
+        ? { before: [], after: [] }
+        : {
+            before: guardCallbacks(reached.slice(0, index), reason, prop),
+            after: guardCallbacks(reached.slice(index + 1), reason, prop),
+          };
+    });
+    const before = groups.flatMap((group) => group.before);
+    const after = groups.flatMap((group) => group.after);
+    return before.length + after.length === 0 ? [] : [...before, callback, ...after];
+  }
+
+  #getReachedCallbacks(chain: SymbolicValue[], prop: JsxProp): SymbolicValue[] {
+    const stopIndex = chain.findIndex(
+      (entry) => this.#getPropertyLoad(entry, "stopPropagation") !== null,
+    );
+    const stopper = chain[stopIndex];
+    if (!stopper) return chain;
+    const reached = chain.slice(0, stopIndex + 1);
+    return this.#getPropertyLoad(stopper, "stopPropagation") === "always"
+      ? reached
+      : [
+          ...reached,
+          ...guardCallbacks(
+            this.#getReachedCallbacks(chain.slice(stopIndex + 1), prop),
+            `propagation ${getHandlerKey(stopper)}`,
+            prop,
+          ),
+        ];
   }
 
   #getSubmitCallbacks(
@@ -586,12 +788,14 @@ class HandlerCollector {
     const form = ancestors.findLast(
       (ancestor) => ancestor.tag.kind === "BuiltinTag" && ancestor.tag.name === "form",
     );
-    const isSubmitted =
-      form !== undefined &&
-      prop.name === "onClick" &&
-      isSubmitControl(element) &&
-      !clicked.some((callback) => this.#loadsProperty(callback, "preventDefault"));
-    return isSubmitted ? this.#getAncestorCallbacks(form, "onSubmit") : [];
+    const submitControl = getSubmitControl(element);
+    if (form === undefined || prop.name !== "onClick" || submitControl === null) return [];
+    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
+    const submitted = this.#getAncestorCallbacks(form, "onSubmit");
+    if (prevents.includes("always")) return [];
+    return prevents.includes("maybe") || submitControl === "maybe"
+      ? guardCallbacks(submitted, "submitted", prop)
+      : submitted;
   }
 
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {
@@ -604,10 +808,15 @@ class HandlerCollector {
       .filter((callback) => getHandlerKey(callback) !== null);
   }
 
-  #loadsProperty(callback: SymbolicValue, property: string): boolean {
-    if (callback.kind !== "Function") return false;
+  #getPropertyLoad(callback: SymbolicValue, property: string): "always" | "maybe" | null {
+    if (callback.kind !== "Function") return null;
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
-    return hirFunction !== null && loadsProperty(hirFunction, property);
+    if (hirFunction === null || !loadsProperty(hirFunction, property)) return null;
+    const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
+    const isAlways = entry?.instructions.some(
+      ({ value }) => value.kind === "PropertyLoad" && value.property === property,
+    );
+    return isAlways ? "always" : "maybe";
   }
 
   #getSelectEvent(element: JsxExpressionValue, prop: JsxProp): ControlEvent | null {
@@ -631,8 +840,13 @@ class HandlerCollector {
     };
   }
 
+  #mayCallOutsideEvents(declaration: string | null): boolean {
+    const hirFunction = declaration ? this.#interpreter.loadProjectComponent(declaration) : null;
+    return hirFunction !== null && mayCallPropsOutsideEvents(hirFunction);
+  }
+
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
-    const resolved = this.#interpreter.resolveModuleFunction(value);
+    const resolved = this.#interpreter.resolveModuleFunction(getHeldValue(value));
     const wrapped = this.#interpreter.getWrappedCallbacks(resolved);
     if (!wrapped) return resolved;
     const [single] = wrapped;
@@ -664,8 +878,7 @@ const getElementAncestors = (
       case "JsxExpression": {
         ancestorsByElement.set(node, ancestors);
         for (const prop of node.props) if (prop.kind === "JsxAttribute") walkPropValue(prop.value);
-        const inner = node.tag.kind === "BuiltinTag" ? [...ancestors, node] : ancestors;
-        for (const child of node.children) walk(child, inner);
+        for (const child of node.children) walk(child, [...ancestors, node]);
         return;
       }
       case "JsxFragment":
@@ -833,12 +1046,12 @@ const collectHandlersOnce = (
   interpreter: Interpreter,
   renderPhaseEffects: CollectedEffects,
 ): Handler[] => {
-  const collector = new HandlerCollector(interpreter);
+  const ancestorsByElement = getElementAncestors(render);
+  const collector = new HandlerCollector(interpreter, ancestorsByElement);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
   const effectCalls = interpreter.effectCalls.filter(
     (effectCall) => !wrappedCallbacks.has(effectCall.callback),
   );
-  const ancestorsByElement = getElementAncestors(render);
   for (const [element, renderGuards] of getRenderGuards(render))
     collector.planElementHandlers(element, renderGuards, ancestorsByElement.get(element) ?? []);
   for (const callback of [
@@ -857,6 +1070,13 @@ const collectHandlersOnce = (
       effectCall.callback,
       effectCall.callbackArguments,
       effectCall.loc,
+    );
+  for (const childCallback of collector.childCallbacks.values())
+    collector.addHandler(
+      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
+      childCallback.callback,
+      [createUnknown("callback-argument", childCallback.loc)],
+      childCallback.loc,
     );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)

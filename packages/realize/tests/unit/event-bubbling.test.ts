@@ -58,4 +58,25 @@ describe("a click that bubbles to an ancestor's handler", () => {
       ['order = "outer"', 'order = "outer-inner"'],
     ]);
   });
+  it("keeps the ancestors after a handler that only sometimes stops propagation", () => {
+    expect(getUpdateSequences("MaybeStopped")).toEqual([
+      ["outer = outer + 1"],
+      ["isLocked = true", "outer = outer + 1"],
+    ]);
+    expect(getUpdateSequences("MaybeStoppedByCapture")).toEqual([["count = count + 1"]]);
+  });
+
+  it("submits the form after a click that only sometimes prevents it", () => {
+    expect(getUpdateSequences("MaybePrevented")).toEqual([
+      ["isSubmitted = true"],
+      ["isHeld = false", "isSubmitted = true"],
+    ]);
+  });
+  it("submits the form after a button whose type is computed or left undefined", () => {
+    expect(getUpdateSequences("SubmitByType")).toEqual([
+      ["isSent = true"],
+      ["isPrimary = false", "isSent = true"],
+      ["isPrimary = true", "isSent = true"],
+    ]);
+  });
 });

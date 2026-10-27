@@ -203,6 +203,7 @@ export interface ProjectModuleDeclaration extends ModuleDeclaration {
 export interface ProjectLoaders {
   loadProjectHook: ProjectHookLoader;
   loadProjectFunction: ProjectHookLoader;
+  loadProjectComponent: (declarationKey: string) => HIRFunction | null;
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
   loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
   loadImportUse: (declarationKey: string) => ImportUse;
@@ -586,9 +587,16 @@ export class Interpreter {
     this.walker.blockVisits = 0;
     try {
       const callbacks = getContainedValues(callback);
-      const walkState = { ...ROOT_WALK_STATE, renderGuards, guards };
+      const rootWalkState = { ...ROOT_WALK_STATE, renderGuards, guards };
       const results: SymbolicValue[] = [];
-      for (const handlerCallback of callbacks) {
+      for (const [index, handlerCallback] of callbacks.entries()) {
+        const walkState =
+          callback.kind === "ObjectExpression" && callbacks.length > 1
+            ? {
+                ...rootWalkState,
+                guards: [...guards, createUnknown(`called:${index}`, GeneratedSource)],
+              }
+            : rootWalkState;
         const returned = runsCleanup
           ? this.#getReturnedValue(handlerCallback, argumentValues, walkState)
           : null;
@@ -1073,6 +1081,10 @@ export class Interpreter {
     return result;
   }
 
+  loadProjectComponent(declarationKey: string): HIRFunction | null {
+    return this.#projectLoaders.loadProjectComponent(declarationKey);
+  }
+
   resolveModuleFunction(value: SymbolicValue): SymbolicValue {
     if (value.kind !== "Global") return value;
     const moduleFunction = this.#functions.loadModuleFunction(this.#resolver, value.name);
@@ -1464,8 +1476,11 @@ export class Interpreter {
     if (this.#handlerEffects || isMutatingCall)
       this.callbacks.passCallbacks(argumentValues, loc, walkState);
     const isMemberCallee = callee.kind === "Binding" && callee.path.length > 0;
-    const calleeCallbacks =
-      this.#handlerEffects && !isMemberCallee ? this.getWrappedCallbacks(callee) : null;
+    const getCalleeCallbacks = () =>
+      callSite.receiver === undefined
+        ? this.getMemberCallbacks(callee)
+        : this.getWrappedCallbacks(callee);
+    const calleeCallbacks = this.#handlerEffects && !isMemberCallee ? getCalleeCallbacks() : null;
     if (calleeCallbacks) this.callbacks.passCallbacks(calleeCallbacks, loc, walkState);
     if (this.#handlerEffects)
       return createUnknown("call", loc, { kind: "Call", callee, argumentValues });
@@ -1532,10 +1547,10 @@ export class Interpreter {
     return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
   }
 
-  #getReceiverCallbacks(receiver: SymbolicValue): SymbolicValue[] | null {
+  getMemberCallbacks(receiver: SymbolicValue): SymbolicValue[] | null {
     const own = this.getWrappedCallbacks(receiver);
     if (own || receiver.kind !== "Unknown" || receiver.origin?.kind !== "Member") return own;
-    return this.#getReceiverCallbacks(receiver.origin.object);
+    return this.getMemberCallbacks(receiver.origin.object);
   }
 
   forgetHandlerWrites(handlerCallback: SymbolicValue): void {
@@ -2149,7 +2164,7 @@ export class Interpreter {
       receiver.kind === "Binding" && receiver.path.length === 0 && receiver.binding.initial
         ? receiver.binding.initial
         : receiver;
-    const instanceCallbacks = this.#handlerEffects ? this.#getReceiverCallbacks(instance) : null;
+    const instanceCallbacks = this.#handlerEffects ? this.getMemberCallbacks(instance) : null;
     if (instanceCallbacks)
       this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, walkState);
     const [callback] = argumentValues;

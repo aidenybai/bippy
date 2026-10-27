@@ -5,6 +5,7 @@ import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook, ProjectLoaders, ProjectModuleDeclaration } from "./interpret";
 import type { ImportUse, ImportUseLoader, ModuleDeclarationLoader } from "./module-values";
 import type { ModuleFunctionLoader } from "./function-registry";
+import type { HIRFunction } from "../react-compiler/HIR/HIR";
 import { getMutatedParameters } from "./utils/get-mutated-parameters";
 import { collectStoreModels } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
@@ -56,6 +57,7 @@ const compileProjectFiles = (
   const isStrictNullChecks = strictNullChecks ?? strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
+  const componentsByDeclaration = new Map<string, HIRFunction>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
   const importUseLoadersByPath = new Map<string, ImportUseLoader>();
@@ -100,6 +102,7 @@ const compileProjectFiles = (
   const projectLoaders: ProjectLoaders = {
     loadProjectHook,
     loadProjectFunction,
+    loadProjectComponent: (declarationKey) => componentsByDeclaration.get(declarationKey) ?? null,
     loadMutatedParameters,
     loadModuleDeclaration,
     loadImportUse,
@@ -122,6 +125,11 @@ const compileProjectFiles = (
     lowerersByPath.set(sourceFile.path, compiled.lowerModuleFunction);
     declarationLoadersByPath.set(sourceFile.path, compiled.loadModuleDeclaration);
     importUseLoadersByPath.set(sourceFile.path, compiled.loadImportUse);
+    const exportNames = collectExportNames(sourceFile);
+    for (const { functionType, hir, name } of compiled.functions)
+      if (functionType === "Component" && hir)
+        for (const key of new Set([name, exportNames.get(name) ?? name]))
+          componentsByDeclaration.set(createDeclarationKey(sourceFile.path, key), hir);
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Hook" && hir)
         projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
@@ -136,7 +144,7 @@ const compileProjectFiles = (
         compiled,
         projectLoaders,
         modelsByStore,
-        exportNames: collectExportNames(sourceFile),
+        exportNames,
         displayNames: collectDisplayNames(sourceFile),
       },
     ];
