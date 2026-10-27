@@ -91,6 +91,9 @@ const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): bo
   return writesCurrent && isRefDomain(ownedValue.binding.domain);
 };
 
+const hasCallFacts = (binding: Binding): boolean =>
+  binding.lengthLimit !== null || binding.derived !== null;
+
 const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
   if (value.kind === "Conditional")
     return [...getOwnedValues(value.consequent), ...getOwnedValues(value.alternate)];
@@ -161,7 +164,7 @@ export class MutationTracker {
       if (
         mutatedValue.kind === "Binding" &&
         mutatedValue.binding.kind === "call" &&
-        isDirectWrite(instruction, mutatedPlace)
+        (isDirectWrite(instruction, mutatedPlace) || hasCallFacts(mutatedValue.binding))
       )
         this.#replaceMutatedValue(
           mutatedValue,
@@ -202,6 +205,19 @@ export class MutationTracker {
       }
       if (possiblyMutatedValue.kind === "Binding" && isStateBinding(possiblyMutatedValue.binding))
         this.#interpreter.handlerEffects?.addPossibleMutation(possiblyMutatedValue.binding);
+      if (
+        possiblyMutatedValue.kind === "Binding" &&
+        possiblyMutatedValue.binding.kind === "call" &&
+        hasCallFacts(possiblyMutatedValue.binding)
+      )
+        this.#replaceMutatedValue(
+          possiblyMutatedValue,
+          this.#interpreter.createDerivedValue(
+            [possiblyMutatedValue],
+            "mutation",
+            possiblyMutatedPlace.loc,
+          ),
+        );
     }
   }
 
@@ -289,6 +305,7 @@ export class MutationTracker {
       return;
     }
     this.#interpreter.warn("render-mutation", `mutates ${binding.name} during render`, loc);
+    this.#interpreter.markRenderMutation(binding);
   }
 
   recordAliasSources(instruction: Instruction): void {

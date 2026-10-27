@@ -513,6 +513,7 @@ export class Interpreter {
     this.warn(kind, message, loc),
   );
   readonly renderedComponents = new Set<string>();
+  readonly #renderMutatedIds = new Set<number>();
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
   readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
@@ -571,6 +572,10 @@ export class Interpreter {
     this.walker.blockVisits = 0;
     this.#componentFunction = hirFunction;
     return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
+  }
+
+  markRenderMutation(binding: Binding): void {
+    this.#renderMutatedIds.add(binding.id);
   }
 
   finishRenderPhaseEffects(): CollectedEffects {
@@ -824,7 +829,9 @@ export class Interpreter {
   ): SymbolicValue {
     switch (object.kind) {
       case "Binding":
-        return this.readField(object.binding, [...object.path, property], loc);
+        return this.#renderMutatedIds.has(object.binding.id) && !this.#handlerEffects
+          ? createUnknown("mutated", loc)
+          : this.readField(object.binding, [...object.path, property], loc);
       case "Props":
         return createBindingValue(this.getPropBinding(property, property, loc));
       case "ObjectExpression":
