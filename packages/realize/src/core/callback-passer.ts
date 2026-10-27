@@ -74,11 +74,26 @@ export class CallbackPasser {
       for (const element of argument.elements) this.#visitArgument(element, walkState);
     const asyncWalkState = getAsyncWalkState(walkState);
     if (argument.kind === "Bound") this.#visitArgument(argument.callee, walkState);
+    if (argument.kind === "Dispatch")
+      this.#interpreter.callStoredValue(
+        argument,
+        [createUnknown("callback-argument", GeneratedSource, argumentOrigin)],
+        argument.binding.loc,
+        asyncWalkState,
+      );
     if (argument.kind === "Setter")
       this.#interpreter.handlerEffects.recordSetterCall(
         argument.binding,
         createUnknown("callback-argument", GeneratedSource, argumentOrigin),
         asyncWalkState,
+      );
+    for (const wrapped of this.#interpreter.getWrappedCallbacks(argument) ?? [])
+      this.#visitArgument(wrapped, walkState, argumentOrigin);
+    if (argument.kind === "Binding" && argument.path.length > 0)
+      this.#interpreter.callStoredFunctions(
+        argument,
+        [createUnknown("callback-argument", GeneratedSource, argumentOrigin)],
+        { ...asyncWalkState, frame: this.#nextFrame++ },
       );
     if (argument.kind === "Function")
       this.#interpreter.walker.runRepeated(() =>
