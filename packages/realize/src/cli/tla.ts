@@ -89,6 +89,7 @@ const RESERVED_NAMES = [
   "Environment",
   "Screen",
   "Settled",
+  "TypeOK",
   "vars",
 ];
 const RELATIONAL_OPERATORS = new Map([
@@ -605,6 +606,9 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     ...actions.map((action) => action.name),
     ...(environmentText === "" ? [] : ["Environment"]),
   ];
+  const typeLines = variables
+    .filter((variable) => variable.role === "state")
+    .map((variable) => `${variable.name} \\in ${variable.domain}`);
   const regionNames = regionTexts.map((_text, regionIndex) => `Region${regionIndex + 1}`);
   const source = [
     `---- MODULE ${moduleName} ----`,
@@ -627,6 +631,7 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     ...regionTexts.map((text, regionIndex) => `${regionNames[regionIndex]} == ${text}`),
     `Screen == <<${regionNames.join(", ")}>>`,
     `Settled == ${settledLines.length === 0 ? "TRUE" : settledLines.join(" /\\ ")}`,
+    `TypeOK ==${formatConjunction(typeLines, "  ")}`,
     "====",
     "",
   ].join("\n");
@@ -634,6 +639,7 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     `CONSTANTS ${constants.map((constant) => `${constant} = ${constant}`).join(" ")}`,
     "INIT Init",
     "NEXT Next",
+    "INVARIANT TypeOK",
     "CHECK_DEADLOCK FALSE",
     "",
   ].join("\n");
