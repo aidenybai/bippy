@@ -30,7 +30,7 @@ export const ITERATION_METHODS = new Set([
   "flatMap",
 ]);
 
-const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter", "reduce"]);
 
 const SHORT_CIRCUIT_OUTCOMES = new Map([
   ["some", true],
@@ -147,17 +147,20 @@ export class ArrayIteration {
   getFirstValue(
     methodName: string,
     receiver: SymbolicValue,
-    callback: SymbolicValue | undefined,
+    argumentValues: SymbolicValue[],
     loc: SourceLocation,
     instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue | null {
+    const [callback, accumulator] = argumentValues;
     const initial =
       receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
     if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
       return null;
     const { elements } = initial;
+    if (methodName === "reduce")
+      return this.#reduceFirstValue(elements, callback, accumulator, loc, walkState);
     const outcomes = elements.map((element, index) =>
       this.#interpreter.callFunction(
         callback,
@@ -221,6 +224,30 @@ export class ArrayIteration {
         return keep(0, []);
       }
     }
+  }
+
+  #reduceFirstValue(
+    elements: SymbolicValue[],
+    callback: FunctionValue,
+    accumulator: SymbolicValue | undefined,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const [first, ...rest] = elements;
+    const start = accumulator ?? first;
+    const remaining = accumulator ? elements : rest;
+    if (!start) return null;
+    const offset = elements.length - remaining.length;
+    return remaining.reduce<SymbolicValue>(
+      (total, element, index) =>
+        this.#interpreter.callFunction(
+          callback,
+          [total, element, { kind: "Primitive", value: index + offset }],
+          loc,
+          walkState,
+        ),
+      start,
+    );
   }
 
   evaluateArrayFind(
