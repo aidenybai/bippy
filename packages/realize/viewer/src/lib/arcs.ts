@@ -81,7 +81,7 @@ const getJunction = (bundle: Omit<PlacedArc, "lane" | "junction">[]): Point | nu
   if (!first || bundle.length < 2) return null;
   const isDownward = first.to.y > first.from.y;
   const nearest = bundle.reduce((best, arc) =>
-    isDownward === arc.from.y > best.from.y ? best : arc,
+    isDownward === arc.from.y > best.from.y ? arc : best,
   );
   const x = nearest.from.x + nearest.from.width * nearest.fromSlot;
   if (isDownward) {
