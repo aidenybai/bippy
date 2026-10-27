@@ -28,6 +28,8 @@ export interface TlaSpec {
   moduleName: string;
   source: string;
   config: string;
+  constants: string[];
+  actionLabels: Map<string, string>;
   branchKeys: string[];
   regionCount: number;
 }
@@ -89,6 +91,7 @@ const RESERVED_NAMES = [
   "Environment",
   "Screen",
   "Settled",
+  "Spec",
   "TypeOK",
   "vars",
 ];
@@ -500,6 +503,23 @@ const formatAction = (
   };
 };
 
+export const getTlaModuleNames = (
+  components: AnalyzedComponent[],
+  rootDirectory: string,
+): Map<AnalyzedComponent, string> => {
+  const countsByName = new Map<string, number>();
+  for (const component of components)
+    countsByName.set(component.analysis.name, (countsByName.get(component.analysis.name) ?? 0) + 1);
+  return new Map(
+    components.map((component) => {
+      const name = component.analysis.name;
+      if (countsByName.get(name) === 1) return [component, name];
+      const path = relative(rootDirectory, component.analysis.file).replace(/\.[^./]+$/, "");
+      return [component, `${name}_${path.replace(/[^A-Za-z0-9]+/g, "_")}`];
+    }),
+  );
+};
+
 export const formatTla = (component: AnalyzedComponent, options: TlaOptions): TlaSpec => {
   const { analysis } = component;
   const allocateName = createNameAllocator();
@@ -627,6 +647,7 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     ...actions.flatMap((action) => [action.formatText(sharedStepLines), ""]),
     ...(environmentText === "" ? [] : [`Environment ==${environmentText}`, ""]),
     `Next == ${actionNames.length === 0 ? "UNCHANGED vars" : actionNames.join(" \\/ ")}`,
+    "Spec == Init /\\ [][Next]_vars",
     "",
     ...regionTexts.map((text, regionIndex) => `${regionNames[regionIndex]} == ${text}`),
     `Screen == <<${regionNames.join(", ")}>>`,
@@ -643,5 +664,21 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     "CHECK_DEADLOCK FALSE",
     "",
   ].join("\n");
-  return { moduleName, source, config, branchKeys, regionCount: regions.length };
+  return {
+    moduleName,
+    source,
+    config,
+    constants,
+    actionLabels: new Map([
+      ...actions.map((action, actionIndex): [string, string] => {
+        const handler = analysis.handlers[actionIndex];
+        const location = `${relative(options.rootDirectory, analysis.file)} ${handler ? formatLine(handler.loc) : ""}`;
+        const label = handler ? triggerLabels.get(handler.id) : undefined;
+        return [action.name, label ? `${label} · ${location}` : location];
+      }),
+      ["Environment", "a value realize can't follow changes"],
+    ]),
+    branchKeys,
+    regionCount: regions.length,
+  };
 };

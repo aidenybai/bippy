@@ -11,6 +11,7 @@
     "build": "tsx scripts/build-react-compiler.ts",
     "prepare": "pnpm build",
     "analyze": "tsx src/cli/analyze.ts",
+    "check-specs": "tsx src/cli/check-specs.ts",
     "conformance": "tsx tests/conformance/runner/cli.ts",
     "viewer": "pnpm --filter realize-viewer dev",
     "test": "vp test",
@@ -31,6 +32,7 @@
     "picocolors": "^1.1.1",
     "playwright": "^1.64.0",
     "pretty-format": "^24.9.0",
+    "tla-ts": "^0.0.1",
     "typescript": "7.0.2",
     "vite": "^7.3.6",
     "vite-tsconfig-paths": "^6.1.1",
@@ -50,7 +52,6 @@
     "mermaid": "^12.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tla-ts": "^0.0.1",
     "ts-pattern": "^5.9.2",
     "tsx": "^4.21.0"
   }

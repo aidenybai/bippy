@@ -8,6 +8,7 @@ Reads a React project with the TypeScript 7 checker and prints, for each compone
 pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json              # every component
 pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
+pnpm check-specs path/to/app/tsconfig.json                         # check the TLA+ specs
 ```
 
 Run these from `packages/realize`.
@@ -46,6 +47,42 @@ Labels use a few symbols:
 `tests/unit/tla-reachability.test.ts` checks each fixture component with tla-ts and compares the screens it reaches with the states realize lists. tla-ts reaches every listed state except one. `SizeLabel` lists `size !== sizes.small ∧ size !== sizes.large`, which no props reach, since `size` is one of the two values `sizes` holds.
 
 `tests/unit/tla-fuzz.test.ts` generates random components from a seed and renders each with React in happy-dom. It clicks every button breadth-first for each combination of props and checks that tla-ts reaches every screen and value React rendered. It runs 40 seeds by default. Set `FUZZ_COUNT` and `FUZZ_SEED` to run more.
+
+## TLA+ specs
+
+A spec is a `.tla` file anywhere in the project that extends or instances a component's module. `pnpm check-specs` analyzes the project, generates the modules the specs use, and checks each invariant and property in the spec's `.cfg` with tla-ts.
+
+```tla
+---- MODULE UploadChecks ----
+EXTENDS Upload
+
+NoErrorWhileUploading == ~(status = "uploading" /\ error # Null)
+DoneIsFinal == [][status = "done" => status' = "done"]_vars
+====
+```
+
+```
+INVARIANT NoErrorWhileUploading
+PROPERTY DoneIsFinal
+```
+
+```
+src/UploadChecks.tla
+  holds   NoErrorWhileUploading
+  broken  DoneIsFinal
+    1. first render: status = "idle", error = Null
+    2. "Upload" · src/upload.tsx L7: status = "done"
+    3. "Upload another" · src/upload.tsx L19: status = "idle"
+```
+
+A broken property lists the actions that break it, from the first render, with the values each one changes. The command exits with 1 when a property breaks or a spec can't be checked.
+
+- A component's module is named after the component. When two components share a name, each module adds its file path, like `Toggle_src_a_toggle`. A spec can still use the bare name when exactly one of them is in the spec's directory.
+- A variable is named after its binding, with object fields joined by `_`, like `user_name`. `null` and `undefined` are `Null` and `Undefined`.
+- The module defines `Init`, `Next`, `vars` and `Spec`. The config checks `Spec` unless the spec's `.cfg` sets `INIT`, `NEXT` or `SPECIFICATION`, and leaves deadlock unchecked unless it sets `CHECK_DEADLOCK`. It assigns the module's model values itself.
+- A spec that uses `INSTANCE` declares the module's constants and variables itself, as TLA+ requires.
+- Values realize can't pin down are free, so a broken property may not happen in the app. Check its actions in the app before treating it as a bug.
+- A property like `[]<>(status = "idle")` breaks as soon as the user stops clicking, since nothing makes an action happen. Invariants and properties of the form `[][A]_vars` fit a UI.
 
 ## What it does
 

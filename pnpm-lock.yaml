@@ -279,6 +279,9 @@ importers:
       pretty-format:
         specifier: ^24.9.0
         version: 24.9.0
+      tla-ts:
+        specifier: ^0.0.1
+        version: 0.0.1
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -331,9 +334,6 @@ importers:
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
-      tla-ts:
-        specifier: ^0.0.1
-        version: 0.0.1
       ts-pattern:
         specifier: ^5.9.2
         version: 5.9.2
