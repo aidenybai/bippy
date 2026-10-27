@@ -1,6 +1,6 @@
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
-import { Legend } from "./legend";
+import { Inspector } from "./inspector";
 import { Viewer } from "./viewer";
 
 export interface AppProps {
@@ -16,12 +16,12 @@ export const App = (props: AppProps) => (
     <Viewer.Toolbar />
     <Viewer.Panes
       source={<Viewer.Source />}
-      legend={
-        <Viewer.Legend>
-          <Legend.Variables />
-          <Legend.States />
-          <Legend.Actions />
-        </Viewer.Legend>
+      inspector={
+        <Viewer.Inspector>
+          <Inspector.Variables />
+          <Inspector.States />
+          <Inspector.Actions />
+        </Viewer.Inspector>
       }
     />
     <Viewer.Status />

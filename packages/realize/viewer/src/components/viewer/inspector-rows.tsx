@@ -16,7 +16,7 @@ import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
 import { useIsDimmed } from "@/store/hover";
 import { Chip } from "./chip";
 import { Domain } from "./domain";
-import { useLegendComponent } from "./legend";
+import { useInspectorComponent } from "./inspector";
 
 const Cell = ({ children, className }: { children: ReactNode; className?: string }) => (
   <TableCell className={cn("wrap-anywhere whitespace-normal", className)}>{children}</TableCell>
@@ -34,7 +34,7 @@ const Row = ({ nodeIds, children }: { nodeIds: string[]; children: ReactNode }) 
 const KEY_CELL = "w-0 wrap-normal whitespace-nowrap";
 
 export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   const nodeId = getBindingNodeId(component, binding.id);
   return (
     <Row nodeIds={nodeId ? [nodeId] : []}>
@@ -64,7 +64,7 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
 };
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   if (state.label === "always") return <span className="text-foreground">always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -84,7 +84,7 @@ const Conditions = ({ state }: { state: ViewState }) => {
 };
 
 export const StateRow = ({ state }: { state: ViewState }) => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   return (
     <Row nodeIds={getStateNodeIds(component, state)}>
       <Cell className={KEY_CELL}>
@@ -129,7 +129,7 @@ const Transitions = ({ transitions }: { transitions: string[] }) => (
 );
 
 export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (

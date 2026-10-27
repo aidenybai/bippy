@@ -13,13 +13,13 @@ import type { ViewComponent } from "@/model";
 import { useHoverStore } from "@/store/hover";
 import { useIsPanelChosen, useIsPanelOpen, useUiStore } from "@/store/ui";
 import { useActiveComponent, useViewer } from "./context";
-import { BindingRow, HandlerRow, StateRow } from "./legend-rows";
+import { BindingRow, HandlerRow, StateRow } from "./inspector-rows";
 
 const ComponentContext = createContext<ViewComponent | null>(null);
 
-export const useLegendComponent = (): ViewComponent => {
+export const useInspectorComponent = (): ViewComponent => {
   const component = useContext(ComponentContext);
-  if (!component) throw new Error("useLegendComponent must be used inside <Legend>");
+  if (!component) throw new Error("useInspectorComponent must be used inside <Inspector>");
   return component;
 };
 
@@ -113,13 +113,13 @@ const useScrollActiveIntoView = (
   };
 };
 
-interface LegendPanelProps {
+interface InspectorPanelProps {
   component: ViewComponent;
   activeName: string | null;
   children: ReactNode;
 }
 
-const LegendPanel = ({ component, activeName, children }: LegendPanelProps) => {
+const InspectorPanel = ({ component, activeName, children }: InspectorPanelProps) => {
   const focus = useHoverStore((state) => state.focus);
   const choosePanel = useUiStore((state) => state.choosePanel);
   const isOpen = useIsPanelOpen(component.name, activeName);
@@ -160,16 +160,16 @@ const Root = ({ children }: { children: ReactNode }) => {
       className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
     >
       {view.components.map((component) => (
-        <LegendPanel key={component.name} component={component} activeName={activeName}>
+        <InspectorPanel key={component.name} component={component} activeName={activeName}>
           {children}
-        </LegendPanel>
+        </InspectorPanel>
       ))}
     </div>
   );
 };
 
 const Variables = () => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   return (
     <Section title="State variables" count={component.bindings.length}>
       {component.bindings.map((binding) => (
@@ -180,7 +180,7 @@ const Variables = () => {
 };
 
 const States = () => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   const hasRegions = component.regions.length > 1;
   return component.regions.map((region) => (
     <Section
@@ -197,7 +197,7 @@ const States = () => {
 };
 
 const Actions = () => {
-  const component = useLegendComponent();
+  const component = useInspectorComponent();
   return (
     <Section title="Actions" count={component.handlers.length}>
       {component.handlers.map((handler) => (
@@ -207,4 +207,4 @@ const Actions = () => {
   );
 };
 
-export const Legend = Object.assign(Root, { Variables, States, Actions });
+export const Inspector = Object.assign(Root, { Variables, States, Actions });

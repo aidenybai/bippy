@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { describeNode } from "@/lib/describe";
-import { hasLegendContent } from "@/lib/graph";
+import { hasInspectorContent } from "@/lib/graph";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
@@ -17,7 +17,7 @@ import { useUiStore } from "@/store/ui";
 import { ArcKey } from "./arc-key";
 import { ViewerProvider, useHoveredNode, useViewer } from "./context";
 import { JsonPane } from "./json-pane";
-import { Legend } from "./legend";
+import { Inspector } from "./inspector";
 import { SourcePane } from "./source-pane";
 import { StateChartPane } from "./state-chart-pane";
 import { ThemeToggle } from "./theme-toggle";
@@ -25,15 +25,15 @@ import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
   const { view, mode } = useViewer();
-  const isLegendOpen = useUiStore((state) => state.isLegendOpen);
-  const setLegendOpen = useUiStore((state) => state.setLegendOpen);
+  const isInspectorOpen = useUiStore((state) => state.isInspectorOpen);
+  const setInspectorOpen = useUiStore((state) => state.setInspectorOpen);
   useHighlighterWarmup();
-  const canShowLegend = hasLegendContent(view) && mode !== "json";
+  const canShowInspector = hasInspectorContent(view) && mode !== "json";
   return (
     <SidebarProvider
-      open={isLegendOpen && canShowLegend}
+      open={isInspectorOpen && canShowInspector}
       onOpenChange={(open) => {
-        if (canShowLegend) setLegendOpen(open);
+        if (canShowInspector) setInspectorOpen(open);
       }}
     >
       <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
@@ -60,7 +60,7 @@ const Root = ({ children, ...props }: RootProps) => (
 
 interface PanesProps {
   source: ReactNode;
-  legend: ReactNode;
+  inspector: ReactNode;
 }
 
 const Crash = ({ error }: { error: unknown }) => (
@@ -69,14 +69,14 @@ const Crash = ({ error }: { error: unknown }) => (
   </pre>
 );
 
-const Panes = ({ source, legend }: PanesProps) => (
+const Panes = ({ source, inspector }: PanesProps) => (
   <SidebarLayout>
     <SidebarInset>
       <ErrorBoundary FallbackComponent={Crash}>{source}</ErrorBoundary>
     </SidebarInset>
-    <Sidebar side="right" title="Legend">
+    <Sidebar side="right" title="Inspector">
       <SidebarContent>
-        <ErrorBoundary FallbackComponent={Crash}>{legend}</ErrorBoundary>
+        <ErrorBoundary FallbackComponent={Crash}>{inspector}</ErrorBoundary>
       </SidebarContent>
     </Sidebar>
   </SidebarLayout>
@@ -89,7 +89,7 @@ const Source = () => {
   return <SourcePane />;
 };
 
-const LegendPane = ({ children }: { children: ReactNode }) => <Legend>{children}</Legend>;
+const InspectorPane = ({ children }: { children: ReactNode }) => <Inspector>{children}</Inspector>;
 
 const Status = () => {
   const { view, mode } = useViewer();
@@ -108,7 +108,9 @@ const Status = () => {
       </div>
       {mode === "code" && <ArcKey />}
       <div className="flex shrink-0 items-center gap-0.5">
-        {hasLegendContent(view) && <SidebarTrigger disabled={mode === "json"} />}
+        {hasInspectorContent(view) && (
+          <SidebarTrigger label="inspector" disabled={mode === "json"} />
+        )}
         <ThemeToggle />
       </div>
     </div>
@@ -119,6 +121,6 @@ export const Viewer = Object.assign(Root, {
   Toolbar,
   Panes,
   Source,
-  Legend: LegendPane,
+  Inspector: InspectorPane,
   Status,
 });

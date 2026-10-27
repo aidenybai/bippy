@@ -8,7 +8,7 @@ export interface GraphIndex {
 
 export const getComponentName = (nodeId: string): string => nodeId.slice(0, nodeId.indexOf("/"));
 
-export const hasLegendContent = (view: ViewFile): boolean =>
+export const hasInspectorContent = (view: ViewFile): boolean =>
   view.components.some(
     (component) => component.bindings.length > 0 || component.handlers.length > 0,
   );

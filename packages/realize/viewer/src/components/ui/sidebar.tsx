@@ -169,7 +169,16 @@ export const Sidebar = ({ side = "right", title = "Sidebar", ...props }: Sidebar
   return <DesktopSidebar side={side} title={title} {...props} />;
 };
 
-export const SidebarTrigger = ({ className, onClick, ...props }: ComponentProps<typeof Button>) => {
+interface SidebarTriggerProps extends ComponentProps<typeof Button> {
+  label?: string;
+}
+
+export const SidebarTrigger = ({
+  label = "sidebar",
+  className,
+  onClick,
+  ...props
+}: SidebarTriggerProps) => {
   const { toggleSidebar, open, openMobile, isMobile } = useSidebar();
   const isOpen = isMobile ? openMobile : open;
   return (
@@ -178,7 +187,7 @@ export const SidebarTrigger = ({ className, onClick, ...props }: ComponentProps<
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      aria-label={isOpen ? "Hide sidebar" : "Show sidebar"}
+      aria-label={`${isOpen ? "Hide" : "Show"} ${label}`}
       aria-pressed={isOpen}
       className={className}
       onClick={(event) => {

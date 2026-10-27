@@ -1,18 +1,18 @@
 import { create } from "zustand";
 
 interface UiState {
-  isLegendOpen: boolean;
+  isInspectorOpen: boolean;
   openedPanels: Set<string>;
   closedPanels: Set<string>;
-  setLegendOpen: (open: boolean) => void;
+  setInspectorOpen: (open: boolean) => void;
   choosePanel: (name: string, open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  isLegendOpen: true,
+  isInspectorOpen: true,
   openedPanels: new Set(),
   closedPanels: new Set(),
-  setLegendOpen: (isLegendOpen) => set({ isLegendOpen }),
+  setInspectorOpen: (isInspectorOpen) => set({ isInspectorOpen }),
   choosePanel: (name, open) =>
     set((state) => {
       const openedPanels = new Set(state.openedPanels);
