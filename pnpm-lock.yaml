@@ -331,6 +331,9 @@ importers:
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
+      tla-ts:
+        specifier: ^0.0.1
+        version: 0.0.1
       ts-pattern:
         specifier: ^5.9.2
         version: 5.9.2
@@ -13252,6 +13255,10 @@ packages:
   tinyrainbow@3.2.0:
     resolution: {integrity: sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==}
     engines: {node: '>=14.0.0'}
+
+  tla-ts@0.0.1:
+    resolution: {integrity: sha512-13By0RxKGQRu9NssPks1nxwqC07PDfNm5M33HfBWyJUsv7kpClYI3VH4LVLEqwuLv30WVoF7JkAIww9amI/bcA==}
+    hasBin: true
 
   tmp@0.2.7:
     resolution: {integrity: sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==}
@@ -28533,6 +28540,8 @@ snapshots:
   tinyrainbow@3.1.1: {}
 
   tinyrainbow@3.2.0: {}
+
+  tla-ts@0.0.1: {}
 
   tmp@0.2.7: {}
 

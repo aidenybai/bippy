@@ -25,6 +25,7 @@ The second is a `stateDiagram-v2`. Each state is labelled with the conditions th
 | `-d, --depth <n>`            | Cut the render tree off at this depth (default: 12)      |
 | `-s, --states <n>`           | Draw at most this many states per region (default: 32)   |
 | `--json`                     | Print the analyses as JSON instead                       |
+| `--tla <directory>`          | Also write each component as a TLA+ module and config    |
 
 Labels use a few symbols:
 
@@ -32,6 +33,17 @@ Labels use a few symbols:
 - `◆` a branch another region decides, `↻` a list
 - `⚠` an expression the analyzer couldn't evaluate, shown as written
 - `· ∅` the state renders nothing
+
+## TLA+ output
+
+`--tla <directory>` writes each component as a TLA+ module and a TLC config, like `Wizard.tla` and `Wizard.cfg`. TLC or tla-ts checks them as written: `npx tla-ts Wizard.tla`.
+
+- Each place with a finite set of values is a variable. State and reducer fields change only through actions, props keep their first value, and hook, context and other values may change on any step.
+- Each handler and effect is an action, enabled under the conditions that render its element. Its updates run in order. A handler that awaits may stop after any of its async updates, so the model reaches the screens in between.
+- `null`, `undefined` and object types are model values. An update the module can't express picks any of the place's values, and a guard it can't express is a free boolean.
+- `Screen` holds one string per region that lists the branch outcomes it renders. `Settled` is false while an update during render is pending.
+
+`tests/unit/tla-reachability.test.ts` checks each fixture component with tla-ts and compares the screens it reaches with the states realize lists. tla-ts reaches every listed state except one. `SizeLabel` lists `size !== sizes.small ∧ size !== sizes.large`, which no props reach, since `size` is one of the two values `sizes` holds.
 
 ## What it does
 
