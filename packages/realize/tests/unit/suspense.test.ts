@@ -17,4 +17,14 @@ describe("Suspense", () => {
     const panel = getComponent(project, "AliasedLazyPanel");
     expect(getBinding(panel, "suspended").kind).toBe("suspense");
   });
+
+  it("can suspend again and resolve after the first render", () => {
+    const { states } = getComponent(project, "PagedPanel").report;
+    const suspended = states.findIndex((state) => state.conditions.includes("suspended"));
+    const shown = states.findIndex((state) => state.conditions.includes("!suspended"));
+    const getTargets = (index: number) =>
+      states[index]?.transitions.flatMap((transition) => transition.targets);
+    expect(getTargets(shown)).toContain(suspended);
+    expect(getTargets(suspended)).toContain(shown);
+  });
 });
