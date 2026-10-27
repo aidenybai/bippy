@@ -165,7 +165,7 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
       <rect
         width={layout.width}
         height={layout.height}
-        fill="var(--color-background)"
+        style={{ fill: "var(--color-background)" }}
         fillOpacity={0.6}
         mask={`url(#${maskId})`}
       />

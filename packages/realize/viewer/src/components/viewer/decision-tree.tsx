@@ -187,7 +187,7 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
       <path
         d={edge.path ?? toPath(edge.points)}
         fill="none"
-        stroke={stroke}
+        style={{ stroke }}
         strokeWidth={strokeWidth}
         strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
       />
