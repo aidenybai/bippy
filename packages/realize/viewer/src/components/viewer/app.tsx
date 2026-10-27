@@ -1,6 +1,8 @@
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { Inspector } from "./inspector";
+import { Status } from "./status";
+import { Toolbar } from "./toolbar";
 import { Viewer } from "./viewer";
 
 export interface AppProps {
@@ -13,17 +15,23 @@ export interface AppProps {
 
 export const App = (props: AppProps) => (
   <Viewer {...props}>
-    <Viewer.Toolbar />
-    <Viewer.Panes
-      source={<Viewer.Source />}
-      inspector={
-        <Viewer.Inspector>
-          <Inspector.Variables />
-          <Inspector.States />
-          <Inspector.Actions />
-        </Viewer.Inspector>
-      }
-    />
-    <Viewer.Status />
+    <Viewer.Toolbar>
+      <Toolbar.Brand />
+      <Toolbar.File />
+      <Toolbar.Modes />
+    </Viewer.Toolbar>
+    <Viewer.Panes>
+      <Viewer.Source />
+      <Viewer.Inspector>
+        <Inspector.Variables />
+        <Inspector.States />
+        <Inspector.Actions />
+      </Viewer.Inspector>
+    </Viewer.Panes>
+    <Viewer.Status>
+      <Status.Hover />
+      <Status.Key />
+      <Status.Controls />
+    </Viewer.Status>
   </Viewer>
 );

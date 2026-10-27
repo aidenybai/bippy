@@ -6,21 +6,18 @@ import {
   SidebarInset,
   SidebarLayout,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { describeNode } from "@/lib/describe";
 import { hasInspectorContent } from "@/lib/graph";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
-import { ArcKey } from "./arc-key";
-import { ViewerProvider, useHoveredNode, useViewer } from "./context";
+import { ViewerProvider, useViewer } from "./context";
 import { JsonPane } from "./json-pane";
 import { Inspector } from "./inspector";
 import { SourcePane } from "./source-pane";
 import { StateChartPane } from "./state-chart-pane";
-import { ThemeToggle } from "./theme-toggle";
+import { Status } from "./status";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
@@ -58,64 +55,38 @@ const Root = ({ children, ...props }: RootProps) => (
   </ViewerProvider>
 );
 
-interface PanesProps {
-  source: ReactNode;
-  inspector: ReactNode;
-}
-
 const Crash = ({ error }: { error: unknown }) => (
   <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
     {error instanceof Error ? (error.stack ?? error.message) : String(error)}
   </pre>
 );
 
-const Panes = ({ source, inspector }: PanesProps) => (
-  <SidebarLayout>
-    <SidebarInset>
-      <ErrorBoundary FallbackComponent={Crash}>{source}</ErrorBoundary>
-    </SidebarInset>
-    <Sidebar side="right" title="Inspector">
-      <SidebarContent>
-        <ErrorBoundary FallbackComponent={Crash}>{inspector}</ErrorBoundary>
-      </SidebarContent>
-    </Sidebar>
-  </SidebarLayout>
-);
+const Panes = ({ children }: { children: ReactNode }) => <SidebarLayout>{children}</SidebarLayout>;
 
-const Source = () => {
+const Pane = () => {
   const { mode } = useViewer();
   if (mode === "state-chart") return <StateChartPane />;
   if (mode === "json") return <JsonPane />;
   return <SourcePane />;
 };
 
-const InspectorPane = ({ children }: { children: ReactNode }) => <Inspector>{children}</Inspector>;
+const Source = () => (
+  <SidebarInset>
+    <ErrorBoundary FallbackComponent={Crash}>
+      <Pane />
+    </ErrorBoundary>
+  </SidebarInset>
+);
 
-const Status = () => {
-  const { view, mode } = useViewer();
-  const hoveredNode = useHoveredNode();
-  return (
-    <div className="flex h-9 items-center gap-4 border-t pr-1.5 pl-3 whitespace-nowrap text-muted-foreground tabular-nums">
-      <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
-        {hoveredNode && (
-          <>
-            <span className="hidden shrink-0 sm:inline">
-              Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
-            </span>
-            <span className="truncate">{describeNode(view, hoveredNode)}</span>
-          </>
-        )}
-      </div>
-      {mode === "code" && <ArcKey />}
-      <div className="flex shrink-0 items-center gap-0.5">
-        {hasInspectorContent(view) && (
-          <SidebarTrigger label="inspector" disabled={mode === "json"} />
-        )}
-        <ThemeToggle />
-      </div>
-    </div>
-  );
-};
+const InspectorPane = ({ children }: { children: ReactNode }) => (
+  <Sidebar side="right" title="Inspector">
+    <SidebarContent>
+      <ErrorBoundary FallbackComponent={Crash}>
+        <Inspector>{children}</Inspector>
+      </ErrorBoundary>
+    </SidebarContent>
+  </Sidebar>
+);
 
 export const Viewer = Object.assign(Root, {
   Toolbar,

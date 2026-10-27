@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,7 +30,7 @@ const ModeTabs = () => {
     <Tabs
       value={mode}
       onValueChange={(value) => isViewMode(value) && setMode(value)}
-      className="max-sm:w-full"
+      className="max-sm:w-full sm:ml-1"
     >
       <TabsList aria-label="View" className="max-sm:w-full">
         <TabsTrigger value="code">Code</TabsTrigger>
@@ -77,16 +77,26 @@ const Logo = () => (
   </svg>
 );
 
-export const Toolbar = () => (
-  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 pt-2 pb-2.5 sm:h-12 sm:flex-nowrap sm:gap-3 sm:py-0">
-    <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-      <span className="flex shrink-0 items-center gap-2 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
-        <Logo />
-        Realize
-      </span>
-      <span className="h-4 w-px shrink-0 bg-border" />
-      <Title />
-    </div>
-    <ModeTabs />
+const Root = ({ children }: { children: ReactNode }) => (
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 pt-2 pb-2.5 sm:h-12 sm:flex-nowrap sm:py-0">
+    {children}
   </div>
 );
+
+const Brand = () => (
+  <div className="flex h-8 shrink-0 items-center gap-2">
+    <span className="flex items-center gap-2 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
+      <Logo />
+      Realize
+    </span>
+    <span className="h-4 w-px bg-border" />
+  </div>
+);
+
+const File = () => (
+  <div className="flex h-8 min-w-0 flex-1 items-center">
+    <Title />
+  </div>
+);
+
+export const Toolbar = Object.assign(Root, { Brand, File, Modes: ModeTabs });
