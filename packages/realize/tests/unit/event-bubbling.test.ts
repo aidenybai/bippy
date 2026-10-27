@@ -110,7 +110,7 @@ describe("a click that bubbles to an ancestor's handler", () => {
     expect(names).toContainEqual(["isLabelClicked", "isFocused"]);
   });
 
-  it("runs a form's reset, a remote form's submit and a details toggle after the click", () => {
+  it("runs a form's reset and a remote form's submit after the click", () => {
     const names = getComponent(project, "FormDefaults").analysis.handlers.map((handler) =>
       handler.updates.map((update) => update.binding.name),
     );
@@ -118,9 +118,74 @@ describe("a click that bubbles to an ancestor's handler", () => {
       expect.arrayContaining([
         ["clicks", "isReset"],
         ["clicks", "isSent"],
-        ["clicks", "isToggled"],
       ]),
     );
+  });
+
+  it("bubbles a button's submit and reset through the form's ancestors", () => {
+    const names = getComponent(project, "BubbledFormEvents").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["clicks", "isCaptured", "isSent"],
+        ["clicks", "isReset"],
+      ]),
+    );
+  });
+
+  it("runs a details toggle after the click's commit, with the state the click set", () => {
+    const handlers = getComponent(project, "ToggleAfterClick").analysis.handlers;
+    const effectUpdates = handlers
+      .filter((handler) => handler.trigger.kind === "Effect")
+      .flatMap((handler) => handler.updates.map((update) => update.binding.name));
+    expect(effectUpdates).toContain("count");
+    expect(getUpdateSequences("ToggleAfterClick")).toContainEqual(["count = 1"]);
+  });
+
+  it("may skip a text input's change handler, which React runs only when the value changed", () => {
+    const updates = getComponent(project, "UnchangedInput").analysis.handlers.flatMap((handler) =>
+      handler.updates.map((update) => [update.binding.name, update.guards.length > 0]),
+    );
+    expect(updates).toContainEqual(["inputs", false]);
+    expect(updates).toContainEqual(["changes", true]);
+    expect(updates).not.toContainEqual(["changes", false]);
+  });
+
+  it("runs an element's own capture handler before its bubble handler and its ancestors'", () => {
+    const names = getComponent(project, "TargetCapture").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["order", "order", "isOuter"],
+        ["isCaptured", "isOuter"],
+      ]),
+    );
+  });
+
+  it("treats a preventDefault behind a maybe-stopped handler as a maybe", () => {
+    const sent = getComponent(project, "MaybeStoppedPrevent")
+      .analysis.handlers.filter(
+        (handler) => handler.trigger.kind === "Event" && handler.trigger.tag === "button",
+      )
+      .flatMap((handler) => handler.updates)
+      .filter((update) => update.binding.name === "isSent");
+    expect(sent.length).toBeGreaterThan(0);
+    expect(sent.every((update) => update.guards.length > 0)).toBe(true);
+  });
+
+  it("runs a checkbox's input handler after the click's commit as well", () => {
+    const effectUpdates = getComponent(project, "InputAfterCommit")
+      .analysis.handlers.filter((handler) => handler.trigger.kind === "Effect")
+      .flatMap((handler) => handler.updates.map((update) => update.binding.name));
+    expect(effectUpdates).toContain("isSeen");
+  });
+
+  it("runs a checkbox's input handler after its click unless the click is prevented", () => {
+    const sequences = getUpdateSequences("CheckboxInput");
+    expect(sequences).toContainEqual(["clicks = 1", "inputs = 1"]);
+    expect(sequences).not.toContainEqual(["clicks = 2", "inputs = 2"]);
   });
 
   it("runs the default action of the nearest button or label above the clicked element", () => {

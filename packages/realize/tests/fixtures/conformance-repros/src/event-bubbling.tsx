@@ -374,3 +374,127 @@ export const ClickThenFormAction = () => {
     </form>
   );
 };
+
+export const CheckboxInput = () => {
+  const [clicks, setClicks] = useState(0);
+  const [inputs, setInputs] = useState(0);
+  return (
+    <div>
+      <input
+        type="checkbox"
+        aria-label="kept"
+        onClick={() => setClicks(1)}
+        onInput={() => setInputs(1)}
+      />
+      <input
+        type="checkbox"
+        aria-label="prevented"
+        onClick={(event) => {
+          event.preventDefault();
+          setClicks(2);
+        }}
+        onInput={() => setInputs(2)}
+      />
+      {clicks > 0 && inputs > 0 ? <i>both</i> : <i>one</i>}
+    </div>
+  );
+};
+
+export const BubbledFormEvents = () => {
+  const [clicks, setClicks] = useState(0);
+  const [isSent, setIsSent] = useState(false);
+  const [isCaptured, setIsCaptured] = useState(false);
+  const [isReset, setIsReset] = useState(false);
+  return (
+    <div
+      onSubmit={() => setIsSent(true)}
+      onSubmitCapture={() => setIsCaptured(true)}
+      onReset={() => setIsReset(true)}
+    >
+      <form onSubmit={(event) => event.preventDefault()}>
+        <button onClick={() => setClicks(1)}>send</button>
+        <button type="reset" onClick={() => setClicks(2)}>
+          clear
+        </button>
+      </form>
+      {clicks > 0 && (isSent || isCaptured || isReset) ? <i>done</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const ToggleAfterClick = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <details onToggle={() => count === 1 && setCount(2)}>
+      <summary onClick={() => setCount(1)}>more</summary>
+      {count === 0 ? <i>zero</i> : count === 1 ? <i>one</i> : <i>two</i>}
+    </details>
+  );
+};
+
+export const UnchangedInput = () => {
+  const [inputs, setInputs] = useState(0);
+  const [changes, setChanges] = useState(0);
+  return (
+    <div>
+      <input aria-label="field" onInput={() => setInputs(1)} onChange={() => setChanges(1)} />
+      {inputs > 0 && changes === 0 ? <i>input only</i> : <i>other</i>}
+    </div>
+  );
+};
+
+export const TargetCapture = () => {
+  const [order, setOrder] = useState("");
+  const [isCaptured, setIsCaptured] = useState(false);
+  const [isOuter, setIsOuter] = useState(false);
+  return (
+    <div onClick={() => setIsOuter(true)}>
+      <button
+        onClickCapture={() => setOrder("capture")}
+        onClick={() => setOrder((current) => `${current}-target`)}
+      >
+        both
+      </button>
+      <button onClickCapture={() => setIsCaptured(true)}>capture</button>
+      {order === "capture-target" || (isCaptured && isOuter) ? <i>done</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const MaybeStoppedPrevent = () => {
+  const [isArmed, setIsArmed] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+  return (
+    <form onSubmit={() => setIsSent(true)}>
+      <button type="button" onClick={() => setIsArmed(!isArmed)}>
+        arm
+      </button>
+      <button
+        onClickCapture={(event) => {
+          if (isArmed) event.stopPropagation();
+        }}
+        onClick={(event) => event.preventDefault()}
+      >
+        send
+      </button>
+      {isSent ? <i>sent</i> : <i>open</i>}
+    </form>
+  );
+};
+
+export const InputAfterCommit = () => {
+  const [clicks, setClicks] = useState(0);
+  const [isSeen, setIsSeen] = useState(false);
+  return (
+    <div>
+      <input
+        type="checkbox"
+        aria-label="box"
+        checked={clicks > 0}
+        onClick={() => setClicks(1)}
+        onInput={() => clicks === 1 && setIsSeen(true)}
+      />
+      {isSeen ? <i>seen</i> : <i>unseen</i>}
+    </div>
+  );
+};

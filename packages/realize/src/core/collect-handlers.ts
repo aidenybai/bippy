@@ -45,6 +45,7 @@ const NON_BUBBLING_EVENTS = new Set([
   "onLoad",
   "onError",
 ]);
+const MAYBE_BUBBLING_EVENTS = new Set(["onToggle", "onBeforeToggle"]);
 const FORM_ACTION_PROPS = new Map([
   ["form", "action"],
   ["button", "formAction"],
@@ -260,8 +261,8 @@ const isTextInput = (element: JsxExpressionValue): boolean => {
 };
 
 const getDispatchedEvents = (element: JsxExpressionValue, prop: JsxProp): string[] => {
-  if (prop.name === "onChange" && getCheckableType(element) !== null)
-    return ["onClick", "onChange"];
+  if (getCheckableType(element) !== null && CHECK_EVENTS.has(prop.name))
+    return ["onClick", "onChange", "onInput"];
   if (INPUT_EVENTS.has(prop.name) && isTextInput(element)) return ["onInput", "onChange"];
   return [prop.name];
 };
@@ -301,7 +302,7 @@ const isLabelable = (element: JsxExpressionValue): boolean => {
 };
 
 const getActivationEvents = (control: JsxExpressionValue): string[] => {
-  if (getCheckableType(control) !== null) return ["onClick", "onChange"];
+  if (getCheckableType(control) !== null) return ["onClick", "onChange", "onInput"];
   if (control.tag.name === "button" || getSubmitControl(control) === "always") return ["onClick"];
   return ["onFocus"];
 };
@@ -377,6 +378,11 @@ const getAttribute = (element: JsxExpressionValue, name: string): JsxProp | unde
 const CHECKABLE_TYPES = new Set(["checkbox", "radio"]);
 
 const CHECK_EVENTS = new Set(["onChange", "onClick", "onInput"]);
+
+interface TargetCallbacks {
+  captured: SymbolicValue[];
+  bubbled: SymbolicValue[];
+}
 
 interface ControlEvent {
   argument: SymbolicValue;
@@ -629,6 +635,20 @@ class HandlerCollector {
         callback: { kind: "ArrayExpression", elements: focused, spreads: [] },
         loc: element.loc,
       });
+    const toggleProp = this.#getEventProp(element, "onToggle");
+    const toggled =
+      element.tag.kind === "BuiltinTag" && element.tag.name === "details"
+        ? this.#getDispatchCallbacks(element, "onToggle", toggleProp)
+        : [];
+    if (toggled.length > 0)
+      this.commitCallbacks.set(`toggle:${getLocationKey(element.loc)}`, {
+        callback: {
+          kind: "ArrayExpression",
+          elements: guardCallbacks(toggled, `toggle ${getLocationKey(element.loc)}`, toggleProp),
+          spreads: [],
+        },
+        loc: element.loc,
+      });
   }
 
   get plannedCallbacks(): SymbolicValue[] {
@@ -778,30 +798,38 @@ class HandlerCollector {
         ? [...entered, callback]
         : [callback, ...entered.reverse()];
     }
-    if (NON_BUBBLING_EVENTS.has(prop.name) || prop.name.endsWith(CAPTURE_SUFFIX)) return [];
-    const clicked = getDispatchedEvents(element, prop).flatMap((event) =>
-      this.#getReachedCallbacks(
-        this.#getChain(
-          event,
-          event === prop.name
-            ? [
-                ...guardCallbacks(
-                  this.#consumerCallbacks.get(element) ?? [],
-                  `consumer ${prop.name} ${getLocationKey(element.loc)}`,
-                  prop,
-                ),
-                callback,
-              ]
-            : this.#getAncestorCallbacks(element, event),
-          ancestors,
-          prop,
-        ),
-        prop,
-      ),
+    const isCapture = prop.name.endsWith(CAPTURE_SUFFIX);
+    const eventProp = isCapture
+      ? { ...prop, name: prop.name.slice(0, -CAPTURE_SUFFIX.length) }
+      : prop;
+    if (NON_BUBBLING_EVENTS.has(eventProp.name)) return [];
+    const consumers = guardCallbacks(
+      this.#consumerCallbacks.get(element) ?? [],
+      `consumer ${prop.name} ${getLocationKey(element.loc)}`,
+      prop,
+    );
+    const clicked = this.#getEventSequence(
+      element,
+      getDispatchedEvents(element, eventProp),
+      ancestors,
+      prop,
+      (event) => {
+        const isProp = event === eventProp.name;
+        return {
+          captured:
+            isProp && isCapture
+              ? [callback]
+              : this.#getAncestorCallbacks(element, `${event}${CAPTURE_SUFFIX}`),
+          bubbled:
+            isProp && !isCapture
+              ? [...consumers, callback]
+              : this.#getAncestorCallbacks(element, event),
+        };
+      },
     );
     const propagated = [
       ...clicked,
-      ...this.#getDefaultActionCallbacks(element, prop, ancestors, clicked),
+      ...this.#getDefaultActionCallbacks(element, eventProp, ancestors, clicked),
     ];
     return propagated.length === 1 ? [] : propagated;
   }
@@ -876,17 +904,14 @@ class HandlerCollector {
     const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
     if (!control || prevents.includes("always")) return [];
     const ancestors = this.#ancestorsByElement.get(control) ?? [];
-    const isRadio = getCheckableType(control) === "radio";
-    const activated = getActivationEvents(control).flatMap((event) => {
-      const reached = this.#getReachedCallbacks(
-        this.#getChain(event, this.#getAncestorCallbacks(control, event), ancestors, prop),
-        prop,
-      );
-      const isMaybe = event === "onFocus" || (isRadio && event === "onChange");
-      return isMaybe
-        ? guardCallbacks(reached, `activated ${event} ${getLocationKey(control.loc)}`, prop)
-        : reached;
-    });
+    const events = getActivationEvents(control);
+    const dispatched = this.#getEventSequence(control, events, ancestors, prop, (event) => ({
+      captured: this.#getAncestorCallbacks(control, `${event}${CAPTURE_SUFFIX}`),
+      bubbled: this.#getAncestorCallbacks(control, event),
+    }));
+    const activated = events.includes("onFocus")
+      ? guardCallbacks(dispatched, `activated onFocus ${getLocationKey(control.loc)}`, prop)
+      : dispatched;
     const sequence = [
       ...activated,
       ...this.#getDefaultActionCallbacks(
@@ -933,18 +958,93 @@ class HandlerCollector {
           : [],
       ),
       ...targetCallbacks,
-      ...[...ancestors]
-        .reverse()
-        .flatMap((ancestor) =>
-          ancestor.tag.kind === "BuiltinTag"
-            ? this.#getAncestorCallbacks(ancestor, name)
-            : guardCallbacks(
-                this.#getComponentCallbacks(ancestor),
-                `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
-                prop,
-              ),
-        ),
+      ...[...ancestors].reverse().flatMap((ancestor) => {
+        if (ancestor.tag.kind !== "BuiltinTag")
+          return guardCallbacks(
+            this.#getComponentCallbacks(ancestor),
+            `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
+            prop,
+          );
+        const callbacks = this.#getAncestorCallbacks(ancestor, name);
+        return MAYBE_BUBBLING_EVENTS.has(name)
+          ? guardCallbacks(callbacks, `bubbled ${name} ${getLocationKey(ancestor.loc)}`, prop)
+          : callbacks;
+      }),
     ];
+  }
+
+  #getDispatchCallbacks(target: JsxExpressionValue, event: string, prop: JsxProp): SymbolicValue[] {
+    return this.#getReachedCallbacks(
+      this.#getChain(
+        event,
+        [
+          ...this.#getAncestorCallbacks(target, `${event}${CAPTURE_SUFFIX}`),
+          ...this.#getAncestorCallbacks(target, event),
+        ],
+        this.#ancestorsByElement.get(target) ?? [],
+        prop,
+      ),
+      prop,
+    );
+  }
+
+  #getEventSequence(
+    element: JsxExpressionValue,
+    events: string[],
+    ancestors: JsxExpressionValue[],
+    prop: JsxProp,
+    getTargetCallbacks: (event: string) => TargetCallbacks,
+  ): SymbolicValue[] {
+    const location = getLocationKey(element.loc);
+    const isRadio = getCheckableType(element) === "radio";
+    return events.reduce<SymbolicValue[]>((sequence, event, index) => {
+      const target = getTargetCallbacks(event);
+      const reached = this.#getReachedCallbacks(
+        this.#getChain(event, [...target.captured, ...target.bubbled], ancestors, prop),
+        prop,
+      );
+      if (event === "onInput" && index > 0) {
+        const inputs = guardCallbacks(
+          this.#getUnpreventedCallbacks(sequence, reached, `input ${location}`, prop),
+          `input ${location}`,
+          prop,
+        );
+        if (inputs.length > 0)
+          this.commitCallbacks.set(`input:${location}`, {
+            callback: { kind: "ArrayExpression", elements: inputs, spreads: [] },
+            loc: element.loc,
+          });
+        return [...sequence, ...inputs];
+      }
+      if (event !== "onChange" || index === 0) return [...sequence, ...reached];
+      const previous = events[index - 1];
+      const stops = [
+        ...ancestors.flatMap((ancestor) =>
+          ancestor.tag.kind === "BuiltinTag"
+            ? this.#getAncestorCallbacks(ancestor, `${previous}${CAPTURE_SUFFIX}`)
+            : [],
+        ),
+        ...getTargetCallbacks(previous).captured,
+      ].map((callback) => this.#getPropertyLoad(callback, "stopPropagation"));
+      if (stops.includes("always")) return sequence;
+      return [
+        ...sequence,
+        ...(stops.includes("maybe") || isRadio || isTextInput(element)
+          ? guardCallbacks(reached, `changed ${location}`, prop)
+          : reached),
+      ];
+    }, []);
+  }
+
+  #getUnpreventedCallbacks(
+    clicked: SymbolicValue[],
+    callbacks: SymbolicValue[],
+    reason: string,
+    prop: JsxProp,
+  ): SymbolicValue[] {
+    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
+    if (prevents.includes("always")) return [];
+    return prevents.includes("maybe") ? guardCallbacks(callbacks, reason, prop) : callbacks;
   }
 
   #getComponentCallbacks(component: JsxExpressionValue): SymbolicValue[] {
@@ -1027,7 +1127,7 @@ class HandlerCollector {
       extra: SymbolicValue[] = [],
     ): SymbolicValue[] => {
       if (owner === undefined || control === null) return [];
-      const callbacks = [...this.#getAncestorCallbacks(owner, event), ...extra];
+      const callbacks = [...this.#getDispatchCallbacks(owner, event, prop), ...extra];
       return prevents.includes("maybe") || control === "maybe"
         ? guardCallbacks(callbacks, `default ${event} ${getLocationKey(owner.loc)}`, prop)
         : callbacks;
@@ -1041,8 +1141,6 @@ class HandlerCollector {
     if (activator.tag.name === "label")
       return this.#getActivationCallbacks(activator, clicked, prop);
     const form = this.#getOwnerForm(activator, path.slice(0, activatorIndex));
-    const details = activator.tag.name === "summary" ? path[activatorIndex - 1] : undefined;
-    const isToggled = details?.tag.kind === "BuiltinTag" && details.tag.name === "details";
     return [
       ...getDefaultCallbacks(
         form,
@@ -1051,7 +1149,6 @@ class HandlerCollector {
         this.#getFormActions(form, activator),
       ),
       ...getDefaultCallbacks(form, getResetControl(activator), "onReset"),
-      ...getDefaultCallbacks(isToggled ? details : undefined, "maybe", "onToggle"),
     ];
   }
 
@@ -1063,17 +1160,13 @@ class HandlerCollector {
     const submitterActions = this.#getAncestorCallbacks(submitter, "formAction");
     const actions =
       submitterActions.length > 0 ? submitterActions : this.#getAncestorCallbacks(form, "action");
-    const prevents = this.#getAncestorCallbacks(form, "onSubmit").map((callback) =>
-      this.#getPropertyLoad(callback, "preventDefault"),
+    const prop = this.#getEventProp(form, "requestSubmit");
+    return this.#getUnpreventedCallbacks(
+      this.#getDispatchCallbacks(form, "onSubmit", prop),
+      actions,
+      `action ${getLocationKey(form.loc)}`,
+      prop,
     );
-    if (prevents.includes("always")) return [];
-    return prevents.includes("maybe")
-      ? guardCallbacks(
-          actions,
-          `action ${getLocationKey(form.loc)}`,
-          this.#getEventProp(form, "requestSubmit"),
-        )
-      : actions;
   }
 
   #getOwnerForm(
@@ -1108,6 +1201,14 @@ class HandlerCollector {
   }
 
   #getPropertyLoad(callback: SymbolicValue, property: string): "always" | "maybe" | null {
+    if (callback.kind === "Bound") return this.#getPropertyLoad(callback.callee, property);
+    if (callback.kind === "Conditional") {
+      const loads = [callback.consequent, callback.alternate].map((branch) =>
+        this.#getPropertyLoad(branch, property),
+      );
+      if (loads.every((load) => load === "always")) return "always";
+      return loads.some((load) => load !== null) ? "maybe" : null;
+    }
     if (callback.kind !== "Function") return null;
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
     if (hirFunction === null || !loadsProperty(hirFunction, property)) return null;
