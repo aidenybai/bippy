@@ -402,10 +402,16 @@ export interface UnreachableBranch {
   description: string;
 }
 
+export interface PropWitness {
+  props: Record<string, Sample>;
+  states: number[];
+}
+
 export interface StateReport {
   places: PlaceMap<AbstractValue[]>;
   states: State[];
   regions: Region[];
+  propWitnesses: PropWitness[];
   unreachableBranches: UnreachableBranch[];
   claimOutcomes: ClaimOutcome[];
   isTruncated: boolean;

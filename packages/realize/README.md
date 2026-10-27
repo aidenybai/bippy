@@ -102,3 +102,5 @@ A component that passes its props on whole, like `templateCtx(props)`, mounts wi
 Untyped props, as in plain JavaScript, take the literals their call sites pass. They are shaped by what the component reads from them, like `booking.guests.fullName`.
 
 A string a component parses has no type to say so, so its name picks a valid sample. A string named like a date, such as `createdAt`, is an ISO date, and one named `currencyCode` is a currency code.
+
+Up to 12 combinations of these samples can miss a state that needs several props at once, or a field of an object prop. So the analyzer also picks props for each state from that state's own conditions, called its witness. A state behind `notice.type === "success"` gets a `notice` whose `type` is `"success"`. A state behind `runs.length > 1` gets two runs, and one behind `children === undefined` gets no children. After exploring, the verifier mounts the witness of each state it hasn't seen yet.

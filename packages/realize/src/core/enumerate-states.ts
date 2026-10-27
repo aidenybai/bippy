@@ -2,6 +2,7 @@ import { evaluateClaims } from "./claims";
 import { isEffectHandler, isRenderHandler } from "./collect-handlers";
 import { cloneConstraints, evaluateCondition, joinConstraints } from "./constraints";
 import type { Constraints } from "./constraints";
+import { findPropWitnesses } from "./prop-witnesses";
 import { findRegions } from "./regions";
 import type { RegionBranches } from "./regions";
 import type {
@@ -277,6 +278,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     places: reachableConstraints.possibleValues.clone(),
     states,
     regions,
+    propWitnesses: findPropWitnesses(analysis, constraintsByState, reachableConstraints),
     unreachableBranches: isTruncated
       ? []
       : collectUnreachableBranches(

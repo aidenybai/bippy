@@ -90,6 +90,7 @@ export const createTestReport = (places: Array<[BindingPlace, AbstractValue[]]>)
   places: new PlaceMap(places),
   states: [],
   regions: [],
+  propWitnesses: [],
   unreachableBranches: [],
   claimOutcomes: [],
   isTruncated: false,

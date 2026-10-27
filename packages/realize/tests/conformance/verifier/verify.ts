@@ -173,8 +173,10 @@ const verifyComponent = async (
       ? await exploreComponent(
           page,
           component.analysis,
+          component.report,
           harness.getComponentModule(component.analysis.file),
           harness.projectIndex,
+          harness.knownComponents,
           budgetMs,
         )
       : [];

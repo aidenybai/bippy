@@ -1,4 +1,4 @@
-import type { ComponentAnalysis, Sample } from "../../../src/core/types";
+import type { ComponentAnalysis, PropWitness, Sample, StateReport } from "../../../src/core/types";
 
 const MAX_PROP_COMBINATIONS = 12;
 
@@ -44,4 +44,21 @@ export const getPropCombinations = (analysis: ComponentAnalysis): Record<string,
     samples.slice(1).map((sample) => ({ ...defaultProps, [name]: sample })),
   );
   return [defaultProps, ...variations].slice(0, MAX_PROP_COMBINATIONS);
+};
+
+export const getWitnessProps = (
+  analysis: ComponentAnalysis,
+  report: StateReport,
+  combinations: Record<string, Sample>[],
+): PropWitness[] => {
+  const defaultProps = getDefaultProps(analysis);
+  const seenKeys = new Set(combinations.map((props) => JSON.stringify(props)));
+  return report.propWitnesses
+    .map((witness) => ({ ...witness, props: { ...defaultProps, ...witness.props } }))
+    .filter((witness) => {
+      const key = JSON.stringify(witness.props);
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
 };
