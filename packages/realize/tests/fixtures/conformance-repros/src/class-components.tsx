@@ -112,3 +112,19 @@ export class ClassDelayed extends Component<object, { count: number }> {
     return <button onClick={this.later}>{this.state.count > 0 ? "late" : "early"}</button>;
   }
 }
+
+export class ClassCappedCounter extends Component<object, { count: number; items: string[] }> {
+  state = { count: 0, items: [] };
+
+  step = () => {
+    this.setState((previous) => (previous.count >= 2 ? null : { count: previous.count + 1 }));
+  };
+
+  render() {
+    return (
+      <button onClick={this.step}>
+        {this.state.items.length === 0 ? "empty" : "full"} {this.state.count}
+      </button>
+    );
+  }
+}

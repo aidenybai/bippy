@@ -37,6 +37,11 @@ describe("a class component", () => {
     expect(getTargets("ClassStepper")).toEqual(getTargets("FunctionStepper"));
   });
 
+  it("keeps the previous state when an updater returns null", () => {
+    const conditions = getConditions("ClassCappedCounter").flat();
+    expect(conditions.some((condition) => condition.includes("items"))).toBe(false);
+  });
+
   it("runs componentDidMount after the first render", () => {
     expect(getConditions("ClassReady")).toEqual([["state.isReady"], ["!state.isReady"]]);
     const { handlers } = getComponent(project, "ClassReady").analysis;
