@@ -19,13 +19,13 @@ import {
   createModuleConstantLoader,
   createModuleDeclarationLoader,
   createModuleVariableLoader,
-  createWrittenImportLoader,
+  createImportUseLoader,
 } from "./module-values";
 import type {
   ModuleConstantLoader,
   ModuleDeclarationLoader,
   ModuleVariableLoader,
-  WrittenImportLoader,
+  ImportUseLoader,
 } from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
 import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
@@ -51,7 +51,7 @@ export interface CompiledFile {
   loadModuleConstant: ModuleConstantLoader;
   loadModuleVariable: ModuleVariableLoader;
   loadModuleDeclaration: ModuleDeclarationLoader;
-  isWrittenImport: WrittenImportLoader;
+  loadImportUse: ImportUseLoader;
 }
 
 const STOP = Symbol("stop");
@@ -110,7 +110,7 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   loadModuleConstant: () => null,
   loadModuleVariable: () => null,
   loadModuleDeclaration: () => null,
-  isWrittenImport: () => false,
+  loadImportUse: () => "read",
 };
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
@@ -377,6 +377,6 @@ export const compileFile = (
     loadModuleConstant: createModuleConstantLoader(ast),
     loadModuleVariable: createModuleVariableLoader(ast),
     loadModuleDeclaration: createModuleDeclarationLoader(ast),
-    isWrittenImport: createWrittenImportLoader(ast),
+    loadImportUse: createImportUseLoader(ast),
   };
 };

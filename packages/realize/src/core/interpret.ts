@@ -123,6 +123,7 @@ import { ExternalSources, getStoreFieldValue } from "./external-sources";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
 import type {
+  ImportUse,
   ModuleConstantLoader,
   ModuleDeclaration,
   ModuleVariableLoader,
@@ -204,7 +205,7 @@ export interface ProjectLoaders {
   loadProjectFunction: ProjectHookLoader;
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
   loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
-  isWrittenImport: (declarationKey: string) => boolean;
+  loadImportUse: (declarationKey: string) => ImportUse;
 }
 
 const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
@@ -505,6 +506,7 @@ export class Interpreter {
   );
   readonly renderedComponents = new Set<string>();
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
+  readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
   readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
@@ -1032,10 +1034,22 @@ export class Interpreter {
       ? this.#projectLoaders.loadModuleDeclaration(declarationKey)
       : null;
     if (!declaration) return null;
-    const isWrittenHere = this.#projectLoaders.isWrittenImport(
+    const isWrittenHere =
+      this.#projectLoaders.loadImportUse(createDeclarationKey(this.#resolver.path, localName)) ===
+      "written";
+    return declaration.isWritten || isWrittenHere ? this.#createModuleBinding(declaration) : null;
+  }
+
+  #loadImportedConstant(localName: string, loc: SourceLocation): SymbolicValue | null {
+    const declarationKey = this.#resolver.getDeclarationKey(loc);
+    const declaration = declarationKey
+      ? this.#projectLoaders.loadModuleDeclaration(declarationKey)
+      : null;
+    if (!declaration?.initial || declaration.isWritten) return null;
+    const use = this.#projectLoaders.loadImportUse(
       createDeclarationKey(this.#resolver.path, localName),
     );
-    return declaration.isWritten || isWrittenHere ? this.#createModuleBinding(declaration) : null;
+    return declaration.initial.kind === "Primitive" || use === "state" ? declaration.initial : null;
   }
 
   #createModuleBinding(declaration: ProjectModuleDeclaration): Binding {
@@ -1062,7 +1076,14 @@ export class Interpreter {
   resolveModuleFunction(value: SymbolicValue): SymbolicValue {
     if (value.kind !== "Global") return value;
     const moduleFunction = this.#functions.loadModuleFunction(this.#resolver, value.name);
-    return moduleFunction ? this.#registerFunction(moduleFunction) : value;
+    if (moduleFunction) return this.#registerFunction(moduleFunction);
+    const declarationKey = this.#importDeclarationKeys.get(value);
+    const imported = declarationKey
+      ? this.#projectLoaders.loadProjectFunction(declarationKey)
+      : null;
+    if (!imported) return value;
+    this.#functions.addModule(imported.resolver, imported.loadModuleFunction, imported.hirFunction);
+    return this.#functions.register(imported.hirFunction, imported.resolver);
   }
 
   warn(kind: WarningKind, message: string, loc: SourceLocation, prop: string | null = null): void {
@@ -2463,8 +2484,13 @@ export class Interpreter {
         const constant =
           isModuleLocal || value.binding.kind === "Global"
             ? this.#loadModuleConstant(value.binding.name)
-            : null;
-        return constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
+            : isImport
+              ? this.#loadImportedConstant(value.binding.name, value.loc)
+              : null;
+        const global = constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
+        const declarationKey = isImport ? this.#resolver.getDeclarationKey(value.loc) : null;
+        if (declarationKey) this.#importDeclarationKeys.set(global, declarationKey);
+        return global;
       }
       case "PropertyLoad":
         return this.#evaluatePropertyLoad(value, instruction.id, walkState);

@@ -25,8 +25,10 @@ export interface ModuleDeclarationLoader {
   (variableName: string): ModuleDeclaration | null;
 }
 
-export interface WrittenImportLoader {
-  (localName: string): boolean;
+export type ImportUse = "written" | "state" | "read";
+
+export interface ImportUseLoader {
+  (localName: string): ImportUse;
 }
 
 const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
@@ -398,17 +400,19 @@ export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoade
   };
 };
 
-export const createWrittenImportLoader = (ast: types.File): WrittenImportLoader => {
-  const writtenImports = new Set<string>();
+export const createImportUseLoader = (ast: types.File): ImportUseLoader => {
+  const uses = new Map<string, ImportUse>();
   traverse(ast, {
     ImportDeclaration(path) {
       for (const specifier of path.node.specifiers) {
-        const binding = path.scope.getBinding(specifier.local.name);
-        if (binding?.referencePaths.some(isMemberWrite)) writtenImports.add(specifier.local.name);
+        const references = path.scope.getBinding(specifier.local.name)?.referencePaths ?? [];
+        if (references.some(isMemberWrite)) uses.set(specifier.local.name, "written");
+        if (references.length > 0 && references.every(isStateValueReference))
+          uses.set(specifier.local.name, "state");
       }
     },
   });
-  return (localName) => writtenImports.has(localName);
+  return (localName) => uses.get(localName) ?? "read";
 };
 
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
