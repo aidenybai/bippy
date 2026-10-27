@@ -62,13 +62,14 @@ interface TlaBranch {
 interface Scope {
   namesByPlace: Map<string, string>;
   variablesByPlace: Map<string, TlaVariable>;
+  readPlaceKeys: Set<string>;
 }
 
 interface SpecContext {
   allocateName: (base: string) => string;
   variables: TlaVariable[];
   stateScope: Scope;
-  stepLines: string[];
+  pendingNames: Map<string, string>;
 }
 
 const MAX_INTEGER = 2 ** 31 - 1;
@@ -80,7 +81,7 @@ const NUMBER_TYPES: ReadonlySet<ValueType> = new Set(["number"]);
 const STRING_TYPES: ReadonlySet<ValueType> = new Set(["string"]);
 const OBJECT_TYPES: ReadonlySet<ValueType> = new Set(["object"]);
 const NO_TYPES: ReadonlySet<ValueType> = new Set();
-const RESERVED_NAMES = ["Null", "Undefined", "Init", "Next", "Screen", "Settled", "vars", "fresh"];
+const RESERVED_NAMES = ["Null", "Undefined", "Init", "Next", "Screen", "Settled", "vars"];
 const RELATIONAL_OPERATORS = new Map([
   ["<", "<"],
   ["<=", "=<"],
@@ -230,8 +231,10 @@ const translateValue = (value: SymbolicValue, scope: Scope, depth = 0): TlaExpre
       const placeKey = getPlaceKey({ bindingId: value.binding.id, path: value.path });
       const name = scope.namesByPlace.get(placeKey);
       const variable = scope.variablesByPlace.get(placeKey);
-      if (name && variable)
+      if (name && variable) {
+        scope.readPlaceKeys.add(placeKey);
         return { text: name, types: variable.types, isNullable: variable.isNullable };
+      }
       const aliased = value.binding.alias ? projectValue(value.binding.alias, value.path) : null;
       return aliased ? translateValue(aliased, scope, depth + 1) : null;
     }
@@ -383,9 +386,10 @@ const createVariables = (
   });
 };
 
-const createScope = (variables: TlaVariable[]): Scope => ({
+const createScope = (variables: TlaVariable[], readPlaceKeys: Set<string>): Scope => ({
   namesByPlace: new Map(variables.map((variable) => [getPlaceKey(variable.place), variable.name])),
   variablesByPlace: new Map(variables.map((variable) => [getPlaceKey(variable.place), variable])),
+  readPlaceKeys,
 });
 
 const formatInitialValue = (variable: TlaVariable, initScope: Scope): string => {
@@ -402,17 +406,17 @@ const formatAction = (
   handler: Handler,
   label: string | undefined,
   context: SpecContext,
-): { name: string; text: string } => {
+): { name: string; formatText: (sharedStepLines: string[]) => string } => {
   const name = context.allocateName(getActionName(handler));
   const scope: Scope = {
+    ...context.stateScope,
     namesByPlace: new Map(context.stateScope.namesByPlace),
-    variablesByPlace: context.stateScope.variablesByPlace,
   };
   const choices: string[] = [];
   const definitions: string[] = [];
   const guessesByKey = new Map<string, string>();
   const formatGuard = (guard: SymbolicValue): string => {
-    const translated = translateCondition(guard, scope);
+    const translated = translateCondition(guard, context.stateScope);
     if (translated !== null) return translated;
     if (guard.kind === "UnaryExpression" && guard.operator === "!")
       return `~${formatGuard(guard.value)}`;
@@ -435,7 +439,7 @@ const formatAction = (
     );
     const nextTexts = updatedVariables.map((variable) => {
       const projected = projectValue(update.value, variable.place.path);
-      const translated = projected ? translateValue(projected, scope) : null;
+      const translated = projected ? translateValue(projected, context.stateScope) : null;
       if (translated) return translated.text;
       const pick = context.allocateName(`${variable.name}_unknown`);
       choices.push(`${pick} \\in ${variable.domain}`);
@@ -456,7 +460,7 @@ const formatAction = (
   });
   const enabledLines = [
     ...handler.guards.flatMap((guard) => translateCondition(guard, context.stateScope) ?? []),
-    ...(isMountOnlyEffect(handler) ? ["fresh"] : []),
+    ...[context.pendingNames.get(handler.id) ?? []].flat(),
   ];
   const stepLines = [
     ...context.variables
@@ -467,17 +471,22 @@ const formatAction = (
           ? `UNCHANGED ${variable.name}`
           : `${variable.name}' = ${finalName}`;
       }),
-    ...context.stepLines,
+    ...[...context.pendingNames].map(([handlerId, pendingName]) =>
+      handlerId === handler.id ? `${pendingName}' = FALSE` : `UNCHANGED ${pendingName}`,
+    ),
   ];
-  const step =
-    definitions.length === 0
-      ? formatConjunction(stepLines, "     ")
-      : `\n     LET ${definitions.join("\n         ")}\n     IN${formatConjunction(stepLines, "       ")}`;
   const chosen = choices.map((choice) => `\\E ${choice} :`).join(" ");
   const header = [label, formatLine(handler.loc)].filter(Boolean).join(" · ");
   return {
     name,
-    text: `\\* ${header}\n${name} ==${formatConjunction([...enabledLines, `${chosen}${step}`.trimStart()], "  ")}`,
+    formatText: (sharedStepLines) => {
+      const allStepLines = [...stepLines, ...sharedStepLines];
+      const step =
+        definitions.length === 0
+          ? formatConjunction(allStepLines, "     ")
+          : `\n     LET ${definitions.join("\n         ")}\n     IN${formatConjunction(allStepLines, "       ")}`;
+      return `\\* ${header}\n${name} ==${formatConjunction([...enabledLines, `${chosen}${step}`.trimStart()], "  ")}`;
+    },
   };
 };
 
@@ -491,9 +500,13 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     objectNames.set(typeText, name);
     return name;
   };
-  const variables = createVariables(component, allocateName, getObjectName);
-  const stateScope = createScope(variables);
-  const initScope = createScope(variables.filter((variable) => variable.role !== "state"));
+  const allVariables = createVariables(component, allocateName, getObjectName);
+  const readPlaceKeys = new Set<string>();
+  const stateScope = createScope(allVariables, readPlaceKeys);
+  const initScope = createScope(
+    allVariables.filter((variable) => variable.role !== "state"),
+    readPlaceKeys,
+  );
 
   const branchesByTestKey = collectBranches(analysis.render, options.rootDirectory, allocateName);
   const branches = [...branchesByTestKey.values()];
@@ -512,39 +525,23 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     (region) => formatRegion(analysis.render, region, branchesByTestKey, branchIndexByKey) ?? '""',
   );
 
-  const constantNames = variables
-    .filter((variable) => variable.role === "constant")
-    .map((variable) => variable.name);
-  const hasMountEffects =
-    analysis.handlers.some(isMountOnlyEffect) ||
-    (variables.length === 0 && branches.every((branch) => branchTexts.get(branch) !== null));
-  const context: SpecContext = {
-    allocateName,
-    variables,
-    stateScope,
-    stepLines: [
-      ...(constantNames.length > 0 ? [`UNCHANGED <<${constantNames.join(", ")}>>`] : []),
-      ...variables
-        .filter((variable) => variable.role === "external")
-        .map((variable) => `${variable.name}' \\in ${variable.domain}`),
-      ...[...freeVariables.values()].map((name) => `${name}' \\in BOOLEAN`),
-      ...(hasMountEffects ? ["fresh' = FALSE"] : []),
-    ],
-  };
+  const pendingNames = new Map(
+    analysis.handlers
+      .filter(isMountOnlyEffect)
+      .map((handler) => [handler.id, allocateName(`${getActionName(handler)}_pending`)]),
+  );
   const triggerLabels = collectTriggerLabels(component, createSourceReader());
   const actions = analysis.handlers.map((handler) =>
-    formatAction(handler, triggerLabels.get(handler.id), context),
+    formatAction(handler, triggerLabels.get(handler.id), {
+      allocateName,
+      variables: allVariables,
+      stateScope,
+      pendingNames,
+    }),
   );
-  const initLines = [
-    ...variables
-      .filter((variable) => variable.role !== "state")
-      .map((variable) => `${variable.name} \\in ${variable.domain}`),
-    ...variables
-      .filter((variable) => variable.role === "state")
-      .map((variable) => formatInitialValue(variable, initScope)),
-    ...[...freeVariables.values()].map((name) => `${name} \\in BOOLEAN`),
-    ...(hasMountEffects ? ["fresh = TRUE"] : []),
-  ];
+  const stateInitLines = allVariables
+    .filter((variable) => variable.role === "state")
+    .map((variable) => formatInitialValue(variable, initScope));
   const settledLines = analysis.handlers
     .filter((handler) => handler.trigger.kind === "Render")
     .flatMap((handler) => handler.updates)
@@ -553,10 +550,38 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
       const guards = update.guards.map((guard) => translateCondition(guard, stateScope));
       return guards.every((guard) => guard !== null) ? `~(${guards.join(" /\\ ")})` : [];
     });
+
+  const variables = allVariables.filter(
+    (variable) => variable.role === "state" || readPlaceKeys.has(getPlaceKey(variable.place)),
+  );
+  const placeholderNames =
+    variables.length + freeVariables.size + pendingNames.size === 0
+      ? [allocateName("rendered")]
+      : [];
+  const constantNames = variables
+    .filter((variable) => variable.role === "constant")
+    .map((variable) => variable.name);
+  const sharedStepLines = [
+    ...(constantNames.length > 0 ? [`UNCHANGED <<${constantNames.join(", ")}>>`] : []),
+    ...variables
+      .filter((variable) => variable.role === "external")
+      .map((variable) => `${variable.name}' \\in ${variable.domain}`),
+    ...[...freeVariables.values()].map((name) => `${name}' \\in BOOLEAN`),
+    ...placeholderNames.map((name) => `UNCHANGED ${name}`),
+  ];
+  const initLines = [
+    ...variables
+      .filter((variable) => variable.role !== "state")
+      .map((variable) => `${variable.name} \\in ${variable.domain}`),
+    ...stateInitLines,
+    ...[...freeVariables.values()].map((name) => `${name} \\in BOOLEAN`),
+    ...[...pendingNames.values(), ...placeholderNames].map((name) => `${name} = TRUE`),
+  ];
   const variableNames = [
     ...variables.map((variable) => variable.name),
     ...freeVariables.values(),
-    ...(hasMountEffects ? ["fresh"] : []),
+    ...pendingNames.values(),
+    ...placeholderNames,
   ];
   const constants = ["Null", "Undefined", ...objectNames.values()];
   const regionNames = regionTexts.map((_text, regionIndex) => `Region${regionIndex + 1}`);
@@ -574,7 +599,7 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     "",
     `Init ==${formatConjunction(initLines, "  ")}`,
     "",
-    ...actions.flatMap((action) => [action.text, ""]),
+    ...actions.flatMap((action) => [action.formatText(sharedStepLines), ""]),
     `Next == ${actions.length === 0 ? "UNCHANGED vars" : actions.map((action) => action.name).join(" \\/ ")}`,
     "",
     ...regionTexts.map((text, regionIndex) => `${regionNames[regionIndex]} == ${text}`),
