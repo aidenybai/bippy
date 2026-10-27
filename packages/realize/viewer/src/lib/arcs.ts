@@ -156,9 +156,13 @@ export const placeArcs = (
   isWanted: (edge: GraphEdge) => boolean,
 ): PlacedArc[] => {
   const boxes = new Map<string, Box>();
-  for (const token of tokens)
-    if (token.anchorBox) boxes.set(token.node.id, token.anchorBox);
-    else if (!token.isMultiLine) boxes.set(token.node.id, token.box);
+  const lines = new Map<string, number>();
+  for (const token of tokens) {
+    const box = token.anchorBox ?? (token.isMultiLine ? null : token.box);
+    if (!box) continue;
+    boxes.set(token.node.id, box);
+    lines.set(token.node.id, (token.node.anchor ?? token.node.loc).start.line);
+  }
   const arcs = view.components
     .flatMap((component) => component.graph.edges)
     .filter(isWanted)
@@ -166,7 +170,9 @@ export const placeArcs = (
       const from = boxes.get(edge.from);
       const to = boxes.get(edge.to);
       const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from);
-      return from && to && color && from.y !== to.y ? [{ edge, from, to, color }] : [];
+      return from && to && color && lines.get(edge.from) !== lines.get(edge.to)
+        ? [{ edge, from, to, color }]
+        : [];
     });
   return assignLanes(assignJunctions(assignSlots(arcs)));
 };
