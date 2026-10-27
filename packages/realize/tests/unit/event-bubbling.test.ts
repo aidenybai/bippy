@@ -164,4 +164,16 @@ describe("a click that bubbles to an ancestor's handler", () => {
     );
     expect(names).toContainEqual(["clicks", "isFocused"]);
   });
+
+  it("runs the form action, or the submitter's formAction, after a submit button's click", () => {
+    const names = getComponent(project, "ClickThenFormAction").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["clicks", "isSaved"],
+        ["clicks", "isAlternate"],
+      ]),
+    );
+  });
 });

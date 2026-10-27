@@ -359,3 +359,18 @@ export const FocusThroughChild = () => {
     </div>
   );
 };
+
+export const ClickThenFormAction = () => {
+  const [clicks, setClicks] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isAlternate, setIsAlternate] = useState(false);
+  return (
+    <form action={() => setIsSaved(true)}>
+      <button onClick={() => setClicks(1)}>save</button>
+      <button formAction={() => setIsAlternate(true)} onClick={() => setClicks(2)}>
+        alternate
+      </button>
+      {clicks > 0 && (isSaved || isAlternate) ? <i>done</i> : <i>open</i>}
+    </form>
+  );
+};
