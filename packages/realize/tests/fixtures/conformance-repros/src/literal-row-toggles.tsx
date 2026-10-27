@@ -9,9 +9,7 @@ export function FaqAccordion() {
         <div key={section}>
           {openSections[section] ? <p>answer</p> : <p>hidden</p>}
           <button
-            onClick={() =>
-              setOpenSections({ ...openSections, [section]: !openSections[section] })
-            }
+            onClick={() => setOpenSections({ ...openSections, [section]: !openSections[section] })}
           >
             {section}
           </button>
