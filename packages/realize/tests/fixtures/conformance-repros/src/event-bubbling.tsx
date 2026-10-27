@@ -498,3 +498,26 @@ export const InputAfterCommit = () => {
     </div>
   );
 };
+
+export const ImageErrorBubbles = () => {
+  const [isBroken, setIsBroken] = useState(false);
+  const [failures, setFailures] = useState(0);
+  return (
+    <div onError={() => setFailures(1)}>
+      <img src="/missing.png" alt="" onError={() => setIsBroken(true)} />
+      {isBroken && failures > 0 ? <i>both</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const ScrollStaysOnTarget = () => {
+  const [inner, setInner] = useState(false);
+  const [outer, setOuter] = useState(false);
+  return (
+    <div onScroll={() => setOuter(true)}>
+      <ul onScroll={() => setInner(true)}>
+        <li>{inner && outer ? "both" : "one"}</li>
+      </ul>
+    </div>
+  );
+};

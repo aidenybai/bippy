@@ -38,12 +38,11 @@ const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 const CAPTURE_SUFFIX = "Capture";
 const NON_BUBBLING_EVENTS = new Set([
   "onScroll",
+  "onScrollEnd",
   "onMouseEnter",
   "onMouseLeave",
   "onPointerEnter",
   "onPointerLeave",
-  "onLoad",
-  "onError",
 ]);
 const MAYBE_BUBBLING_EVENTS = new Set(["onToggle", "onBeforeToggle"]);
 const FORM_ACTION_PROPS = new Map([
