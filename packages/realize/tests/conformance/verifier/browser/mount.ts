@@ -32,7 +32,7 @@ import {
   isFunctionComponent,
   resolveServerTree,
 } from "./server-components";
-import { settle } from "./settle";
+import { drain, settle } from "./settle";
 
 interface ProvidersProps {
   children?: ReactNode;
@@ -137,7 +137,7 @@ const renderClientComponent = async (
 export const mount = async (request: MountRequest): Promise<Capture> => {
   mountedRoot?.unmount();
   setMountedType(null);
-  await settle();
+  await drain();
   resetMountState();
   const providersModule: ProvidersModule = await import(/* @vite-ignore */ PROVIDERS_PATH);
   if (request.scenario && !(await runScenario(request.scenario)))
