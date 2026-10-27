@@ -112,6 +112,7 @@ export interface Branch {
   loc: SourceLocation;
   file: string;
   caseIndex?: number;
+  rowScope?: string;
 }
 
 export interface JsxProp {
