@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 export const hasPermission = (role: string, action: "edit" | "view"): boolean =>
   role === "admin" || action === "view";
 
-export const getName = (): string => "Ada";
+export declare const getName: () => string;
 
-export const getStatus = (): "idle" | "busy" | undefined => "idle";
+export declare const getStatus: () => "idle" | "busy" | undefined;
 
 export const renderBadge = (): ReactNode => <span>Badge</span>;
 

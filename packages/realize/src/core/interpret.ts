@@ -1228,7 +1228,6 @@ export class Interpreter {
     for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
     const isPure =
       declarationKey !== null &&
-      inputPlaces.size > 0 &&
       this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
       !callSite.argumentValues.some((argument) => BOUND_CALLEES.has(argument.kind)) &&
       this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
@@ -1817,6 +1816,8 @@ export class Interpreter {
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     if (initial) this.collectInputPlaces(initial, inputPlaces);
+    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !derived && !range)
+      return initial;
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;

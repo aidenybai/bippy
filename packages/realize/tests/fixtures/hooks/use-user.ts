@@ -5,4 +5,4 @@ export interface User {
 
 export const useUser = (): User => ({ name: "Ada", isAdmin: true });
 
-export const user = (): "guest" | "member" => "guest";
+export declare const user: () => "guest" | "member";
