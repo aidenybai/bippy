@@ -19,6 +19,12 @@ import { getReactExportName } from "./utils/typescript";
 import { getTypeAtLocation } from "./utils/get-type-at-location";
 import { getTypeArguments } from "./utils/get-type-arguments";
 import { getUnionMembers } from "./utils/get-union-members";
+import {
+  getPropertyOfType,
+  getReturnTypeOfSignature,
+  getSignaturesOfType,
+  getTypeOfSymbol,
+} from "./utils/checker-queries";
 
 const MAX_CONVERSION_DEPTH = 3;
 const NULLISH_FLAGS = TypeFlags.Null | TypeFlags.Undefined | TypeFlags.Void;
@@ -83,7 +89,7 @@ export class CompilerTypeProvider implements TypeProvider {
     }
     const collectionType = this.#getCollectionType(type);
     if (collectionType) return collectionType;
-    const [signature, ...overloads] = this.#checker.getSignaturesOfType(type, SignatureKind.Call);
+    const [signature, ...overloads] = getSignaturesOfType(this.#checker, type, SignatureKind.Call);
     if (signature && overloads.length === 0 && depth < MAX_CONVERSION_DEPTH) {
       return this.#convertSignature(signature, shapes, depth);
     }
@@ -93,11 +99,11 @@ export class CompilerTypeProvider implements TypeProvider {
   #convertSignature(signature: Signature, shapes: ShapeRegistry, depth: number): BuiltInType {
     const parameterEffects = signature
       .getParameters()
-      .map((parameter) => this.#getParameterEffect(this.#checker.getTypeOfSymbol(parameter)));
+      .map((parameter) => this.#getParameterEffect(getTypeOfSymbol(this.#checker, parameter)));
     const restParameterEffect = signature.hasRestParameter
       ? (parameterEffects.pop() ?? null)
       : null;
-    const signatureReturnType = this.#checker.getReturnTypeOfSignature(signature);
+    const signatureReturnType = getReturnTypeOfSignature(this.#checker, signature);
     const returnType =
       (signatureReturnType && this.#convertType(signatureReturnType, shapes, depth + 1)) ?? null;
     if (returnType?.kind !== "Primitive") {
@@ -130,7 +136,7 @@ export class CompilerTypeProvider implements TypeProvider {
   }
 
   #isDeeplyReadonly(type: Type, collection: Collection): boolean {
-    if (this.#checker.getPropertyOfType(type, collection.mutatingMethod)) return false;
+    if (getPropertyOfType(this.#checker, type, collection.mutatingMethod)) return false;
     return type.isTypeReference() && getTypeArguments(this.#checker, type).every(isPrimitiveType);
   }
 

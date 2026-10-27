@@ -31,6 +31,14 @@ import {
 } from "./domains";
 import { getPropertySamples, getSamples } from "./type-samples";
 import { getTypeAtLocation } from "./utils/get-type-at-location";
+import {
+  getIndexInfosOfType,
+  getPropertiesOfType,
+  getPropertyOfType,
+  getSignaturesOfType,
+  getTypeOfSymbol,
+  isTupleType,
+} from "./utils/checker-queries";
 
 const CONTEXT_TYPE_PATTERN = /^Context$/;
 
@@ -108,7 +116,7 @@ export class SourceFileResolver {
 
   getTupleElementDomain(loc: SourceLocation, index: number): Domain | null {
     const type = this.#getType(loc);
-    if (!type?.isTypeReference() || !this.#checker.isTupleType(type)) return null;
+    if (!type?.isTypeReference() || !isTupleType(this.#checker, type)) return null;
     const element = this.#checker.getTypeArguments(type)[index];
     return element ? getDomainOfType(this.#checker, element) : null;
   }
@@ -120,7 +128,7 @@ export class SourceFileResolver {
   getDeclaredDomain(loc: SourceLocation): Domain | null {
     const node = this.#findNode(loc);
     const symbol = node && isIdentifier(node) ? this.#checker.getSymbolAtLocation(node) : undefined;
-    return symbol ? getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(symbol)) : null;
+    return symbol ? getDomainOfType(this.#checker, getTypeOfSymbol(this.#checker, symbol)) : null;
   }
 
   #isOptionalRead(loc: SourceLocation): boolean {
@@ -139,7 +147,7 @@ export class SourceFileResolver {
       : (bindingElement?.propertyName ?? bindingElement?.name);
     if (!objectNode || !nameNode || !isIdentifier(nameNode)) return false;
     const objectType = getTypeAtLocation(this.#checker, objectNode);
-    const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
+    const property = objectType && getPropertyOfType(this.#checker, objectType, nameNode.text);
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
   }
 
@@ -160,13 +168,13 @@ export class SourceFileResolver {
     if (!node || !(isElementAccessExpression(node) || isPropertyAccessExpression(node)))
       return false;
     const objectType = getTypeAtLocation(this.#checker, node.expression);
-    if (!objectType || this.#checker.getIndexInfosOfType(objectType).length === 0) return false;
+    if (!objectType || getIndexInfosOfType(this.#checker, objectType).length === 0) return false;
     const propertyName = isPropertyAccessExpression(node)
       ? node.name.text
       : isStringLiteral(node.argumentExpression) || isNumericLiteral(node.argumentExpression)
         ? node.argumentExpression.text
         : null;
-    return propertyName === null || !this.#checker.getPropertyOfType(objectType, propertyName);
+    return propertyName === null || !getPropertyOfType(this.#checker, objectType, propertyName);
   }
 
   getPropertyDomains(loc: SourceLocation): Array<[string, Domain]> | null {
@@ -174,16 +182,14 @@ export class SourceFileResolver {
     if (
       !type ||
       !(type.flags & TypeFlags.Object) ||
-      this.#checker.getIndexInfosOfType(type).length > 0 ||
-      this.#checker.getSignaturesOfType(type, SignatureKind.Call).length > 0
+      getIndexInfosOfType(this.#checker, type).length > 0 ||
+      getSignaturesOfType(this.#checker, type, SignatureKind.Call).length > 0
     )
       return null;
-    return this.#checker
-      .getPropertiesOfType(type)
-      .map((property) => [
-        property.name,
-        getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(property)),
-      ]);
+    return getPropertiesOfType(this.#checker, type).map((property) => [
+      property.name,
+      getDomainOfType(this.#checker, getTypeOfSymbol(this.#checker, property)),
+    ]);
   }
 
   getRequiredPropertyNames(loc: SourceLocation): string[] | null {
@@ -191,10 +197,10 @@ export class SourceFileResolver {
     if (
       !type ||
       !(type.flags & TypeFlags.Object) ||
-      this.#checker.getIndexInfosOfType(type).length > 0
+      getIndexInfosOfType(this.#checker, type).length > 0
     )
       return null;
-    const properties = this.#checker.getPropertiesOfType(type);
+    const properties = getPropertiesOfType(this.#checker, type);
     return properties.some((property) => property.flags & SymbolFlags.Optional)
       ? null
       : properties.map((property) => property.name);
@@ -211,12 +217,12 @@ export class SourceFileResolver {
         continue;
       }
       if (!(member.flags & (TypeFlags.Object | TypeFlags.Intersection))) return null;
-      const property = this.#checker.getPropertyOfType(member, field);
+      const property = getPropertyOfType(this.#checker, member, field);
       if (!property) {
         unionMemberValues.push([UNDEFINED_CASE]);
         continue;
       }
-      const propertyType = this.#checker.getTypeOfSymbol(property);
+      const propertyType = getTypeOfSymbol(this.#checker, property);
       if (!propertyType) return null;
       const propertyMembers = getUnionMembers(propertyType);
       if (!propertyMembers) return null;
@@ -318,7 +324,7 @@ export class SourceFileResolver {
     const type = this.#getType(loc);
     if (!type) return null;
     const fields: Record<string, Sample> = {};
-    for (const property of this.#checker.getPropertiesOfType(type)) {
+    for (const property of getPropertiesOfType(this.#checker, type)) {
       if (property.flags & SymbolFlags.Optional) continue;
       const [fieldSample] = getPropertySamples(this.#checker, property, 1);
       if (fieldSample) fields[property.name] = fieldSample;

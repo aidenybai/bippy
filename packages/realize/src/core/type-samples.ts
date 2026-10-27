@@ -5,6 +5,13 @@ import { getTypeArguments } from "./utils/get-type-arguments";
 import { getUnionMembers } from "./utils/get-union-members";
 import type { PrimitiveValue, Sample } from "./types";
 import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples";
+import {
+  getReturnTypeOfSignature,
+  getSignaturesOfType,
+  getTypeOfSymbol,
+  getTypeText,
+  isArrayType,
+} from "./utils/checker-queries";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
@@ -54,7 +61,7 @@ const getPrimitiveSamples = (
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return [{ kind: "Value", value: type.value }];
   if (type.isBooleanLiteralType())
-    return [{ kind: "Value", value: checker.typeToString(type) === "true" }];
+    return [{ kind: "Value", value: getTypeText(checker, type) === "true" }];
   if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
   if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
   if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
@@ -82,7 +89,7 @@ const getCollectionSamples = (checker: Checker, type: Type, depth: number): Samp
   if (isLibraryType(type, DATE_TYPE_PATTERN)) return [{ kind: "Date", value: SAMPLE_DATE }];
   if (!type.isTypeReference()) return null;
   const typeArguments = getTypeArguments(checker, type);
-  if (checker.isArrayType(type)) {
+  if (isArrayType(checker, type)) {
     const itemSample = getFirstSample(checker, typeArguments[0], depth);
     return itemSample
       ? [
@@ -157,16 +164,16 @@ export const getSamples = (
     ? getBrandedSamples(checker, type.getTypes() ?? [], depth, name)
     : null;
   if (brandedSamples) return brandedSamples;
-  const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
+  const [signature] = getSignaturesOfType(checker, type, SignatureKind.Call);
   if (signature) {
     const returnSample = getFirstSample(
       checker,
-      checker.getReturnTypeOfSignature(signature),
+      getReturnTypeOfSignature(checker, signature),
       depth,
     );
     return [{ kind: "Function", returns: returnSample ?? null }];
   }
-  if (checker.getSignaturesOfType(type, SignatureKind.Construct).length > 0)
+  if (getSignaturesOfType(checker, type, SignatureKind.Construct).length > 0)
     return [{ kind: "Function", returns: null }];
   const collectionSamples = getCollectionSamples(checker, type, depth);
   if (collectionSamples) return collectionSamples;
@@ -179,4 +186,4 @@ export const getSampleOfValue = (value: PrimitiveValue): Sample =>
   value === undefined ? { kind: "Undefined" } : { kind: "Value", value };
 
 export const getPropertySamples = (checker: Checker, property: Symbol, depth: number): Sample[] =>
-  getSamples(checker, checker.getTypeOfSymbol(property), depth, property.name);
+  getSamples(checker, getTypeOfSymbol(checker, property), depth, property.name);

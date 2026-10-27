@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTestExpression } from "./utils/get-test-expression";
+import { isTreeLargerThan } from "./utils/is-tree-larger-than";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { negate } from "./utils/negate";
 
@@ -32,6 +33,8 @@ interface ReachableInterval {
 const MAX_ROUNDS = 8;
 
 const MAX_INTEGER_CASES = 16;
+
+const MAX_INTERVAL_NODES = 4096;
 
 const INTEGER_CALLEES = new Set(["Math.floor", "Math.ceil", "Math.round", "Math.trunc"]);
 
@@ -284,7 +287,13 @@ export const getIntervalBounds = (update: StateUpdate, constraints: Constraints)
   const { binding, value } = update;
   const { initial } = binding;
   const isNumber = initial?.kind === "Primitive" && typeof initial.value === "number";
-  if (!isNumber || update.isRepeated || getNumber(value) !== null) return [];
+  if (
+    !isNumber ||
+    update.isRepeated ||
+    getNumber(value) !== null ||
+    isTreeLargerThan(value, MAX_INTERVAL_NODES)
+  )
+    return [];
   const source = getSourceInterval(constraints, binding);
   const next = getValueInterval(value, binding, source, update.guards, false);
   if (!next) return [];
@@ -303,10 +312,26 @@ const widen = (previous: Interval, next: Interval): Interval => ({
   max: next.max > previous.max ? Infinity : next.max,
 });
 
+const reachableIntervals = new WeakMap<Handler[], Map<Binding, ReachableInterval | null>>();
+
 const getReachableInterval = (binding: Binding, handlers: Handler[]): ReachableInterval | null => {
+  const byBinding =
+    reachableIntervals.get(handlers) ?? new Map<Binding, ReachableInterval | null>();
+  reachableIntervals.set(handlers, byBinding);
+  if (byBinding.has(binding)) return byBinding.get(binding) ?? null;
+  const reachable = getUncachedReachableInterval(binding, handlers);
+  byBinding.set(binding, reachable);
+  return reachable;
+};
+
+const getUncachedReachableInterval = (
+  binding: Binding,
+  handlers: Handler[],
+): ReachableInterval | null => {
   const initial = binding.initial ? getNumber(binding.initial) : null;
   if (initial === null) return null;
   const updates = getGuardedUpdates(binding, handlers);
+  if (updates.some(({ update }) => isTreeLargerThan(update.value, MAX_INTERVAL_NODES))) return null;
   const isInteger = Number.isInteger(initial) && isIntegerOnly(updates, binding);
   let hypothesis: Interval = { min: initial, max: initial };
   for (let round = 0; round <= MAX_ROUNDS + 1; round++) {
