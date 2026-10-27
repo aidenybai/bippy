@@ -178,14 +178,30 @@ const getValueInterval = (
   hypothesis: Interval,
   guards: SymbolicValue[],
   isInteger: boolean,
+  handlers: Handler[] | null,
 ): Interval | null => {
   const literal = getNumber(value);
   if (literal !== null) return { min: literal, max: literal };
   if (isWholeBinding(value, binding)) return tighten(hypothesis, binding, guards, isInteger);
+  const copied =
+    handlers &&
+    value.kind === "Binding" &&
+    value.path.length === 0 &&
+    value.binding.kind === "state"
+      ? getReachableInterval(value.binding, handlers)
+      : null;
+  if (copied) return copied.interval;
   if (value.kind === "Binding" && value.binding.range?.inner)
     return clamp(
       value.binding.range,
-      getValueInterval(value.binding.range.inner, binding, hypothesis, guards, isInteger) ?? {
+      getValueInterval(
+        value.binding.range.inner,
+        binding,
+        hypothesis,
+        guards,
+        isInteger,
+        handlers,
+      ) ?? {
         min: -Infinity,
         max: Infinity,
       },
@@ -195,7 +211,7 @@ const getValueInterval = (
   const extreme = derived && "callee" in derived ? EXTREMES.get(derived.callee) : undefined;
   if (derived && "callee" in derived && extreme && derived.operands.length > 0) {
     const operands = derived.operands.map((operand) =>
-      getValueInterval(operand, binding, hypothesis, guards, isInteger),
+      getValueInterval(operand, binding, hypothesis, guards, isInteger, handlers),
     );
     if (operands.some((operand) => operand === null)) return null;
     const intervals = operands.filter((operand): operand is Interval => operand !== null);
@@ -209,7 +225,7 @@ const getValueInterval = (
     const term =
       offset === null || getNumber(value.left) !== null
         ? null
-        : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
+        : getValueInterval(value.left, binding, hypothesis, guards, isInteger, handlers);
     if (!term || offset === null || Math.abs(offset) > Number.MAX_SAFE_INTEGER) return null;
     const sign = value.operator === "+" ? 1 : -1;
     return { min: term.min + sign * offset, max: term.max + sign * offset };
@@ -219,7 +235,7 @@ const getValueInterval = (
     const term =
       factor === null || factor === 0 || getNumber(value.left) !== null
         ? null
-        : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
+        : getValueInterval(value.left, binding, hypothesis, guards, isInteger, handlers);
     if (!term || factor === null) return null;
     const scale = value.operator === "*" ? factor : 1 / factor;
     const ends = [term.min * scale, term.max * scale];
@@ -230,7 +246,7 @@ const getValueInterval = (
     const term =
       divisor === null || divisor === 0
         ? null
-        : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
+        : getValueInterval(value.left, binding, hypothesis, guards, isInteger, handlers);
     if (!term || divisor === null) return null;
     const limit =
       isInteger && Number.isInteger(divisor) ? Math.abs(divisor) - 1 : Math.abs(divisor);
@@ -247,6 +263,7 @@ const getValueInterval = (
       hypothesis,
       [...guards, test],
       isInteger,
+      handlers,
     );
     const alternate = getValueInterval(
       value.alternate,
@@ -254,6 +271,7 @@ const getValueInterval = (
       hypothesis,
       [...guards, negate(test)],
       isInteger,
+      handlers,
     );
     return consequent && alternate ? union(consequent, alternate) : null;
   }
@@ -295,7 +313,7 @@ export const getIntervalBounds = (update: StateUpdate, constraints: Constraints)
   )
     return [];
   const source = getSourceInterval(constraints, binding);
-  const next = getValueInterval(value, binding, source, update.guards, false);
+  const next = getValueInterval(value, binding, source, update.guards, false, null);
   if (!next) return [];
   const atom = getBindingPlace(binding);
   const atMost: Bound[] = Number.isFinite(next.max)
@@ -319,6 +337,7 @@ const getReachableInterval = (binding: Binding, handlers: Handler[]): ReachableI
     reachableIntervals.get(handlers) ?? new Map<Binding, ReachableInterval | null>();
   reachableIntervals.set(handlers, byBinding);
   if (byBinding.has(binding)) return byBinding.get(binding) ?? null;
+  byBinding.set(binding, null);
   const reachable = getUncachedReachableInterval(binding, handlers);
   byBinding.set(binding, reachable);
   return reachable;
@@ -337,7 +356,14 @@ const getUncachedReachableInterval = (
   for (let round = 0; round <= MAX_ROUNDS + 1; round++) {
     let next = hypothesis;
     for (const { update, guards } of updates) {
-      const interval = getValueInterval(update.value, binding, hypothesis, guards, isInteger);
+      const interval = getValueInterval(
+        update.value,
+        binding,
+        hypothesis,
+        guards,
+        isInteger,
+        handlers,
+      );
       if (!interval) return null;
       next = union(next, interval);
     }
