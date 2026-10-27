@@ -95,7 +95,7 @@ export const SidebarLayout = ({ className, style, ...props }: ComponentProps<"di
       data-slot="sidebar-wrapper"
       style={layoutStyle}
       className={cn(
-        "group/sidebar-wrapper relative flex h-full min-h-0 w-full overflow-hidden",
+        "group/sidebar-wrapper relative flex h-full min-h-0 w-full overflow-clip",
         className,
       )}
       {...props}
