@@ -39,13 +39,18 @@ XMLHttpRequest.prototype.send = function send(...sendArguments) {
 const waitForSettleInterval = (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
+const isBusy = (): boolean =>
+  pendingRequests > 0 ||
+  hasPendingReactWork() ||
+  (getMountedType() !== null && !findMountedFiber() && !getRecordedError());
+
 export const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await waitForSettleInterval();
-  while (
-    (pendingRequests > 0 ||
-      hasPendingReactWork() ||
-      (getMountedType() !== null && !findMountedFiber() && !getRecordedError())) &&
-    performance.now() < deadline
-  );
+  while (isBusy() && performance.now() < deadline);
+};
+
+export const drain = async (): Promise<void> => {
+  const deadline = performance.now() + MAX_SETTLE_MS;
+  while (isBusy() && performance.now() < deadline) await waitForSettleInterval();
 };
