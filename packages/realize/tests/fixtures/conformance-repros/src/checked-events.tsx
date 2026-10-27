@@ -92,3 +92,35 @@ export const CheckedRadio = () => {
     </div>
   );
 };
+
+export const ClickedRadio = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <input
+        type="radio"
+        aria-label="a"
+        checked
+        readOnly
+        onClick={() => setCount((current) => current + 1)}
+      />
+      {count > 0 ? <i>clicked</i> : <i>fresh</i>}
+    </div>
+  );
+};
+
+export const ClickThenChange = () => {
+  const [isOn, setIsOn] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  return (
+    <div onClick={() => setIsClicked(true)}>
+      <input
+        type="checkbox"
+        aria-label="a"
+        checked={isOn}
+        onChange={(event) => setIsOn(event.target.checked)}
+      />
+      {isOn && isClicked ? <i>both</i> : isOn ? <i>changed</i> : <i>neither</i>}
+    </div>
+  );
+};

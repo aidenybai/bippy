@@ -87,7 +87,7 @@ export class CallbackPasser {
         createUnknown("callback-argument", GeneratedSource, argumentOrigin),
         asyncWalkState,
       );
-    for (const wrapped of this.#interpreter.getWrappedCallbacks(argument) ?? [])
+    for (const wrapped of this.#interpreter.getMemberCallbacks(argument) ?? [])
       this.#visitArgument(wrapped, walkState, argumentOrigin);
     if (argument.kind === "Binding" && argument.path.length > 0)
       this.#interpreter.callStoredFunctions(

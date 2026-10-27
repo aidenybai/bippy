@@ -37,9 +37,17 @@ const collectMutatedPlaces = (hirFunction: HIRFunction): Place[] =>
 const getCapturedIds = (hirFunction: HIRFunction): Set<IdentifierId> =>
   new Set(hirFunction.context.map((place) => place.identifier.id));
 
+const storedContextPlaces = new WeakMap<HIRFunction, Place[]>();
+
 export const getStoredContextPlaces = (hirFunction: HIRFunction): Place[] => {
+  const cached = storedContextPlaces.get(hirFunction);
+  if (cached) return cached;
   const capturedIds = getCapturedIds(hirFunction);
-  return collectStoredPlaces(hirFunction).filter((place) => capturedIds.has(place.identifier.id));
+  const places = collectStoredPlaces(hirFunction).filter((place) =>
+    capturedIds.has(place.identifier.id),
+  );
+  storedContextPlaces.set(hirFunction, places);
+  return places;
 };
 
 export const getWrittenContextPlaces = (hirFunction: HIRFunction): Place[] => {

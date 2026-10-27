@@ -40,7 +40,7 @@ import {
   isTupleType,
 } from "./utils/checker-queries";
 
-const CONTEXT_TYPE_PATTERN = /^Context$/;
+const CONTEXT_TYPE_PATTERN = /^(Context|Provider|ProviderExoticComponent)$/;
 
 interface Cached<Result> {
   value: Result;
