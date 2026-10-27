@@ -17,6 +17,17 @@ describe("a click that bubbles to an ancestor's handler", () => {
       ),
     );
 
+  it("runs an ancestor's onError after an image's, since React propagates it", () => {
+    expect(getUpdateSequences("ImageErrorBubbles")).toContainEqual([
+      "isBroken = true",
+      "failures = 1",
+    ]);
+  });
+
+  it("keeps onScroll on its own element", () => {
+    expect(getUpdateSequences("ScrollStaysOnTarget")).toEqual([["outer = true"], ["inner = true"]]);
+  });
+
   it("runs the target's handler and then the ancestor's as one transition", () => {
     expect(getUpdateSequences("Bubbling")).toEqual([
       ["outer = true"],
