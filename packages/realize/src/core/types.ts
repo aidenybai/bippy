@@ -382,6 +382,7 @@ export interface Transition {
 
 export interface State {
   regionIndex: number;
+  branches: string[];
   conditions: string[];
   render: SymbolicValue;
   fragments: SymbolicValue[];

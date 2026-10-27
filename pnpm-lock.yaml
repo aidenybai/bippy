@@ -322,6 +322,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.3.0(@types/react@19.3.0)
+      happy-dom:
+        specifier: ^20.11.6
+        version: 20.11.6
       mermaid:
         specifier: ^12.2.0
         version: 12.2.0

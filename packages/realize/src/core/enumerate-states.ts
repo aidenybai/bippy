@@ -211,6 +211,7 @@ const enumerateRegion = (
   };
   const states = alternatives.map((alternative, index) => ({
     regionIndex,
+    branches: [...alternative.branches].sort(),
     conditions: alternative.conditions,
     render: alternative.render,
     fragments: alternative.fragments,
