@@ -47,6 +47,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "happy-dom": "^20.11.6",
     "mermaid": "^12.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
