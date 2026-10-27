@@ -23,7 +23,11 @@ const getPropPart = (prop: JsxProp | JsxSpreadProp): KeyPart =>
 const getKeyPart = (value: SymbolicValue): KeyPart => {
   switch (value.kind) {
     case "Primitive":
-      return [value.kind, typeof value.value, String(value.value)];
+      return [
+        value.kind,
+        typeof value.value,
+        Object.is(value.value, -0) ? "-0" : String(value.value),
+      ];
     case "Binding":
       return [value.kind, value.binding.id, value.path];
     case "BinaryExpression":

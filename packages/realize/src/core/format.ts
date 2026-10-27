@@ -51,8 +51,10 @@ export const formatLine = (loc: SourceLocation): string =>
 export const formatPlace = (binding: Binding, path: readonly string[]): string =>
   [binding.name, ...path].join(".");
 
-const formatPrimitive = (value: PrimitiveValue): string =>
-  typeof value === "string" ? JSON.stringify(value) : String(value);
+const formatPrimitive = (value: PrimitiveValue): string => {
+  if (typeof value === "string") return JSON.stringify(value);
+  return Object.is(value, -0) ? "-0" : String(value);
+};
 
 const formatEntry = (
   [key, entryValue]: [PrimitiveValue, PrimitiveValue],
