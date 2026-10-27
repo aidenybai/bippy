@@ -3122,7 +3122,7 @@ export class Interpreter {
           name: property.key,
           value: property.value,
           handlerId: null,
-          loc,
+          loc: property.value.kind === "Function" ? property.value.loc : loc,
           file: this.#resolver.fileName,
         })),
       ...(props?.kind === "ObjectExpression"

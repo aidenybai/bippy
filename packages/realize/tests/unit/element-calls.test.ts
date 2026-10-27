@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeFixture, getComponent } from "./helpers";
+import { analyzeFixture, getComponent, getHandlerProbeId } from "./helpers";
 
 describe("an element made by a createElement or jsx() call", () => {
   const project = analyzeFixture("conformance-repros", "element-calls");
@@ -13,6 +13,13 @@ describe("an element made by a createElement or jsx() call", () => {
         [[1]],
         [[0]],
       ]);
+    },
+  );
+
+  it.each(["CreateElementToggle", "JsxRuntimeToggle"])(
+    "%s probes the handler function, not the whole call",
+    (name) => {
+      expect(getHandlerProbeId(getComponent(project, name), "() => setOn(!on)")).toBeTruthy();
     },
   );
 
