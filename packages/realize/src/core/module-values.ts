@@ -3,6 +3,7 @@ import type { NodePath } from "@babel/core";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { PrimitiveValue, SymbolicValue } from "./types";
+import { isStatelessRegExp } from "./utils/is-stateless-regexp";
 
 export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
@@ -62,6 +63,8 @@ const toSymbolicValue = (node: types.Node): SymbolicValue | null => {
   if (types.isStringLiteral(node) || types.isNumericLiteral(node) || types.isBooleanLiteral(node))
     return { kind: "Primitive", value: node.value };
   if (types.isNullLiteral(node)) return { kind: "Primitive", value: null };
+  if (types.isRegExpLiteral(node))
+    return { kind: "RegExp", pattern: node.pattern, flags: node.flags };
   if (types.isIdentifier(node) && node.name === "undefined")
     return { kind: "Primitive", value: undefined };
   if (types.isTemplateLiteral(node) && node.expressions.length === 0)
@@ -500,6 +503,10 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
       const binding = path.scope.getBinding(path.node.id.name);
       const isUnchanged =
         isPrimitive(value) ||
+        (isStatelessRegExp(value) &&
+          binding !== undefined &&
+          binding.constantViolations.length === 0 &&
+          !binding.referencePaths.some(isMemberWrite)) ||
         (!isExported &&
           binding !== undefined &&
           binding.constantViolations.length === 0 &&

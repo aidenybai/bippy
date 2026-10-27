@@ -95,6 +95,7 @@ import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isStateBinding } from "./utils/is-state-binding";
 import { getLiteralRead } from "./utils/literal-reads";
+import { isStatelessRegExp } from "./utils/is-stateless-regexp";
 import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
@@ -1086,6 +1087,7 @@ export class Interpreter {
       createDeclarationKey(this.#resolver.path, localName),
     );
     return declaration.initial.kind === "Primitive" ||
+      isStatelessRegExp(declaration.initial) ||
       use === "state" ||
       (declarationKey !== null && this.#projectLoaders.isReadOnlyDeclaration(declarationKey))
       ? declaration.initial
@@ -2303,7 +2305,7 @@ export class Interpreter {
       ? getMathCall(methodName, argumentValues)
       : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (range || derived) return this.#createCallResult(callSite, { range, derived });
-    const firstRead = this.#getFirstObjectRead(receiver, methodName, argumentValues);
+    const firstRead = this.#getFirstLiteralRead(receiver, methodName, argumentValues);
     if (firstRead) return this.#createCallResult(callSite, { firstRender: firstRead });
     const getFirstValue = () =>
       this.iteration.getFirstValue(
@@ -2325,7 +2327,7 @@ export class Interpreter {
     );
   }
 
-  #getFirstObjectRead(
+  #getFirstLiteralRead(
     receiver: SymbolicValue,
     methodName: string,
     argumentValues: SymbolicValue[],
@@ -2659,8 +2661,9 @@ export class Interpreter {
       }
       case "IteratorNext":
         return this.iteration.createLoopItem(this.read(value.collection), value.loc);
-      case "TaggedTemplateExpression":
       case "RegExpLiteral":
+        return { kind: "RegExp", pattern: value.pattern, flags: value.flags };
+      case "TaggedTemplateExpression":
       case "MetaProperty":
       case "GetIterator":
       case "NextPropertyOf":
