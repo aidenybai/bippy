@@ -68,10 +68,20 @@ const Title = () => {
   );
 };
 
+const Logo = () => (
+  <svg viewBox="0 0 72 72" fill="currentColor" aria-hidden="true" className="size-5">
+    <path
+      fillRule="evenodd"
+      d="M0 0H72V72H0ZM11 13.7A2.7 2.7 0 0 1 13.7 11L20.8 11A2.7 2.7 0 0 1 23.5 13.7L23.5 20.8A2.7 2.7 0 0 0 26.2 23.5L33.3 23.5A2.7 2.7 0 0 0 36 20.8L36 13.7A2.7 2.7 0 0 1 38.7 11L58.3 11A2.7 2.7 0 0 1 61 13.7L61 20.8A2.7 2.7 0 0 1 58.3 23.5L38.7 23.5A2.7 2.7 0 0 0 36 26.2L36 33.3A2.7 2.7 0 0 1 33.3 36L26.2 36A2.7 2.7 0 0 0 23.5 38.7L23.5 58.3A2.7 2.7 0 0 1 20.8 61L13.7 61A2.7 2.7 0 0 1 11 58.3Z"
+    />
+  </svg>
+);
+
 export const Toolbar = () => (
   <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 pt-2 pb-2.5 sm:h-12 sm:flex-nowrap sm:gap-3 sm:py-0">
     <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-      <span className="shrink-0 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
+      <span className="flex shrink-0 items-center gap-2 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
+        <Logo />
         Realize
       </span>
       <span className="h-4 w-px shrink-0 bg-border" />
