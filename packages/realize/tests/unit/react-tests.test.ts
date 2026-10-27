@@ -193,7 +193,7 @@ describePorts("ReactDOMEventPropagation-test.js > ReactDOMEventListener", [
         {
           action: "target",
           fired: [
-            "onClickCapture",
+            '() => setPhase((current) => (current === "idle"',
             '() => setPhase((current) => (current === "capture"',
             '() => setPhase((current) => (current === "target"',
           ],

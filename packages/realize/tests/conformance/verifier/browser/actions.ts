@@ -23,6 +23,7 @@ interface DomAction {
 }
 
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
+const UNTYPEABLE_INPUT_TYPES = new Set(["checkbox", "radio", "file"]);
 const FORM_ACTION_TAGS = new Set(["button", "input"]);
 const CHANGE_VALUES = ["text", ""];
 const KEYS = ["Enter", "Escape"];
@@ -87,7 +88,9 @@ const DOM_ACTIONS: DomAction[] = [
   {
     kind: "change",
     isCandidate: (props, tag) =>
-      INPUT_TAGS.has(tag) && props.type !== "file" && hasHandler(props, ["onChange", "onInput"]),
+      INPUT_TAGS.has(tag) &&
+      !UNTYPEABLE_INPUT_TYPES.has(String(props.type)) &&
+      hasHandler(props, ["onChange", "onInput"]),
     getValues: getChangeValues,
     hasValue: true,
     perform: setInputValue,
