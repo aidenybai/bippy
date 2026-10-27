@@ -112,10 +112,16 @@ title: CardEditor src/mutating-helpers.tsx:14
 flowchart TD
   classDef event stroke-dasharray: 4 2
   n1["CardEditor"]
-  n2["#lt;button#gt; {describeOptions(options)}"]
+  n2["#lt;button#gt;"]
   n1 --> n2
   n3(["onClick ⇒ options = Unknown(mutated)"]):::event
-  n2 -.-> n3"
+  n2 -.-> n3
+  n4{"options.shape != null"}
+  n2 --> n4
+  n5["{options.shape}"]
+  n4 -->|✓| n5
+  n6["{#quot;auto#quot;}"]
+  n4 -->|✗| n6"
 `;
 
 exports[`fixture analysis > CardEditor keeps its states, transitions and unreachable branches 1`] = `
@@ -124,8 +130,11 @@ title: CardEditor src/mutating-helpers.tsx:14
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {describeOptions(options)}
-  [*] --> S1
+  S1: options.shape != null · #lt;button#gt; {options.shape}
+  S2: options.shape == null · #lt;button#gt; {"auto"}
+  [*] --> S2
+  S1 --> S2: fillDefaults(options, 120)
+  S2 --> S1: fillDefaults(options, 120)
   state "warnings" as warnings {
     warnings1: state-mutation L16 mutates options without setting it, so the change shows only on the next render
   }"
@@ -138,8 +147,14 @@ title: CardGrid src/mutating-helpers.tsx:9
 flowchart TD
   classDef event stroke-dasharray: 4 2
   n1["CardGrid"]
-  n2["#lt;p#gt; {describeOptions(options)}"]
-  n1 --> n2"
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"options.shape != null"}
+  n2 --> n3
+  n4["{options.shape}"]
+  n3 -->|✓| n4
+  n5["{#quot;auto#quot;}"]
+  n3 -->|✗| n5"
 `;
 
 exports[`fixture analysis > CardGrid keeps its states, transitions and unreachable branches 1`] = `
@@ -148,8 +163,10 @@ title: CardGrid src/mutating-helpers.tsx:9
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; {describeOptions(options)}
+  S1: options.shape != null · #lt;p#gt; {options.shape}
+  S2: options.shape == null · #lt;p#gt; {"auto"}
   [*] --> S1
+  [*] --> S2
   state "warnings" as warnings {
     warnings1: prop-mutation L10 mutates prop options
   }"
@@ -590,7 +607,7 @@ title: EditButton src/access.tsx:5
 flowchart TD
   classDef event stroke-dasharray: 4 2
   n1["EditButton"]
-  n2{"!hasPermission(role, #quot;edit#quot;)"}
+  n2{"!(role === #quot;admin#quot; || false)"}
   n1 --> n2
   n3["#lt;p#gt; #quot;Read only#quot;"]
   n2 -->|✓| n3
@@ -612,9 +629,9 @@ title: EditButton src/access.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: !hasPermission(role, "edit") · #lt;p#gt; "Read only"
-  S2: hasPermission(role, "edit") ∧ isEditing · #lt;button#gt; "Save"
-  S3: hasPermission(role, "edit") ∧ !isEditing · #lt;button#gt; "Edit"
+  S1: !(role === "admin" || false) · #lt;p#gt; "Read only"
+  S2: role === "admin" || false ∧ isEditing · #lt;button#gt; "Save"
+  S3: role === "admin" || false ∧ !isEditing · #lt;button#gt; "Edit"
   [*] --> S1
   [*] --> S3
   S2 --> S3: "Save"
@@ -3066,7 +3083,7 @@ flowchart TD
   n2 --> n3
   n4["#lt;span#gt; #quot;Admin#quot;"]
   n3 -->|✓| n4
-  n5{"hasPermission(role, #quot;edit#quot;)"}
+  n5{"role === #quot;admin#quot; || false"}
   n2 --> n5
   n6["#lt;button#gt; #quot;Edit#quot;"]
   n5 -->|✓| n6
@@ -3097,32 +3114,28 @@ title: Toolbar src/groups.tsx:12
 stateDiagram-v2
   direction LR
   state "Toolbar" as regions {
-    %% role, hasPermission(role, "edit")
-    S1: role === "admin" ∧ hasPermission(role, "edit") · #lt;span#gt; "Admin" #lt;button#gt; "Edit"
-    S2: role === "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Admin" #lt;span#gt; "Read only"
-    S3: role !== "admin" ∧ hasPermission(role, "edit") · #lt;button#gt; "Edit"
-    S4: role !== "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Read only"
+    %% role
+    S1: role === "admin" · #lt;span#gt; "Admin" #lt;button#gt; "Edit"
+    S2: role !== "admin" · #lt;span#gt; "Read only"
     [*] --> S1
     [*] --> S2
-    [*] --> S3
-    [*] --> S4
     --
     %% status.isSaving, status.error
-    S5: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
-    S6: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
-    S7: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
-    S8: !status.isSaving ∧ !status.error · ∅
+    S3: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
+    S4: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
+    S5: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
+    S6: !status.isSaving ∧ !status.error · ∅
+    [*] --> S3
+    [*] --> S4
     [*] --> S5
     [*] --> S6
-    [*] --> S7
-    [*] --> S8
     --
     %% isHelpOpen
-    S9: isHelpOpen · #lt;p#gt; "Press E to edit"
-    S10: !isHelpOpen · ∅
-    [*] --> S10
-    S9 --> S10: "Help"
-    S10 --> S9: "Help"
+    S7: isHelpOpen · #lt;p#gt; "Press E to edit"
+    S8: !isHelpOpen · ∅
+    [*] --> S8
+    S7 --> S8: "Help"
+    S8 --> S7: "Help"
   }
   state "claims" as claims {
     claims1: holds isHelpOpen stays within false | true L14

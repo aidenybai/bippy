@@ -14,7 +14,7 @@ describe("typed call results", () => {
     const gate = getComponent(project, "Gate");
     expect(gate.analysis.bindings.map((binding) => [binding.name, binding.kind])).toEqual([
       ["role", "prop"],
-      ['hasPermission(role, "edit")', "call"],
+      ['isAllowed(role, "edit")', "call"],
     ]);
     expect(gate.analysis.bindings[1]?.domain).toEqual({
       kind: "Cases",
@@ -25,8 +25,8 @@ describe("typed call results", () => {
       origin: "type",
     });
     expect(gate.report.states.map((state) => state.conditions)).toEqual([
-      ['!hasPermission(role, "edit")'],
-      ['hasPermission(role, "edit")'],
+      ['!isAllowed(role, "edit")'],
+      ['isAllowed(role, "edit")'],
     ]);
     expect(gate.analysis.bailouts).toEqual([]);
   });

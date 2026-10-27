@@ -11,6 +11,8 @@ import type {
   Place,
   SourceLocation,
 } from "../react-compiler/HIR/HIR";
+import { hasLoop } from "./utils/has-loop";
+import { addsCallResult } from "./utils/adds-call-result";
 import {
   GeneratedSource,
   makeInstructionId,
@@ -1532,6 +1534,13 @@ export class Interpreter {
     }
     const helper = this.#loadPureHelper(callSite);
     const initial = this.#getPureHelperResult(helper, callSite, walkState);
+    if (
+      initial &&
+      helper &&
+      !hasLoop(helper.hirFunction) &&
+      !addsCallResult(initial, callSite.argumentValues)
+    )
+      return initial;
     const result = this.#createCallResult(callSite, {
       initial,
       firstRender: this.#getFirstRenderHelperResult(helper, callSite, walkState),
