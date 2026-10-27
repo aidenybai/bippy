@@ -13,6 +13,7 @@ import type {
 } from "../react-compiler/HIR/HIR";
 import {
   GeneratedSource,
+  makeInstructionId,
   InstructionKind,
   SETTER_KEY_PREFIX,
   getHookKind,
@@ -828,10 +829,24 @@ export class Interpreter {
           object.properties.findLast((candidate) => candidate.key === property)?.value ??
           this.#loadSpreadField(object.spreads, property, loc)
         );
-      case "ArrayExpression":
-        return object.spreads.length === 0
-          ? getArrayLiteralMember(object, property, loc)
-          : createUnknown("member", loc, { kind: "Member", object, property });
+      case "ArrayExpression": {
+        if (object.spreads.length === 0) return getArrayLiteralMember(object, property, loc);
+        const opaque = createUnknown("member", loc, { kind: "Member", object, property });
+        const element = ARRAY_INDEX_PATTERN.test(property)
+          ? object.elements[Number(property)]
+          : undefined;
+        return element
+          ? {
+              kind: "Conditional",
+              test: createUnknown("spread-index", loc),
+              testKind: "truthy",
+              consequent: element,
+              alternate: opaque,
+              branch: this.createBranch(makeInstructionId(0), loc, "none"),
+              guardKeys: [],
+            }
+          : opaque;
+      }
       case "Primitive":
         return property === "length" && typeof object.value === "string"
           ? { kind: "Primitive", value: object.value.length }
@@ -988,8 +1003,10 @@ export class Interpreter {
     const called = this.#storedFunctions.get(getValuePlace(place)) ?? [];
     const lastSegment = place.path.at(-1);
     if (lastSegment === undefined || !ARRAY_INDEX_PATTERN.test(lastSegment)) return called;
-    const array = getValuePlace({ ...place, path: place.path.slice(0, -1) });
-    return [...called, ...(this.#storedFunctions.get(array) ?? [])];
+    const container = this.getStoredFunctions({ ...place, path: place.path.slice(0, -1) });
+    return [
+      ...new Map([...called, ...container].map((value) => [getValueKey(value), value])).values(),
+    ];
   }
 
   callStoredFunctions(
