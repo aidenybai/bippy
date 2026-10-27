@@ -9,7 +9,7 @@ const STATE_NAME = "state";
 const BINDING_METHODS = new Set(["bind", "call", "apply"]);
 const SET_STATE_NAME = "setState";
 const PROPS_NAME = "props";
-const HOOK_NAMES = ["useState", "useEffect"];
+const HOOK_NAMES = ["useState", "useLayoutEffect"];
 const IGNORED_STATICS = new Set(["displayName"]);
 const SYNCHRONOUS_CALLBACK_METHODS = new Set([
   "map",
@@ -415,7 +415,10 @@ const createLifecycleEffect = (
   );
   return withLoc(
     types.expressionStatement(
-      types.callExpression(types.identifier("useEffect"), [effect, types.arrayExpression([])]),
+      types.callExpression(types.identifier("useLayoutEffect"), [
+        effect,
+        types.arrayExpression([]),
+      ]),
     ),
     (mount ?? unmount)?.loc,
   );
