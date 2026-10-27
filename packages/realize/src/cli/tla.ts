@@ -81,7 +81,16 @@ const NUMBER_TYPES: ReadonlySet<ValueType> = new Set(["number"]);
 const STRING_TYPES: ReadonlySet<ValueType> = new Set(["string"]);
 const OBJECT_TYPES: ReadonlySet<ValueType> = new Set(["object"]);
 const NO_TYPES: ReadonlySet<ValueType> = new Set();
-const RESERVED_NAMES = ["Null", "Undefined", "Init", "Next", "Screen", "Settled", "vars"];
+const RESERVED_NAMES = [
+  "Null",
+  "Undefined",
+  "Init",
+  "Next",
+  "Environment",
+  "Screen",
+  "Settled",
+  "vars",
+];
 const RELATIONAL_OPERATORS = new Map([
   ["<", "<"],
   ["<=", "=<"],
@@ -558,17 +567,19 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     variables.length + freeVariables.size + pendingNames.size === 0
       ? [allocateName("rendered")]
       : [];
-  const constantNames = variables
-    .filter((variable) => variable.role === "constant")
-    .map((variable) => variable.name);
-  const sharedStepLines = [
-    ...(constantNames.length > 0 ? [`UNCHANGED <<${constantNames.join(", ")}>>`] : []),
+  const environmentDomains = new Map([
     ...variables
       .filter((variable) => variable.role === "external")
-      .map((variable) => `${variable.name}' \\in ${variable.domain}`),
-    ...[...freeVariables.values()].map((name) => `${name}' \\in BOOLEAN`),
-    ...placeholderNames.map((name) => `UNCHANGED ${name}`),
+      .map((variable) => [variable.name, variable.domain] as const),
+    ...[...freeVariables.values()].map((name) => [name, "BOOLEAN"] as const),
+  ]);
+  const unchangedNames = [
+    ...variables.filter((variable) => variable.role !== "state").map((variable) => variable.name),
+    ...freeVariables.values(),
+    ...placeholderNames,
   ];
+  const sharedStepLines =
+    unchangedNames.length > 0 ? [`UNCHANGED <<${unchangedNames.join(", ")}>>`] : [];
   const initLines = [
     ...variables
       .filter((variable) => variable.role !== "state")
@@ -584,6 +595,16 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     ...placeholderNames,
   ];
   const constants = ["Null", "Undefined", ...objectNames.values()];
+  const environmentText = [...environmentDomains]
+    .map(([name, domain]) => {
+      const otherNames = variableNames.filter((otherName) => otherName !== name);
+      return `\n  \\/ /\\ ${name}' \\in ${domain}${otherNames.length > 0 ? `\n     /\\ UNCHANGED <<${otherNames.join(", ")}>>` : ""}`;
+    })
+    .join("");
+  const actionNames = [
+    ...actions.map((action) => action.name),
+    ...(environmentText === "" ? [] : ["Environment"]),
+  ];
   const regionNames = regionTexts.map((_text, regionIndex) => `Region${regionIndex + 1}`);
   const source = [
     `---- MODULE ${moduleName} ----`,
@@ -600,7 +621,8 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     `Init ==${formatConjunction(initLines, "  ")}`,
     "",
     ...actions.flatMap((action) => [action.formatText(sharedStepLines), ""]),
-    `Next == ${actions.length === 0 ? "UNCHANGED vars" : actions.map((action) => action.name).join(" \\/ ")}`,
+    ...(environmentText === "" ? [] : [`Environment ==${environmentText}`, ""]),
+    `Next == ${actionNames.length === 0 ? "UNCHANGED vars" : actionNames.join(" \\/ ")}`,
     "",
     ...regionTexts.map((text, regionIndex) => `${regionNames[regionIndex]} == ${text}`),
     `Screen == <<${regionNames.join(", ")}>>`,
