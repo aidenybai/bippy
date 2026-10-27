@@ -43,7 +43,9 @@ export const getStateBindings = (
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))
   )
     return null;
-  const stateBindings = analysis.bindings.filter(isStateBinding);
+  const stateBindings = analysis.bindings.filter(
+    (binding) => isStateBinding(binding) && binding.kind !== "memo",
+  );
   const isEveryQueueAState = observations.every(
     ({ after }) => after.error !== null || after.hookStates.length === stateBindings.length,
   );

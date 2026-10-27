@@ -1,6 +1,7 @@
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 import {
+  isClassDeclaration,
   isFunctionDeclaration,
   isVariableStatement,
   isIdentifier,
@@ -19,7 +20,7 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
   const exportNames = new Map<string, string>();
   for (const statement of sourceFile.statements) {
     const isExported = hasModifier(statement, SyntaxKind.ExportKeyword);
-    if (isFunctionDeclaration(statement) && isExported) {
+    if ((isFunctionDeclaration(statement) || isClassDeclaration(statement)) && isExported) {
       const name = statement.name?.text ?? "default";
       exportNames.set(name, hasModifier(statement, SyntaxKind.DefaultKeyword) ? "default" : name);
     }
