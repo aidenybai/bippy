@@ -28,11 +28,13 @@ const Shell = ({ children }: { children: ReactNode }) => {
   const isLegendOpen = useUiStore((state) => state.isLegendOpen);
   const setLegendOpen = useUiStore((state) => state.setLegendOpen);
   useHighlighterWarmup();
-  const hasLegend = hasLegendContent(view);
+  const canShowLegend = hasLegendContent(view) && mode !== "json";
   return (
     <SidebarProvider
-      open={isLegendOpen && hasLegend && mode !== "json"}
-      onOpenChange={setLegendOpen}
+      open={isLegendOpen && canShowLegend}
+      onOpenChange={(open) => {
+        if (canShowLegend) setLegendOpen(open);
+      }}
     >
       <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
         {children}
