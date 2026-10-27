@@ -20,12 +20,14 @@ import {
   createModuleDeclarationLoader,
   createModuleVariableLoader,
   createImportUseLoader,
+  collectImportedNames,
 } from "./module-values";
 import type {
   ModuleConstantLoader,
   ModuleDeclarationLoader,
   ModuleVariableLoader,
   ImportUseLoader,
+  ImportedNames,
 } from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
 import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
@@ -52,6 +54,7 @@ export interface CompiledFile {
   loadModuleVariable: ModuleVariableLoader;
   loadModuleDeclaration: ModuleDeclarationLoader;
   loadImportUse: ImportUseLoader;
+  importedNames: ImportedNames;
 }
 
 const STOP = Symbol("stop");
@@ -111,6 +114,12 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   loadModuleVariable: () => null,
   loadModuleDeclaration: () => null,
   loadImportUse: () => "read",
+  importedNames: {
+    specifiers: [],
+    namespaceSources: [],
+    reexportSources: [],
+    isReadOnly: () => false,
+  },
 };
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
@@ -378,5 +387,6 @@ export const compileFile = (
     loadModuleVariable: createModuleVariableLoader(ast),
     loadModuleDeclaration: createModuleDeclarationLoader(ast),
     loadImportUse: createImportUseLoader(ast),
+    importedNames: collectImportedNames(ast),
   };
 };

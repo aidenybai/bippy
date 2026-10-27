@@ -207,6 +207,7 @@ export interface ProjectLoaders {
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
   loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
   loadImportUse: (declarationKey: string) => ImportUse;
+  isReadOnlyDeclaration: (declarationKey: string) => boolean;
 }
 
 const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
@@ -1034,7 +1035,13 @@ export class Interpreter {
     }
     const variable = this.#loadModuleVariable(name);
     return variable
-      ? this.#createModuleBinding({ ...variable, isWritten: true, name, resolver: this.#resolver })
+      ? this.#createModuleBinding({
+          ...variable,
+          isWritten: true,
+          isReadOnly: false,
+          name,
+          resolver: this.#resolver,
+        })
       : null;
   }
 
@@ -1059,7 +1066,11 @@ export class Interpreter {
     const use = this.#projectLoaders.loadImportUse(
       createDeclarationKey(this.#resolver.path, localName),
     );
-    return declaration.initial.kind === "Primitive" || use === "state" ? declaration.initial : null;
+    return declaration.initial.kind === "Primitive" ||
+      use === "state" ||
+      (declarationKey !== null && this.#projectLoaders.isReadOnlyDeclaration(declarationKey))
+      ? declaration.initial
+      : null;
   }
 
   #createModuleBinding(declaration: ProjectModuleDeclaration): Binding {

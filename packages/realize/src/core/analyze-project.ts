@@ -3,7 +3,12 @@ import type { CompiledFunction } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
 import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook, ProjectLoaders, ProjectModuleDeclaration } from "./interpret";
-import type { ImportUse, ImportUseLoader, ModuleDeclarationLoader } from "./module-values";
+import type {
+  ImportUse,
+  ImportUseLoader,
+  ImportedNames,
+  ModuleDeclarationLoader,
+} from "./module-values";
 import type { ModuleFunctionLoader } from "./function-registry";
 import type { HIRFunction } from "../react-compiler/HIR/HIR";
 import { getMutatedParameters } from "./utils/get-mutated-parameters";
@@ -15,6 +20,7 @@ import { collectContextSetterFields } from "./context-setter-fields";
 import type {
   ComponentAnalysis,
   ContextSetterFields,
+  SymbolicValue,
   StoreModel,
   ProjectAnalysis,
   StateReport,
@@ -29,6 +35,8 @@ import { NO_TRACER } from "./tracer";
 import type { Tracer } from "./tracer";
 import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
+import { createImportIndex } from "./utils/create-import-index";
+import type { ImportIndex } from "./utils/create-import-index";
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
@@ -61,6 +69,9 @@ const compileProjectFiles = (
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
   const importUseLoadersByPath = new Map<string, ImportUseLoader>();
+  const importedNamesByPath = new Map<string, ImportedNames>();
+  const readOnlyByDeclaration = new Map<string, boolean>();
+  let importIndex: ImportIndex | null = null;
   const lowerersByPath = new Map<string, ModuleFunctionLoader>();
   const mutatedParametersByDeclaration = new Map<string, Map<number, boolean>>();
   const modelsByStore = new Map<string, StoreModel>();
@@ -99,6 +110,30 @@ const compileProjectFiles = (
     const { path, name } = parseDeclarationKey(declarationKey);
     return importUseLoadersByPath.get(path)?.(name) ?? "read";
   };
+  const getImportIndex = (): ImportIndex => {
+    importIndex ??= createImportIndex(
+      importedNamesByPath,
+      (path) => loadersByPath.get(path)?.resolver,
+    );
+    return importIndex;
+  };
+  const isImportedReadOnly = (declarationKey: string, value: SymbolicValue): boolean =>
+    (getImportIndex().importers.get(declarationKey) ?? []).every(
+      ({ path, localName }) => importedNamesByPath.get(path)?.isReadOnly(localName, value) ?? false,
+    );
+  const isReadOnlyDeclaration = (declarationKey: string): boolean => {
+    const cached = readOnlyByDeclaration.get(declarationKey);
+    if (cached !== undefined) return cached;
+    const { path, name } = parseDeclarationKey(declarationKey);
+    const declaration = declarationLoadersByPath.get(path)?.(name);
+    const isReadOnly =
+      declaration?.isReadOnly === true &&
+      declaration.initial !== null &&
+      !getImportIndex().exposedPaths.has(path) &&
+      isImportedReadOnly(declarationKey, declaration.initial);
+    readOnlyByDeclaration.set(declarationKey, isReadOnly);
+    return isReadOnly;
+  };
   const projectLoaders: ProjectLoaders = {
     loadProjectHook,
     loadProjectFunction,
@@ -106,6 +141,7 @@ const compileProjectFiles = (
     loadMutatedParameters,
     loadModuleDeclaration,
     loadImportUse,
+    isReadOnlyDeclaration,
   };
   return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
@@ -130,6 +166,7 @@ const compileProjectFiles = (
       if (functionType === "Component" && hir)
         for (const key of new Set([name, exportNames.get(name) ?? name]))
           componentsByDeclaration.set(createDeclarationKey(sourceFile.path, key), hir);
+    importedNamesByPath.set(sourceFile.path, compiled.importedNames);
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Hook" && hir)
         projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
