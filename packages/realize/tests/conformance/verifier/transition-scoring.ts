@@ -63,6 +63,22 @@ export const getTargetStates = (
   ),
 ];
 
+export const getReachableStates = (
+  context: ScoringContext,
+  fromStates: number[],
+  handlerIds: Set<string>,
+): Set<number> => {
+  const reached = new Set<number>();
+  const pending = [...fromStates];
+  for (let stateIndex = pending.pop(); stateIndex !== undefined; stateIndex = pending.pop())
+    for (const target of getTargetStates(context, [stateIndex], handlerIds)) {
+      if (reached.has(target)) continue;
+      reached.add(target);
+      pending.push(target);
+    }
+  return reached;
+};
+
 interface EdgeHandlerIds extends Pick<ObservedEdge, "triggeredIds" | "maybeTriggeredIds"> {}
 
 interface ObservedEdge {
