@@ -16,9 +16,9 @@ describe("a project helper called with only literal arguments", () => {
   });
 
   it.each([
-    ["ModuleLetGetter", "getClicks() !== 0"],
-    ["ModuleArrayGetter", "getLogSize() !== 0"],
-    ["ImportedGetter", 'getRole() !== "guest"'],
+    ["ModuleLetGetter", "clicks !== 0"],
+    ["ModuleArrayGetter", "log.length !== 0"],
+    ["ImportedGetter", 'role !== "guest"'],
   ])("keeps the module read in %s live after a handler changes it", (name, changed) => {
     const { report } = getComponent(project, name);
     const target = report.states.findIndex((state) => state.conditions.includes(changed));
