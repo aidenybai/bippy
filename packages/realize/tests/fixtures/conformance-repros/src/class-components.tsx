@@ -128,3 +128,46 @@ export class ClassCappedCounter extends Component<object, { count: number; items
     );
   }
 }
+
+export class ClassUnbound extends Component<object, { isOn: boolean }> {
+  state = { isOn: false };
+
+  toggle() {
+    this.setState({ isOn: !this.state.isOn });
+  }
+
+  render() {
+    return <button onClick={this.toggle}>{this.state.isOn ? "on" : "off"}</button>;
+  }
+}
+
+export class ClassInlineBound extends Component<object, { isOn: boolean }> {
+  state = { isOn: false };
+
+  toggle() {
+    this.setState({ isOn: !this.state.isOn });
+  }
+
+  render() {
+    return <button onClick={this.toggle.bind(this)}>{this.state.isOn ? "on" : "off"}</button>;
+  }
+}
+
+export class ClassUnboundWithoutThis extends Component<object, { isOn: boolean }> {
+  state = { isOn: false };
+
+  report() {
+    return "clicked";
+  }
+
+  render() {
+    return (
+      <div>
+        <button onClick={this.report}>report</button>
+        <button onClick={() => this.setState({ isOn: true })}>
+          {this.state.isOn ? "on" : "off"}
+        </button>
+      </div>
+    );
+  }
+}
