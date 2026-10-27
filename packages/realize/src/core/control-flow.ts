@@ -161,7 +161,7 @@ export const NO_STOPS: ReadonlySet<BlockId> = new Set();
 
 export const getBranchKey = memoizeByIdentity(
   (branch: Branch): string =>
-    `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}${branch.caseIndex === undefined ? "" : `#${branch.caseIndex}`}`,
+    `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}${branch.caseIndex === undefined ? "" : `#${branch.caseIndex}`}${branch.rowScope === undefined ? "" : `@${branch.rowScope}`}`,
 );
 
 export const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {

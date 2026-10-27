@@ -2823,7 +2823,14 @@ export class Interpreter {
     probe: Branch["probe"],
     caseIndex?: number,
   ): Branch {
-    const branch: Branch = { terminalId, probe, loc, file: this.#resolver.fileName };
+    const rowScope = this.#bindingScopes.filter((scope) => scope.startsWith("row:")).join("/");
+    const branch: Branch = {
+      terminalId,
+      probe,
+      loc,
+      file: this.#resolver.fileName,
+      ...(rowScope !== "" && { rowScope }),
+    };
     return caseIndex === undefined ? branch : { ...branch, caseIndex };
   }
 
