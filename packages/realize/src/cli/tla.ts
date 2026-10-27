@@ -29,7 +29,6 @@ export interface TlaSpec {
   source: string;
   config: string;
   constants: string[];
-  actionLabels: Map<string, string>;
   branchKeys: string[];
   regionCount: number;
 }
@@ -669,15 +668,6 @@ export const formatTla = (component: AnalyzedComponent, options: TlaOptions): Tl
     source,
     config,
     constants,
-    actionLabels: new Map([
-      ...actions.map((action, actionIndex): [string, string] => {
-        const handler = analysis.handlers[actionIndex];
-        const location = `${relative(options.rootDirectory, analysis.file)} ${handler ? formatLine(handler.loc) : ""}`;
-        const label = handler ? triggerLabels.get(handler.id) : undefined;
-        return [action.name, label ? `${label} · ${location}` : location];
-      }),
-      ["Environment", "a value realize can't follow changes"],
-    ]),
     branchKeys,
     regionCount: regions.length,
   };

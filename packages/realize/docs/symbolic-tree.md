@@ -50,7 +50,7 @@ Labels use a few symbols:
 
 ## TLA+ specs
 
-A spec is a `.tla` file anywhere in the project that extends or instances a component's module. `pnpm check-specs` analyzes the project, generates the modules the specs use, and checks each invariant and property in the spec's `.cfg` with tla-ts.
+A spec is a `.tla` file anywhere in the project that extends or instances a component's module. `pnpm check-specs` analyzes the project, generates the modules the specs use, and checks each spec and its `.cfg` with tla-ts. It prints what TLC prints.
 
 ```tla
 ---- MODULE UploadChecks ----
@@ -67,15 +67,23 @@ PROPERTY DoneIsFinal
 ```
 
 ```
-src/UploadChecks.tla
-  holds   NoErrorWhileUploading
-  broken  DoneIsFinal
-    1. first render: status = "idle", error = Null
-    2. "Upload" · src/upload.tsx L7: status = "done"
-    3. "Upload another" · src/upload.tsx L19: status = "idle"
+Checking src/UploadChecks.tla with src/UploadChecks.cfg
+Error: Temporal property DoneIsFinal was violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ status = "idle"
+/\ error = Null
+
+State 2: <onClick_t2>
+/\ status = "done"
+/\ error = Null
+
+State 3: <onClick_t1>
+/\ status = "idle"
+/\ error = Null
 ```
 
-A broken property lists the actions that break it, from the first render, with the values each one changes. The command exits with 1 when a property breaks or a spec can't be checked.
+Each action is named after its handler, and the comment above it in the generated module gives its label and line, like `\* "Upload another" · L19`. `--tla` writes those modules. The command exits with 1 when a spec breaks or can't be checked.
 
 - A component's module is named after the component. When two components share a name, each module adds its file path, like `Toggle_src_a_toggle`. A spec can still use the bare name when exactly one of them is in the spec's directory.
 - A variable is named after its binding, with object fields joined by `_`, like `user_name`. `null` and `undefined` are `Null` and `Undefined`.

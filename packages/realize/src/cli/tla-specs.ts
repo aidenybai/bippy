@@ -1,27 +1,16 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { check, formatValue, parseConfig, parseModule } from "tla-ts";
-import type { CheckStatus, TraceStep } from "tla-ts";
+import type { CheckResult, CheckStatus } from "tla-ts";
 import { ConfigError } from "../core/config-error";
 import type { AnalyzedComponent } from "../core/types";
 import { formatTla, getTlaModuleNames } from "./tla";
 import type { TlaSpec } from "./tla";
 
-export interface SpecStep {
-  label: string;
-  changes: string[];
-}
-
-export interface PropertyResult {
-  name: string;
-  status: CheckStatus;
-  trace: SpecStep[];
-  loopStart: number | undefined;
-}
-
-export interface SpecResult {
-  file: string;
-  properties: PropertyResult[];
+export interface SpecCheck {
+  specFile: string;
+  configFile: string | null;
+  result: CheckResult;
 }
 
 export type ComponentModuleResolver = (name: string, specFile: string) => TlaSpec | null;
@@ -69,19 +58,20 @@ export const createComponentModuleResolver = (
   };
 };
 
-const formatChanges = (step: TraceStep, previous: TraceStep | undefined): string[] =>
-  Object.entries(step.state).flatMap(([name, value]) => {
-    const text = formatValue(value);
-    const previousValue = previous?.state[name];
-    return previousValue !== undefined && formatValue(previousValue) === text
-      ? []
-      : `${name} = ${text}`;
-  });
+const VIOLATION_MESSAGES: Record<CheckStatus, (name: string) => string> = {
+  success: () => "",
+  "assumption-violation": (name) => `Error: Assumption ${name} is false.`,
+  deadlock: () => "Error: Deadlock reached.",
+  "invariant-violation": (name) => `Error: Invariant ${name} is violated.`,
+  "property-violation": (name) => `Error: Property ${name} is violated.`,
+  "liveness-violation": (name) => `Error: Temporal property ${name} was violated.`,
+  "postcondition-violation": (name) => `Error: Postcondition ${name} is false.`,
+};
 
 export const checkSpec = (
   specFile: string,
   resolveComponentModule: ComponentModuleResolver,
-): SpecResult | null => {
+): SpecCheck | null => {
   const source = readFileSync(specFile, "utf8");
   const module = parseModule(source);
   const componentSpecs = [
@@ -95,72 +85,55 @@ export const checkSpec = (
   const constants = [
     ...new Set(componentSpecs.flatMap((componentSpec) => componentSpec.constants)),
   ].filter((constant) => !assignedNames.has(constant));
-  const config = parseConfig(
-    [
-      ...(constants.length > 0
-        ? [`CONSTANTS ${constants.map((constant) => `${constant} = ${constant}`).join(" ")}`]
-        : []),
-      ...(SPECIFICATION_PATTERN.test(userConfig) ? [] : ["SPECIFICATION Spec"]),
-      ...(CHECK_DEADLOCK_PATTERN.test(userConfig) ? [] : ["CHECK_DEADLOCK FALSE"]),
-      userConfig,
-    ].join("\n"),
-  );
-  const actionLabels = new Map(
-    componentSpecs.flatMap((componentSpec) => [...componentSpec.actionLabels]),
-  );
-  const loadModule = (name: string): string | undefined => {
-    const componentSpec = resolveComponentModule(name, specFile);
-    if (componentSpec) return componentSpec.source;
-    const siblingFile = join(dirname(specFile), `${name}.tla`);
-    return existsSync(siblingFile) ? readFileSync(siblingFile, "utf8") : undefined;
-  };
-  const checkOne = (name: string, isInvariant: boolean): PropertyResult => {
-    const result = check({
-      source,
-      config: {
-        ...config,
-        invariants: isInvariant ? [name] : [],
-        properties: isInvariant ? [] : [name],
-      },
-      loadModule,
-    });
-    const trace = result.violation?.trace ?? [];
-    return {
-      name,
-      status: result.status,
-      trace: trace.map((step, stepIndex) => ({
-        label:
-          step.action === undefined
-            ? "first render"
-            : (actionLabels.get(step.action) ?? step.action),
-        changes: formatChanges(step, trace[stepIndex - 1]),
-      })),
-      loopStart: result.violation?.loopStart,
-    };
-  };
-  return {
-    file: specFile,
-    properties: [
-      ...config.invariants.map((name) => checkOne(name, true)),
-      ...config.properties.map((name) => checkOne(name, false)),
-    ],
-  };
+  const config = [
+    ...(constants.length > 0
+      ? [`CONSTANTS ${constants.map((constant) => `${constant} = ${constant}`).join(" ")}`]
+      : []),
+    ...(SPECIFICATION_PATTERN.test(userConfig) ? [] : ["SPECIFICATION Spec"]),
+    ...(CHECK_DEADLOCK_PATTERN.test(userConfig) ? [] : ["CHECK_DEADLOCK FALSE"]),
+    userConfig,
+  ].join("\n");
+  const result = check({
+    source,
+    config,
+    loadModule: (name) => {
+      const componentSpec = resolveComponentModule(name, specFile);
+      if (componentSpec) return componentSpec.source;
+      const siblingFile = join(dirname(specFile), `${name}.tla`);
+      return existsSync(siblingFile) ? readFileSync(siblingFile, "utf8") : undefined;
+    },
+  });
+  return { specFile, configFile: existsSync(configFile) ? configFile : null, result };
 };
 
-export const formatSpecResult = (result: SpecResult, rootDirectory: string): string =>
-  [
-    relative(rootDirectory, result.file),
-    ...result.properties.flatMap((property) => {
-      if (property.status === "success") return [`  holds   ${property.name}`];
-      return [
-        `  broken  ${property.name}`,
-        ...property.trace.map(
-          (step, stepIndex) =>
-            `    ${stepIndex + 1}. ${step.label}${step.changes.length > 0 ? `: ${step.changes.join(", ")}` : ""}`,
-        ),
-        ...(property.loopStart === undefined
-          ? []
-          : [`    then back to step ${property.loopStart + 1}`]),
-      ];
-    }),
+export const formatSpecCheck = (specCheck: SpecCheck, rootDirectory: string): string => {
+  const { result } = specCheck;
+  const { violation } = result;
+  const trace = violation?.trace ?? [];
+  const loopStart = violation?.loopStart;
+  return [
+    `Checking ${relative(rootDirectory, specCheck.specFile)}${specCheck.configFile ? ` with ${relative(rootDirectory, specCheck.configFile)}` : ""}`,
+    ...(violation
+      ? [
+          VIOLATION_MESSAGES[result.status](violation.name),
+          ...(trace.length > 0 ? ["Error: The behavior up to this point is:"] : []),
+          ...trace.flatMap((step, stepIndex) => [
+            `State ${stepIndex + 1}: <${step.action ?? "Initial predicate"}>`,
+            ...Object.entries(step.state).map(
+              ([name, value]) => `/\\ ${name} = ${formatValue(value)}`,
+            ),
+            "",
+          ]),
+          ...(loopStart === undefined
+            ? []
+            : [
+                loopStart === trace.length - 1
+                  ? `State ${loopStart + 2}: Stuttering`
+                  : `Back to state ${loopStart + 1}`,
+              ]),
+        ]
+      : ["Model checking completed. No error has been found."]),
+    `${result.generatedStates} states generated, ${result.distinctStates} distinct states found, 0 states left on queue.`,
+    `The depth of the complete state graph search is ${result.depth}.`,
   ].join("\n");
+};

@@ -5,7 +5,7 @@ import {
   checkSpec,
   createComponentModuleResolver,
   findSpecFiles,
-  formatSpecResult,
+  formatSpecCheck,
 } from "../../src/cli/tla-specs";
 import { analyzeFixture, getFixtureConfig } from "./helpers";
 
@@ -33,31 +33,37 @@ describe("TLA+ specs", () => {
     ]);
   });
 
-  it("checks each property and traces a broken one back to its clicks", () => {
-    const result = checkFixtureSpec("src/UploadChecks.tla");
-    expect(result && formatSpecResult(result, ROOT_DIRECTORY)).toBe(
+  it("prints a broken property the way TLC does", () => {
+    const specCheck = checkFixtureSpec("src/UploadChecks.tla");
+    expect(specCheck && formatSpecCheck(specCheck, ROOT_DIRECTORY)).toBe(
       [
-        "src/UploadChecks.tla",
-        "  holds   NoErrorWhileUploading",
-        "  holds   ErrorOnlyWhenFailed",
-        "  broken  DoneIsFinal",
-        '    1. first render: status = "idle", error = Null',
-        '    2. "Upload" · src/upload.tsx L7: status = "done"',
-        '    3. "Upload another" · src/upload.tsx L19: status = "idle"',
+        "Checking src/UploadChecks.tla with src/UploadChecks.cfg",
+        "Error: Temporal property DoneIsFinal was violated.",
+        "Error: The behavior up to this point is:",
+        "State 1: <Initial predicate>",
+        '/\\ status = "idle"',
+        "/\\ error = Null",
+        "",
+        "State 2: <onClick_t2>",
+        '/\\ status = "done"',
+        "/\\ error = Null",
+        "",
+        "State 3: <onClick_t1>",
+        '/\\ status = "idle"',
+        "/\\ error = Null",
+        "",
+        "10 states generated, 5 distinct states found, 0 states left on queue.",
+        "The depth of the complete state graph search is 2.",
       ].join("\n"),
     );
   });
 
   it("resolves a shared component name to the one beside the spec", () => {
-    expect(
-      checkFixtureSpec("src/a/ToggleChecks.tla")?.properties.map((property) => property.status),
-    ).toEqual(["liveness-violation"]);
+    expect(checkFixtureSpec("src/a/ToggleChecks.tla")?.result.status).toBe("liveness-violation");
   });
 
   it("resolves a name qualified by its file", () => {
-    expect(
-      checkFixtureSpec("src/OneWayChecks.tla")?.properties.map((property) => property.status),
-    ).toEqual(["success"]);
+    expect(checkFixtureSpec("src/OneWayChecks.tla")?.result.status).toBe("success");
   });
 
   it("rejects a shared component name with no component beside the spec", () => {

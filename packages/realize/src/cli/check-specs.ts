@@ -7,7 +7,7 @@ import {
   checkSpec,
   createComponentModuleResolver,
   findSpecFiles,
-  formatSpecResult,
+  formatSpecCheck,
 } from "./tla-specs";
 
 const runCheckSpecs = (tsconfig: string): void => {
@@ -17,10 +17,10 @@ const runCheckSpecs = (tsconfig: string): void => {
   const resolveComponentModule = createComponentModuleResolver(components, rootDirectory);
   for (const specFile of findSpecFiles(rootDirectory)) {
     try {
-      const result = checkSpec(specFile, resolveComponentModule);
-      if (!result) continue;
-      console.log(formatSpecResult(result, rootDirectory));
-      if (result.properties.some((property) => property.status !== "success")) process.exitCode = 1;
+      const specCheck = checkSpec(specFile, resolveComponentModule);
+      if (!specCheck) continue;
+      console.log(formatSpecCheck(specCheck, rootDirectory));
+      if (specCheck.result.status !== "success") process.exitCode = 1;
     } catch (error) {
       if (!(error instanceof ConfigError || error instanceof TlaError)) throw error;
       console.error(`${relative(rootDirectory, specFile)}: ${error.message}`);
