@@ -39,3 +39,42 @@ export const CapturedSwitchLabel = () => {
     </button>
   );
 };
+
+export const CapturedReturnArm = () => {
+  const [step, setStep] = useState(0);
+  let next = 1;
+  const advance = () => setStep(next);
+  if (step === 2) {
+    next = 0;
+    return <button onClick={advance}>two</button>;
+  }
+  if (step === 1) next = 2;
+  return <button onClick={advance}>{step === 0 ? "zero" : "one"}</button>;
+};
+
+export const CapturedReturnCase = () => {
+  const [step, setStep] = useState(0);
+  let next = 1;
+  const advance = () => setStep(next);
+  switch (step) {
+    case 2:
+      next = 0;
+      return <button onClick={advance}>two</button>;
+    case 1:
+      next = 2;
+      break;
+  }
+  return <button onClick={advance}>{step === 0 ? "zero" : "one"}</button>;
+};
+
+export const CapturedTryCatch = () => {
+  const [step, setStep] = useState(0);
+  let next = 1;
+  const advance = () => setStep(next);
+  try {
+    if (step === 1) next = 2;
+  } catch {
+    next = 0;
+  }
+  return <button onClick={advance}>{step === 0 ? "zero" : step === 1 ? "one" : "two"}</button>;
+};

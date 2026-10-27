@@ -10,6 +10,7 @@ import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-v
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
+import { negate } from "./utils/negate";
 import { PlaceMap } from "./utils/place-map";
 import { getValueKey } from "./utils/get-value-key";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
@@ -30,6 +31,13 @@ export const ITERATION_METHODS = new Set([
 ]);
 
 const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
+const SHORT_CIRCUIT_OUTCOMES = new Map([
+  ["some", true],
+  ["find", true],
+  ["findIndex", true],
+  ["every", false],
+]);
 
 const MAX_OPEN_FILTER_OUTCOMES = 4;
 
@@ -90,20 +98,30 @@ export class ArrayIteration {
   }
 
   callForEachItem(
+    methodName: string,
     callback: FunctionValue,
     array: ArrayExpressionValue,
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue[] {
     const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
-    return items.map((item, itemIndex) =>
-      this.#interpreter.callFunction(
+    const stopsOn = SHORT_CIRCUIT_OUTCOMES.get(methodName);
+    const results: SymbolicValue[] = [];
+    let guards = walkState.guards;
+    for (const [itemIndex, item] of items.entries()) {
+      const result = this.#interpreter.callFunction(
         callback,
         [item, { kind: "Primitive", value: itemIndex }, array],
         loc,
-        walkState,
-      ),
-    );
+        { ...walkState, guards },
+      );
+      results.push(result);
+      if (stopsOn === undefined) continue;
+      const truthiness = getKnownTruthiness(result);
+      if (truthiness === stopsOn) break;
+      if (truthiness === null) guards = [...guards, stopsOn ? negate(result) : result];
+    }
+    return results;
   }
 
   getLiteralResult(

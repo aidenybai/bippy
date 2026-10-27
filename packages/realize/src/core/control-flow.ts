@@ -18,6 +18,7 @@ import { memoizeByIdentity } from "./utils/memoize-by-identity";
 interface ReturnOutcome {
   kind: "Return";
   value: SymbolicValue;
+  contextValues?: ReadonlyMap<IdentifierId, ContextValue>;
 }
 
 export interface FallthroughOutcome {

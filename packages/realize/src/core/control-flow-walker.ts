@@ -594,16 +594,48 @@ export class ControlFlowWalker {
     return places;
   }
 
-  #fallthrough(from: BlockId | null, to: BlockId): FallthroughOutcome {
+  #getContextValues(): ReadonlyMap<IdentifierId, ContextValue> | null {
     const places = this.#getTrackedContextPlaces();
-    if (places.length === 0) return { kind: "Fallthrough", from, to };
-    const contextValues = new Map(
+    if (places.length === 0) return null;
+    return new Map(
       places.map((place): [IdentifierId, ContextValue] => [
         place.identifier.id,
         { place, value: this.#interpreter.read(place) },
       ]),
     );
-    return { kind: "Fallthrough", from, to, contextValues };
+  }
+
+  #fallthrough(from: BlockId | null, to: BlockId): FallthroughOutcome {
+    const contextValues = this.#getContextValues();
+    return contextValues
+      ? { kind: "Fallthrough", from, to, contextValues }
+      : { kind: "Fallthrough", from, to };
+  }
+
+  #return(value: SymbolicValue): Outcome {
+    const contextValues = this.#getContextValues();
+    return contextValues ? { kind: "Return", value, contextValues } : { kind: "Return", value };
+  }
+
+  mergeReturnedContextValues(outcome: Outcome, guards: SymbolicValue[]): void {
+    for (const place of this.#getTrackedContextPlaces()) {
+      const returned = this.#getReturnedContextValue(outcome, place.identifier.id, guards);
+      if (returned) this.#interpreter.write(place, returned);
+    }
+  }
+
+  #getReturnedContextValue(
+    outcome: Outcome,
+    id: IdentifierId,
+    guards: SymbolicValue[],
+  ): SymbolicValue | null {
+    if (outcome.kind !== "Split") return outcome.contextValues?.get(id)?.value ?? null;
+    const consequent = this.#getReturnedContextValue(outcome.consequent, id, guards);
+    const alternate = this.#getReturnedContextValue(outcome.alternate, id, guards);
+    if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
+    return createConditional(outcome, guards, (arm) =>
+      arm === outcome.consequent ? consequent : alternate,
+    );
   }
 
   #restoreContextValues(fallthrough: FallthroughOutcome): void {
@@ -789,7 +821,7 @@ export class ControlFlowWalker {
   ): TerminalStep {
     switch (terminal.kind) {
       case "return":
-        return { kind: "Return", value: this.#interpreter.read(terminal.value) };
+        return this.#return(this.#interpreter.read(terminal.value));
       case "throw":
       case "unreachable":
       case "unsupported":
@@ -864,12 +896,16 @@ export class ControlFlowWalker {
       return { kind: "Next", block: continuation };
     walkedCatches.add(handler);
     const throwTest = createUnknown("throws", terminal.loc);
+    const places = this.#getTrackedContextPlaces();
+    const valuesBefore = places.map((place) => this.#interpreter.read(place));
+    const consequent = this.#walkArm(handler, blockId, stops, walkState, throwTest);
+    places.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
     return {
       kind: "Split",
       test: throwTest,
       testKind: "truthy",
       branch: this.#interpreter.createBranch(terminal.id, terminal.loc, "none"),
-      consequent: this.#walkArm(handler, blockId, stops, walkState, throwTest),
+      consequent,
       alternate: this.#walkArm(continuation, blockId, stops, walkState, negate(throwTest)),
     };
   }

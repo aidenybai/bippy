@@ -439,9 +439,19 @@ export class MutationTracker {
       value.kind === "PropertyStore" &&
       value.object.identifier.id === mutatedPlace.identifier.id;
     if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
-    return value.kind === "MethodCall"
-      ? this.#interpreter.createDerivedValue([literal], "mutation", loc)
-      : createUnknown("mutation", loc);
+    if (value.kind !== "MethodCall") return createUnknown("mutation", loc);
+    const mutated = this.#interpreter.createDerivedValue([literal], "mutation", loc);
+    return literal.kind === "ObjectExpression" || literal.kind === "ArrayExpression"
+      ? {
+          kind: "Conditional",
+          test: createUnknown("mutation", loc),
+          testKind: "truthy",
+          consequent: mutated,
+          alternate: literal,
+          branch: this.#interpreter.createBranch(instruction.id, loc, "none"),
+          guardKeys: [],
+        }
+      : mutated;
   }
 
   #pushIntoArray(
