@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import type { Ref } from "react";
 
 export const Bubbling = () => {
   const [inner, setInner] = useState(false);
@@ -320,6 +321,41 @@ export const DispatchedFromHandlers = () => {
         <button>send</button>
       </form>
       {clicks > 0 && (isFocused || isReset) ? <i>done</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const AutoFocused = () => {
+  const [isFocused, setIsFocused] = useState(false);
+  return (
+    <div>
+      <input autoFocus aria-label="field" onFocus={() => setIsFocused(true)} />
+      {isFocused ? <i>focused</i> : <i>idle</i>}
+    </div>
+  );
+};
+
+const FocusField = ({ ref, onFocus }: { ref: Ref<HTMLInputElement>; onFocus: () => void }) => (
+  <input ref={ref} aria-label="field" onFocus={onFocus} />
+);
+
+export const FocusThroughChild = () => {
+  const [clicks, setClicks] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
+  const fieldRef = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <FocusField ref={fieldRef} onFocus={() => setIsFocused(true)} />
+      <button
+        type="button"
+        onClick={() => {
+          setClicks(1);
+          fieldRef.current?.focus();
+        }}
+      >
+        go
+      </button>
+      {clicks > 0 && isFocused ? <i>done</i> : <i>open</i>}
     </div>
   );
 };

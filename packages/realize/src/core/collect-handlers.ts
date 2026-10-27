@@ -510,7 +510,7 @@ class HandlerCollector {
   readonly #interpreter: Interpreter;
   readonly #plannedByKey = new Map<string | JsxSpreadProp, PlannedHandler>();
   readonly #idsByContent = new Map<string, string>();
-  readonly childCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
+  readonly commitCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
 
   readonly #consumerCallbacks: Map<JsxExpressionValue, SymbolicValue[]>;
   readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
@@ -619,6 +619,16 @@ class HandlerCollector {
       else if (isHandlerProp(element.tag, prop))
         this.#planEventHandler(element, prop, eventGuards, ancestors);
     });
+    const autoFocus = getAttribute(element, "autoFocus")?.value;
+    const focused =
+      autoFocus && !(autoFocus.kind === "Primitive" && !autoFocus.value)
+        ? this.#getElementEventCallbacks(element, "focus")
+        : [];
+    if (focused.length > 0)
+      this.commitCallbacks.set(`autofocus:${getLocationKey(element.loc)}`, {
+        callback: { kind: "ArrayExpression", elements: focused, spreads: [] },
+        loc: element.loc,
+      });
   }
 
   get plannedCallbacks(): SymbolicValue[] {
@@ -717,7 +727,7 @@ class HandlerCollector {
     const callbackKey = getHandlerKey(callback);
     if (callbackKey === null) return;
     if (element.tag.kind === "Component" && this.#mayCallOutsideEvents(element.tag.declaration))
-      this.childCallbacks.set(callbackKey, { callback, loc: prop.loc });
+      this.commitCallbacks.set(callbackKey, { callback, loc: prop.loc });
     const propagated =
       element.tag.kind === "Component"
         ? this.#getBubbledCallbacks(prop, callback, ancestors)
@@ -807,7 +817,14 @@ class HandlerCollector {
           prop.value.binding.id === refId,
       ),
     );
-    return element ? this.#getElementEventCallbacks(element, methodName) : [];
+    if (!element) return [];
+    if (element.tag.kind === "BuiltinTag")
+      return this.#getElementEventCallbacks(element, methodName);
+    return guardCallbacks(
+      this.#getComponentCallbacks(element),
+      `ref ${methodName} ${getLocationKey(element.loc)}`,
+      this.#getEventProp(element, methodName),
+    );
   }
 
   #getTargetEventCallbacks(element: JsxExpressionValue, callback: SymbolicValue): SymbolicValue[] {
@@ -1326,12 +1343,12 @@ const collectHandlersOnce = (
       effectCall.callbackArguments,
       effectCall.loc,
     );
-  for (const childCallback of collector.childCallbacks.values())
+  for (const commitCallback of collector.commitCallbacks.values())
     collector.addHandler(
       { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
-      childCallback.callback,
-      [createUnknown("callback-argument", childCallback.loc)],
-      childCallback.loc,
+      commitCallback.callback,
+      [createUnknown("callback-argument", commitCallback.loc)],
+      commitCallback.loc,
     );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)
