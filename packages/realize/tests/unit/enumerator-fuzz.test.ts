@@ -9,7 +9,7 @@ import { analyzeProject } from "../../src/core/analyze-project";
 import { getBranchKey } from "../../src/core/control-flow";
 import type { AnalyzedComponent } from "../../src/core/types";
 
-type FuzzValue = string | boolean | number;
+type FuzzValue = string | boolean | number | null;
 
 interface FuzzProps {
   [name: string]: FuzzValue;
@@ -62,6 +62,11 @@ const createRandom = (seed: number): (() => number) => {
 const formatLiteral = (value: FuzzValue): string =>
   typeof value === "string" ? `"${value}"` : String(value);
 
+const isNullable = (variable: FuzzVariable): boolean => variable.values.includes(null);
+
+const formatWideType = (values: FuzzValue[]): string =>
+  values.includes(null) ? "string | null" : typeof values[0];
+
 const formatType = (values: FuzzValue[]): string => values.map(formatLiteral).join(" | ");
 
 const isSameKind = (variable: FuzzVariable, other: FuzzVariable): boolean =>
@@ -77,16 +82,29 @@ const generateComponent = (seed: number): FuzzComponent => {
       [false, true],
       STRING_VALUES.slice(0, isProp ? 2 : pick([2, 3])),
       isProp ? [0, 1] : [0, 1, 2],
+      [null, ...STRING_VALUES.slice(0, 2)],
     ]);
-  const props = Array.from({ length: pick([0, 1, 2]) }, (_unused, index) => ({
-    name: `p${index}`,
-    expression: `p${index}`,
-    values: createValues(true),
-  }));
+  const props = Array.from({ length: pick([0, 1, 2]) }, (_unused, index) => {
+    const values = createValues(true);
+    return {
+      name: `p${index}`,
+      expression: `p${index}`,
+      values,
+      isWide: typeof values[0] !== "boolean" && chance(0.3),
+    };
+  });
   const readables: FuzzVariable[] = [...props];
   const formatAtom = (): string => {
     const readable = pick(readables);
     const value = formatLiteral(pick(readable.values));
+    if (isNullable(readable))
+      return pick([
+        () => readable.expression,
+        () => `!${readable.expression}`,
+        () => `${readable.expression} === ${value}`,
+        () => `${readable.expression} ${chance(0.5) ? "==" : "!="} null`,
+        () => `(${readable.expression} ?? "x") === "y"`,
+      ])();
     if (typeof readable.values[0] === "boolean")
       return chance(0.5) ? readable.expression : `!${readable.expression}`;
     if (typeof readable.values[0] === "string")
@@ -100,6 +118,8 @@ const generateComponent = (seed: number): FuzzComponent => {
   const formatTransform = (variable: FuzzVariable, current: string): string => {
     const values = variable.values;
     const last = formatLiteral(values.at(-1) ?? 0);
+    if (isNullable(variable))
+      return chance(0.5) ? `${current} === null ? "x" : null` : `${current} ?? "y"`;
     if (typeof values[0] === "boolean") return `!${current}`;
     if (typeof values[0] === "string")
       return `${current} === ${formatLiteral(pick(values))} ? ${formatLiteral(pick(values))} : ${formatLiteral(pick(values))}`;
@@ -131,7 +151,7 @@ const generateComponent = (seed: number): FuzzComponent => {
   const hooks: FuzzHook[] = Array.from({ length: pick([1, 2, 3]) }, (_unused, index) => {
     const name = `s${index}`;
     const setter = `setS${index}`;
-    const kind = pick(["state", "state", "object", "reducer"]);
+    const kind = pick(["state", "state", "object", "reducer", "custom"]);
     if (kind === "object") {
       const fields = FIELD_NAMES.slice(0, pick([1, 2])).map((field) => ({
         name: `${name}_${field}`,
@@ -168,9 +188,9 @@ const generateComponent = (seed: number): FuzzComponent => {
       name,
       expression: name,
       values,
-      isWide: typeof values[0] === "number" && chance(0.5),
+      isWide: typeof values[0] !== "boolean" && chance(0.4),
     };
-    const typeText = variable.isWide ? "number" : formatType(values);
+    const typeText = variable.isWide ? formatWideType(values) : formatType(values);
     if (kind === "reducer") {
       const actions = Array.from(
         { length: pick([2, 3]) },
@@ -198,8 +218,18 @@ const generateComponent = (seed: number): FuzzComponent => {
       };
     }
     const initial = createInitial(variable);
+    if (kind === "custom")
+      prelude.push(
+        `const useS${index} = (initial: ${typeText}) => {`,
+        `  const [value, setValue] = useState<${typeText}>(initial);`,
+        "  return [value, setValue] as const;",
+        "};",
+        "",
+      );
     declarations.push(
-      `  const [${name}, ${setter}] = useState<${typeText}>(${chance(0.2) ? `() => ${initial}` : initial});`,
+      kind === "custom"
+        ? `  const [${name}, ${setter}] = useS${index}(${initial});`
+        : `  const [${name}, ${setter}] = useState<${typeText}>(${chance(0.2) ? `() => ${initial}` : initial});`,
     );
     readables.push(variable);
     return {
@@ -271,7 +301,19 @@ const generateComponent = (seed: number): FuzzComponent => {
     const childCount = depth === 0 ? pick([2, 3]) : pick([1, 2]);
     body.push(`${indent}<div>`);
     for (let childIndex = 0; childIndex < childCount; childIndex++) {
-      const kind = depth >= 2 ? "button" : pick(["ternary", "and", "button", "button"]);
+      const rowTargets = readables.filter(
+        (readable) => typeof readable.values[0] === "string" || isNullable(readable),
+      );
+      const kind = depth >= 2 ? "button" : pick(["ternary", "and", "rows", "button", "button"]);
+      if (kind === "rows" && rowTargets.length > 0) {
+        body.push(`${indent}  {["x", "y"].map((item, index) => (`);
+        const line = body.length + 1;
+        body.push(
+          `${indent}    <span key={item}>{item === ${pick(rowTargets).expression} ? <i data-m={\`${line}@\${index}:t\`} /> : <i data-m={\`${line}@\${index}:f\`} />}</span>`,
+        );
+        body.push(`${indent}  ))}`);
+        continue;
+      }
       if (kind === "button") {
         buttonCount++;
         if (chance(0.4)) {
@@ -344,7 +386,10 @@ const generateComponent = (seed: number): FuzzComponent => {
       props.length === 0
         ? ""
         : `{ ${props.map((prop) => prop.name).join(", ")} }: { ${props
-            .map((prop) => `${prop.name}: ${formatType(prop.values)}`)
+            .map(
+              (prop) =>
+                `${prop.name}: ${prop.isWide ? formatWideType(prop.values) : formatType(prop.values)}`,
+            )
             .join("; ")} }`
     }) => {`,
     ...declarations,
@@ -456,18 +501,28 @@ const observeComponent = async (
   return [...observations.values()];
 };
 
-const getBranchLine = (branchKey: string, fuzz: FuzzComponent): number => {
+const getOutcomeLabel = (
+  branchKey: string,
+  isTrue: boolean,
+  fuzz: FuzzComponent,
+): string | null => {
   const start = Number(/:(\d+):\d+:\d+(?:#\d+)?(?:@.*)?$/.exec(branchKey)?.[1] ?? -1);
-  return fuzz.source.slice(0, start).split("\n").length - fuzz.bodyOffset;
+  const line = fuzz.source.slice(0, start).split("\n").length - fuzz.bodyOffset;
+  const row = /@row:\d+:(\d+)$/.exec(branchKey)?.[1];
+  const isMarked =
+    row === undefined ? fuzz.source.includes(`"${line}:t"`) : fuzz.source.includes(`{\`${line}@`);
+  if (!isMarked) return null;
+  return `${line}${row === undefined ? "" : `@${row}`}:${isTrue ? "t" : "f"}`;
 };
 
 const getMarkedOutcomes = (branches: string[], fuzz: FuzzComponent): string[] => [
   ...new Set(
     branches.flatMap((branch) => {
       const separator = branch.lastIndexOf(":");
-      const line = getBranchLine(branch.slice(0, separator), fuzz);
-      const outcome = `${line}:${branch.slice(separator + 1) === "true" ? "t" : "f"}`;
-      return fuzz.source.includes(`"${line}:t"`) ? [outcome] : [];
+      return (
+        getOutcomeLabel(branch.slice(0, separator), branch.slice(separator + 1) === "true", fuzz) ??
+        []
+      );
     }),
   ),
 ];
@@ -511,8 +566,10 @@ const findReachedUnreachableBranches = (
 ): string[] => {
   const reached = new Set(observations.flatMap((observation) => observation.screen));
   return analyzed.report.unreachableBranches.flatMap((unreachable) => {
-    const outcome = `${getBranchLine(getBranchKey(unreachable.branch), fuzz)}:${unreachable.isTrueSide ? "t" : "f"}`;
-    return reached.has(outcome) ? [`renders ${outcome}, which realize calls unreachable`] : [];
+    const outcome = getOutcomeLabel(getBranchKey(unreachable.branch), unreachable.isTrueSide, fuzz);
+    return outcome && reached.has(outcome)
+      ? [`renders ${outcome}, which realize calls unreachable`]
+      : [];
   });
 };
 
