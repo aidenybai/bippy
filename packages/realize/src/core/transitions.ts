@@ -77,7 +77,12 @@ const NO_MAYBE_UPDATES: ReadonlySet<StateUpdate> = new Set();
 const applyUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
-  { reachableConstraints, reachablePlacesByBinding, dependentsByBinding }: ReachabilityContext,
+  {
+    analysis,
+    reachableConstraints,
+    reachablePlacesByBinding,
+    dependentsByBinding,
+  }: ReachabilityContext,
   maybeUpdates = NO_MAYBE_UPDATES,
 ): Constraints => {
   const updated = cloneConstraints(constraints);
@@ -130,7 +135,7 @@ const applyUpdates = (
             [...constraints.bounds, ...constraints.invariants],
             sequenceBindingIds,
           ),
-          ...getIntervalBounds(update, constraints),
+          ...getIntervalBounds(update, constraints, analysis.handlers),
           ...getAppendedLengthBounds(decidedValue, update.binding, constraints.bounds),
         ];
     forgetBinding(

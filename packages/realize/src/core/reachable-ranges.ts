@@ -290,7 +290,7 @@ const getValuesInterval = (values: AbstractValue[] | undefined): Interval => {
 };
 
 const getSourceInterval = (constraints: Constraints, binding: Binding): Interval =>
-  constraints.bounds.reduce<Interval>(
+  [...constraints.bounds, ...constraints.invariants].reduce<Interval>(
     (interval, bound) => {
       const limit = getBoundLimit(bound, binding, false);
       return {
@@ -301,7 +301,23 @@ const getSourceInterval = (constraints: Constraints, binding: Binding): Interval
     getValuesInterval(constraints.possibleValues.get(getBindingPlace(binding))),
   );
 
-export const getIntervalBounds = (update: StateUpdate, constraints: Constraints): Bound[] => {
+const getExcludedLiteralGuards = (constraints: Constraints, binding: Binding): SymbolicValue[] => {
+  const excluded = [...constraints.assumptions.values()].flatMap((assumption) => {
+    if (assumption.isTrue) return [];
+    const guard = negate(assumption.value);
+    const isNegated = guard.kind === "UnaryExpression" && guard.operator === "!";
+    const literal = getExcludedLiteral(isNegated ? guard.value : guard, binding, isNegated);
+    return literal === null ? [] : [{ literal, guard }];
+  });
+  const ascending = excluded.toSorted((left, right) => left.literal - right.literal);
+  return [...ascending, ...ascending.toReversed()].map((entry) => entry.guard);
+};
+
+export const getIntervalBounds = (
+  update: StateUpdate,
+  constraints: Constraints,
+  handlers: Handler[],
+): Bound[] => {
   const { binding, value } = update;
   const { initial } = binding;
   const isNumber = initial?.kind === "Primitive" && typeof initial.value === "number";
@@ -313,7 +329,11 @@ export const getIntervalBounds = (update: StateUpdate, constraints: Constraints)
   )
     return [];
   const source = getSourceInterval(constraints, binding);
-  const next = getValueInterval(value, binding, source, update.guards, false, null);
+  const isInteger = getReachableInterval(binding, handlers)?.isInteger ?? false;
+  const guards = isInteger
+    ? [...getExcludedLiteralGuards(constraints, binding), ...update.guards]
+    : update.guards;
+  const next = getValueInterval(value, binding, source, guards, isInteger, null);
   if (!next) return [];
   const atom = getBindingPlace(binding);
   const atMost: Bound[] = Number.isFinite(next.max)
