@@ -7,6 +7,7 @@ import { getCollectionCases, getContentsField } from "./utils/literal-receivers"
 import type { CollectionOwner } from "./utils/literal-receivers";
 import { getValuePlace } from "./utils/get-value-place";
 import { getTestExpression } from "./utils/get-test-expression";
+import { getValueKey } from "./utils/get-value-key";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isSamePlace } from "./utils/is-same-place";
 
@@ -77,6 +78,30 @@ const getFirstRenderCases = (value: SymbolicValue, walk: FieldWalk): FieldCases 
   return literals.length === folded.length ? toLiteralCases(literals) : null;
 };
 
+const narrowByTest = (
+  cases: AbstractValue[] | null,
+  arm: SymbolicValue,
+  test: SymbolicValue,
+  isTrue: boolean,
+): AbstractValue[] | null => {
+  if (test.kind === "UnaryExpression" && test.operator === "!")
+    return narrowByTest(cases, arm, test.value, !isTrue);
+  if (!cases || arm.kind !== "Binding" || test.kind !== "BinaryExpression") return cases;
+  if (test.operator !== "===" && test.operator !== "!==") return cases;
+  const armKey = getValueKey(arm);
+  const literal =
+    getValueKey(test.left) === armKey
+      ? test.right
+      : getValueKey(test.right) === armKey
+        ? test.left
+        : null;
+  if (literal?.kind !== "Primitive") return cases;
+  const isEqual = (test.operator === "===") === isTrue;
+  return cases.filter(
+    (value) => value.kind !== "Literal" || (value.value === literal.value) === isEqual,
+  );
+};
+
 const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldCases => {
   const firstRenderCases =
     walk.isFirstRender && path.length === 0 ? getFirstRenderCases(value, walk) : null;
@@ -97,8 +122,15 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
     const consequent = getCases(value.consequent, path, walk);
     const alternate = getCases(value.alternate, path, walk);
     if (consequent === "unchanged" && alternate === "unchanged") return "unchanged";
-    const consequentCases = resolveUnchanged(consequent, walk);
-    const alternateCases = resolveUnchanged(alternate, walk);
+    const test = getTestExpression(value);
+    const consequentCases =
+      path.length === 0
+        ? narrowByTest(resolveUnchanged(consequent, walk), value.consequent, test, true)
+        : resolveUnchanged(consequent, walk);
+    const alternateCases =
+      path.length === 0
+        ? narrowByTest(resolveUnchanged(alternate, walk), value.alternate, test, false)
+        : resolveUnchanged(alternate, walk);
     return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
   }
   if (path.length === 0 && walk.constraints && isBooleanExpression(value)) {
