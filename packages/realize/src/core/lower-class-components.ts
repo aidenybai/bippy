@@ -6,6 +6,7 @@ const MOUNT_METHOD = "componentDidMount";
 const UNMOUNT_METHOD = "componentWillUnmount";
 const RENDER_METHOD = "render";
 const STATE_NAME = "state";
+const BINDING_METHODS = new Set(["bind", "call", "apply"]);
 const SET_STATE_NAME = "setState";
 const PROPS_NAME = "props";
 const HOOK_NAMES = ["useState", "useEffect"];
@@ -45,6 +46,7 @@ interface ClassParts {
   stateLoc: types.SourceLocation | null;
   stateNameLoc: types.SourceLocation | null;
   methods: Map<string, MethodValue>;
+  boundNames: Set<string>;
   render: types.ClassMethod | null;
 }
 
@@ -75,11 +77,18 @@ const isBindCall = (node: types.Expression): boolean =>
   node.arguments.length === 1 &&
   types.isThisExpression(node.arguments[0]);
 
-const readConstructor = (
-  method: types.ClassMethod,
-  parts: ClassParts,
-  boundNames: Set<string>,
-): boolean =>
+const getInlineBoundName = (node: types.CallExpression): string | null => {
+  if (!isBindCall(node) || !types.isMemberExpression(node.callee)) return null;
+  const target = node.callee.object;
+  return types.isMemberExpression(target) &&
+    types.isThisExpression(target.object) &&
+    !target.computed &&
+    types.isIdentifier(target.property)
+    ? target.property.name
+    : null;
+};
+
+const readConstructor = (method: types.ClassMethod, parts: ClassParts): boolean =>
   method.params.every((param) => types.isIdentifier(param, { name: PROPS_NAME })) &&
   method.body.body.every((statement) => {
     if (!types.isExpressionStatement(statement)) return false;
@@ -99,14 +108,14 @@ const readConstructor = (
         ? expression.left.property.name
         : null;
     if (!name || !isBindCall(expression.right)) return false;
-    boundNames.add(name);
+    parts.boundNames.add(name);
     return true;
   });
 
-const readMember = (member: ClassMember, parts: ClassParts, boundNames: Set<string>): boolean => {
+const readMember = (member: ClassMember, parts: ClassParts): boolean => {
   const name = getMemberName(member);
   if (types.isClassMethod(member) && member.kind === "constructor")
-    return readConstructor(member, parts, boundNames);
+    return readConstructor(member, parts);
   if (!name || UNSUPPORTED_LIFECYCLES.has(name)) return false;
   if ("static" in member && member.static) return IGNORED_STATICS.has(name);
   if (types.isClassMethod(member)) {
@@ -135,12 +144,12 @@ const readClassParts = (node: types.Class): ClassParts | null => {
     stateLoc: null,
     stateNameLoc: null,
     methods: new Map(),
+    boundNames: new Set(),
     render: null,
   };
-  const boundNames = new Set<string>();
-  if (!node.body.body.every((member) => readMember(member, parts, boundNames))) return null;
+  if (!node.body.body.every((member) => readMember(member, parts))) return null;
   if (!parts.render || parts.render.params.length > 0) return null;
-  if ([...boundNames].some((name) => !parts.methods.has(name))) return null;
+  if ([...parts.boundNames].some((name) => !parts.methods.has(name))) return null;
   const mount = parts.methods.get(MOUNT_METHOD);
   if (mount && mount.params.length > 0) return null;
   const unmount = parts.methods.get(UNMOUNT_METHOD);
@@ -181,6 +190,32 @@ const isClassMember = (path: NodePath | null, classBody: types.ClassBody): boole
   path !== null &&
   (path.parent === classBody ||
     (path.parentPath?.isClassProperty() === true && path.parentPath.parent === classBody));
+
+const usesThis = (value: MethodValue): boolean => {
+  let isFound = false;
+  types.traverseFast(value.body, (node) => {
+    if (types.isThisExpression(node)) isFound = true;
+  });
+  return isFound;
+};
+
+const isUnboundMethodValue = (
+  member: NodePath<types.MemberExpression>,
+  parts: ClassParts,
+): boolean => {
+  const name = types.isIdentifier(member.node.property) ? member.node.property.name : null;
+  const value = name === null ? undefined : parts.methods.get(name);
+  if (!name || !value || types.isArrowFunctionExpression(value) || parts.boundNames.has(name))
+    return false;
+  const { parent } = member;
+  const isCalled = types.isCallExpression(parent) && parent.callee === member.node;
+  const isBound =
+    types.isMemberExpression(parent) &&
+    parent.object === member.node &&
+    types.isIdentifier(parent.property) &&
+    BINDING_METHODS.has(parent.property.name);
+  return !isCalled && !isBound && usesThis(value);
+};
 
 const isNullishNode = (node: types.Expression): boolean =>
   types.isNullLiteral(node) || types.isIdentifier(node, { name: "undefined" });
@@ -238,6 +273,7 @@ const withLoc = <Node extends types.Node>(
 
 const rewriteThis = (
   classPath: NodePath<types.Class>,
+  parts: ClassParts,
   introducedNames: Set<string>,
   isApplied: boolean,
 ): { usesState: boolean } | null => {
@@ -254,6 +290,12 @@ const rewriteThis = (
     return binding !== undefined && isInsideNode(binding.path, classBody);
   };
   classPath.get("body").traverse({
+    CallExpression(path) {
+      const name = getInlineBoundName(path.node);
+      if (!name || !parts.methods.has(name) || isShadowed(path, name)) return;
+      if (isApplied) path.replaceWith(insert(withLoc(types.identifier(name), path.node.loc)));
+      path.skip();
+    },
     ExpressionStatement(path) {
       const { expression } = path.node;
       const isConstructorStatement =
@@ -318,6 +360,10 @@ const rewriteThis = (
         return;
       }
       if (!isInstanceRead && !introducedNames.has(name)) {
+        isLowerable = false;
+        return;
+      }
+      if (!isApplied && isUnboundMethodValue(member, parts)) {
         isLowerable = false;
         return;
       }
@@ -436,9 +482,9 @@ const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
     PROPS_NAME,
     ...parts.methods.keys(),
   ]);
-  const checked = rewriteThis(path, introducedNames, false);
+  const checked = rewriteThis(path, parts, introducedNames, false);
   if (!checked || !createComponentBody(parts, render, checked.usesState)) return false;
-  if (!rewriteThis(path, introducedNames, true)) return false;
+  if (!rewriteThis(path, parts, introducedNames, true)) return false;
   const body = createComponentBody(parts, render, checked.usesState) ?? [];
   const params = [types.identifier(PROPS_NAME)];
   const block = types.blockStatement(body);

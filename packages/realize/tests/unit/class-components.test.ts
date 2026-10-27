@@ -17,7 +17,7 @@ describe("a class component", () => {
       .filter((component) => component.analysis.file.endsWith("class-components.tsx"))
       .filter((component) => component.analysis.bailouts.length > 0)
       .map((component) => component.analysis.name);
-    expect(bailouts).toEqual(["ClassAfterUpdate", "ClassForced", "ClassDelayed"]);
+    expect(bailouts).toEqual(["ClassAfterUpdate", "ClassForced", "ClassDelayed", "ClassUnbound"]);
   });
 
   it("reads props through this.props", () => {
@@ -50,8 +50,13 @@ describe("a class component", () => {
     ]);
   });
 
-  it("keeps the bailout for other lifecycles, instance methods and deferred state reads", () => {
-    for (const name of ["ClassAfterUpdate", "ClassForced", "ClassDelayed"])
+  it("lowers a method bound inline or passed unbound without reading this", () => {
+    expect(getConditions("ClassInlineBound")).toEqual([["state.isOn"], ["!state.isOn"]]);
+    expect(getConditions("ClassUnboundWithoutThis")).toEqual([["state.isOn"], ["!state.isOn"]]);
+  });
+
+  it("keeps the bailout for other lifecycles, instance methods, deferred state reads and unbound methods", () => {
+    for (const name of ["ClassAfterUpdate", "ClassForced", "ClassDelayed", "ClassUnbound"])
       expect(
         getComponent(project, name).analysis.bailouts.map((bailout) => bailout.reason),
       ).toEqual(["class-component"]);
