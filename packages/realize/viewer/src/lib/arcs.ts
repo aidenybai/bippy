@@ -9,6 +9,11 @@ const RESTING_ARC_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
 const LANE_X_REACH = 64;
 const JUNCTION_GAP = 12;
 
+interface ArcEnd {
+  box: Box;
+  line: number;
+}
+
 interface Endpoint {
   arcIndex: number;
   end: "from" | "to";
@@ -155,23 +160,21 @@ export const placeArcs = (
   colorByNodeId: Map<string, string>,
   isWanted: (edge: GraphEdge) => boolean,
 ): PlacedArc[] => {
-  const boxes = new Map<string, Box>();
-  const lines = new Map<string, number>();
+  const ends = new Map<string, ArcEnd>();
   for (const token of tokens) {
     const box = token.anchorBox ?? (token.isMultiLine ? null : token.box);
-    if (!box) continue;
-    boxes.set(token.node.id, box);
-    lines.set(token.node.id, (token.node.anchor ?? token.node.loc).start.line);
+    if (box)
+      ends.set(token.node.id, { box, line: (token.node.anchor ?? token.node.loc).start.line });
   }
   const arcs = view.components
     .flatMap((component) => component.graph.edges)
     .filter(isWanted)
     .flatMap((edge) => {
-      const from = boxes.get(edge.from);
-      const to = boxes.get(edge.to);
+      const from = ends.get(edge.from);
+      const to = ends.get(edge.to);
       const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from);
-      return from && to && color && lines.get(edge.from) !== lines.get(edge.to)
-        ? [{ edge, from, to, color }]
+      return from && to && color && from.line !== to.line
+        ? [{ edge, from: from.box, to: to.box, color }]
         : [];
     });
   return assignLanes(assignJunctions(assignSlots(arcs)));

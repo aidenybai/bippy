@@ -17,7 +17,7 @@ export const App = (props: AppProps) => (
   <Viewer {...props}>
     <Viewer.Toolbar>
       <Toolbar.Brand />
-      <Toolbar.File />
+      <Toolbar.FileMenu />
       <Toolbar.Modes />
     </Viewer.Toolbar>
     <Viewer.Panes>

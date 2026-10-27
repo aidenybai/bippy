@@ -23,7 +23,7 @@ const usePrefetchModes = (name: string): void => {
   }, [router, name]);
 };
 
-const ModeTabs = () => {
+const Modes = () => {
   const { name, mode, setMode } = useViewer();
   usePrefetchModes(name);
   return (
@@ -41,30 +41,32 @@ const ModeTabs = () => {
   );
 };
 
-const Title = () => {
+const FileMenu = () => {
   const { examples, name, mode, view } = useViewer();
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant: "ghost" }), "min-w-0 font-mono text-foreground")}
-      >
-        <span className="truncate">{getFileTitle(view.file)}</span>
-        <ChevronDown className="text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {examples.map((example) => (
-          <DropdownMenuLinkItem
-            key={example.name}
-            render={<Link href={getRouteHref(example.name, mode)} />}
-            aria-current={example.name === name ? "page" : undefined}
-            className="font-mono"
-          >
-            <span className="flex-1">{getFileTitle(example.file)}</span>
-            {example.name === name && <Check />}
-          </DropdownMenuLinkItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex h-8 min-w-0 flex-1 items-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(buttonVariants({ variant: "ghost" }), "min-w-0 font-mono text-foreground")}
+        >
+          <span className="truncate">{getFileTitle(view.file)}</span>
+          <ChevronDown className="text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {examples.map((example) => (
+            <DropdownMenuLinkItem
+              key={example.name}
+              render={<Link href={getRouteHref(example.name, mode)} />}
+              aria-current={example.name === name ? "page" : undefined}
+              className="font-mono"
+            >
+              <span className="flex-1">{getFileTitle(example.file)}</span>
+              {example.name === name && <Check />}
+            </DropdownMenuLinkItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 
@@ -93,10 +95,4 @@ const Brand = () => (
   </div>
 );
 
-const File = () => (
-  <div className="flex h-8 min-w-0 flex-1 items-center">
-    <Title />
-  </div>
-);
-
-export const Toolbar = Object.assign(Root, { Brand, File, Modes: ModeTabs });
+export const Toolbar = Object.assign(Root, { Brand, FileMenu, Modes });

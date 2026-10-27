@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   Sidebar,
@@ -61,22 +61,23 @@ const Crash = ({ error }: { error: unknown }) => (
   </pre>
 );
 
-const Panes = ({ children }: { children: ReactNode }) => <SidebarLayout>{children}</SidebarLayout>;
-
-const Pane = () => {
-  const { mode } = useViewer();
-  if (mode === "state-chart") return <StateChartPane />;
-  if (mode === "json") return <JsonPane />;
-  return <SourcePane />;
+const PANES: Record<ViewMode, ComponentType> = {
+  code: SourcePane,
+  "state-chart": StateChartPane,
+  json: JsonPane,
 };
 
-const Source = () => (
-  <SidebarInset>
-    <ErrorBoundary FallbackComponent={Crash}>
-      <Pane />
-    </ErrorBoundary>
-  </SidebarInset>
-);
+const Source = () => {
+  const { mode } = useViewer();
+  const Pane = PANES[mode];
+  return (
+    <SidebarInset>
+      <ErrorBoundary FallbackComponent={Crash}>
+        <Pane />
+      </ErrorBoundary>
+    </SidebarInset>
+  );
+};
 
 const InspectorPane = ({ children }: { children: ReactNode }) => (
   <Sidebar side="right" title="Inspector">
@@ -90,7 +91,7 @@ const InspectorPane = ({ children }: { children: ReactNode }) => (
 
 export const Viewer = Object.assign(Root, {
   Toolbar,
-  Panes,
+  Panes: SidebarLayout,
   Source,
   Inspector: InspectorPane,
   Status,
