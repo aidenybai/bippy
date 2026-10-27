@@ -1107,6 +1107,23 @@ export const evaluateCondition = (
   }
 };
 
+const isKnownMember = (
+  key: SymbolicValue,
+  object: SymbolicValue,
+  constraints: Constraints,
+): boolean => {
+  if (key.kind !== "Primitive" || object.kind !== "Binding") return false;
+  const fieldValues = getPossibleValues(
+    { ...object, path: [...object.path, String(key.value)] },
+    constraints,
+  );
+  return (
+    fieldValues !== null &&
+    fieldValues.length > 0 &&
+    fieldValues.every((field) => field.kind === "Literal" && field.value !== undefined)
+  );
+};
+
 const evaluateUncachedCondition = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -1132,6 +1149,8 @@ const evaluateUncachedCondition = (
       return operand === null ? null : !operand;
     }
     case "BinaryExpression": {
+      if (value.operator === "in" && isKnownMember(value.left, value.right, constraints))
+        return true;
       const distributed = distributeComparison(value);
       if (distributed) return evaluateCondition(distributed, constraints);
       const bounded = evaluateBounds(value, constraints);
