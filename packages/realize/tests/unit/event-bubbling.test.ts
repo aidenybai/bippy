@@ -148,4 +148,20 @@ describe("a click that bubbles to an ancestor's handler", () => {
       ]),
     );
   });
+
+  it("runs an autoFocus input's focus handler after the commit that mounts it", () => {
+    const effectUpdates = getComponent(project, "AutoFocused")
+      .analysis.handlers.filter((handler) => handler.trigger.kind === "Effect")
+      .flatMap((handler) => handler.updates.map((update) => update.binding.name));
+    expect(effectUpdates).toContain("isFocused");
+  });
+
+  it("runs a child's callback props when a ref the child holds dispatches an event", () => {
+    const names = getComponent(project, "FocusThroughChild").analysis.handlers.map((handler) =>
+      handler.updates
+        .filter((update) => update.binding.kind === "state")
+        .map((update) => update.binding.name),
+    );
+    expect(names).toContainEqual(["clicks", "isFocused"]);
+  });
 });
