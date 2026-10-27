@@ -61,4 +61,8 @@ describe("a class component", () => {
         getComponent(project, name).analysis.bailouts.map((bailout) => bailout.reason),
       ).toEqual(["class-component"]);
   });
+
+  it("keeps the export name of an exported class declaration", () => {
+    expect(getComponent(project, "ClassCounter").analysis.exportName).toBe("ClassCounter");
+  });
 });

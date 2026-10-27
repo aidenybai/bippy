@@ -2699,8 +2699,9 @@ export class Interpreter {
       property === "current" &&
       initialRef !== undefined &&
       getIdentifierName(load.object) === null;
-    if (isUnsharedRef && initialRef.kind === "Function")
-      this.#mountClosureIds.add(initialRef.functionId);
+    if (isUnsharedRef)
+      for (const callback of getPassedCallbacks([initialRef]))
+        if (callback.kind === "Function") this.#mountClosureIds.add(callback.functionId);
     if (isUnsharedRef) return initialRef;
     const loaded = this.#foldLiteralType(
       this.evaluatePropertyLoad(object, property, load.loc),
