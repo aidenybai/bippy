@@ -38,12 +38,14 @@ Labels use a few symbols:
 
 `--tla <directory>` writes each component as a TLA+ module and a TLC config, like `Wizard.tla` and `Wizard.cfg`. TLC or tla-ts checks them as written: `npx tla-ts Wizard.tla`.
 
-- Each place with a finite set of values is a variable. State and reducer fields change only through actions, props keep their first value, and hook, context and other values may change on any step.
+- Each place with a finite set of values is a variable. State and reducer fields change only through actions, props keep their first value, and hook, context and other values may change on any step. The `Environment` action changes one of those values at a time.
 - Each handler and effect is an action, enabled under the conditions that render its element. Its updates run in order. A handler that awaits may stop after any of its async updates, so the model reaches the screens in between.
 - `null`, `undefined` and object types are model values. An update the module can't express picks any of the place's values, and a guard it can't express is a free boolean.
-- `Screen` holds one string per region that lists the branch outcomes it renders. `Settled` is false while an update during render is pending.
+- `Screen` holds one string per region that lists the branch outcomes it renders. `Settled` is false while an update during render is pending. The config checks `TypeOK`, which fails if a state value leaves the set realize found for it.
 
 `tests/unit/tla-reachability.test.ts` checks each fixture component with tla-ts and compares the screens it reaches with the states realize lists. tla-ts reaches every listed state except one. `SizeLabel` lists `size !== sizes.small ∧ size !== sizes.large`, which no props reach, since `size` is one of the two values `sizes` holds.
+
+`tests/unit/tla-fuzz.test.ts` generates random components from a seed and renders each with React in happy-dom. It clicks every button breadth-first for each combination of props and checks that tla-ts reaches every screen and value React rendered. It runs 40 seeds by default. Set `FUZZ_COUNT` and `FUZZ_SEED` to run more.
 
 ## What it does
 
