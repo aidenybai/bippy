@@ -6,7 +6,7 @@ import type { Observation } from "./driver";
 import { explainMismatch, findClosest, formatShapes, normalizeShapes, toExpected } from "./match";
 import type { ExpectedShape } from "./match";
 import { scoreWarnings } from "./mutation";
-import { TRUNCATED_VALUE } from "./types";
+import { TRUNCATED_VALUE, getStateOwner } from "./types";
 import type { Capture, Shape } from "./types";
 import {
   collectProbes,
@@ -159,8 +159,17 @@ const scoreFirstCommit = (
     });
 };
 
+const isMutatedInPlace = (context: ScoringContext, path: string[], owner: string): boolean =>
+  path.some(
+    (_action, index) =>
+      context.capturesByPathKey
+        .get(getPathKey(path.slice(0, index + 1)))
+        ?.mutatedOwners.includes(owner) ?? false,
+  );
+
 const scoreValues = (context: ScoringContext, observation: Observation): void => {
   context.stateBindings?.forEach((binding, hookIndex) => {
+    if (isMutatedInPlace(context, observation.path, getStateOwner(hookIndex))) return;
     for (const [{ bindingId, path: placePath }, predicted] of context.report.places) {
       if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
         continue;
