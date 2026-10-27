@@ -2232,11 +2232,13 @@ export class Interpreter {
       ? getMathCall(methodName, argumentValues)
       : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (range || derived) return this.#createCallResult(callSite, { range, derived });
+    const firstRead = this.#getFirstObjectRead(receiver, methodName, argumentValues);
+    if (firstRead) return this.#createCallResult(callSite, { firstRender: firstRead });
     const getFirstValue = () =>
       this.iteration.getFirstValue(
         methodName,
         receiver,
-        callback,
+        argumentValues,
         methodCall.loc,
         instructionId,
         walkState,
@@ -2250,6 +2252,19 @@ export class Interpreter {
       this.#evaluateDerivedMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
     );
+  }
+
+  #getFirstObjectRead(
+    receiver: SymbolicValue,
+    methodName: string,
+    argumentValues: SymbolicValue[],
+  ): FirstRenderValue | null {
+    const [target, ...rest] = argumentValues;
+    const isWholeState =
+      target?.kind === "Binding" && target.path.length === 0 && isStateBinding(target.binding);
+    const initial = isWholeState ? target.binding.initial : null;
+    const value = initial ? getLiteralRead(receiver, methodName, [initial, ...rest]) : null;
+    return value && target?.kind === "Binding" ? { value, inputIds: [target.binding.id] } : null;
   }
 
   #readBindingObject(

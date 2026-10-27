@@ -47,6 +47,13 @@ const readObject = (methodName: string, target: SymbolicValue): SymbolicValue | 
   );
 };
 
+const hasOwnKey = (target: SymbolicValue, key: SymbolicValue | undefined): SymbolicValue | null => {
+  const entries = getLiteralEntries(target);
+  return entries && key?.kind === "Primitive"
+    ? { kind: "Primitive", value: entries.some(([entryKey]) => entryKey === String(key.value)) }
+    : null;
+};
+
 const getConcatenatedCopy = (
   receiver: SymbolicValue,
   argumentValues: SymbolicValue[],
@@ -73,6 +80,8 @@ export const getLiteralRead = (
       : null;
   const isObject =
     receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
+  if (isObject && argument && methodName === "hasOwn")
+    return hasOwnKey(argument, argumentValues[1]);
   return isObject && argument && OBJECT_READS.has(methodName)
     ? readObject(methodName, argument)
     : null;
