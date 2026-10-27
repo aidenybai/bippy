@@ -3,6 +3,6 @@ export interface User {
   isAdmin: boolean;
 }
 
-export const useUser = (): User => ({ name: "Ada", isAdmin: true });
+export declare function useUser(): User;
 
 export declare const user: () => "guest" | "member";

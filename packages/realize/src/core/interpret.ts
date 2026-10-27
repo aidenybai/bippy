@@ -1182,7 +1182,9 @@ export class Interpreter {
       return { kind: "Transition" };
     const hookKind = getHookKind(this.getCurrentFunction().env, callSite.calleePlace.identifier);
     if (hookKind === "Custom") {
-      const projectHook = this.#findProjectHook(callSite.calleePlace);
+      const projectHook =
+        this.#findProjectHook(callSite.calleePlace) ??
+        this.#findProjectFunction(callSite.calleePlace);
       if (projectHook)
         return this.#inlinedFunctions.size < MAX_INLINE_DEPTH
           ? { kind: "ProjectHook", projectHook }
