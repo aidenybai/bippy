@@ -524,6 +524,7 @@ export class Interpreter {
   readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
   readonly #sourcesByBinding = new Map<number, SymbolicValue[]>();
   readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue[]>();
+  readonly #unknownSourceKeys = new WeakMap<SymbolicValue, Set<string>>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
@@ -1645,9 +1646,14 @@ export class Interpreter {
   }
 
   addUnknownSource(unknown: SymbolicValue, source: SymbolicValue): void {
+    const sourceKeys = this.#unknownSourceKeys.get(unknown) ?? new Set<string>();
+    const sourceKey = getValueKey(source);
+    if (sourceKeys.has(sourceKey)) return;
+    sourceKeys.add(sourceKey);
+    this.#unknownSourceKeys.set(unknown, sourceKeys);
     const sources = this.#unknownSources.get(unknown);
     if (!sources) this.#unknownSources.set(unknown, [source]);
-    if (sources && !sources.includes(source)) sources.push(source);
+    sources?.push(source);
   }
 
   #getCalledSourceFunctions(callee: SymbolicValue): SymbolicValue[] {
