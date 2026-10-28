@@ -1,9 +1,23 @@
 import { getRecordedError } from "./errors";
-import { findMountedFiber, getMountedType, hasPendingReactWork } from "./fibers";
+import {
+  findMountedFiber,
+  getMountedType,
+  hasPendingReactWork,
+  hasSuspendedReactWork,
+} from "./fibers";
 import { createOpenObject } from "./hydrate";
+import {
+  SHORT_CALLBACK_MS,
+  hasPendingCallbacks,
+  hasPendingPassiveFlush,
+  nativeClearTimeout,
+  nativeRequestAnimationFrame,
+  nativeSetTimeout,
+} from "./pending-callbacks";
 
-const SETTLE_MS = 40;
+const SETTLE_MS = SHORT_CALLBACK_MS;
 const MAX_SETTLE_MS = 3000;
+const POLL_MS = 4;
 
 let pendingRequests = 0;
 
@@ -29,6 +43,19 @@ window.fetch = (input, init) => {
       : Promise.resolve(createStandInResponse()),
   );
 };
+const trackBodyRead = <Method extends "arrayBuffer" | "blob" | "formData" | "json" | "text">(
+  method: Method,
+): void => {
+  const read = Response.prototype[method];
+  Response.prototype[method] = function readBody(this: Response) {
+    return trackRequest(read.call(this));
+  } as Response[Method];
+};
+trackBodyRead("arrayBuffer");
+trackBodyRead("blob");
+trackBodyRead("formData");
+trackBodyRead("json");
+trackBodyRead("text");
 const originalSend = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function send(...sendArguments) {
   pendingRequests++;
@@ -36,21 +63,39 @@ XMLHttpRequest.prototype.send = function send(...sendArguments) {
   originalSend.apply(this, sendArguments);
 };
 
-const waitForSettleInterval = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+const waitForPoll = (): Promise<void> =>
+  new Promise((resolve) => nativeSetTimeout(resolve, POLL_MS));
+
+const waitForFrame = (): Promise<void> =>
+  new Promise((resolve) => {
+    const fallbackId = nativeSetTimeout(resolve, SETTLE_MS);
+    nativeRequestAnimationFrame(() => {
+      nativeClearTimeout(fallbackId);
+      nativeSetTimeout(resolve, 0);
+    });
+  });
 
 const isBusy = (): boolean =>
   pendingRequests > 0 ||
   hasPendingReactWork() ||
+  hasPendingPassiveFlush() ||
   (getMountedType() !== null && !findMountedFiber() && !getRecordedError());
 
 export const settle = async (): Promise<void> => {
-  const deadline = performance.now() + MAX_SETTLE_MS;
-  do await waitForSettleInterval();
-  while (isBusy() && performance.now() < deadline);
+  const start = performance.now();
+  const deadline = start + MAX_SETTLE_MS;
+  let quietDeadline = start + SETTLE_MS;
+  await waitForFrame();
+  while (performance.now() < deadline) {
+    const isWorking = isBusy();
+    if (isWorking) quietDeadline = performance.now() + SETTLE_MS;
+    const isWaiting = hasPendingCallbacks() || hasSuspendedReactWork();
+    if (!isWorking && (!isWaiting || performance.now() >= quietDeadline)) return;
+    await waitForPoll();
+  }
 };
 
 export const drain = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
-  while (isBusy() && performance.now() < deadline) await waitForSettleInterval();
+  while (isBusy() && performance.now() < deadline) await waitForPoll();
 };

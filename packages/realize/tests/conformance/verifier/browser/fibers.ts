@@ -83,6 +83,9 @@ const getLanes = (root: FiberRoot, key: string): number => {
   return typeof lanes === "number" ? lanes : 0;
 };
 
+export const hasSuspendedReactWork = (): boolean =>
+  latestRoot !== null && getLanes(latestRoot, "suspendedLanes") !== 0;
+
 export const hasPendingReactWork = (): boolean => {
   if (!latestRoot) return false;
   const warmLanes = "warmLanes" in latestRoot ? getLanes(latestRoot, "warmLanes") : ~0;
