@@ -57,6 +57,9 @@ export const performInPage = (page: Page, actionKey: string): Promise<Capture | 
 const canLoadInPage = (page: Page, wrapper: Wrapper): Promise<boolean> =>
   withTimeout(page.evaluate((candidate) => window.__verify.canLoad(candidate), wrapper));
 
+const hasActionTimersInPage = (page: Page): Promise<boolean> =>
+  withTimeout(page.evaluate(() => window.__verify.hasActionTimers()));
+
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
@@ -261,6 +264,15 @@ export const resolveWrappers = async (
 const getCaptureKey = (capture: Capture): string =>
   JSON.stringify([normalizeShapes(capture.shapes), capture.hookStates]);
 
+const isUnchangedBy = (action: Action, before: Capture, after: Capture): boolean =>
+  action.kind !== "change" &&
+  !after.error &&
+  after.handlerHits.length === 0 &&
+  after.probes.length === 0 &&
+  after.mutationHits.length === 0 &&
+  after.mutatedOwners.length === 0 &&
+  getCaptureKey(after) === getCaptureKey(before);
+
 const replayPath = async (
   page: Page,
   request: MountRequest,
@@ -298,12 +310,14 @@ const explorePropCombination = async (
     if (!replayed) continue;
     for (const action of await listActionsInPage(page)) {
       if (!hasBudget()) break;
-      const before = replayed ?? (await replayPath(page, request, currentPath));
+      const before: Capture | null = replayed ?? (await replayPath(page, request, currentPath));
       replayed = null;
       if (!before) continue;
       const after = await performInPage(page, action.key);
       if (!after) continue;
       actionCount++;
+      replayed =
+        isUnchangedBy(action, before, after) && !(await hasActionTimersInPage(page)) ? after : null;
       const path = [...currentPath, action.key];
       observations.push({ props, path, action, before, after });
       const captureKey = getCaptureKey(after);

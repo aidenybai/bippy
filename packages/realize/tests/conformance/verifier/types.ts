@@ -155,6 +155,7 @@ interface VerifyApi {
   mount: (request: MountRequest) => Promise<Capture>;
   actions: () => Action[];
   perform: (key: string) => Promise<Capture | null>;
+  hasActionTimers: () => boolean;
   observe: () => Promise<Capture>;
   canLoad: (wrapper: Wrapper) => Promise<boolean>;
 }
