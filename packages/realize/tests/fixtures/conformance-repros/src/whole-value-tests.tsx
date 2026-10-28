@@ -22,3 +22,22 @@ export const ReduceSum = () => {
     </button>
   );
 };
+
+export const InFlags = () => {
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  return (
+    <button onClick={() => setFlags({ ...flags, a: true })}>{"a" in flags ? "yes" : "no"}</button>
+  );
+};
+
+export const InFlagsHas = () => {
+  const [flags, setFlags] = useState<Record<string, boolean>>({ a: true });
+  return <button onClick={() => setFlags({})}>{"a" in flags ? "yes" : "no"}</button>;
+};
+
+export const InheritedKey = () => {
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  return (
+    <button onClick={() => setFlags({ a: true })}>{"toString" in flags ? "yes" : "no"}</button>
+  );
+};

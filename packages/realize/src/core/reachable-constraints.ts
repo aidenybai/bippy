@@ -587,6 +587,16 @@ export const createFirstRenderConstraints = (
   return firstRender;
 };
 
+const foldFirstMembership = (value: SymbolicValue): SymbolicValue => {
+  if (value.kind !== "BinaryExpression" || value.operator !== "in") return value;
+  const { right } = value;
+  const isWholeState =
+    right.kind === "Binding" && right.path.length === 0 && isStateBinding(right.binding);
+  const initial = isWholeState ? right.binding.initial : null;
+  const folded = initial ? foldBinary("in", value.left, initial) : null;
+  return folded?.kind === "Primitive" ? folded : value;
+};
+
 export const getFirstRenderOutcome = (
   firstRender: FirstRenderOutcomes,
   branchKey: string,
@@ -594,7 +604,10 @@ export const getFirstRenderOutcome = (
 ): boolean | null => {
   const cachedOutcome = firstRender.outcomesByBranchKey.get(branchKey);
   if (cachedOutcome !== undefined) return cachedOutcome;
-  const outcome = evaluateCondition(test, firstRender.constraints);
+  const outcome = evaluateCondition(
+    mapSymbolicValue(test, foldFirstMembership),
+    firstRender.constraints,
+  );
   firstRender.outcomesByBranchKey.set(branchKey, outcome);
   return outcome;
 };
