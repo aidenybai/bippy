@@ -1,3 +1,4 @@
+import { getDomainPrimitive } from "./domains";
 import { getBounds, isNumberAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
 import type {
@@ -315,10 +316,8 @@ export const getIntervalBounds = (
   handlers: Handler[],
 ): Bound[] => {
   const { binding, value } = update;
-  const { initial } = binding;
-  const isNumber = initial?.kind === "Primitive" && typeof initial.value === "number";
   if (
-    !isNumber ||
+    getDomainPrimitive(binding.domain) !== "number" ||
     update.isRepeated ||
     getNumber(value) !== null ||
     isTreeLargerThan(value, MAX_INTERVAL_NODES)

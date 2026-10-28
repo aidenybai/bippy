@@ -6,10 +6,12 @@ import type {
   BindingPlace,
   ConditionalValue,
   DerivedCall,
+  Domain,
   PrimitiveValue,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
+import { getDomainPrimitive } from "./domains";
 import { isEqualToLiteral } from "./utils/is-equal-to-literal";
 import { formatAbstractValue } from "./format";
 import { getValueKey } from "./utils/get-value-key";
@@ -92,6 +94,7 @@ export interface Constraints {
   invariants: Bound[];
   finitePlaces: PlaceMap<true>;
   unionMemberValues: PlaceMap<AbstractValue[][]>;
+  placeDomains: PlaceMap<Domain>;
   possibleMembers: Map<number, number[]>;
 }
 
@@ -103,6 +106,7 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   invariants: constraints.invariants,
   finitePlaces: constraints.finitePlaces,
   unionMemberValues: constraints.unionMemberValues,
+  placeDomains: constraints.placeDomains,
   possibleMembers: new Map(constraints.possibleMembers),
 });
 
@@ -335,6 +339,35 @@ const isNumericAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   ) ||
   appearsIn(atom, constraints.invariants);
 
+const isNumberTyped = (value: SymbolicValue, constraints: Constraints): boolean => {
+  if (value.kind === "Primitive") return typeof value.value === "number";
+  if (value.kind === "UnaryExpression") return value.operator === "-";
+  if (value.kind === "BinaryExpression")
+    return (
+      value.operator === "-" ||
+      (isNumberTyped(value.left, constraints) && isNumberTyped(value.right, constraints))
+    );
+  if (value.kind !== "Binding") return false;
+  const place = getValuePlace(value);
+  const domain =
+    value.path.length === 0 ? value.binding.domain : constraints.placeDomains.get(place);
+  return (
+    (domain !== undefined && getDomainPrimitive(domain) === "number") ||
+    isNumericAtom(place, constraints)
+  );
+};
+
+const isArithmetic = (value: SymbolicValue, constraints: Constraints): boolean => {
+  if (value.kind === "UnaryExpression") return isArithmetic(value.value, constraints);
+  if (value.kind !== "BinaryExpression") return true;
+  return (
+    (value.operator !== "+" ||
+      (isNumberTyped(value.left, constraints) && isNumberTyped(value.right, constraints))) &&
+    isArithmetic(value.left, constraints) &&
+    isArithmetic(value.right, constraints)
+  );
+};
+
 const isFiniteAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   atom.path.at(-1) === LENGTH_FIELD ||
   everyCase(
@@ -368,6 +401,11 @@ export const getBounds = (
 ): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
   if (!isTrue && constraints && !isComplementNegation(value, constraints)) return null;
+  if (
+    constraints &&
+    !(isArithmetic(value.left, constraints) && isArithmetic(value.right, constraints))
+  )
+    return null;
   const operator = isTrue ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const leftTerm = getSignedSum(value.left);
@@ -523,6 +561,8 @@ const isBoundedEquality = (
     above !== null &&
     isNumberValue(value.left, constraints) &&
     isNumberValue(value.right, constraints) &&
+    isNumberTyped(value.left, constraints) &&
+    isNumberTyped(value.right, constraints) &&
     !isConsistentWith(graph, below) &&
     !isConsistentWith(graph, above)
   );
@@ -563,7 +603,9 @@ const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean
   const isPositive = compareWithZero(value, ">", constraints);
   const isNegative = compareWithZero(value, "<", constraints);
   if (isPositive || isNegative) return true;
-  return isPositive === false && isNegative === false ? false : null;
+  return isPositive === false && isNegative === false && isNumberTyped(value, constraints)
+    ? false
+    : null;
 };
 
 const getLiteralCases = (
@@ -1332,6 +1374,7 @@ export const joinConstraints = (left: Constraints, right: Constraints): Constrai
     invariants: left.invariants,
     finitePlaces: left.finitePlaces,
     unionMemberValues: left.unionMemberValues,
+    placeDomains: left.placeDomains,
     possibleMembers: new Map(
       [...left.possibleMembers].flatMap(([bindingId, members]): Array<[number, number[]]> => {
         const rightMembers = right.possibleMembers.get(bindingId);

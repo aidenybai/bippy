@@ -1,6 +1,7 @@
 import { getBindingUpdates } from "./collect-handlers";
 import { addBounds, dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
+import { getDomainPrimitive } from "./domains";
 import { decideGuards, getFieldCases } from "./field-cases";
 import { getReachableIntegers, getReachableRange } from "./reachable-ranges";
 import type {
@@ -443,6 +444,7 @@ const createEmptyConstraints = (
       .map((binding): [BindingPlace, true] => [getBindingPlace(binding), true]),
   ),
   unionMemberValues: analysis.unionMemberValues,
+  placeDomains: analysis.placeDomains,
   possibleMembers: new Map(),
 });
 
@@ -791,14 +793,14 @@ export const getShiftedBounds = (
   bounds: Bound[],
   updatedBindingIds: ReadonlySet<number> = new Set([binding.id]),
 ): Bound[] => {
-  const isRootNumber =
-    isNumber(binding.initial) ||
-    (binding.domain.kind === "Opaque" && binding.domain.typeText === "number");
-  const targets = isRootNumber
-    ? isWholeBinding(value, binding)
-      ? []
-      : [{ place: getBindingPlace(binding), value }]
-    : getFieldTargets(value, binding.initial, binding).filter((target) => isNumber(target.initial));
+  const targets =
+    getDomainPrimitive(binding.domain) === "number"
+      ? isWholeBinding(value, binding)
+        ? []
+        : [{ place: getBindingPlace(binding), value }]
+      : getFieldTargets(value, binding.initial, binding).filter((target) =>
+          isNumber(target.initial),
+        );
   const updates = targets.map((target) => ({
     place: target.place,
     update: getAffineUpdate(target.value, target.place),
