@@ -148,7 +148,10 @@ const applyUpdates = (
     );
     updatedBindingIds.add(update.binding.id);
     if (!isMaybe)
-      addBounds(updated, [...getUpdateBounds(decidedValue, update.binding), ...shiftedBounds]);
+      addBounds(updated, [
+        ...getUpdateBounds(decidedValue, update.binding, updated),
+        ...shiftedBounds,
+      ]);
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
       for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])

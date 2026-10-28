@@ -59,6 +59,7 @@ export interface Bound {
   right: BindingPlace | null;
   maxDifference: number;
   isStrict: boolean;
+  mayBeNaN?: boolean;
 }
 
 interface AtomDifference {
@@ -140,7 +141,7 @@ const formatPossibleValues = (possibleValues: PlaceMap<AbstractValue[]>): string
   Int32Array.from(possibleValues, getPossibleValueId).sort().join(",");
 
 const formatBound = (bound: Bound): string =>
-  `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}`;
+  `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}${bound.mayBeNaN ? "?" : ""}`;
 
 const formatBounds = memoizeByIdentity((bounds: Bound[]): string =>
   bounds.map(formatBound).sort().join(";"),
@@ -312,7 +313,7 @@ const everyCase = (
   predicate: (value: AbstractValue) => boolean,
 ): boolean => constraints.possibleValues.get(atom)?.every(predicate) ?? false;
 
-const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
+export const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   atom.path.at(-1) === LENGTH_FIELD ||
   everyCase(
     atom,
@@ -320,7 +321,10 @@ const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
     (value) =>
       value.kind === "Literal" && typeof value.value === "number" && !Number.isNaN(value.value),
   ) ||
-  appearsIn(atom, [...constraints.invariants, ...constraints.bounds]);
+  appearsIn(
+    atom,
+    [...constraints.invariants, ...constraints.bounds].filter((bound) => !bound.mayBeNaN),
+  );
 
 const isNumericAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   atom.path.at(-1) === LENGTH_FIELD ||
@@ -517,6 +521,8 @@ const isBoundedEquality = (
   return (
     below !== null &&
     above !== null &&
+    isNumberValue(value.left, constraints) &&
+    isNumberValue(value.right, constraints) &&
     !isConsistentWith(graph, below) &&
     !isConsistentWith(graph, above)
   );
@@ -1548,10 +1554,13 @@ const withExactValue = (
 ): Constraints | null => {
   const assumed = cloneConstraints(constraints);
   const place = getValuePlace(bindingValue);
-  const values: AbstractValue[] = [{ kind: "Literal", value: literal }];
+  const values = getEqualLiterals(literal);
   assumed.possibleValues.set(place, values);
   return withLiteralLengths(assumed, place, values);
 };
+
+const getEqualLiterals = (literal: PrimitiveValue): AbstractValue[] =>
+  (literal === 0 ? [0, -0] : [literal]).map((value) => ({ kind: "Literal", value }));
 
 const assumeTypeof = (
   value: BinaryExpressionValue,
@@ -1584,7 +1593,7 @@ const narrowEquality = (
   if (isEqualToLiteral(value, literal, operator)) return wantsMatch ? [value] : [];
   if (!canTypeEqualLiteral(value, literal, operator)) return wantsMatch ? [] : [value];
   if (wantsMatch && value.kind === "Type" && value.primitive === typeof literal)
-    return [{ kind: "Literal", value: literal }];
+    return getEqualLiterals(literal);
   return [value];
 };
 

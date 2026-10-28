@@ -34,6 +34,7 @@ import { isNullish } from "./utils/is-nullish";
 import { isNullishCase } from "./utils/is-nullish-case";
 import { isSamePlace } from "./utils/is-same-place";
 import { isStateBinding } from "./utils/is-state-binding";
+import { isNaNFreeRange } from "./utils/is-nan-free";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { PlaceMap } from "./utils/place-map";
@@ -427,10 +428,13 @@ const createEmptyConstraints = (
   boundGraph: null,
   invariants: analysis.bindings.flatMap((binding) => [
     ...getLengthLimitBounds(binding),
-    ...getRangeBounds(
-      getBindingPlace(binding),
-      binding.range ?? reachableRanges.get(binding.id) ?? null,
-    ),
+    ...(binding.range
+      ? getRangeBounds(
+          getBindingPlace(binding),
+          binding.range,
+          !isNaNFreeRange(binding.range, (other) => reachableRanges.has(other.id)),
+        )
+      : getRangeBounds(getBindingPlace(binding), reachableRanges.get(binding.id) ?? null)),
     ...getFieldRangeBounds(binding, analysis.handlers),
   ]),
   finitePlaces: new PlaceMap(
@@ -630,19 +634,33 @@ const getKnownLength = (value: SymbolicValue): { count: number; isExact: boolean
   return null;
 };
 
-export const getRangeBounds = (place: BindingPlace, range: NumberRange | null): Bound[] => {
+export const getRangeBounds = (
+  place: BindingPlace,
+  range: NumberRange | null,
+  mayBeNaN = false,
+): Bound[] => {
   if (!range) return [];
   const bounds: Bound[] = [];
   if (range.min !== null)
-    bounds.push({ left: null, right: place, maxDifference: -range.min, isStrict: false });
+    bounds.push({ left: null, right: place, maxDifference: -range.min, isStrict: false, mayBeNaN });
   if (range.max !== null)
-    bounds.push({ left: place, right: null, maxDifference: range.max, isStrict: false });
+    bounds.push({ left: place, right: null, maxDifference: range.max, isStrict: false, mayBeNaN });
   return bounds;
 };
 
-export const getUpdateBounds = (value: SymbolicValue, binding: Binding): Bound[] =>
-  value.kind === "Binding" && value.path.length === 0
-    ? getRangeBounds(getBindingPlace(binding), value.binding.range)
+export const getUpdateBounds = (
+  value: SymbolicValue,
+  binding: Binding,
+  constraints: Constraints,
+): Bound[] =>
+  value.kind === "Binding" && value.path.length === 0 && value.binding.range
+    ? getRangeBounds(
+        getBindingPlace(binding),
+        value.binding.range,
+        !isNaNFreeRange(value.binding.range, (other) =>
+          constraints.finitePlaces.has(getBindingPlace(other)),
+        ),
+      )
     : getLengthBounds(value, binding);
 
 const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
@@ -696,8 +714,8 @@ const shiftBound = (bound: Bound, place: BindingPlace, update: AffineUpdate): Bo
   const shifted = limit + update.offset;
   if (!Number.isFinite(shifted)) return null;
   return isUpper === update.scale > 0
-    ? { left: atom, right: null, maxDifference: shifted, isStrict: bound.isStrict }
-    : { left: null, right: atom, maxDifference: -shifted, isStrict: bound.isStrict };
+    ? { ...bound, left: atom, right: null, maxDifference: shifted }
+    : { ...bound, left: null, right: atom, maxDifference: -shifted };
 };
 
 const shiftPairBound = (

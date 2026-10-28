@@ -9,3 +9,14 @@ export const NegatedZero = () => {
     </div>
   );
 };
+
+export const NegatedAmount = () => {
+  const [amount, setAmount] = useState(1);
+  return (
+    <div>
+      {amount === 0 ? <i>zero</i> : <i>nonzero</i>}
+      {1 / amount < 0 ? <i>negative</i> : <i>positive</i>}
+      <input aria-label="amount" onChange={(event) => setAmount(-Number(event.target.value))} />
+    </div>
+  );
+};
