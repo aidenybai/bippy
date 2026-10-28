@@ -262,6 +262,7 @@ const createConstraints = (model: Model): Constraints => {
     invariants: [],
     finitePlaces: new PlaceMap(),
     unionMemberValues: new PlaceMap(),
+    placeDomains: new PlaceMap(),
     possibleMembers: new Map(),
   };
 };
