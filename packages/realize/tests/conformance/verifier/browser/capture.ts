@@ -23,8 +23,9 @@ const MAX_PLAIN_NODES = 2000;
 let firstCommitShapes: Shape[] | null = null;
 
 const toShapes = (fiber: Fiber): Shape[] => {
-  if (fiber.tag === getReactWorkTagsForFiber(fiber).HostText)
-    return [{ kind: "text", text: String(fiber.memoizedProps) }];
+  const workTags = getReactWorkTagsForFiber(fiber);
+  if (fiber.tag === workTags.OffscreenComponent && fiber.memoizedState !== null) return [];
+  if (fiber.tag === workTags.HostText) return [{ kind: "text", text: String(fiber.memoizedProps) }];
   if (isHostFiber(fiber)) {
     const children = getChildren(fiber).flatMap(toShapes);
     const textContent: unknown = fiber.memoizedProps?.children;
