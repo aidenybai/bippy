@@ -523,7 +523,7 @@ export class Interpreter {
   readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
   readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
   readonly #sourcesByBinding = new Map<number, SymbolicValue[]>();
-  readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue>();
+  readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue[]>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
@@ -1645,11 +1645,9 @@ export class Interpreter {
   }
 
   addUnknownSource(unknown: SymbolicValue, source: SymbolicValue): void {
-    const existing = this.#unknownSources.get(unknown);
-    this.#unknownSources.set(
-      unknown,
-      existing ? { kind: "ArrayExpression", elements: [existing, source], spreads: [] } : source,
-    );
+    const sources = this.#unknownSources.get(unknown);
+    if (!sources) this.#unknownSources.set(unknown, [source]);
+    if (sources && !sources.includes(source)) sources.push(source);
   }
 
   #getCalledSourceFunctions(callee: SymbolicValue): SymbolicValue[] {
@@ -1661,8 +1659,8 @@ export class Interpreter {
         : [];
     }
     if (callee.kind !== "Unknown") return [];
-    const source = this.#unknownSources.get(callee);
-    if (source) return this.#getSourceFunctions([source]);
+    const sources = this.#unknownSources.get(callee);
+    if (sources) return this.#getSourceFunctions(sources);
     const { origin } = callee;
     if (!origin) return [];
     if (origin.kind === "Member")
@@ -1701,8 +1699,8 @@ export class Interpreter {
           );
         }
         case "Unknown": {
-          const source = this.#unknownSources.get(value);
-          if (source) return this.#getSourceFunctions([source], seen);
+          const sources = this.#unknownSources.get(value);
+          if (sources) return this.#getSourceFunctions(sources, seen);
           const { origin } = value;
           if (origin?.kind === "Member") return this.#getSourceFunctions([origin.object], seen);
           if (origin?.kind === "Call")
@@ -1996,7 +1994,7 @@ export class Interpreter {
   }
 
   #getUnknownInputs(unknown: Extract<SymbolicValue, { kind: "Unknown" }>): SymbolicValue[] {
-    const source = this.#unknownSources.get(unknown);
+    const sources = this.#unknownSources.get(unknown) ?? [];
     const { origin } = unknown;
     const originValues =
       origin?.kind === "Member"
@@ -2008,7 +2006,7 @@ export class Interpreter {
             : origin?.kind === "Value"
               ? [origin.value]
               : [];
-    return source ? [source, ...originValues] : originValues;
+    return [...sources, ...originValues];
   }
 
   #hasHiddenInputs(value: SymbolicValue, seen = new Set<SymbolicValue>()): boolean {
