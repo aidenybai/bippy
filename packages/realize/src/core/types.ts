@@ -173,7 +173,13 @@ export type SymbolicValue =
     }
   | { kind: "ObjectExpression"; properties: SymbolicObjectProperty[]; spreads: SymbolicValue[] }
   | { kind: "ArrayExpression"; elements: SymbolicValue[]; spreads: SymbolicValue[] }
-  | { kind: "ArrayMap"; array: SymbolicValue; item: SymbolicValue; loc: SourceLocation }
+  | {
+      kind: "ArrayMap";
+      array: SymbolicValue;
+      item: SymbolicValue;
+      loc: SourceLocation;
+      isFlat?: boolean;
+    }
   | {
       kind: "JsxExpression";
       tag: JsxTag;

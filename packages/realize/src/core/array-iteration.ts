@@ -117,7 +117,7 @@ export class ArrayIteration {
     walkState: WalkState,
   ): SymbolicValue[] {
     const spreadItems = array.spreads.map((spread) =>
-      spread.kind === "ArrayMap" ? spread.item : createUnknown("item", loc),
+      spread.kind === "ArrayMap" && !spread.isFlat ? spread.item : createUnknown("item", loc),
     );
     const items = [...array.elements, ...spreadItems];
     const stopsOn = SHORT_CIRCUIT_OUTCOMES.get(methodName);
@@ -373,6 +373,7 @@ export class ArrayIteration {
       array,
       item: this.#interpreter.callFunction(callback, [item, index, array], loc, walkState),
       loc,
+      isFlat,
     };
   }
 

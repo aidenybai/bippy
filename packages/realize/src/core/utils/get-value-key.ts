@@ -51,7 +51,7 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
     case "ArrayExpression":
       return [value.kind, value.elements.map(getValueKey), value.spreads.map(getValueKey)];
     case "ArrayMap":
-      return [value.kind, getValueKey(value.array), getValueKey(value.item)];
+      return [value.kind, getValueKey(value.array), getValueKey(value.item), value.isFlat === true];
     case "JsxExpression":
       return [
         value.kind,
