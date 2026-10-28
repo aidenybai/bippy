@@ -1,3 +1,4 @@
+import "./browser/pending-callbacks";
 import "./stubs/node-globals";
 import "./stubs/tauri-globals";
 import "./stubs/react-shims";
@@ -8,15 +9,18 @@ import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
 import { trackStates } from "./browser/mutations";
+import { recordCommitFlags, recordPassiveFlush } from "./browser/pending-callbacks";
 import { settle } from "./browser/settle";
 
 instrument({
   onCommitFiberRoot: (_rendererId, root) => {
+    recordCommitFlags(root.current.flags | root.current.subtreeFlags);
     const fiber = recordCommit(root);
     if (!fiber) return;
     recordFirstCommitShapes(fiber);
     trackStates(fiber);
   },
+  onPostCommitFiberRoot: recordPassiveFlush,
 });
 
 const preventLinkNavigation = (event: Event): void => {
