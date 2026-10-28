@@ -1,5 +1,5 @@
-import { writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import { analyzeProject } from "../core/analyze-project";
 import { ConfigError } from "../core/config-error";
@@ -7,6 +7,7 @@ import { serializeProjectAnalysis } from "../core/serialize";
 import { createTracer, NO_TRACER } from "../core/tracer";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
+import { formatTla, getTlaModuleNames } from "./tla";
 import type { AnalyzedComponent } from "../core/types";
 
 interface AnalyzeCliOptions {
@@ -15,6 +16,7 @@ interface AnalyzeCliOptions {
   depth: number;
   states: number;
   json: boolean;
+  tla?: string;
   trace?: string;
 }
 
@@ -48,6 +50,23 @@ const formatTotals = (
   ];
 };
 
+const writeTlaSpecs = (
+  components: AnalyzedComponent[],
+  moduleNames: Map<AnalyzedComponent, string>,
+  rootDirectory: string,
+  outputDirectory: string,
+): void => {
+  mkdirSync(outputDirectory, { recursive: true });
+  for (const component of components) {
+    const spec = formatTla(component, {
+      rootDirectory,
+      moduleName: moduleNames.get(component) ?? component.analysis.name,
+    });
+    writeFileSync(join(outputDirectory, `${spec.moduleName}.tla`), spec.source);
+    writeFileSync(join(outputDirectory, `${spec.moduleName}.cfg`), spec.config);
+  }
+};
+
 const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
@@ -62,6 +81,13 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const components = componentNames
     ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
     : allComponents;
+  if (options.tla)
+    writeTlaSpecs(
+      components,
+      getTlaModuleNames(allComponents, rootDirectory),
+      rootDirectory,
+      resolve(options.tla),
+    );
   const output = tracer.span("output", options.json ? "json" : "mermaid", () =>
     options.json
       ? serializeProjectAnalysis({ components, fileCount })
@@ -103,6 +129,7 @@ new Command()
     DEFAULT_MAX_STATES,
   )
   .option("--json", "print the analyses as JSON instead", false)
+  .option("--tla <directory>", "also write each component as a TLA+ module and TLC config")
   .option("--trace <file>", "write the time and memory of each phase as a Chrome trace")
   .action((tsconfig: string, options: AnalyzeCliOptions) => {
     try {
