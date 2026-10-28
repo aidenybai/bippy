@@ -85,6 +85,7 @@ interface Assumption {
 export interface BoundGraph {
   indicesByAtomKey: Map<string, number>;
   distances: Distance[][];
+  placeDomains: PlaceMap<Domain>;
 }
 
 export interface Constraints {
@@ -500,13 +501,20 @@ const getUpperSum = (left: number, right: number): number => {
 
 const SELF: Distance = { weight: 0, isStrict: false };
 
-const EMPTY_GRAPH: BoundGraph = {
+const createEmptyGraph = (placeDomains: PlaceMap<Domain>): BoundGraph => ({
   indicesByAtomKey: new Map([[CONSTANT_KEY, 0]]),
   distances: [[SELF]],
+  placeDomains,
+});
+
+const isNonNegativeLength = (atom: BindingPlace, placeDomains: PlaceMap<Domain>): boolean => {
+  if (atom.path.at(-1) !== LENGTH_FIELD) return false;
+  const owner = placeDomains.get({ ...atom, path: atom.path.slice(0, -1) });
+  return owner?.kind !== "Opaque" || !owner.hasOwnLength;
 };
 
-const getLengthBound = (atom: BindingPlace | null): Bound | null =>
-  atom?.path.at(-1) === LENGTH_FIELD
+const getLengthBound = (atom: BindingPlace | null, placeDomains: PlaceMap<Domain>): Bound | null =>
+  atom && isNonNegativeLength(atom, placeDomains)
     ? { left: null, right: atom, maxDifference: 0, isStrict: false }
     : null;
 
@@ -520,20 +528,25 @@ const withAtom = (graph: BoundGraph, atom: BindingPlace | null): BoundGraph => {
       ...graph.distances.map((row) => [...row, UNREACHABLE]),
       [...Array.from({ length: size }, () => UNREACHABLE), SELF],
     ],
+    placeDomains: graph.placeDomains,
   };
-  const lengthBound = getLengthBound(atom);
+  const lengthBound = getLengthBound(atom, graph.placeDomains);
   return lengthBound ? withBound(grown, lengthBound) : grown;
 };
 
 const withBound = (graph: BoundGraph, bound: Bound): BoundGraph => {
-  const { indicesByAtomKey, distances } = withAtom(withAtom(graph, bound.left), bound.right);
+  const { indicesByAtomKey, distances, placeDomains } = withAtom(
+    withAtom(graph, bound.left),
+    bound.right,
+  );
   const from = indicesByAtomKey.get(getAtomKey(bound.right)) ?? 0;
   const to = indicesByAtomKey.get(getAtomKey(bound.left)) ?? 0;
   const edge: Distance = { weight: bound.maxDifference, isStrict: bound.isStrict };
-  if (!isShorter(edge, distances[from][to])) return { indicesByAtomKey, distances };
+  if (!isShorter(edge, distances[from][to])) return { indicesByAtomKey, distances, placeDomains };
   const fromRow = distances[to];
   return {
     indicesByAtomKey,
+    placeDomains,
     distances: distances.map((row) => {
       const toEdge = row[from];
       if (toEdge.weight === Infinity) return row;
@@ -571,6 +584,7 @@ const getSubgraph = (graph: BoundGraph, bounds: Bound[]): BoundGraph => {
     distances: indices.map(([, fromIndex]) =>
       indices.map(([, toIndex]) => graph.distances[fromIndex][toIndex]),
     ),
+    placeDomains: graph.placeDomains,
   };
 };
 
@@ -586,14 +600,16 @@ const isConsistentWith = (graph: BoundGraph, bounds: Bound[]): boolean => {
   return !(cycleWeight < 0 || (cycleWeight === 0 && (back.isStrict || bound.isStrict)));
 };
 
-const getInvariantGraph = memoizeByIdentity((invariants: Bound[]): BoundGraph =>
-  invariants.reduce(withBound, EMPTY_GRAPH),
+const getInvariantGraphs = memoizeByIdentity((placeDomains: PlaceMap<Domain>) =>
+  memoizeByIdentity((invariants: Bound[]): BoundGraph =>
+    invariants.reduce(withBound, createEmptyGraph(placeDomains)),
+  ),
 );
 
 const getBoundGraph = (constraints: Constraints): BoundGraph =>
   (constraints.boundGraph ??= constraints.bounds.reduce(
     withBound,
-    getInvariantGraph(constraints.invariants),
+    getInvariantGraphs(constraints.placeDomains)(constraints.invariants),
   ));
 
 const isBoundedEquality = (
