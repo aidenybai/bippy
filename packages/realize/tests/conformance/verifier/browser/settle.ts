@@ -10,6 +10,7 @@ import {
   SHORT_CALLBACK_MS,
   hasPendingCallbacks,
   hasPendingPassiveFlush,
+  hasTimerScheduledSince,
   nativeClearTimeout,
   nativeRequestAnimationFrame,
   nativeSetTimeout,
@@ -85,12 +86,14 @@ export const settle = async (): Promise<void> => {
   const start = performance.now();
   const deadline = start + MAX_SETTLE_MS;
   let quietDeadline = start + SETTLE_MS;
+  let polledAt = start;
   await waitForFrame();
   while (performance.now() < deadline) {
-    const isWorking = isBusy();
+    const isWorking = isBusy() || hasTimerScheduledSince(polledAt);
     if (isWorking) quietDeadline = performance.now() + SETTLE_MS;
     const isWaiting = hasPendingCallbacks() || hasSuspendedReactWork();
     if (!isWorking && (!isWaiting || performance.now() >= quietDeadline)) return;
+    polledAt = performance.now();
     await waitForPoll();
   }
 };
