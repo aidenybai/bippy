@@ -43,6 +43,19 @@ window.fetch = (input, init) => {
       : Promise.resolve(createStandInResponse()),
   );
 };
+const trackBodyRead = <Method extends "arrayBuffer" | "blob" | "formData" | "json" | "text">(
+  method: Method,
+): void => {
+  const read = Response.prototype[method];
+  Response.prototype[method] = function readBody(this: Response) {
+    return trackRequest(read.call(this));
+  } as Response[Method];
+};
+trackBodyRead("arrayBuffer");
+trackBodyRead("blob");
+trackBodyRead("formData");
+trackBodyRead("json");
+trackBodyRead("text");
 const originalSend = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function send(...sendArguments) {
   pendingRequests++;
