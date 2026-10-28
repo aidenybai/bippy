@@ -38,6 +38,7 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { applyStringMethod, isStringMethod } from "./utils/string-methods";
 import { readContents } from "./utils/literal-receivers";
 import { memoizeByIdentity } from "./utils/memoize-by-identity";
+import { getNextDown } from "./utils/get-next-down";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
@@ -292,6 +293,19 @@ const getSignedSum = (value: SymbolicValue): SignedSum | null => {
   return atoms.length > MAX_SUM_ATOMS ? null : { atoms, offset: left.offset + added.offset };
 };
 
+const hasArithmetic = (value: SymbolicValue): boolean =>
+  value.kind === "BinaryExpression" ||
+  (value.kind === "UnaryExpression" && hasArithmetic(value.value));
+
+const isIntegerArithmetic = (value: SymbolicValue): boolean => {
+  if (value.kind === "Primitive") return Number.isSafeInteger(value.value);
+  if (value.kind === "UnaryExpression") return isIntegerArithmetic(value.value);
+  return (
+    value.kind !== "BinaryExpression" ||
+    (isIntegerArithmetic(value.left) && isIntegerArithmetic(value.right))
+  );
+};
+
 const getAtomDifference = (left: SignedSum, right: SignedSum): AtomDifference | null => {
   const signedAtoms = [...left.atoms, ...negateSum(right).atoms];
   const remaining = signedAtoms.filter(
@@ -430,6 +444,15 @@ export const getBounds = (
   if (!leftTerm || !rightTerm || !difference) return null;
   const { plus, minus } = difference;
   const offsetDifference = rightTerm.offset - leftTerm.offset;
+  if (
+    (hasArithmetic(value.left) || hasArithmetic(value.right)) &&
+    !(
+      isIntegerArithmetic(value.left) &&
+      isIntegerArithmetic(value.right) &&
+      Number.isSafeInteger(offsetDifference)
+    )
+  )
+    return null;
   if (constraints !== null && plus !== null && minus !== null) {
     if (!isNumericAtom(plus, constraints) || !isNumericAtom(minus, constraints)) return null;
     const isFinite = isFiniteAtom(plus, constraints) && isFiniteAtom(minus, constraints);
@@ -466,6 +489,14 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
   (candidate.weight === current.weight && candidate.isStrict && !current.isStrict);
 
 const UNREACHABLE: Distance = { weight: Infinity, isStrict: false };
+
+const getUpperSum = (left: number, right: number): number => {
+  const sum = left + right;
+  if (!Number.isFinite(sum)) return sum;
+  const rightPart = sum - left;
+  const error = left - (sum - rightPart) + (right - rightPart);
+  return error > 0 ? -getNextDown(-sum) : sum;
+};
 
 const SELF: Distance = { weight: 0, isStrict: false };
 
@@ -510,7 +541,7 @@ const withBound = (graph: BoundGraph, bound: Bound): BoundGraph => {
         const fromEdge = fromRow[columnIndex];
         if (fromEdge.weight === Infinity) return current;
         const throughEdge: Distance = {
-          weight: toEdge.weight + edge.weight + fromEdge.weight,
+          weight: getUpperSum(getUpperSum(toEdge.weight, edge.weight), fromEdge.weight),
           isStrict: toEdge.isStrict || edge.isStrict || fromEdge.isStrict,
         };
         return isShorter(throughEdge, current) ? throughEdge : current;
@@ -551,7 +582,7 @@ const isConsistentWith = (graph: BoundGraph, bounds: Bound[]): boolean => {
   if (bounds.length !== 1 || !bound || from === undefined || to === undefined)
     return isConsistent(bounds.reduce(withBound, getSubgraph(graph, bounds)));
   const back = graph.distances[to][from];
-  const cycleWeight = back.weight + bound.maxDifference;
+  const cycleWeight = getUpperSum(back.weight, bound.maxDifference);
   return !(cycleWeight < 0 || (cycleWeight === 0 && (back.isStrict || bound.isStrict)));
 };
 
