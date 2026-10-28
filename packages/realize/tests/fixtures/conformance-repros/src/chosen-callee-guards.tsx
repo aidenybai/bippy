@@ -57,3 +57,32 @@ export const DirectTernary = () => {
     </div>
   );
 };
+
+export const FoundCall = () => {
+  const [pick, setPick] = useState("a");
+  const steps = [() => setPick("b"), () => setPick("c")];
+  return (
+    <div>
+      <button onClick={() => steps[1]()}>skip</button>
+      <button onClick={() => steps.find((_, position) => position === (pick === "a" ? 0 : 1))?.()}>
+        go
+      </button>
+      {pick === "a" ? <i>a</i> : pick === "b" ? <i>b</i> : <i>c</i>}
+    </div>
+  );
+};
+
+export const FilteredCall = () => {
+  const [pick, setPick] = useState("a");
+  const steps = [() => setPick("b"), () => setPick("c")];
+  return (
+    <div>
+      <button
+        onClick={() => steps.filter((_, position) => position === (pick === "a" ? 0 : 1))[0]?.()}
+      >
+        go
+      </button>
+      {pick === "a" ? <i>a</i> : pick === "b" ? <i>b</i> : <i>c</i>}
+    </div>
+  );
+};

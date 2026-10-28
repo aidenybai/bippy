@@ -43,7 +43,11 @@ describe("calling a function chosen by a condition", () => {
     );
   });
 
-  for (const name of ["LocalTernary", "SwappedTernary", "TableCall", "FieldCall"]) {
+  it("calls the step find picks from a table that another handler also calls into", () => {
+    expect(getGuardedUpdates("FoundCall").map(([value]) => value)).toEqual(['"c"', '"b"', '"c"']);
+  });
+
+  for (const name of ["LocalTernary", "SwappedTernary", "TableCall", "FieldCall", "FilteredCall"]) {
     it(`${name} moves like the directly passed handler`, () => {
       expect(getTargets(name)).toEqual(getTargets("DirectTernary"));
     });
