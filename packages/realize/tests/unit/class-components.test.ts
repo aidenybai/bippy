@@ -42,11 +42,11 @@ describe("a class component", () => {
     expect(conditions.some((condition) => condition.includes("items"))).toBe(false);
   });
 
-  it("runs componentDidMount after the first render", () => {
+  it("runs componentDidMount in the layout phase, before the first paint", () => {
     expect(getConditions("ClassReady")).toEqual([["state.isReady"], ["!state.isReady"]]);
     const { handlers } = getComponent(project, "ClassReady").analysis;
     expect(handlers.map((handler) => handler.trigger)).toMatchObject([
-      { kind: "Effect", hookKind: "useEffect", dependencies: "[]" },
+      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: "[]" },
     ]);
   });
 
