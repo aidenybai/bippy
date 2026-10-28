@@ -21,4 +21,14 @@ describe("a built-in read of a constant array, object or Map", () => {
   ])("%s folds to %s", (name, value) => {
     expect(getUpdatedValues(name)).toEqual([{ kind: "Primitive", value }]);
   });
+
+  it("reads an element with at() for a NaN index, which at() turns into 0", () => {
+    const { states } = getComponent(project, "TypedSlide").report;
+    const [, idleMoved] = states;
+    expect(idleMoved?.conditions[1]).toBe("index !== 0");
+    expect(idleMoved?.transitions.map((transition) => transition.targets)).toEqual([
+      [0, 1, 2],
+      [0, 1, 2],
+    ]);
+  });
 });

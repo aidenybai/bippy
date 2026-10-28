@@ -48,3 +48,16 @@ export const EntriesByIndex = () => {
   const [mode, setMode] = useState("idle");
   return <button onClick={() => setMode(Object.entries(NEXT)[0]?.[1] ?? "idle")}>{mode}</button>;
 };
+
+export const TypedSlide = () => {
+  const [index, setIndex] = useState(0);
+  const mode = MODES.at(index);
+  return (
+    <div>
+      {mode === "idle" ? <i>first</i> : <i>other</i>}
+      {index === 0 ? <i>start</i> : <i>moved</i>}
+      <input aria-label="slide" onChange={(event) => setIndex(Number(event.target.value))} />
+      <button onClick={() => setIndex((current) => current - 1)}>back</button>
+    </div>
+  );
+};
