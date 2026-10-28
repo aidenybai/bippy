@@ -134,6 +134,7 @@ export const getSelfCases = (
   place: BindingPlace,
   currentValues: AbstractValue[] | undefined,
 ): AbstractValue[] | null => {
+  if (place.path.length > 0) return null;
   const results: AbstractValue[] = [];
   for (const currentValue of currentValues ?? []) {
     if (currentValue.kind !== "Literal") return null;
