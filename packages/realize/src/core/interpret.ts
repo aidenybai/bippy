@@ -1645,7 +1645,11 @@ export class Interpreter {
   }
 
   addUnknownSource(unknown: SymbolicValue, source: SymbolicValue): void {
-    this.#unknownSources.set(unknown, source);
+    const existing = this.#unknownSources.get(unknown);
+    this.#unknownSources.set(
+      unknown,
+      existing ? { kind: "ArrayExpression", elements: [existing, source], spreads: [] } : source,
+    );
   }
 
   #getCalledSourceFunctions(callee: SymbolicValue): SymbolicValue[] {
@@ -1979,11 +1983,42 @@ export class Interpreter {
   ): void {
     forEachSymbolicValue(value, (part) => {
       if (part.kind === "Binding") inputPlaces.set(getValuePlace(part), true);
+      if (part.kind === "Unknown")
+        for (const source of this.#getUnknownInputs(part))
+          this.collectInputPlaces(source, inputPlaces, visitedFunctionIds);
       if (part.kind !== "Function" || visitedFunctionIds.has(part.functionId)) return;
       visitedFunctionIds.add(part.functionId);
       for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
         this.collectInputPlaces(this.read(capturedPlace), inputPlaces, visitedFunctionIds);
     });
+  }
+
+  #getUnknownInputs(unknown: Extract<SymbolicValue, { kind: "Unknown" }>): SymbolicValue[] {
+    const source = this.#unknownSources.get(unknown);
+    const { origin } = unknown;
+    const originValues =
+      origin?.kind === "Member"
+        ? [origin.object]
+        : origin?.kind === "Call"
+          ? [origin.callee, ...origin.argumentValues]
+          : origin?.kind === "Settled"
+            ? [origin.promise]
+            : origin?.kind === "Value"
+              ? [origin.value]
+              : [];
+    return source ? [source, ...originValues] : originValues;
+  }
+
+  #hasHiddenInputs(value: SymbolicValue, seen = new Set<SymbolicValue>()): boolean {
+    let isHidden = false;
+    forEachSymbolicValue(value, (part) => {
+      if (isHidden || part.kind !== "Unknown" || seen.has(part)) return;
+      seen.add(part);
+      isHidden =
+        part.reason === "UnsupportedNode" ||
+        this.#getUnknownInputs(part).some((source) => this.#hasHiddenInputs(source, seen));
+    });
+    return isHidden;
   }
 
   createDerivedValue(
@@ -2052,6 +2087,8 @@ export class Interpreter {
     const inputPlaces = new PlaceMap<true>();
     for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
     const receiverPlace = this.#getReceiverPlace(callSite.callee);
+    if (!receiverPlace && callSite.callee.kind !== "Function")
+      this.collectInputPlaces(callSite.callee, inputPlaces);
     if (receiverPlace && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
       inputPlaces.set(receiverPlace, true);
     if (!receiverPlace && callSite.receiver)
@@ -2067,12 +2104,33 @@ export class Interpreter {
       !initial &&
       inputPlaces.size === 0 &&
       !hasFiniteResult
-    )
-      return createUnknown("call", callSite.loc);
+    ) {
+      const unknownResult = createUnknown("call", callSite.loc);
+      this.addUnknownSource(unknownResult, {
+        kind: "ArrayExpression",
+        elements: [callSite.callee, ...callSite.argumentValues],
+        spreads: [],
+      });
+      return unknownResult;
+    }
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     if (initial) this.collectInputPlaces(initial, inputPlaces);
     if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !derived && !range)
       return initial;
+    const sourceValues = [
+      callSite.callee,
+      ...callSite.argumentValues,
+      ...(initial ? [initial] : []),
+    ];
+    if (inputPlaces.size === 0 && sourceValues.some((value) => this.#hasHiddenInputs(value)))
+      return (
+        initial ??
+        createUnknown("call", callSite.loc, {
+          kind: "Call",
+          callee: callSite.callee,
+          argumentValues: callSite.argumentValues,
+        })
+      );
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
@@ -2796,16 +2854,22 @@ export class Interpreter {
             writes: [],
             loc: value.loc,
           };
-        const instance = createUnknown(value.kind, value.loc);
         const callbacks = getPassedCallbacks(argumentValues);
+        if (!this.#handlerEffects && callbacks.length === 0)
+          return this.createDerivedValue([constructor, ...argumentValues], value.kind, value.loc);
+        const instance = createUnknown(value.kind, value.loc);
         if (callbacks.length > 0) this.#wrappedCallbacks.set(instance, callbacks);
         return instance;
       }
       case "PropertyStore":
         return this.#evaluatePropertyStore(value, walkState);
-      case "ComputedStore":
+      case "ComputedStore": {
         this.callbacks.passStoredCallback(value, walkState);
-        return this.read(value.value);
+        const object = this.read(value.object);
+        const storedValue = this.read(value.value);
+        if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
+        return storedValue;
+      }
       case "PrefixUpdateLocal":
       case "PrefixUpdateContext":
         return this.#evaluateUpdateLocal(value, true, walkState);
@@ -2895,6 +2959,7 @@ export class Interpreter {
     this.callbacks.passStoredCallback(store, walkState);
     const object = this.read(store.object);
     const storedValue = this.read(store.value);
+    if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
     const setter = getSetterAccessor(object, String(store.property));
     if (setter) this.callFunction(setter, [storedValue], store.loc, walkState);
     if (isRefCell(object, String(store.property))) {

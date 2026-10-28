@@ -1,4 +1,4 @@
-import { ValueKind } from "../react-compiler/HIR/HIR";
+import { SETTER_KEY_PREFIX, ValueKind } from "../react-compiler/HIR/HIR";
 import type { Instruction, Place, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects";
 import { formatPlace } from "./format";
@@ -455,6 +455,10 @@ export class MutationTracker {
       literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
       value.object.identifier.id === mutatedPlace.identifier.id;
+    const hasSetter =
+      isStoreIntoLiteral &&
+      literal.properties.some(({ key }) => key === `${SETTER_KEY_PREFIX}${String(value.property)}`);
+    if (hasSetter) return this.#storeThroughSetter(literal, instruction, value, loc);
     if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
     if (value.kind !== "MethodCall") return createUnknown("mutation", loc);
     const mutated = this.#interpreter.createDerivedValue([literal], "mutation", loc);
@@ -512,6 +516,40 @@ export class MutationTracker {
     return {
       ...collection,
       writes: [...collection.writes, { method: methodName, argumentValues, guards }],
+    };
+  }
+
+  #storeThroughSetter(
+    object: ObjectExpressionValue,
+    instruction: Instruction,
+    store: InstructionValueOfKind<"PropertyStore">,
+    loc: SourceLocation,
+  ): ObjectExpressionValue {
+    const storedValue = this.#interpreter.read(store.value);
+    const test = createUnknown("mutation", loc);
+    const branch = this.#interpreter.createBranch(instruction.id, loc, "none");
+    return {
+      ...object,
+      properties: object.properties.map((property) =>
+        property.key.startsWith(SETTER_KEY_PREFIX) || property.value.kind === "Function"
+          ? property
+          : {
+              ...property,
+              value: {
+                kind: "Conditional",
+                test,
+                testKind: "truthy",
+                consequent: this.#interpreter.createDerivedValue(
+                  [property.value, storedValue],
+                  "mutation",
+                  loc,
+                ),
+                alternate: property.value,
+                branch,
+                guardKeys: [],
+              },
+            },
+      ),
     };
   }
 
