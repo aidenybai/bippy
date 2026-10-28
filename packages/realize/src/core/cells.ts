@@ -19,6 +19,29 @@ const isNestedIn = (store: CellStore, walkState: WalkState): boolean =>
   store.walkState.guards.length > walkState.guards.length &&
   walkState.guards.every((guard, index) => store.walkState.guards[index] === guard);
 
+const isNegationOf = (guard: SymbolicValue, other: SymbolicValue): boolean =>
+  guard.kind === "UnaryExpression" && guard.operator === "!" && guard.value === other;
+
+const isOnOtherSide = (store: CellStore, walkState: WalkState): boolean => {
+  const index = store.walkState.guards.findIndex(
+    (guard, position) => walkState.guards[position] !== guard,
+  );
+  const storeGuard = store.walkState.guards[index];
+  const readGuard = walkState.guards[index];
+  return (
+    storeGuard !== undefined &&
+    readGuard !== undefined &&
+    (isNegationOf(storeGuard, readGuard) || isNegationOf(readGuard, storeGuard))
+  );
+};
+
+const isMaybeOverwrittenBy = (store: CellStore, walkState: WalkState): boolean =>
+  isNestedIn(store, walkState) ||
+  (store.walkState.isAsync === walkState.isAsync &&
+    store.walkState.frame === walkState.frame &&
+    !isDominatedBy(walkState, store) &&
+    !isOnOtherSide(store, walkState));
+
 export class Cells {
   #stores: CellStore[] = [];
   #generation = 0;
@@ -45,7 +68,7 @@ export class Cells {
     );
     const isMaybeOverwritten = this.#stores
       .slice(storeIndex + 1)
-      .some((candidate) => candidate.key === key && isNestedIn(candidate, walkState));
+      .some((candidate) => candidate.key === key && isMaybeOverwrittenBy(candidate, walkState));
     if (isMaybeOverwritten) return createUnknown("cell", loc);
     const store = this.#stores[storeIndex];
     if (store) return store.value;
