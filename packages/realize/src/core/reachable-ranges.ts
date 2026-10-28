@@ -1,4 +1,4 @@
-import { getBounds } from "./constraints";
+import { getBounds, isNumberAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
 import type {
   AbstractValue,
@@ -191,21 +191,17 @@ const getValueInterval = (
       ? getReachableInterval(value.binding, handlers)
       : null;
   if (copied) return copied.interval;
-  if (value.kind === "Binding" && value.binding.range?.inner)
-    return clamp(
-      value.binding.range,
-      getValueInterval(
-        value.binding.range.inner,
-        binding,
-        hypothesis,
-        guards,
-        isInteger,
-        handlers,
-      ) ?? {
-        min: -Infinity,
-        max: Infinity,
-      },
+  if (value.kind === "Binding" && value.binding.range?.inner) {
+    const inner = getValueInterval(
+      value.binding.range.inner,
+      binding,
+      hypothesis,
+      guards,
+      isInteger,
+      handlers,
     );
+    return inner && clamp(value.binding.range, inner);
+  }
   const derived =
     value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
   const extreme = derived && "callee" in derived ? EXTREMES.get(derived.callee) : undefined;
@@ -336,11 +332,12 @@ export const getIntervalBounds = (
   const next = getValueInterval(value, binding, source, guards, isInteger, null);
   if (!next) return [];
   const atom = getBindingPlace(binding);
+  const mayBeNaN = !isNumberAtom(atom, constraints);
   const atMost: Bound[] = Number.isFinite(next.max)
-    ? [{ left: atom, right: null, maxDifference: next.max, isStrict: false }]
+    ? [{ left: atom, right: null, maxDifference: next.max, isStrict: false, mayBeNaN }]
     : [];
   const atLeast: Bound[] = Number.isFinite(next.min)
-    ? [{ left: null, right: atom, maxDifference: -next.min, isStrict: false }]
+    ? [{ left: null, right: atom, maxDifference: -next.min, isStrict: false, mayBeNaN }]
     : [];
   return [...atMost, ...atLeast];
 };
