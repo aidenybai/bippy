@@ -37,6 +37,7 @@ import { isSamePlace } from "./utils/is-same-place";
 import { isStateBinding } from "./utils/is-state-binding";
 import { isNaNFreeRange } from "./utils/is-nan-free";
 import { isWholeBinding } from "./utils/is-whole-binding";
+import { getNextDown } from "./utils/get-next-down";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { PlaceMap } from "./utils/place-map";
 import type { FirstRenderOutcomes } from "./state-enumerator";
@@ -713,12 +714,13 @@ const shiftBound = (bound: Bound, place: BindingPlace, update: AffineUpdate): Bo
   const isLower = bound.left === null && isAtomAt(bound.right, place);
   const atom = isUpper ? bound.left : bound.right;
   if ((!isUpper && !isLower) || !atom) return null;
-  const limit = update.scale * (isUpper ? bound.maxDifference : -bound.maxDifference);
+  const maxDifference = bound.isStrict ? getNextDown(bound.maxDifference) : bound.maxDifference;
+  const limit = update.scale * (isUpper ? maxDifference : -maxDifference);
   const shifted = limit + update.offset;
   if (!Number.isFinite(shifted)) return null;
   return isUpper === update.scale > 0
-    ? { ...bound, left: atom, right: null, maxDifference: shifted }
-    : { ...bound, left: null, right: atom, maxDifference: -shifted };
+    ? { ...bound, left: atom, right: null, maxDifference: shifted, isStrict: false }
+    : { ...bound, left: null, right: atom, maxDifference: -shifted, isStrict: false };
 };
 
 const shiftPairBound = (
