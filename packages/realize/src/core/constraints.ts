@@ -317,8 +317,24 @@ const everyCase = (
   predicate: (value: AbstractValue) => boolean,
 ): boolean => constraints.possibleValues.get(atom)?.every(predicate) ?? false;
 
+const hasLength = (value: AbstractValue): boolean =>
+  value.kind === "Literal"
+    ? typeof value.value === "string"
+    : value.kind === "Type" && (value.primitive === null || value.primitive === "string");
+
+const isLengthAtom = (atom: BindingPlace, constraints: Constraints): boolean => {
+  if (atom.path.at(-1) !== LENGTH_FIELD) return false;
+  const owner = constraints.placeDomains.get({ ...atom, path: atom.path.slice(0, -1) });
+  const length = constraints.placeDomains.get(atom);
+  return (
+    owner?.kind !== "Unknown" &&
+    (owner?.kind !== "Cases" || owner.cases.every(hasLength)) &&
+    (length === undefined || getDomainPrimitive(length) === "number")
+  );
+};
+
 export const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
-  atom.path.at(-1) === LENGTH_FIELD ||
+  isLengthAtom(atom, constraints) ||
   everyCase(
     atom,
     constraints,
@@ -331,7 +347,7 @@ export const isNumberAtom = (atom: BindingPlace, constraints: Constraints): bool
   );
 
 const isNumericAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
-  atom.path.at(-1) === LENGTH_FIELD ||
+  isLengthAtom(atom, constraints) ||
   everyCase(atom, constraints, (value) =>
     value.kind === "Literal"
       ? typeof value.value === "number"
@@ -369,7 +385,7 @@ const isArithmetic = (value: SymbolicValue, constraints: Constraints): boolean =
 };
 
 const isFiniteAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
-  atom.path.at(-1) === LENGTH_FIELD ||
+  isLengthAtom(atom, constraints) ||
   everyCase(
     atom,
     constraints,
