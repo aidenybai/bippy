@@ -1979,17 +1979,19 @@ export class Interpreter {
   collectInputPlaces(
     value: SymbolicValue,
     inputPlaces: PlaceMap<true>,
-    visitedFunctionIds = new Set<number>(),
+    visited = new Set<number | SymbolicValue>(),
   ): void {
     forEachSymbolicValue(value, (part) => {
       if (part.kind === "Binding") inputPlaces.set(getValuePlace(part), true);
-      if (part.kind === "Unknown")
+      if (part.kind === "Unknown" && !visited.has(part)) {
+        visited.add(part);
         for (const source of this.#getUnknownInputs(part))
-          this.collectInputPlaces(source, inputPlaces, visitedFunctionIds);
-      if (part.kind !== "Function" || visitedFunctionIds.has(part.functionId)) return;
-      visitedFunctionIds.add(part.functionId);
+          this.collectInputPlaces(source, inputPlaces, visited);
+      }
+      if (part.kind !== "Function" || visited.has(part.functionId)) return;
+      visited.add(part.functionId);
       for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
-        this.collectInputPlaces(this.read(capturedPlace), inputPlaces, visitedFunctionIds);
+        this.collectInputPlaces(this.read(capturedPlace), inputPlaces, visited);
     });
   }
 
