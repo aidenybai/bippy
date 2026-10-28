@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import { serializeProjectAnalysis } from "../../../src/core/serialize";
 import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
@@ -87,3 +88,25 @@ export const collect = async (
   writeFileSync(join(outputDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
   return summary;
 };
+
+const getFlagValue = (flag: string): string | undefined => {
+  const index = process.argv.indexOf(flag);
+  return index === -1 ? undefined : process.argv[index + 1];
+};
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const [tsconfigPath, outputDirectory] = process.argv.slice(2);
+  if (!tsconfigPath || !outputDirectory)
+    throw new Error(
+      "Usage: collect.ts <tsconfig> <outputDirectory> [--verify] [--setup <dir>] [--component-budget <ms>]",
+    );
+  const budget = getFlagValue("--component-budget");
+  await collect(
+    tsconfigPath,
+    outputDirectory,
+    process.argv.includes("--verify"),
+    getFlagValue("--setup") ?? null,
+    (line) => console.error(line),
+    budget === undefined ? undefined : Number(budget),
+  );
+}

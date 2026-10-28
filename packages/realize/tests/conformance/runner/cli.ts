@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import picocolors from "picocolors";
 import { runLocal } from "./local-environment";
+import { runVercel } from "./vercel-environment";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos";
 import { formatTable, hasFailure, readRepoResult } from "./results";
 import type { RepoResult } from "./results";
@@ -17,7 +18,10 @@ import type { ComponentVerdict } from "../verifier/verdicts";
 import { verifyProject } from "../verifier/verify";
 import { getErrorChain } from "../verifier/reasons";
 
+type Environment = "local" | "vercel";
+
 interface RunOptions {
+  env: Environment;
   out: string;
   runName: string;
   concurrency: number;
@@ -35,6 +39,17 @@ const parsePositiveInteger = (value: string): number => {
   if (!Number.isInteger(integer) || integer < 1)
     throw new InvalidArgumentError("Expected a positive integer.");
   return integer;
+};
+
+const ENVIRONMENTS: Environment[] = ["local", "vercel"];
+
+const parseEnvironment = (value: string): Environment => {
+  const environment = ENVIRONMENTS.find((candidate) => candidate === value);
+  if (!environment)
+    throw new InvalidArgumentError(
+      `Unknown environment: ${value}. Use ${ENVIRONMENTS.join(", ")}.`,
+    );
+  return environment;
 };
 
 const getRunName = (): string => new Date().toISOString().replace(/[:.]/g, "-");
@@ -70,11 +85,16 @@ const run = async (ids: string[], options: RunOptions): Promise<void> => {
     async (repo): Promise<RepoResult> => {
       const outputDirectory = join(runDirectory, repo.id);
       try {
-        log(`running ${repo.id}`);
+        log(`running ${repo.id} (${options.env})`);
         return {
           id: repo.id,
           revision: repo.revision,
-          summary: await runLocal(repo, outputDirectory, options.verify, log),
+          summary: await (options.env === "vercel" ? runVercel : runLocal)(
+            repo,
+            outputDirectory,
+            options.verify,
+            log,
+          ),
           error: null,
         };
       } catch (error) {
@@ -134,6 +154,7 @@ program
   .command("run")
   .description("Analyze and verify the pinned repos, and collect the results.")
   .argument("[ids...]", "repos to run (default: all)")
+  .option("-e, --env <env>", `where to run: ${ENVIRONMENTS.join(", ")}`, parseEnvironment, "local")
   .option("-o, --out <dir>", "results directory", join(CONFORMANCE_DIRECTORY, "results"))
   .option(
     "--run-name <name>",

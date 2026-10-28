@@ -5,3 +5,4 @@ test-results/
 tests/conformance/results/
 viewer/.next/
 viewer/.vercel/
+.vercel/
