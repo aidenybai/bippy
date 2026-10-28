@@ -158,9 +158,10 @@ export class MutationTracker {
         if (isTransitiveMutation(effect)) this.#forgetNestedLiterals(mutatedValue, instruction.loc);
         continue;
       }
-      if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
+      if (mutatedValue.kind === "Global")
+        this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc, walkState.guards);
       if (mutatedValue.kind === "Binding" && mutatedValue.binding.kind === "module")
-        this.#trackModuleMutation(mutatedValue, mutatedPlace.loc);
+        this.#trackModuleMutation(mutatedValue, mutatedPlace.loc, walkState.guards);
       if (
         mutatedValue.kind === "Binding" &&
         mutatedValue.binding.kind === "call" &&
@@ -177,6 +178,7 @@ export class MutationTracker {
         mutatedValue,
         mutatedPlace.loc,
         storedProperty,
+        walkState.guards,
         effect.kind === "MutateFrozen",
       );
     }
@@ -248,10 +250,10 @@ export class MutationTracker {
     }
   }
 
-  trackArgument(place: Place, loc: SourceLocation, isPart = false): void {
+  trackArgument(place: Place, loc: SourceLocation, guards: SymbolicValue[], isPart = false): void {
     const value = this.#interpreter.read(place);
     const copiedValue = isPart ? this.#getCopiedOwnedValue(place, value) : null;
-    this.#trackOwnedValues(place, copiedValue ?? value, loc, null);
+    this.#trackOwnedValues(place, copiedValue ?? value, loc, null, guards);
   }
 
   #getCopiedOwnedValue(place: Place, value: SymbolicValue): BindingValue | null {
@@ -267,19 +269,21 @@ export class MutationTracker {
     value: SymbolicValue,
     loc: SourceLocation,
     storedProperty: string | null,
+    guards: SymbolicValue[],
     isFrozen = false,
   ): void {
     const ownedValues = getOwnedValues(value);
     const aliasedValue =
       ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place, isFrozen);
     for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
-      this.#trackOwnedMutation(ownedValue, loc, storedProperty);
+      this.#trackOwnedMutation(ownedValue, loc, storedProperty, guards);
   }
 
   #trackOwnedMutation(
     ownedValue: BindingValue,
     loc: SourceLocation,
     storedProperty: string | null,
+    guards: SymbolicValue[],
   ): void {
     const { binding } = ownedValue;
     if (binding.kind === "context") {
@@ -301,7 +305,7 @@ export class MutationTracker {
       return;
     }
     if (this.#interpreter.handlerEffects) {
-      this.#interpreter.handlerEffects.addMutation(binding, loc);
+      this.#interpreter.handlerEffects.addMutation(binding, loc, guards);
       return;
     }
     this.#interpreter.warn("render-mutation", `mutates ${binding.name} during render`, loc);
@@ -366,14 +370,22 @@ export class MutationTracker {
     return null;
   }
 
-  #trackGlobalMutation(mutatedGlobal: GlobalValue, loc: SourceLocation): void {
+  #trackGlobalMutation(
+    mutatedGlobal: GlobalValue,
+    loc: SourceLocation,
+    guards: SymbolicValue[],
+  ): void {
     if (!this.#interpreter.handlerEffects) return;
     for (const binding of this.#interpreter.bindingTable.bindings)
       if (isStateBinding(binding) && this.#isInitializedFrom(binding, mutatedGlobal))
-        this.#interpreter.handlerEffects.addMutation(binding, loc);
+        this.#interpreter.handlerEffects.addMutation(binding, loc, guards);
   }
 
-  #trackModuleMutation(mutatedValue: BindingValue, loc: SourceLocation): void {
+  #trackModuleMutation(
+    mutatedValue: BindingValue,
+    loc: SourceLocation,
+    guards: SymbolicValue[],
+  ): void {
     const handlerEffects = this.#interpreter.handlerEffects;
     if (!handlerEffects) return;
     handlerEffects.addPossibleMutation(mutatedValue.binding);
@@ -384,7 +396,7 @@ export class MutationTracker {
         initial?.kind === "Binding" &&
         initial.binding.id === mutatedValue.binding.id &&
         initial.path.every((key, index) => mutatedValue.path[index] === key);
-      if (isInitializedFromMutated) handlerEffects.addMutation(binding, loc);
+      if (isInitializedFromMutated) handlerEffects.addMutation(binding, loc, guards);
     }
   }
 

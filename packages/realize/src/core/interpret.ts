@@ -1526,8 +1526,8 @@ export class Interpreter {
   #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, loc } = callSite;
     if (callee.kind === "Global" && callee.module !== null) this.#handlerEffects?.addImportedCall();
-    this.#trackProjectCallMutations(callSite);
-    this.#trackBuiltinMutation(callSite);
+    this.#trackProjectCallMutations(callSite, walkState.guards);
+    this.#trackBuiltinMutation(callSite, walkState.guards);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
     if (isMutatingCall) this.#handlerEffects?.addOpaqueCall();
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
@@ -1611,23 +1611,23 @@ export class Interpreter {
     return result;
   }
 
-  #trackProjectCallMutations(callSite: CallSite): void {
+  #trackProjectCallMutations(callSite: CallSite, guards: SymbolicValue[]): void {
     const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
     if (!declarationKey) return;
     for (const [index, isPart] of this.#projectLoaders.loadMutatedParameters(declarationKey)) {
       const argumentPlace = callSite.argumentPlaces[index];
-      if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc, isPart);
+      if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc, guards, isPart);
     }
   }
 
-  #trackBuiltinMutation(callSite: CallSite): void {
+  #trackBuiltinMutation(callSite: CallSite, guards: SymbolicValue[]): void {
     const { callee } = callSite;
     if (callee.kind !== "Global" || callee.module !== null) return;
     const targetIndex =
       BUILTIN_MUTATOR_TARGETS.get(callee.name) ??
       (PROTOTYPE_MUTATOR_CALL.test(callee.name) ? 0 : null);
     const argumentPlace = targetIndex === null ? undefined : callSite.argumentPlaces[targetIndex];
-    if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
+    if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc, guards);
   }
 
   carryWrappedCallbacks(binding: Binding, value: SymbolicValue): void {
