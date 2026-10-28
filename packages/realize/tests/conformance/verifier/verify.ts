@@ -270,8 +270,9 @@ const verifyOnFreshPage = async (
   const startTime = performance.now();
   if (harnessPage.isStale || (!harnessPage.isFresh && readsStoreData(component)))
     await harnessPage.reopen();
+  const isOnFreshPage = harnessPage.isFresh;
   let verification = await harnessPage.verify(component, budgetMs);
-  if (harnessPage.isStale) {
+  if (harnessPage.isStale || (!isOnFreshPage && verification.verdict.status === "mount-failed")) {
     await harnessPage.reopen();
     verification = await harnessPage.verify(component, budgetMs);
   }
