@@ -7,6 +7,7 @@ const nativeCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
 const pendingTimers = new Set<number>();
 const pendingFrames = new Set<number>();
 let pendingObservations = 0;
+let timerScheduledAt = Number.NEGATIVE_INFINITY;
 
 window.setTimeout = ((handler: TimerHandler, timeout?: number, ...timerArguments: unknown[]) => {
   if (typeof handler !== "function" || Number(timeout ?? 0) > SHORT_CALLBACK_MS)
@@ -16,6 +17,7 @@ window.setTimeout = ((handler: TimerHandler, timeout?: number, ...timerArguments
     Reflect.apply(handler, window, timerArguments);
   }, timeout);
   pendingTimers.add(timerId);
+  timerScheduledAt = performance.now();
   return timerId;
 }) as typeof window.setTimeout;
 
@@ -112,3 +114,6 @@ export const hasPendingPassiveFlush = (): boolean => hasPendingPassiveEffects;
 
 export const hasPendingCallbacks = (): boolean =>
   pendingTimers.size > 0 || pendingFrames.size > 0 || pendingObservations > 0;
+
+export const hasTimerScheduledSince = (time: number): boolean =>
+  pendingTimers.size > 0 && timerScheduledAt >= time;
