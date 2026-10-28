@@ -70,18 +70,6 @@ test("pages through comments", async ({ mountComponent }) => {
 
 `expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter realize conformance specs`, after a `conformance run` has set the repos up.
 
-## GitHub Actions
-
-The Analyzer Conformance workflow (`.github/workflows/analyzer-conformance.yml`) runs the corpus on pull requests that touch the analyzer, the verifier, the repos or the lockfile, and on demand from the Actions tab, where a list of repo ids limits the run. It starts one job per repo, so the corpus takes as long as its slowest repo, about two hours for shadcn-ui.
-
-A repo's result depends only on the analyzer, runner and verifier source, bippy's source, the lockfile, the workflow and the repo's own folder. The job hashes those into a cache key and restores the result when it already exists, so a change to one repo reruns one repo and a change to the docs reruns nothing. A fresh result is cached only when the repo passed.
-
-Every job uploads its folder as an artifact. The `report` job merges them, prints the table into the job summary, uploads `results.json` and fails if any repo failed or has a counterexample. The same command works on a folder of downloaded artifacts:
-
-```sh
-pnpm --filter realize conformance report tests/conformance/results/ci
-```
-
 ## Checking a setup
 
 If more than 20% of bindings have unresolved types, the run prints a warning. It usually means dependencies weren't installed where the `tsconfig` looks for them.
