@@ -251,6 +251,11 @@ const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
   "Conditional",
 ]);
 
+const CALLABLE_KINDS = new Set<SymbolicValue["kind"]>(["Function", "Bound", "Setter", "Dispatch"]);
+
+const isBuiltinMember = (property: string): boolean =>
+  property in Array.prototype || property in Object.prototype;
+
 const hasLiteralArrayLeaf = (value: SymbolicValue): boolean =>
   value.kind === "Conditional"
     ? hasLiteralArrayLeaf(value.consequent) || hasLiteralArrayLeaf(value.alternate)
@@ -517,6 +522,8 @@ export class Interpreter {
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
   readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
+  readonly #sourcesByBinding = new Map<number, SymbolicValue[]>();
+  readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
@@ -1024,12 +1031,27 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     walkState: WalkState,
   ): void {
-    const label = getStoredLabel(place);
+    this.#callChosen(
+      this.#getCalledFunctions(place),
+      getStoredLabel(place),
+      argumentValues,
+      place.binding.loc,
+      walkState,
+    );
+  }
+
+  #callChosen(
+    functions: SymbolicValue[],
+    label: string,
+    argumentValues: SymbolicValue[],
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): void {
     let skipped: SymbolicValue[] = [];
-    for (const [index, stored] of this.#getCalledFunctions(place).entries()) {
-      const isChosen = createUnknown(`stored-call:${label}:${index}`, place.binding.loc);
+    for (const [index, stored] of functions.entries()) {
+      const isChosen = createUnknown(`stored-call:${label}:${index}`, loc);
       const guards = [...walkState.guards, ...skipped, isChosen];
-      this.callStoredValue(stored, argumentValues, place.binding.loc, { ...walkState, guards });
+      this.callStoredValue(stored, argumentValues, loc, { ...walkState, guards });
       skipped = [...skipped, negate(isChosen)];
     }
   }
@@ -1525,6 +1547,31 @@ export class Interpreter {
         : this.getWrappedCallbacks(callee);
     const calleeCallbacks = this.#handlerEffects && !isMemberCallee ? getCalleeCallbacks() : null;
     if (calleeCallbacks) this.callbacks.passCallbacks(calleeCallbacks, loc, walkState);
+    if (this.#handlerEffects && !calleeCallbacks)
+      this.#callChosen(
+        this.#getCalledSourceFunctions(callee),
+        formatSymbolicValue(callee),
+        argumentValues,
+        loc,
+        walkState,
+      );
+    const iterated =
+      this.#handlerEffects &&
+      callee.kind === "Unknown" &&
+      callee.origin?.kind === "Member" &&
+      ITERATION_METHODS.has(callee.origin.property)
+        ? callee.origin.object
+        : null;
+    const [callback] = argumentValues;
+    if (iterated && callback?.kind === "Function")
+      this.#callStoredItems(
+        callback,
+        this.#getCalledSourceFunctions(iterated),
+        iterated,
+        formatSymbolicValue(iterated),
+        loc,
+        walkState,
+      );
     if (this.#handlerEffects)
       return createUnknown("call", loc, { kind: "Call", callee, argumentValues });
     this.#forgetCallbackWrites(argumentValues, loc);
@@ -1595,6 +1642,78 @@ export class Interpreter {
     const byBinding =
       value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
     return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
+  }
+
+  addUnknownSource(unknown: SymbolicValue, source: SymbolicValue): void {
+    this.#unknownSources.set(unknown, source);
+  }
+
+  #getCalledSourceFunctions(callee: SymbolicValue): SymbolicValue[] {
+    if (callee.kind === "Binding") {
+      const member = callee.path.at(-1);
+      const isElement = member === undefined || !isBuiltinMember(member);
+      return isElement
+        ? this.#getSourceFunctions(this.#sourcesByBinding.get(callee.binding.id) ?? [])
+        : [];
+    }
+    if (callee.kind !== "Unknown") return [];
+    const source = this.#unknownSources.get(callee);
+    if (source) return this.#getSourceFunctions([source]);
+    const { origin } = callee;
+    if (!origin) return [];
+    if (origin.kind === "Member")
+      return isBuiltinMember(origin.property) ? [] : this.#getSourceFunctions([origin.object]);
+    return origin.kind === "Call" ? this.#getSourceFunctions([origin.callee]) : [];
+  }
+
+  #getSourceFunctions(
+    values: SymbolicValue[],
+    seen = new Set<SymbolicValue | number>(),
+  ): SymbolicValue[] {
+    return values.flatMap((value): SymbolicValue[] => {
+      if (seen.has(value)) return [];
+      seen.add(value);
+      if (CALLABLE_KINDS.has(value.kind)) return [value];
+      switch (value.kind) {
+        case "Conditional":
+          return this.#getSourceFunctions([value.consequent, value.alternate], seen);
+        case "ArrayExpression":
+          return this.#getSourceFunctions([...value.elements, ...value.spreads], seen);
+        case "ArrayMap":
+          return this.#getSourceFunctions([value.item, value.array], seen);
+        case "ObjectExpression":
+          return this.#getSourceFunctions(
+            [...value.properties.map((property) => property.value), ...value.spreads],
+            seen,
+          );
+        case "Binding": {
+          if (seen.has(value.binding.id)) return [];
+          seen.add(value.binding.id);
+          const sources = this.#sourcesByBinding.get(value.binding.id) ?? [];
+          const initial = value.binding.initial ? [value.binding.initial] : [];
+          return this.#getSourceFunctions(
+            [...sources, ...initial, ...this.getStoredFunctions(value)],
+            seen,
+          );
+        }
+        case "Unknown": {
+          const source = this.#unknownSources.get(value);
+          if (source) return this.#getSourceFunctions([source], seen);
+          const { origin } = value;
+          if (origin?.kind === "Member") return this.#getSourceFunctions([origin.object], seen);
+          if (origin?.kind === "Call")
+            return this.#getSourceFunctions(
+              origin.callee.kind === "Global"
+                ? [origin.callee, ...origin.argumentValues]
+                : [origin.callee],
+              seen,
+            );
+          return origin?.kind === "Value" ? this.#getSourceFunctions([origin.value], seen) : [];
+        }
+        default:
+          return [];
+      }
+    });
   }
 
   getMemberCallbacks(receiver: SymbolicValue): SymbolicValue[] | null {
@@ -1876,9 +1995,11 @@ export class Interpreter {
     for (const sourceValue of sourceValues) this.collectInputPlaces(sourceValue, inputPlaces);
     const sourceText = this.#resolver.getSourceText(loc);
     if (inputPlaces.size === 0 || sourceText === null) return createUnknown(reason, loc);
-    return createBindingValue(
-      this.createBinding(sourceText, "call", loc, { inputPlaces: inputPlaces.places() }),
-    );
+    const binding = this.createBinding(sourceText, "call", loc, {
+      inputPlaces: inputPlaces.places(),
+    });
+    this.#sourcesByBinding.set(binding.id, sourceValues);
+    return createBindingValue(binding);
   }
 
   #getReceiverPlace(callee: SymbolicValue): BindingPlace | null {
@@ -1956,25 +2077,28 @@ export class Interpreter {
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
     const domain = derived && "operands" in derived ? getDerivedDomain(derived) : null;
-    return createBindingValue(
-      this.createBinding(
-        isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
-        "call",
-        callSite.loc,
-        {
-          inputPlaces: inputPlaces.places(),
-          lengthLimit,
-          identityKey:
-            this.#getRepeatableCallKey(callSite) ??
-            (isLongName ? this.#getLongCallKey(callSite) : undefined),
-          derived,
-          range,
-          initial,
-          ...(domain && { domain }),
-          ...(firstRender && { firstRender }),
-        },
-      ),
+    const binding = this.createBinding(
+      isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
+      "call",
+      callSite.loc,
+      {
+        inputPlaces: inputPlaces.places(),
+        lengthLimit,
+        identityKey:
+          this.#getRepeatableCallKey(callSite) ??
+          (isLongName ? this.#getLongCallKey(callSite) : undefined),
+        derived,
+        range,
+        initial,
+        ...(domain && { domain }),
+        ...(firstRender && { firstRender }),
+      },
     );
+    this.#sourcesByBinding.set(
+      binding.id,
+      callSite.receiver ? [callSite.callee, callSite.receiver] : [callSite.callee],
+    );
+    return createBindingValue(binding);
   }
 
   #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
@@ -2114,7 +2238,14 @@ export class Interpreter {
     const storedFunctions = this.getStoredFunctions(receiver);
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
-      this.#callStoredItems(callback, storedFunctions, receiver, methodCall.loc, walkState);
+      this.#callStoredItems(
+        callback,
+        [...storedFunctions, ...this.#getCalledSourceFunctions(receiver)],
+        receiver,
+        getStoredLabel(receiver),
+        methodCall.loc,
+        walkState,
+      );
     const result = this.#evaluateMethodResult(methodCall, instructionId, walkState);
     if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
@@ -2152,11 +2283,11 @@ export class Interpreter {
   #callStoredItems(
     callback: FunctionValue,
     storedFunctions: SymbolicValue[],
-    receiver: BindingValue,
+    receiver: SymbolicValue,
+    label: string,
     loc: SourceLocation,
     walkState: WalkState,
   ): void {
-    const label = getStoredLabel(receiver);
     for (const [index, stored] of storedFunctions.entries()) {
       const isHeld = createUnknown(`stored-item:${label}:${index}`, loc);
       this.callFunction(callback, [stored, createUnknown("item-index", loc), receiver], loc, {
@@ -2259,7 +2390,14 @@ export class Interpreter {
       return UNDEFINED_VALUE;
     }
     if (isIteratingLiteral)
-      return this.#iterateLiteralArms(methodName, receiver, callback, methodCall.loc, walkState);
+      return this.#iterateLiteralArms(
+        methodName,
+        receiver,
+        callback,
+        methodCall.loc,
+        instructionId,
+        walkState,
+      );
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
       return this.iteration.evaluateArrayMap(
         receiver,
@@ -2426,6 +2564,7 @@ export class Interpreter {
     receiver: SymbolicValue,
     callback: FunctionValue,
     loc: SourceLocation,
+    instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue {
     if (receiver.kind !== "Conditional") {
@@ -2441,20 +2580,38 @@ export class Interpreter {
         walkState,
       );
       return (
-        this.iteration.getLiteralResult(methodName, receiver, results) ?? createUnknown("call", loc)
+        this.iteration.getLiteralResult(methodName, receiver, results) ??
+        this.iteration.getOpenResult(methodName, receiver, results, loc, instructionId) ??
+        createUnknown("call", loc, {
+          kind: "Call",
+          callee: createUnknown("member", loc, {
+            kind: "Member",
+            object: receiver,
+            property: methodName,
+          }),
+          argumentValues: [callback],
+        })
       );
     }
     const test = getTestExpression(receiver);
     return {
       ...receiver,
-      consequent: this.#iterateLiteralArms(methodName, receiver.consequent, callback, loc, {
-        ...walkState,
-        guards: [...walkState.guards, test],
-      }),
-      alternate: this.#iterateLiteralArms(methodName, receiver.alternate, callback, loc, {
-        ...walkState,
-        guards: [...walkState.guards, negate(test)],
-      }),
+      consequent: this.#iterateLiteralArms(
+        methodName,
+        receiver.consequent,
+        callback,
+        loc,
+        instructionId,
+        { ...walkState, guards: [...walkState.guards, test] },
+      ),
+      alternate: this.#iterateLiteralArms(
+        methodName,
+        receiver.alternate,
+        callback,
+        loc,
+        instructionId,
+        { ...walkState, guards: [...walkState.guards, negate(test)] },
+      ),
     };
   }
 

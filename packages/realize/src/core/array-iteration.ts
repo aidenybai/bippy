@@ -47,6 +47,18 @@ const FALSE_VALUE: SymbolicValue = { kind: "Primitive", value: false };
 
 const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
 
+const getLoopElements = (collection: SymbolicValue): SymbolicValue[] => {
+  if (collection.kind === "Conditional")
+    return [...getLoopElements(collection.consequent), ...getLoopElements(collection.alternate)];
+  const literal =
+    collection.kind === "Binding" && collection.path.length === 0
+      ? collection.binding.initial
+      : collection;
+  return literal?.kind === "ArrayExpression"
+    ? [...literal.elements, ...literal.spreads]
+    : [collection];
+};
+
 const getDeclaredNameLoc = (
   sourceText: string | null,
   loc: SourceLocation,
@@ -104,7 +116,10 @@ export class ArrayIteration {
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue[] {
-    const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
+    const spreadItems = array.spreads.map((spread) =>
+      spread.kind === "ArrayMap" ? spread.item : createUnknown("item", loc),
+    );
+    const items = [...array.elements, ...spreadItems];
     const stopsOn = SHORT_CIRCUIT_OUTCOMES.get(methodName);
     const results: SymbolicValue[] = [];
     let guards = walkState.guards;
@@ -117,7 +132,7 @@ export class ArrayIteration {
       );
       results.push(result);
       if (stopsOn === undefined) continue;
-      const truthiness = getKnownTruthiness(result);
+      const truthiness = itemIndex < array.elements.length ? getKnownTruthiness(result) : null;
       if (truthiness === stopsOn) break;
       if (truthiness === null) guards = [...guards, stopsOn ? negate(result) : result];
     }
@@ -169,6 +184,18 @@ export class ArrayIteration {
         walkState,
       ),
     );
+    return this.getOpenResult(methodName, initial, outcomes, loc, instructionId);
+  }
+
+  getOpenResult(
+    methodName: string,
+    array: ArrayExpressionValue,
+    outcomes: SymbolicValue[],
+    loc: SourceLocation,
+    instructionId: InstructionId,
+  ): SymbolicValue | null {
+    if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
+    const { elements } = array;
     const select = (
       outcome: SymbolicValue,
       consequent: SymbolicValue,
@@ -211,7 +238,7 @@ export class ArrayIteration {
         });
       case "find":
         return chain((index) => elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
-      default: {
+      case "filter": {
         const openCount = outcomes.filter((outcome) => getKnownTruthiness(outcome) === null).length;
         if (openCount > MAX_OPEN_FILTER_OUTCOMES) return null;
         const keep = (index: number, kept: SymbolicValue[]): SymbolicValue => {
@@ -223,6 +250,8 @@ export class ArrayIteration {
         };
         return keep(0, []);
       }
+      default:
+        return null;
     }
   }
 
@@ -366,7 +395,11 @@ export class ArrayIteration {
 
   createLoopItem(collection: SymbolicValue, loc: SourceLocation): SymbolicValue {
     const declaredLoc = getDeclaredNameLoc(this.#interpreter.resolver.getSourceText(loc), loc);
-    if (!declaredLoc) return createUnknown("IteratorNext", loc);
+    if (!declaredLoc) {
+      const unknownItem = createUnknown("IteratorNext", loc);
+      this.#interpreter.addUnknownSource(unknownItem, collection);
+      return unknownItem;
+    }
     const inputPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(collection, inputPlaces);
     const binding = this.#interpreter.createBinding(declaredLoc.name, "item", declaredLoc.loc, {
@@ -374,7 +407,8 @@ export class ArrayIteration {
     });
     this.#interpreter.addItemSource(binding, collection);
     const item = createBindingValue(binding);
-    this.#interpreter.addStoredFunctions(item, collection, false);
+    for (const element of getLoopElements(collection))
+      this.#interpreter.addStoredFunctions(item, element, false);
     if (collection.kind === "Binding")
       for (const stored of this.#interpreter.getStoredFunctions(collection))
         this.#interpreter.addStoredFunctions(item, stored, false);

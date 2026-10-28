@@ -195,10 +195,9 @@ export class Destructurer {
     pattern.items.forEach((item, itemIndex) => {
       if (item.kind === "Hole") return;
       const itemPlace = getPlaceOrSpread(item);
-      this.#interpreter.write(
-        itemPlace,
-        destructuredValues[itemIndex] ?? createUnknown("destructure", itemPlace.loc),
-      );
+      const unknownItem = createUnknown("destructure", itemPlace.loc);
+      this.#interpreter.addUnknownSource(unknownItem, value);
+      this.#interpreter.write(itemPlace, destructuredValues[itemIndex] ?? unknownItem);
     });
   }
 
@@ -234,11 +233,11 @@ export class Destructurer {
         property.key.kind === "string" || property.key.kind === "identifier"
           ? property.key.name
           : null;
+      const computedField = createUnknown("computed-key", property.place.loc);
+      this.#interpreter.addUnknownSource(computedField, value);
       this.#interpreter.write(
         property.place,
-        key === null
-          ? createUnknown("computed-key", property.place.loc)
-          : this.#getDestructuredField(value, key, property.place),
+        key === null ? computedField : this.#getDestructuredField(value, key, property.place),
       );
     }
   }
