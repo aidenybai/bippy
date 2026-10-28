@@ -5,6 +5,7 @@ import type { Action, Capture } from "../types";
 import { markDispatchersIdle } from "../write-origins";
 import { captureMountedComponent } from "./capture";
 import { findMountedFiber, getChildren, isRenderedByChild } from "./fibers";
+import { trackActionTimers } from "./pending-callbacks";
 import { settle } from "./settle";
 
 interface MountedAction extends Action {
@@ -195,7 +196,9 @@ export const performAction = async (key: string): Promise<Capture | null> => {
   const action = collectActions().find((candidate) => candidate.key === key);
   if (!action) return null;
   markDispatchersIdle();
+  trackActionTimers(true);
   DOM_ACTIONS_BY_KIND.get(action.kind)?.perform(action.element, action.value);
   await settle();
+  trackActionTimers(false);
   return captureMountedComponent();
 };

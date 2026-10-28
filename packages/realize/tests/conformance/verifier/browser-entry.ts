@@ -9,7 +9,11 @@ import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
 import { trackStates } from "./browser/mutations";
-import { recordCommitFlags, recordPassiveFlush } from "./browser/pending-callbacks";
+import {
+  hasPendingActionTimers,
+  recordCommitFlags,
+  recordPassiveFlush,
+} from "./browser/pending-callbacks";
 import { settle } from "./browser/settle";
 
 instrument({
@@ -42,6 +46,7 @@ window.__verify = {
   mount,
   actions: () => collectActions().map(({ element: _element, value: _value, ...action }) => action),
   perform: performAction,
+  hasActionTimers: hasPendingActionTimers,
   observe: async () => {
     await settle();
     return captureMountedComponent();
