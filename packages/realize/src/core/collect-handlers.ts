@@ -284,6 +284,8 @@ const ACTIVATABLE_TAGS = new Set([
   "textarea",
 ]);
 
+const INTERACTIVE_TAGS = new Set([...ACTIVATABLE_TAGS, "details"]);
+
 const LABELABLE_TAGS = new Set([
   "button",
   "input",
@@ -298,12 +300,6 @@ const isLabelable = (element: JsxExpressionValue): boolean => {
   if (element.tag.kind !== "BuiltinTag" || !LABELABLE_TAGS.has(element.tag.name)) return false;
   const type = getAttribute(element, "type")?.value;
   return !(type?.kind === "Primitive" && type.value === "hidden");
-};
-
-const getActivationEvents = (control: JsxExpressionValue): string[] => {
-  if (getCheckableType(control) !== null) return ["onClick", "onChange", "onInput"];
-  if (control.tag.name === "button" || getSubmitControl(control) === "always") return ["onClick"];
-  return ["onFocus"];
 };
 
 const getHandlerKey = (value: SymbolicValue): string | null => {
@@ -826,9 +822,36 @@ class HandlerCollector {
         };
       },
     );
+    const descendants = [...this.#ancestorsByElement].flatMap(([candidate, path]) =>
+      path.includes(element) ? [candidate] : [],
+    );
+    const getDescendantLoads = (property: string) =>
+      descendants
+        .flatMap((descendant) => [
+          ...this.#getAncestorCallbacks(descendant, eventProp.name),
+          ...this.#getAncestorCallbacks(descendant, `${eventProp.name}${CAPTURE_SUFFIX}`),
+        ])
+        .map((descendantCallback) => this.#getPropertyLoad(descendantCallback, property));
+    const index = clicked.indexOf(callback);
+    const isStoppedBelow =
+      isCapture &&
+      index !== -1 &&
+      getDescendantLoads("stopPropagation").some((load) => load !== null);
+    const isRetargeted =
+      descendants.some(
+        (descendant) =>
+          descendant.tag.kind === "BuiltinTag" && INTERACTIVE_TAGS.has(descendant.tag.name),
+      ) || getDescendantLoads("preventDefault").some((load) => load !== null);
+    const reason = `descendant ${prop.name} ${getLocationKey(element.loc)}`;
+    const defaults = this.#getDefaultActionCallbacks(element, eventProp, ancestors, clicked);
     const propagated = [
-      ...clicked,
-      ...this.#getDefaultActionCallbacks(element, eventProp, ancestors, clicked),
+      ...(isStoppedBelow
+        ? [
+            ...clicked.slice(0, index + 1),
+            ...guardCallbacks(clicked.slice(index + 1), reason, prop),
+          ]
+        : clicked),
+      ...(isRetargeted ? guardCallbacks(defaults, reason, prop) : defaults),
     ];
     return propagated.length === 1 ? [] : propagated;
   }
@@ -903,23 +926,33 @@ class HandlerCollector {
     const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
     if (!control || prevents.includes("always")) return [];
     const ancestors = this.#ancestorsByElement.get(control) ?? [];
-    const events = getActivationEvents(control);
-    const dispatched = this.#getEventSequence(control, events, ancestors, prop, (event) => ({
-      captured: this.#getAncestorCallbacks(control, `${event}${CAPTURE_SUFFIX}`),
-      bubbled: this.#getAncestorCallbacks(control, event),
-    }));
-    const activated = events.includes("onFocus")
-      ? guardCallbacks(dispatched, `activated onFocus ${getLocationKey(control.loc)}`, prop)
-      : dispatched;
-    const sequence = [
-      ...activated,
-      ...this.#getDefaultActionCallbacks(
-        control,
-        { ...prop, name: "onClick" },
-        ancestors,
-        activated,
-      ),
+    const location = getLocationKey(control.loc);
+    const clickProp = { ...prop, name: "onClick" };
+    const focused = guardCallbacks(
+      this.#getDispatchCallbacks(control, "onFocus", prop),
+      `activated onFocus ${location}`,
+      prop,
+    );
+    const dispatched = this.#getEventSequence(
+      control,
+      getDispatchedEvents(control, clickProp),
+      ancestors,
+      prop,
+      (event) => ({
+        captured: this.#getAncestorCallbacks(control, `${event}${CAPTURE_SUFFIX}`),
+        bubbled: this.#getAncestorCallbacks(control, event),
+      }),
+    );
+    const activated = [
+      ...dispatched,
+      ...this.#getDefaultActionCallbacks(control, clickProp, ancestors, dispatched),
     ];
+    if (focused.length > 0 && activated.length > 0)
+      this.commitCallbacks.set(`activated:${location}`, {
+        callback: { kind: "ArrayExpression", elements: activated, spreads: [] },
+        loc: control.loc,
+      });
+    const sequence = [...focused, ...activated];
     return prevents.includes("maybe")
       ? guardCallbacks(sequence, `activated ${getLocationKey(label.loc)}`, prop)
       : sequence;

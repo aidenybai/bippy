@@ -199,6 +199,34 @@ describe("a click that bubbles to an ancestor's handler", () => {
     expect(sequences).not.toContainEqual(["clicks = 2", "inputs = 2"]);
   });
 
+  it("clicks a label's text field after focusing it", () => {
+    const names = getComponent(project, "LabelClicksField").analysis.handlers.map((handler) =>
+      handler.updates.map((update) => update.binding.name),
+    );
+    expect(names).toContainEqual(["isLabelClicked", "isClicked"]);
+  });
+
+  it("may skip an ancestor's bubble handler after its capture handler, since a descendant may stop the click", () => {
+    const guarded = getComponent(project, "CaptureAboveStop").analysis.handlers.map((handler) =>
+      handler.updates
+        .filter((update) => update.binding.name === "isOpened")
+        .map((update) => update.guards.length > 0),
+    );
+    expect(guarded).toContainEqual([true]);
+    expect(guarded).toContainEqual([false]);
+  });
+
+  it("may skip a label's activation after a click inside it, since the click may target interactive content", () => {
+    const isOn = getComponent(project, "ClickInsideLabel")
+      .analysis.handlers.filter(
+        (handler) => handler.trigger.kind === "Event" && handler.trigger.tag === "div",
+      )
+      .flatMap((handler) => handler.updates)
+      .filter((update) => update.binding.name === "isOn");
+    expect(isOn.length).toBeGreaterThan(0);
+    expect(isOn.every((update) => update.guards.length > 0)).toBe(true);
+  });
+
   it("runs the default action of the nearest button or label above the clicked element", () => {
     const names = getComponent(project, "NestedActivators").analysis.handlers.map((handler) =>
       handler.updates.map((update) => update.binding.name),
