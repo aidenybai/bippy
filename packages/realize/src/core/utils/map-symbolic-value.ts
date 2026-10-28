@@ -31,6 +31,8 @@ const mapChildren = (
         elements: value.elements.map(mapChild),
         spreads: value.spreads.map(mapChild),
       };
+    case "ArrayMap":
+      return { ...value, array: mapChild(value.array), item: mapChild(value.item) };
     case "Collection":
       return {
         ...value,
