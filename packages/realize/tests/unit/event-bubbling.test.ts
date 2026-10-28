@@ -227,6 +227,66 @@ describe("a click that bubbles to an ancestor's handler", () => {
     expect(isOn.every((update) => update.guards.length > 0)).toBe(true);
   });
 
+  it("activates the first rendered element with a label's htmlFor id, only while it renders and is enabled", () => {
+    const getLabelUpdates = (name: string) =>
+      getComponent(project, name)
+        .analysis.handlers.filter(
+          (handler) => handler.trigger.kind === "Event" && handler.trigger.tag === "label",
+        )
+        .flatMap((handler) => handler.updates)
+        .map((update) => ({
+          update: `${update.binding.name} = ${formatSymbolicValue(update.value)}`,
+          guards: update.guards.map(formatSymbolicValue),
+        }));
+    expect(getLabelUpdates("SwappedLabelTarget")).toEqual([
+      { update: 'mode = "editing"', guards: ["isEditing"] },
+      { update: 'mode = "viewing"', guards: ["!isEditing", "!isEditing"] },
+    ]);
+    expect(getLabelUpdates("MissingLabelTarget")).toEqual([
+      { update: "isOn = !isOn", guards: ["isShown"] },
+    ]);
+    expect(getLabelUpdates("DisabledLabelTarget")).toEqual([
+      { update: "isOn = !isOn", guards: ["!isLocked"] },
+    ]);
+    expect(getLabelUpdates("UseIdLabel")).toEqual([{ update: "isOn = !isOn", guards: [] }]);
+  });
+
+  it("skips a disabled ancestor's click handler, which React drops for a click on its descendant", () => {
+    const presses = getComponent(project, "DisabledAncestorClick")
+      .analysis.handlers.filter(
+        (handler) => handler.trigger.kind === "Event" && handler.trigger.tag === "span",
+      )
+      .flatMap((handler) => handler.updates)
+      .map((update) => update.guards.map(formatSymbolicValue));
+    expect(presses).toEqual([["!isLocked"]]);
+  });
+
+  it("submits a form after a click inside its submit button only while the button is enabled", () => {
+    const sent = getComponent(project, "DisabledSubmitIcon")
+      .analysis.handlers.filter(
+        (handler) => handler.trigger.kind === "Event" && handler.trigger.tag === "span",
+      )
+      .flatMap((handler) => handler.updates)
+      .map((update) => update.guards.map(formatSymbolicValue));
+    expect(sent).toEqual([["!isLocked"]]);
+  });
+
+  it("may skip what follows a child component that stops or prevents the click inside it", () => {
+    const getGuarded = (name: string, binding: string) =>
+      getComponent(project, name)
+        .analysis.handlers.filter(
+          (handler) =>
+            handler.trigger.kind === "Event" &&
+            (handler.trigger.tag === "button" || handler.trigger.tag === "span"),
+        )
+        .flatMap((handler) => handler.updates)
+        .filter((update) => update.binding.name === binding)
+        .map((update) => update.guards.length > 0);
+    expect(getGuarded("StoppedInChild", "isOpen")).toEqual([true]);
+    expect(getGuarded("StoppedInChild", "count")).toEqual([false]);
+    expect(getGuarded("PreventedInChild", "isSent")).toEqual([true]);
+  });
+
   it("runs the default action of the nearest button or label above the clicked element", () => {
     const names = getComponent(project, "NestedActivators").analysis.handlers.map((handler) =>
       handler.updates.map((update) => update.binding.name),

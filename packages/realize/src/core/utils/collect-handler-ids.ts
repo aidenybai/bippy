@@ -2,6 +2,7 @@ import { evaluateCondition } from "../constraints";
 import type { Constraints } from "../constraints";
 import type { JsxExpressionValue, SymbolicValue } from "../types";
 import { forEachJsxElement } from "./for-each-jsx-element";
+import { isDisabledEvent } from "./is-disabled-event";
 
 const DISABLEABLE_TAGS = new Set(["button", "input", "select", "textarea"]);
 
@@ -18,8 +19,13 @@ const isDisabled = (element: JsxExpressionValue, constraints: Constraints): bool
 export const collectHandlerIds = (render: SymbolicValue, constraints: Constraints): Set<string> => {
   const handlerIds = new Set<string>();
   forEachJsxElement(render, (element) => {
-    if (isDisabled(element, constraints)) return;
-    for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
+    const isElementDisabled = isDisabled(element, constraints);
+    for (const prop of element.props)
+      if (
+        prop.handlerId &&
+        !(isElementDisabled && prop.kind === "JsxAttribute" && isDisabledEvent(prop.name))
+      )
+        handlerIds.add(prop.handlerId);
   });
   return handlerIds;
 };

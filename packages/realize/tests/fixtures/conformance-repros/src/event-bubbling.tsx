@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import type { Ref } from "react";
+import { useId, useRef, useState } from "react";
+import type { ReactNode, Ref } from "react";
 
 export const Bubbling = () => {
   const [inner, setInner] = useState(false);
@@ -499,29 +499,6 @@ export const InputAfterCommit = () => {
   );
 };
 
-export const ImageErrorBubbles = () => {
-  const [isBroken, setIsBroken] = useState(false);
-  const [failures, setFailures] = useState(0);
-  return (
-    <div onError={() => setFailures(1)}>
-      <img src="/missing.png" alt="" onError={() => setIsBroken(true)} />
-      {isBroken && failures > 0 ? <i>both</i> : <i>open</i>}
-    </div>
-  );
-};
-
-export const ScrollStaysOnTarget = () => {
-  const [inner, setInner] = useState(false);
-  const [outer, setOuter] = useState(false);
-  return (
-    <div onScroll={() => setOuter(true)}>
-      <ul onScroll={() => setInner(true)}>
-        <li>{inner && outer ? "both" : "one"}</li>
-      </ul>
-    </div>
-  );
-};
-
 export const LabelClicksField = () => {
   const [isLabelClicked, setIsLabelClicked] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
@@ -557,5 +534,178 @@ export const ClickInsideLabel = () => {
         <input aria-label="name" />
       </div>
     </label>
+  );
+};
+
+export const SwappedLabelTarget = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [mode, setMode] = useState("idle");
+  return (
+    <div>
+      <button type="button" onClick={() => setIsEditing(!isEditing)}>
+        edit
+      </button>
+      <label htmlFor="name" onClick={() => {}}>
+        name
+      </label>
+      {isEditing ? (
+        <input id="name" type="checkbox" onChange={() => setMode("editing")} />
+      ) : (
+        <input id="name" type="checkbox" onChange={() => setMode("viewing")} />
+      )}
+      {mode === "editing" ? <i>editing</i> : mode === "viewing" ? <i>viewing</i> : <i>idle</i>}
+    </div>
+  );
+};
+
+export const MissingLabelTarget = () => {
+  const [isShown, setIsShown] = useState(false);
+  const [isOn, setIsOn] = useState(false);
+  return (
+    <div>
+      <button type="button" onClick={() => setIsShown(!isShown)}>
+        show
+      </button>
+      <label htmlFor="toggle" onClick={() => {}}>
+        toggle
+      </label>
+      {isShown && <input id="toggle" type="checkbox" onChange={() => setIsOn(!isOn)} />}
+      {isOn ? <i>on</i> : <i>off</i>}
+    </div>
+  );
+};
+
+export const DisabledLabelTarget = () => {
+  const [isLocked, setIsLocked] = useState(false);
+  const [isOn, setIsOn] = useState(false);
+  return (
+    <div>
+      <button type="button" onClick={() => setIsLocked(!isLocked)}>
+        lock
+      </button>
+      <label htmlFor="flag" onClick={() => {}}>
+        flag
+      </label>
+      <input id="flag" type="checkbox" disabled={isLocked} onChange={() => setIsOn(!isOn)} />
+      {isOn ? <i>on</i> : <i>off</i>}
+    </div>
+  );
+};
+
+export const UseIdLabel = () => {
+  const id = useId();
+  const [isOn, setIsOn] = useState(false);
+  return (
+    <div>
+      <label htmlFor={id} onClick={() => {}}>
+        flag
+      </label>
+      <input id={id} type="checkbox" onChange={() => setIsOn(!isOn)} />
+      {isOn ? <i>on</i> : <i>off</i>}
+    </div>
+  );
+};
+
+export const DisabledAncestorClick = () => {
+  const [isLocked, setIsLocked] = useState(false);
+  const [presses, setPresses] = useState(0);
+  return (
+    <div>
+      <button type="button" onClick={() => setIsLocked(!isLocked)}>
+        lock
+      </button>
+      <button type="button" disabled={isLocked} onClick={() => setPresses(presses + 1)}>
+        <span onClick={() => {}}>icon</span>
+      </button>
+      {presses > 0 ? <i>pressed</i> : <i>idle</i>}
+    </div>
+  );
+};
+
+export const DisabledSubmitIcon = () => {
+  const [isLocked, setIsLocked] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setIsSent(!isSent);
+      }}
+    >
+      <button type="button" onClick={() => setIsLocked(!isLocked)}>
+        lock
+      </button>
+      <button disabled={isLocked}>
+        <span onClick={() => {}}>send</span>
+      </button>
+      {isSent ? <i>sent</i> : <i>draft</i>}
+    </form>
+  );
+};
+
+const StoppingPanel = ({ children }: { children: ReactNode }) => {
+  const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
+  return <div onClick={stop}>{children}</div>;
+};
+
+export const StoppedInChild = () => {
+  const [isOpen, setIsOpen] = useState(true);
+  const [count, setCount] = useState(0);
+  return (
+    <div onClick={() => setIsOpen(false)}>
+      {isOpen ? <i>open</i> : <i>closed</i>}
+      <StoppingPanel>
+        <button type="button" onClick={() => setCount(count === 0 ? 1 : 0)}>
+          inside
+        </button>
+      </StoppingPanel>
+      {count === 0 ? <i>zero</i> : <i>one</i>}
+    </div>
+  );
+};
+
+const PreventingSlot = ({ children }: { children: ReactNode }) => (
+  <div onClick={(event) => event.preventDefault()}>{children}</div>
+);
+
+export const PreventedInChild = () => {
+  const [isSent, setIsSent] = useState(false);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setIsSent(!isSent);
+      }}
+    >
+      <button>
+        <PreventingSlot>
+          <span onClick={() => {}}>send</span>
+        </PreventingSlot>
+      </button>
+      {isSent ? <i>sent</i> : <i>draft</i>}
+    </form>
+  );
+};
+
+export const ImageErrorBubbles = () => {
+  const [isBroken, setIsBroken] = useState(false);
+  const [failures, setFailures] = useState(0);
+  return (
+    <div onError={() => setFailures(1)}>
+      <img src="/missing.png" alt="" onError={() => setIsBroken(true)} />
+      {isBroken && failures > 0 ? <i>both</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const ScrollStaysOnTarget = () => {
+  const [inner, setInner] = useState(false);
+  const [outer, setOuter] = useState(false);
+  return (
+    <div onScroll={() => setOuter(true)}>
+      <ul onScroll={() => setInner(true)}>
+        <li>{inner && outer ? "both" : "one"}</li>
+      </ul>
+    </div>
   );
 };

@@ -88,6 +88,7 @@ const DOM_ACTIONS: DomAction[] = [
   {
     kind: "change",
     isCandidate: (props, tag) =>
+      props.disabled !== true &&
       INPUT_TAGS.has(tag) &&
       !UNTYPEABLE_INPUT_TYPES.has(String(props.type)) &&
       hasHandler(props, ["onChange", "onInput"]),
@@ -97,7 +98,7 @@ const DOM_ACTIONS: DomAction[] = [
   },
   {
     kind: "keydown",
-    isCandidate: (props) => hasHandler(props, ["onKeyDown"]),
+    isCandidate: (props) => props.disabled !== true && hasHandler(props, ["onKeyDown"]),
     getValues: () => KEYS,
     hasValue: true,
     perform: (element, key) =>
@@ -107,7 +108,7 @@ const DOM_ACTIONS: DomAction[] = [
   },
   {
     kind: "focus",
-    isCandidate: (props) => hasHandler(props, ["onFocus"]),
+    isCandidate: (props) => props.disabled !== true && hasHandler(props, ["onFocus"]),
     getValues: () => NO_VALUES,
     hasValue: false,
     perform: (element) => dispatchAll(element, [new FocusEvent("focusin", { bubbles: true })]),
