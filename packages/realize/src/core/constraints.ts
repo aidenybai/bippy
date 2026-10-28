@@ -39,6 +39,7 @@ import { applyStringMethod, isStringMethod } from "./utils/string-methods";
 import { readContents } from "./utils/literal-receivers";
 import { memoizeByIdentity } from "./utils/memoize-by-identity";
 import { getNextDown } from "./utils/get-next-down";
+import { getLeastFloat } from "./utils/get-least-float";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
@@ -298,13 +299,49 @@ const hasArithmetic = (value: SymbolicValue): boolean =>
   value.kind === "BinaryExpression" ||
   (value.kind === "UnaryExpression" && hasArithmetic(value.value));
 
-const isIntegerArithmetic = (value: SymbolicValue): boolean => {
-  if (value.kind === "Primitive") return Number.isSafeInteger(value.value);
-  if (value.kind === "UnaryExpression") return isIntegerArithmetic(value.value);
-  return (
-    value.kind !== "BinaryExpression" ||
-    (isIntegerArithmetic(value.left) && isIntegerArithmetic(value.right))
-  );
+const hasOffset = (value: SymbolicValue): boolean =>
+  (value.kind === "Primitive" && value.value !== 0) ||
+  (value.kind === "UnaryExpression" && hasOffset(value.value)) ||
+  (value.kind === "BinaryExpression" && (hasOffset(value.left) || hasOffset(value.right)));
+
+const getAtomSum = (value: SymbolicValue, atomValue: number): SymbolicValue => {
+  if (value.kind === "UnaryExpression")
+    return foldUnary(value.operator, getAtomSum(value.value, atomValue));
+  if (value.kind === "BinaryExpression")
+    return foldBinary(
+      value.operator,
+      getAtomSum(value.left, atomValue),
+      getAtomSum(value.right, atomValue),
+    );
+  return value.kind === "Binding" ? { kind: "Primitive", value: atomValue } : value;
+};
+
+const getRoundedBounds = (
+  value: BinaryExpressionValue,
+  operator: BinaryOperator,
+  atom: BindingPlace,
+  isIncreasing: boolean,
+): Bound[] | null => {
+  const parts: BinaryOperator[] = EQUALITY_OPERATORS.has(operator) ? [">=", "<="] : [operator];
+  const bounds = parts.map((part) => {
+    const isIncluded = (atomValue: number): boolean => {
+      const folded = foldBinary(
+        part,
+        getAtomSum(value.left, atomValue),
+        getAtomSum(value.right, atomValue),
+      );
+      return folded.kind === "Primitive" && folded.value === true;
+    };
+    const isUpward = (part === ">" || part === ">=") === isIncreasing;
+    const least = isUpward
+      ? getLeastFloat(isIncluded)
+      : getLeastFloat((atomValue) => isIncluded(-atomValue));
+    if (least === null || !Number.isFinite(least)) return null;
+    return isUpward
+      ? { left: null, right: atom, maxDifference: -least, isStrict: false }
+      : { left: atom, right: null, maxDifference: -least, isStrict: false };
+  });
+  return bounds.every((bound) => bound !== null) ? bounds : null;
 };
 
 const getAtomDifference = (left: SignedSum, right: SignedSum): AtomDifference | null => {
@@ -409,6 +446,35 @@ const isFiniteAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   ) ||
   constraints.finitePlaces.has(atom);
 
+const getIntegerMagnitude = (value: SymbolicValue, constraints: Constraints): number | null => {
+  if (value.kind === "Primitive")
+    return Number.isSafeInteger(value.value) ? Math.abs(Number(value.value)) : null;
+  if (value.kind === "UnaryExpression") return getIntegerMagnitude(value.value, constraints);
+  if (value.kind === "BinaryExpression") {
+    const left = getIntegerMagnitude(value.left, constraints);
+    const right = getIntegerMagnitude(value.right, constraints);
+    return left === null || right === null ? null : left + right;
+  }
+  if (value.kind !== "Binding") return null;
+  const atom = getValuePlace(value);
+  if (isLengthAtom(atom, constraints)) return 2 ** 32;
+  const cases = constraints.possibleValues.get(atom) ?? [];
+  const magnitudes = cases.flatMap((innerCase) =>
+    innerCase.kind === "Literal" && Number.isSafeInteger(innerCase.value)
+      ? [Math.abs(Number(innerCase.value))]
+      : [],
+  );
+  return magnitudes.length > 0 && magnitudes.length === cases.length
+    ? Math.max(...magnitudes)
+    : null;
+};
+
+const isExactSum = (value: SymbolicValue, constraints: Constraints): boolean => {
+  if (!hasArithmetic(value)) return true;
+  const magnitude = getIntegerMagnitude(value, constraints);
+  return magnitude !== null && magnitude <= Number.MAX_SAFE_INTEGER;
+};
+
 const isNumberValue = (value: SymbolicValue, constraints: Constraints): boolean => {
   if (value.kind === "Conditional")
     return (
@@ -445,39 +511,57 @@ export const getBounds = (
   if (!leftTerm || !rightTerm || !difference) return null;
   const { plus, minus } = difference;
   const offsetDifference = rightTerm.offset - leftTerm.offset;
-  if (
-    (hasArithmetic(value.left) || hasArithmetic(value.right)) &&
-    !(
-      isIntegerArithmetic(value.left) &&
-      isIntegerArithmetic(value.right) &&
-      Number.isSafeInteger(offsetDifference)
-    )
-  )
-    return null;
+  const isRounded = hasArithmetic(value.left) || hasArithmetic(value.right);
+  const atom = plus ?? minus;
+  const atomCount = leftTerm.atoms.length + rightTerm.atoms.length;
+  if (isRounded && atom && atomCount === 1)
+    return getRoundedBounds(value, operator, atom, plus !== null);
+  const isSignExact =
+    plus !== null &&
+    minus !== null &&
+    atomCount === 2 &&
+    !hasOffset(value.left) &&
+    !hasOffset(value.right);
+  const isExact =
+    !isRounded ||
+    isSignExact ||
+    (constraints !== null &&
+      isExactSum(value.left, constraints) &&
+      isExactSum(value.right, constraints));
+  const isSingleRounding =
+    plus !== null &&
+    minus !== null &&
+    atomCount === 2 &&
+    Number.isFinite(offsetDifference) &&
+    (leftTerm.atoms.length === 0
+      ? !hasArithmetic(value.left) && !hasOffset(value.right)
+      : rightTerm.atoms.length === 0 && !hasArithmetic(value.right) && !hasOffset(value.left));
+  if (!isExact && !isSingleRounding) return null;
   if (constraints !== null && plus !== null && minus !== null) {
     if (!isNumericAtom(plus, constraints) || !isNumericAtom(minus, constraints)) return null;
     const isFinite = isFiniteAtom(plus, constraints) && isFiniteAtom(minus, constraints);
-    if (offsetDifference !== 0 && !isFinite) return null;
+    const isNonStrict = value.operator === ">=" || value.operator === "<=";
+    if ((offsetDifference !== 0 || (isRounded && isNonStrict)) && !isFinite) return null;
   }
   const below: Bound = {
     left: plus,
     right: minus,
-    maxDifference: offsetDifference,
-    isStrict: false,
+    maxDifference: isExact ? offsetDifference : -getNextDown(-offsetDifference),
+    isStrict: !isExact,
   };
   const above: Bound = {
     left: minus,
     right: plus,
-    maxDifference: -offsetDifference,
-    isStrict: false,
+    maxDifference: isExact ? -offsetDifference : -getNextDown(offsetDifference),
+    isStrict: !isExact,
   };
   switch (operator) {
     case "<":
-      return [{ ...below, isStrict: true }];
+      return [{ ...below, maxDifference: offsetDifference, isStrict: true }];
     case "<=":
       return [below];
     case ">":
-      return [{ ...above, isStrict: true }];
+      return [{ ...above, maxDifference: -offsetDifference, isStrict: true }];
     case ">=":
       return [above];
     default:
