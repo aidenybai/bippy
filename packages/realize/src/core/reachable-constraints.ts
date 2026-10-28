@@ -617,7 +617,7 @@ export const getFirstRenderOutcome = (
 };
 
 export const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {
-  if (value.kind === "ArrayMap") return isWholeBinding(value.array, binding);
+  if (value.kind === "ArrayMap") return !value.isFlat && isWholeBinding(value.array, binding);
   return (
     value.kind === "ArrayExpression" &&
     value.elements.length === 0 &&
