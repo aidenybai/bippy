@@ -2417,9 +2417,7 @@ export class Interpreter {
         branch: this.createBranch(instructionId, loc, "none", index),
         guardKeys: walkState.guards.map(getValueKey),
       }),
-      isBinding
-        ? this.createDerivedValue([receiver, atIndex], "computed-member", loc)
-        : UNDEFINED_VALUE,
+      this.createDerivedValue([receiver, atIndex], "computed-member", loc),
     );
   }
 
