@@ -51,9 +51,14 @@ const isSurelyChanged = (value: SymbolicValue, binding: Binding): boolean => {
   );
 };
 
+interface MutationSite {
+  loc: SourceLocation;
+  guards: SymbolicValue[];
+}
+
 interface Mutation {
   binding: Binding;
-  loc: SourceLocation;
+  sites: MutationSite[];
 }
 
 interface WarnCallback {
@@ -93,9 +98,16 @@ export class EffectCollector {
         };
   }
 
-  addMutation(binding: Binding, loc: SourceLocation): void {
-    if (!this.#mutationsByBinding.has(binding.id))
-      this.#mutationsByBinding.set(binding.id, { binding, loc });
+  addMutation(binding: Binding, loc: SourceLocation, guards: SymbolicValue[]): void {
+    const mutation = this.#mutationsByBinding.get(binding.id);
+    if (!mutation) {
+      this.#mutationsByBinding.set(binding.id, { binding, sites: [{ loc, guards }] });
+      return;
+    }
+    const isDominated = mutation.sites.some((site) =>
+      site.guards.every((guard, index) => guards[index] === guard),
+    );
+    if (!isDominated) mutation.sites.push({ loc, guards });
   }
 
   addPossibleMutation(binding: Binding): void {
@@ -171,15 +183,14 @@ export class EffectCollector {
   recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
     const isSameReference = isWholeBinding(nextValue, binding);
     const mutation = this.#mutationsByBinding.get(binding.id);
-    if (mutation) {
+    for (const site of mutation?.sites ?? [])
       this.#warn(
         isSameReference ? "lost-update" : "state-mutation",
         isSameReference
           ? `sets ${binding.name} to the array or object it mutated, so React skips the update`
           : `mutates ${binding.name} in place before setting it`,
-        mutation.loc,
+        site.loc,
       );
-    }
     if (isSameReference && !this.hasUpdate(binding)) {
       this.#sameReferenceSets.add(binding.id);
       return;
@@ -212,14 +223,15 @@ export class EffectCollector {
         ];
     const mayRender =
       this.#updates.length > 0 || this.#delegates.length > 0 || this.#callsImportedCode;
-    for (const { binding, loc } of this.#mutationsByBinding.values()) {
+    for (const { binding, sites } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
       if (!this.#sameReferenceSets.has(binding.id))
-        this.#warn(
-          "state-mutation",
-          `mutates ${binding.name} without setting it, so the change shows only on the next render`,
-          loc,
-        );
+        for (const site of sites)
+          this.#warn(
+            "state-mutation",
+            `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+            site.loc,
+          );
       if (mayRender)
         this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     }
