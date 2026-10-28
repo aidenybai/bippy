@@ -14,6 +14,10 @@ describe("handlers on a disabled form element", () => {
     expect(getTransitionsFrom("LockedButton", "!isDone")).toEqual([]);
   });
 
+  it("still fire for mouse leave, which React only blocks for clicks and mouse enter", () => {
+    expect(getTransitionsFrom("LockedButtonLeave", "!isLeft")).toHaveLength(1);
+  });
+
   it("fire once the element can be enabled", () => {
     expect(getTransitionsFrom("UnlockedButton", "!isDone")).toHaveLength(1);
   });

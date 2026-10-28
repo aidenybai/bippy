@@ -1,5 +1,5 @@
 import { GeneratedSource, makeInstructionId } from "../react-compiler/HIR/HIR";
-import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
+import type { HIRFunction, IdentifierId, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
 import type { CollectedEffects } from "./effect-collector";
 import type {
@@ -32,6 +32,7 @@ import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
 import { mayCallPropsOutsideEvents } from "./utils/may-call-props-outside-events";
 import { getTargetMethodCalls } from "./utils/get-target-method-calls";
+import { isDisabledEvent, isMouseBlockedEvent } from "./utils/is-disabled-event";
 import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "./build-jsx";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -215,11 +216,37 @@ const guardCallbacks = (
     guardKeys: [],
   }));
 
+const getRenderedBranch = (
+  guards: SymbolicValue[],
+  consequent: SymbolicValue,
+  alternate: SymbolicValue,
+  prop: JsxProp,
+): SymbolicValue =>
+  guards.reduceRight<SymbolicValue>(
+    (inner, test, caseIndex) => ({
+      kind: "Conditional",
+      test,
+      testKind: "truthy",
+      consequent: inner,
+      alternate,
+      branch: {
+        terminalId: makeInstructionId(0),
+        probe: "none",
+        loc: prop.loc,
+        file: prop.file,
+        caseIndex,
+      },
+      guardKeys: [],
+    }),
+    consequent,
+  );
+
+const getBaseEvent = (name: string): string =>
+  name.endsWith(CAPTURE_SUFFIX) ? name.slice(0, -CAPTURE_SUFFIX.length) : name;
+
 const getBubblingEvent = (prop: JsxProp | JsxSpreadProp): string[] => {
   if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) return [];
-  const event = prop.name.endsWith(CAPTURE_SUFFIX)
-    ? prop.name.slice(0, -CAPTURE_SUFFIX.length)
-    : prop.name;
+  const event = getBaseEvent(prop.name);
   return NON_BUBBLING_EVENTS.has(event) ? [] : [event];
 };
 
@@ -515,14 +542,18 @@ class HandlerCollector {
 
   readonly #consumerCallbacks: Map<JsxExpressionValue, SymbolicValue[]>;
   readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
+  readonly #renderGuards: Map<JsxExpressionValue, SymbolicValue[]>;
+  readonly #wrapperLoads = new Map<SymbolicValue, Set<string>>();
 
   constructor(
     interpreter: Interpreter,
     ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]> = new Map(),
+    renderGuards: Map<JsxExpressionValue, SymbolicValue[]> = new Map(),
   ) {
     this.#interpreter = interpreter;
     this.#consumerCallbacks = this.#getConsumerCallbacks(ancestorsByElement);
     this.#ancestorsByElement = ancestorsByElement;
+    this.#renderGuards = renderGuards;
     interpreter.refEventDispatcher = (refId, methodName) =>
       this.#getRefEventCallbacks(refId, methodName);
   }
@@ -609,16 +640,21 @@ class HandlerCollector {
     renderGuards: SymbolicValue[],
     ancestors: JsxExpressionValue[],
   ): void {
-    const eventGuards = [...renderGuards, ...getEnabledGuards(element)];
+    const enabledGuards = getEnabledGuards(element);
     const laterKeys = getLaterPropKeys(element.props);
     element.props.forEach((prop, index) => {
       const overridden = laterKeys[index] ?? new Set<string>();
       if (prop.kind === "JsxSpreadAttribute")
-        this.#planSpreadHandlers(element, prop, eventGuards, overridden);
+        this.#planSpreadHandlers(element, prop, renderGuards, overridden);
       else if (overridden.has(prop.name)) return;
       else if (isRefCallback(prop)) this.#planRefCallback(prop, renderGuards);
       else if (isHandlerProp(element.tag, prop))
-        this.#planEventHandler(element, prop, eventGuards, ancestors);
+        this.#planEventHandler(
+          element,
+          prop,
+          isDisabledEvent(prop.name) ? [...renderGuards, ...enabledGuards] : renderGuards,
+          ancestors,
+        );
     });
     const autoFocus = getAttribute(element, "autoFocus")?.value;
     const focused =
@@ -794,9 +830,7 @@ class HandlerCollector {
         : [callback, ...entered.reverse()];
     }
     const isCapture = prop.name.endsWith(CAPTURE_SUFFIX);
-    const eventProp = isCapture
-      ? { ...prop, name: prop.name.slice(0, -CAPTURE_SUFFIX.length) }
-      : prop;
+    const eventProp = isCapture ? { ...prop, name: getBaseEvent(prop.name) } : prop;
     if (NON_BUBBLING_EVENTS.has(eventProp.name)) return [];
     const consumers = guardCallbacks(
       this.#consumerCallbacks.get(element) ?? [],
@@ -828,6 +862,10 @@ class HandlerCollector {
     const getDescendantLoads = (property: string) =>
       descendants
         .flatMap((descendant) => [
+          ...this.#getWrapperMarkers(descendant, [
+            eventProp.name,
+            `${eventProp.name}${CAPTURE_SUFFIX}`,
+          ]),
           ...this.#getAncestorCallbacks(descendant, eventProp.name),
           ...this.#getAncestorCallbacks(descendant, `${eventProp.name}${CAPTURE_SUFFIX}`),
         ])
@@ -922,9 +960,41 @@ class HandlerCollector {
     clicked: SymbolicValue[],
     prop: JsxProp,
   ): SymbolicValue[] {
-    const control = this.#getLabelControl(label);
     const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
-    if (!control || prevents.includes("always")) return [];
+    if (prevents.includes("always")) return [];
+    const labelKeys = new Set((this.#renderGuards.get(label) ?? []).map(getValueKey));
+    const getControlGuards = (control: JsxExpressionValue) =>
+      (this.#renderGuards.get(control) ?? []).filter((guard) => !labelKeys.has(getValueKey(guard)));
+    const controls = this.#getLabelControls(label);
+    const renderedIndex = controls.findIndex((control) => getControlGuards(control).length === 0);
+    const sequence = controls
+      .slice(0, renderedIndex === -1 ? controls.length : renderedIndex + 1)
+      .flatMap((control, index) =>
+        this.#getControlActivation(control, prop, (callback) =>
+          controls
+            .slice(0, index)
+            .reduce(
+              (gated, earlier) =>
+                getRenderedBranch(getControlGuards(earlier), UNDEFINED_VALUE, gated, prop),
+              getRenderedBranch(
+                [...getControlGuards(control), ...getEnabledGuards(control)],
+                callback,
+                UNDEFINED_VALUE,
+                prop,
+              ),
+            ),
+        ),
+      );
+    return prevents.includes("maybe")
+      ? guardCallbacks(sequence, `activated ${getLocationKey(label.loc)}`, prop)
+      : sequence;
+  }
+
+  #getControlActivation(
+    control: JsxExpressionValue,
+    prop: JsxProp,
+    gate: (callback: SymbolicValue) => SymbolicValue,
+  ): SymbolicValue[] {
     const ancestors = this.#ancestorsByElement.get(control) ?? [];
     const location = getLocationKey(control.loc);
     const clickProp = { ...prop, name: "onClick" };
@@ -949,31 +1019,23 @@ class HandlerCollector {
     ];
     if (focused.length > 0 && activated.length > 0)
       this.commitCallbacks.set(`activated:${location}`, {
-        callback: { kind: "ArrayExpression", elements: activated, spreads: [] },
+        callback: { kind: "ArrayExpression", elements: activated.map(gate), spreads: [] },
         loc: control.loc,
       });
-    const sequence = [...focused, ...activated];
-    return prevents.includes("maybe")
-      ? guardCallbacks(sequence, `activated ${getLocationKey(label.loc)}`, prop)
-      : sequence;
+    return [...focused, ...activated].map(gate);
   }
 
-  #getLabelControl(label: JsxExpressionValue): JsxExpressionValue | null {
+  #getLabelControls(label: JsxExpressionValue): JsxExpressionValue[] {
     const target = getAttribute(label, "htmlFor")?.value;
     const elements = [...this.#ancestorsByElement.keys()];
-    if (target?.kind === "Primitive")
-      return (
-        elements.find((element) => {
-          const id = getAttribute(element, "id")?.value;
-          return id?.kind === "Primitive" && id.value === target.value;
-        }) ?? null
-      );
-    if (target) return null;
-    return (
-      elements.find(
-        (element) =>
-          isLabelable(element) && (this.#ancestorsByElement.get(element) ?? []).includes(label),
-      ) ?? null
+    if (target)
+      return elements.filter((element) => {
+        const id = getAttribute(element, "id")?.value;
+        return id !== undefined && getValueKey(id) === getValueKey(target);
+      });
+    return elements.filter(
+      (element) =>
+        isLabelable(element) && (this.#ancestorsByElement.get(element) ?? []).includes(label),
     );
   }
 
@@ -983,26 +1045,53 @@ class HandlerCollector {
     ancestors: JsxExpressionValue[],
     prop: JsxProp,
   ): SymbolicValue[] {
+    const getEnabledCallbacks = (ancestor: JsxExpressionValue, eventName: string) =>
+      this.#getAncestorCallbacks(ancestor, eventName).map((callback) =>
+        isMouseBlockedEvent(eventName)
+          ? getRenderedBranch(getEnabledGuards(ancestor), callback, UNDEFINED_VALUE, prop)
+          : callback,
+      );
     return [
       ...ancestors.flatMap((ancestor) =>
         ancestor.tag.kind === "BuiltinTag"
-          ? this.#getAncestorCallbacks(ancestor, `${name}${CAPTURE_SUFFIX}`)
-          : [],
+          ? getEnabledCallbacks(ancestor, `${name}${CAPTURE_SUFFIX}`)
+          : this.#getWrapperMarkers(ancestor, [`${name}${CAPTURE_SUFFIX}`]),
       ),
       ...targetCallbacks,
       ...[...ancestors].reverse().flatMap((ancestor) => {
         if (ancestor.tag.kind !== "BuiltinTag")
-          return guardCallbacks(
-            this.#getComponentCallbacks(ancestor),
-            `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
-            prop,
-          );
-        const callbacks = this.#getAncestorCallbacks(ancestor, name);
+          return [
+            ...this.#getWrapperMarkers(ancestor, [name]),
+            ...guardCallbacks(
+              this.#getComponentCallbacks(ancestor),
+              `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
+              prop,
+            ),
+          ];
+        const callbacks = getEnabledCallbacks(ancestor, name);
         return MAYBE_BUBBLING_EVENTS.has(name)
           ? guardCallbacks(callbacks, `bubbled ${name} ${getLocationKey(ancestor.loc)}`, prop)
           : callbacks;
       }),
     ];
+  }
+
+  #getWrapperMarkers(component: JsxExpressionValue, names: string[]): SymbolicValue[] {
+    const hirFunction =
+      component.tag.kind === "Component" && component.tag.declaration
+        ? this.#interpreter.loadProjectComponent(component.tag.declaration)
+        : null;
+    if (!hirFunction) return [];
+    const loads = HIDDEN_PROPERTIES.filter((property) =>
+      loadsInHandlers(hirFunction, new Set(names), property),
+    );
+    if (loads.length === 0) return [];
+    const marker = createUnknown(
+      `wrapper ${names.join(" ")} ${getLocationKey(component.loc)}`,
+      component.loc,
+    );
+    this.#wrapperLoads.set(marker, new Set(loads));
+    return [marker];
   }
 
   #getDispatchCallbacks(target: JsxExpressionValue, event: string, prop: JsxProp): SymbolicValue[] {
@@ -1181,7 +1270,9 @@ class HandlerCollector {
         this.#getFormActions(form, activator),
       ),
       ...getDefaultCallbacks(form, getResetControl(activator), "onReset"),
-    ];
+    ].map((callback) =>
+      getRenderedBranch(getEnabledGuards(activator), callback, UNDEFINED_VALUE, prop),
+    );
   }
 
   #getFormActions(
@@ -1233,6 +1324,7 @@ class HandlerCollector {
   }
 
   #getPropertyLoad(callback: SymbolicValue, property: string): "always" | "maybe" | null {
+    if (this.#wrapperLoads.get(callback)?.has(property)) return "maybe";
     if (callback.kind === "Bound") return this.#getPropertyLoad(callback.callee, property);
     if (callback.kind === "Conditional") {
       const loads = [callback.consequent, callback.alternate].map((branch) =>
@@ -1287,6 +1379,47 @@ class HandlerCollector {
       : { kind: "ArrayExpression", elements: wrapped, spreads: [] };
   }
 }
+
+const HIDDEN_PROPERTIES = ["stopPropagation", "preventDefault"];
+
+const loadsInHandlers = (
+  hirFunction: HIRFunction,
+  names: ReadonlySet<string>,
+  property: string,
+): boolean => {
+  const functions = new Map<IdentifierId, HIRFunction>();
+  for (const block of hirFunction.body.blocks.values())
+    for (const { lvalue, value } of block.instructions) {
+      if (value.kind === "FunctionExpression" || value.kind === "ObjectMethod") {
+        if (loadsInHandlers(value.loweredFunc.func, names, property)) return true;
+        functions.set(lvalue.identifier.id, value.loweredFunc.func);
+      }
+      if (value.kind === "StoreLocal") {
+        const stored = functions.get(value.value.identifier.id);
+        if (stored) functions.set(value.lvalue.place.identifier.id, stored);
+      }
+      const source =
+        value.kind === "LoadLocal"
+          ? value.place
+          : value.kind === "CallExpression"
+            ? value.args.find(
+                (argument) =>
+                  argument.kind === "Identifier" && functions.has(argument.identifier.id),
+              )
+            : undefined;
+      const sourceFunction =
+        source?.kind === "Identifier" ? functions.get(source.identifier.id) : undefined;
+      if (sourceFunction) functions.set(lvalue.identifier.id, sourceFunction);
+      if (value.kind !== "JsxExpression") continue;
+      const isLoaded = value.props.some((prop) => {
+        if (prop.kind !== "JsxAttribute" || !names.has(prop.name)) return false;
+        const handler = functions.get(prop.place.identifier.id);
+        return handler !== undefined && loadsProperty(handler, property);
+      });
+      if (isLoaded) return true;
+    }
+  return false;
+};
 
 const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
   for (const block of hirFunction.body.blocks.values())
@@ -1479,13 +1612,14 @@ const collectHandlersOnce = (
   renderPhaseEffects: CollectedEffects,
 ): Handler[] => {
   const ancestorsByElement = getElementAncestors(render);
-  const collector = new HandlerCollector(interpreter, ancestorsByElement);
+  const renderGuards = getRenderGuards(render);
+  const collector = new HandlerCollector(interpreter, ancestorsByElement, renderGuards);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
   const effectCalls = interpreter.effectCalls.filter(
     (effectCall) => !wrappedCallbacks.has(effectCall.callback),
   );
-  for (const [element, renderGuards] of getRenderGuards(render))
-    collector.planElementHandlers(element, renderGuards, ancestorsByElement.get(element) ?? []);
+  for (const [element, guards] of renderGuards)
+    collector.planElementHandlers(element, guards, ancestorsByElement.get(element) ?? []);
   for (const callback of [
     ...effectCalls.map((effectCall) => effectCall.callback),
     ...collector.plannedCallbacks,

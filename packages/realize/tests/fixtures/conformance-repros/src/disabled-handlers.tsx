@@ -26,3 +26,16 @@ export const UnlockedButton = () => {
     </div>
   );
 };
+
+export const LockedButtonLeave = () => {
+  const [isReady] = useState(false);
+  const [isLeft, setIsLeft] = useState(false);
+  return (
+    <div>
+      <button disabled={!isReady} onMouseLeave={() => setIsLeft(true)}>
+        done
+      </button>
+      {isLeft ? <i>left</i> : <i>inside</i>}
+    </div>
+  );
+};
