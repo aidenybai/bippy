@@ -42,7 +42,6 @@ import type {
   BindingValue,
   CollectionValue,
   Branch,
-  Claim,
   ContextSetterFields,
   DerivedCall,
   FirstRenderValue,
@@ -497,7 +496,7 @@ export class Interpreter {
   #componentCallLoc: SourceLocation | null = null;
   readonly #itemSources = new Map<number, PlaceMap<true>>();
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
-  readonly #functions = new FunctionRegistry();
+  readonly functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
   readonly mutations = new MutationTracker(this);
   readonly destructurer = new Destructurer(this);
@@ -553,13 +552,9 @@ export class Interpreter {
     this.#loadModuleConstant = loadModuleConstant;
     this.#loadModuleVariable = loadModuleVariable;
     this.#componentResolver = resolver;
-    this.#functions.addModule(resolver, loadModuleFunction);
+    this.functions.addModule(resolver, loadModuleFunction);
     this.#projectLoaders = projectLoaders;
     this.externalSources = new ExternalSources(contextSetterFields, modelsByStore);
-  }
-
-  get functions(): FunctionRegistry {
-    return this.#functions;
   }
 
   get resolver(): SourceFileResolver {
@@ -568,10 +563,6 @@ export class Interpreter {
 
   get handlerEffects(): EffectCollector | null {
     return this.#handlerEffects;
-  }
-
-  get claims(): Claim[] {
-    return this.claimRecorder.claims;
   }
 
   get wholePropsSample(): Sample | null {
@@ -669,7 +660,7 @@ export class Interpreter {
     const handlerEffects = this.#handlerEffects;
     const cells = this.cells;
     const hirFunction =
-      callback?.kind === "Function" ? this.#functions.get(callback.functionId) : undefined;
+      callback?.kind === "Function" ? this.functions.get(callback.functionId) : undefined;
     const values = hirFunction ? this.getCompilationTables(hirFunction).values : null;
     const savedValues = new Map(values);
     this.#handlerEffects = new EffectCollector(() => {});
@@ -688,7 +679,7 @@ export class Interpreter {
   }
 
   #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
-    return this.#functions.register(hirFunction, this.#resolver, isSnapshot);
+    return this.functions.register(hirFunction, this.#resolver, isSnapshot);
   }
 
   #bindMutatedMemo(finish: InstructionValueOfKind<"FinishMemoize">): void {
@@ -719,7 +710,7 @@ export class Interpreter {
     const isInlined = this.#inlinedFunctions.size > 0;
     const closure = this.#registerFunction(hirFunction, isInlined);
     if (!isInlined) return closure;
-    this.#functions.setCapturedValues(
+    this.functions.setCapturedValues(
       closure.functionId,
       hirFunction.context.map((place): CapturedValue => [place, this.read(place)]),
     );
@@ -733,8 +724,8 @@ export class Interpreter {
       this.#frameClosureIds.some((closureIds) => closureIds.includes(functionId));
     const capturedValues = isCreatingFrameActive
       ? []
-      : this.#functions.getCapturedValues(functionId);
-    const hirFunction = functionId === null ? undefined : this.#functions.get(functionId);
+      : this.functions.getCapturedValues(functionId);
+    const hirFunction = functionId === null ? undefined : this.functions.get(functionId);
     const writtenPlaces =
       this.#handlerEffects && hirFunction && !isCreatingFrameActive
         ? getStoredContextPlaces(hirFunction)
@@ -927,7 +918,7 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue {
-    const hirFunction = this.#functions.get(callee.functionId);
+    const hirFunction = this.functions.get(callee.functionId);
     if (!hirFunction) return createUnknown("call", loc);
     if (
       this.#inlinedFunctions.size >= MAX_INLINE_DEPTH ||
@@ -956,7 +947,7 @@ export class Interpreter {
     const collector = this.#handlerEffects;
     if (!collector || visited.has(callee.functionId)) return;
     visited.add(callee.functionId);
-    for (const place of this.#functions.get(callee.functionId)?.context ?? []) {
+    for (const place of this.functions.get(callee.functionId)?.context ?? []) {
       const value = this.read(place);
       if (value.kind === "Setter" || value.kind === "Dispatch")
         collector.recordSetterCall(value.binding, createUnknown("call", loc), walkState);
@@ -1153,15 +1144,15 @@ export class Interpreter {
 
   resolveModuleFunction(value: SymbolicValue): SymbolicValue {
     if (value.kind !== "Global") return value;
-    const moduleFunction = this.#functions.loadModuleFunction(this.#resolver, value.name);
+    const moduleFunction = this.functions.loadModuleFunction(this.#resolver, value.name);
     if (moduleFunction) return this.#registerFunction(moduleFunction);
     const declarationKey = this.#importDeclarationKeys.get(value);
     const imported = declarationKey
       ? this.#projectLoaders.loadProjectFunction(declarationKey)
       : null;
     if (!imported) return value;
-    this.#functions.addModule(imported.resolver, imported.loadModuleFunction, imported.hirFunction);
-    return this.#functions.register(imported.hirFunction, imported.resolver);
+    this.functions.addModule(imported.resolver, imported.loadModuleFunction, imported.hirFunction);
+    return this.functions.register(imported.hirFunction, imported.resolver);
   }
 
   warn(kind: WarningKind, message: string, loc: SourceLocation, prop: string | null = null): void {
@@ -1177,7 +1168,7 @@ export class Interpreter {
     const updaterValue = setterArgument && this.resolveModuleFunction(setterArgument);
     if (updaterValue?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
     const reassignedIds = getReassignedIds(this.getCurrentFunction());
-    const updater = this.#functions.get(updaterValue.functionId);
+    const updater = this.functions.get(updaterValue.functionId);
     return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
       ? createUnknown("deferred-updater", loc)
       : this.callFunction(updaterValue, [previousValue], loc, walkState);
@@ -1220,7 +1211,7 @@ export class Interpreter {
   ): void {
     const { reducer, pending } = dispatch;
     const isAsyncAction =
-      reducer.kind === "Function" && (this.#functions.get(reducer.functionId)?.async ?? false);
+      reducer.kind === "Function" && (this.functions.get(reducer.functionId)?.async ?? false);
     const collector = this.#getUpdateCollector();
     const nextValue =
       reducer.kind === "Function"
@@ -1274,7 +1265,7 @@ export class Interpreter {
     if (hookKind !== null) return { kind: "Hook", hookKind };
     const helperTakingCallbacks =
       callSite.callee.kind === "Global" && getPassedCallbacks(callSite.argumentValues).length > 0
-        ? this.#functions.loadModuleFunction(this.#resolver, callSite.callee.name)
+        ? this.functions.loadModuleFunction(this.#resolver, callSite.callee.name)
         : null;
     if (helperTakingCallbacks)
       return { kind: "ModuleFunction", hirFunction: helperTakingCallbacks };
@@ -1289,7 +1280,7 @@ export class Interpreter {
       ? this.#projectLoaders.loadProjectFunction(declarationKey)
       : null;
     if (!handlerHelper) return { kind: "Value" };
-    this.#functions.addModule(
+    this.functions.addModule(
       handlerHelper.resolver,
       handlerHelper.loadModuleFunction,
       handlerHelper.hirFunction,
@@ -1367,7 +1358,7 @@ export class Interpreter {
       this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
     const helper = isPure ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
     if (helper)
-      this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
+      this.functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
     return helper;
   }
 
@@ -1437,7 +1428,7 @@ export class Interpreter {
       case "Portal":
         return target.children;
       case "ProjectHook": {
-        this.#functions.addModule(
+        this.functions.addModule(
           target.projectHook.resolver,
           target.projectHook.loadModuleFunction,
           target.projectHook.hirFunction,
@@ -1581,7 +1572,7 @@ export class Interpreter {
     if (this.#resolver.isReactElement(loc)) {
       const helper = this.#findProjectFunction(callSite.calleePlace);
       if (helper && this.#inlinedFunctions.size < MAX_INLINE_DEPTH) {
-        this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
+        this.functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
         return this.#inlineFunction(helper.hirFunction, callSite, walkState);
       }
       this.diagnostics.bailOut(
@@ -1747,7 +1738,7 @@ export class Interpreter {
   forgetHandlerWrites(handlerCallback: SymbolicValue): void {
     for (const callback of getContainedValues(handlerCallback)) {
       if (callback.kind !== "Function") continue;
-      const hirFunction = this.#functions.get(callback.functionId);
+      const hirFunction = this.functions.get(callback.functionId);
       if (!hirFunction) continue;
       const { values } = this.getCompilationTables(hirFunction);
       for (const place of getStoredContextPlaces(hirFunction))
@@ -1758,7 +1749,7 @@ export class Interpreter {
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
     for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
-      const hirFunction = this.#functions.get(callback.functionId);
+      const hirFunction = this.functions.get(callback.functionId);
       for (const place of hirFunction ? getWrittenContextPlaces(hirFunction) : [])
         this.write(place, createUnknown("callback-write", loc));
     }
@@ -1927,9 +1918,9 @@ export class Interpreter {
   ): void {
     if (visitedFunctionIds.has(callback.functionId)) return;
     visitedFunctionIds.add(callback.functionId);
-    const context = this.#functions.get(callback.functionId)?.context ?? [];
+    const context = this.functions.get(callback.functionId)?.context ?? [];
     const capturedValues = new Map(
-      this.#functions
+      this.functions
         .getCapturedValues(callback.functionId)
         .map(([place, value]) => [place.identifier.id, value]),
     );
@@ -1951,10 +1942,10 @@ export class Interpreter {
     });
     if (staleValues.length === 0) return;
     const staleIds = new Set(staleValues.map(([place]) => place.identifier.id));
-    const keptValues = this.#functions
+    const keptValues = this.functions
       .getCapturedValues(callback.functionId)
       .filter(([place]) => !staleIds.has(place.identifier.id));
-    this.#functions.setCapturedValues(callback.functionId, [...keptValues, ...staleValues]);
+    this.functions.setCapturedValues(callback.functionId, [...keptValues, ...staleValues]);
   }
 
   #captureHeldProps(props: Array<JsxProp | JsxSpreadProp>, heldProps: ReadonlySet<string>): void {
@@ -1978,7 +1969,7 @@ export class Interpreter {
     const capturedPlaces = new PlaceMap<true>();
     forEachSymbolicValue(memoized, (part) => {
       if (part.kind !== "Function") return;
-      for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
+      for (const capturedPlace of this.functions.get(part.functionId)?.context ?? [])
         this.collectInputPlaces(this.read(capturedPlace), capturedPlaces);
     });
     const nullishTestPlaces = getNullishTestPlaces(memoized, capturedPlaces);
@@ -2020,7 +2011,7 @@ export class Interpreter {
       }
       if (part.kind !== "Function" || visited.has(part.functionId)) return;
       visited.add(part.functionId);
-      for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
+      for (const capturedPlace of this.functions.get(part.functionId)?.context ?? [])
         this.collectInputPlaces(this.read(capturedPlace), inputPlaces, visited);
     });
   }
@@ -3458,7 +3449,7 @@ export class Interpreter {
     const previousFunctionScope = this.walker.functionScope;
     this.walker.functionScope = createFunctionScope();
     this.#currentFunction = hirFunction;
-    this.#resolver = this.#functions.getResolver(hirFunction) ?? previousResolver;
+    this.#resolver = this.functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
     const closureIds: number[] = [];
     this.#frameClosureIds.push(closureIds);
@@ -3492,9 +3483,9 @@ export class Interpreter {
       this.#frameClosureIds.pop();
       const outerIdentifierIds = new Set(hirFunction.context.map((place) => place.identifier.id));
       for (const closureId of closureIds)
-        this.#functions.setCapturedValues(
+        this.functions.setCapturedValues(
           closureId,
-          this.#functions
+          this.functions
             .getCapturedValues(closureId)
             .map(([place, value]): CapturedValue => [
               place,
@@ -3553,7 +3544,7 @@ export class Interpreter {
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return null;
     visitedFunctionIds.add(callback.functionId);
-    const hirFunction = this.#functions.get(callback.functionId);
+    const hirFunction = this.functions.get(callback.functionId);
     if (!hirFunction) return null;
     const externalArguments = hirFunction.params.map(
       (_parameter, index) =>
