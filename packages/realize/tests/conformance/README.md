@@ -8,6 +8,7 @@ Runs the analyzer and the verifier against pinned real-world repos and collects 
 pnpm --filter realize conformance run                        # every repo
 pnpm --filter realize conformance run invoify                # one repo
 pnpm --filter realize conformance run -n 4                   # four at a time
+pnpm --filter realize conformance run -e vercel -n 16        # Vercel Sandbox, 16 at a time
 ```
 
 Each repo is set up once under `.conformance/<id>`, or under `BIPPY_CONFORMANCE_CACHE` when that is set: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. It runs without the `npm_` and `COREPACK_` variables pnpm sets for scripts, so the app's own package manager sees a clean environment. Set `BIPPY_CONFORMANCE_CACHE` to a folder outside this repository when an app's package manager walks up and finds bippy's root `package.json`, as Yarn 1 does. Each component gets 60 seconds of exploration.
@@ -69,6 +70,20 @@ test("pages through comments", async ({ mountComponent }) => {
 ```
 
 `expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter realize conformance specs`, after a `conformance run` has set the repos up.
+
+## Vercel Sandbox
+
+`-e vercel` runs each repo in its own Vercel Sandbox with 8 vCPUs and 16 GB of memory, so a full corpus run takes about as long as its slowest repo.
+
+- The first run of a repo checks it out, installs it, installs the analyzer dependencies and Chromium, and saves a snapshot. Later runs start from that snapshot. A new snapshot is made when the commit, install command, patch or analyzer dependency versions change. Snapshot ids are kept in `vercel-snapshots.json` under the cache folder.
+- Each run uploads the current analyzer, runner, verifier and repo setup source, plus bippy's source, then runs `collect.ts` in the sandbox. The results are gzipped there and written to the same run folder as a local run. The sandbox output goes to `<repo>/sandbox.log`.
+- The runner signs in with the OIDC token from `vercel link` and `vercel env pull .env.local` in `packages/realize`. It also accepts `VERCEL_TOKEN`, `VERCEL_TEAM_ID` and `VERCEL_PROJECT_ID`, from the environment or from `.env.local`, which is gitignored.
+
+The corpus does not run on GitHub Actions. `conformance report` merges a folder of per-repo results:
+
+```sh
+pnpm --filter realize conformance report tests/conformance/results/<run>
+```
 
 ## Checking a setup
 

@@ -8,10 +8,10 @@ import type { LineLogger, RepoConfig } from "./repos";
 
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 const SETUP_ERROR_TAIL_LENGTH = 4000;
-const COMPONENT_BUDGET_MS = 60_000;
+export const COMPONENT_BUDGET_MS = 60_000;
 const PACKAGE_MANAGER_ENVIRONMENT_PREFIXES = ["npm_", "COREPACK_"];
 
-const getSetupKey = (repo: RepoConfig): string =>
+export const getSetupKey = (repo: RepoConfig): string =>
   JSON.stringify([
     repo.revision,
     repo.install,
