@@ -3267,6 +3267,10 @@ export class Interpreter {
     if (callback.kind === "Dispatch")
       this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, walkState);
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
+    if (callback.kind === "Unknown") {
+      const memberCallbacks = this.getMemberCallbacks(callback);
+      if (memberCallbacks) this.callbacks.passCallbacks(memberCallbacks, callback.loc, walkState);
+    }
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return null;
     visitedFunctionIds.add(callback.functionId);
     const hirFunction = this.functions.get(callback.functionId);
