@@ -1601,8 +1601,12 @@ export class Interpreter {
           seen.add(value.binding.id);
           const sources = this.#sourcesByBinding.get(value.binding.id) ?? [];
           const initial = value.binding.initial ? [value.binding.initial] : [];
+          const passed =
+            value.binding.kind === "call"
+              ? (this.#wrappedCallbacksByBinding.get(value.binding.id) ?? [])
+              : [];
           return this.#getSourceFunctions(
-            [...sources, ...initial, ...this.getStoredFunctions(value)],
+            [...sources, ...initial, ...passed, ...this.getStoredFunctions(value)],
             seen,
           );
         }

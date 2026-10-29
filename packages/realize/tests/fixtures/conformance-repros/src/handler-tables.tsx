@@ -76,3 +76,20 @@ export const ReducedTable = () => {
     </div>
   );
 };
+
+export const FilteredTable = () => {
+  const [n, setN] = useState(0);
+  const [k, setK] = useState(0);
+  const handlers = [
+    { id: 0, run: () => setN(1) },
+    { id: 1, run: () => setN(2) },
+  ].filter((item) => item.id === k);
+  return (
+    <div>
+      {n === 1 ? <b>one</b> : <s>one</s>}
+      {n === 2 ? <b>two</b> : <s>two</s>}
+      <button onClick={handlers[0].run}>step</button>
+      <button onClick={() => setK(1 - k)}>flip</button>
+    </div>
+  );
+};

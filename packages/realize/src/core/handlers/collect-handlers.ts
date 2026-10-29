@@ -1181,7 +1181,9 @@ class HandlerCollector {
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
     const resolved = this.#interpreter.resolveModuleFunction(getHeldValue(value));
-    const wrapped = this.#interpreter.getWrappedCallbacks(resolved);
+    const isCallMember =
+      resolved.kind === "Binding" && resolved.binding.kind === "call" && resolved.path.length > 0;
+    const wrapped = isCallMember ? null : this.#interpreter.getWrappedCallbacks(resolved);
     if (!wrapped) return resolved;
     const [single] = wrapped;
     return wrapped.length === 1 && single
