@@ -13,7 +13,8 @@ import { gunzipSync } from "node:zlib";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
 import { z } from "zod";
-import type { CollectSummary } from "./collect";
+import { parseCollectSummary } from "./collect-summary";
+import type { CollectSummary } from "./collect-summary";
 import { COMPONENT_BUDGET_MS, getSetupKey } from "./local-environment";
 import { CACHE_DIRECTORY, PACKAGE_DIRECTORY } from "./repos";
 import type { LineLogger, RepoConfig } from "./repos";
@@ -348,7 +349,7 @@ export const runVercel = async (
     await runStage("upload", () => uploadAnalyzerSource(sandbox));
     await runStage("collect", () => runCollect(sandbox, repo, shouldVerify, appendSandboxLog));
     await runStage("download", () => downloadResults(sandbox, outputDirectory, shouldVerify));
-    return JSON.parse(readFileSync(join(outputDirectory, "summary.json"), "utf8"));
+    return parseCollectSummary(readFileSync(join(outputDirectory, "summary.json"), "utf8"));
   } finally {
     await sandbox.stop().catch(() => undefined);
   }
