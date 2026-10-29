@@ -502,6 +502,7 @@ export class Interpreter {
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
+  readonly #thisValues = new Map<HIRFunction, SymbolicValue>();
   readonly #mountClosureIds = new Set<number>();
   readonly #storedFunctions = new PlaceMap<SymbolicValue[]>();
   #storedFunctionCount = 0;
@@ -1368,8 +1369,13 @@ export class Interpreter {
         derived: { kind: "Call", callee: callee.name, operands: callSite.argumentValues },
       });
     switch (callee.kind) {
-      case "Function":
-        return this.callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
+      case "Function": {
+        const hirFunction = this.functions.get(callee.functionId);
+        if (hirFunction && callSite.receiver) this.#thisValues.set(hirFunction, callSite.receiver);
+        const result = this.callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
+        if (hirFunction) this.#thisValues.delete(hirFunction);
+        return result;
+      }
       case "Conditional": {
         const test = getTestExpression(callee);
         return {
@@ -2560,8 +2566,16 @@ export class Interpreter {
       case "ArrayExpression":
         return this.#evaluateArrayLiteral(value);
       case "FunctionExpression":
-      case "ObjectMethod":
+      case "ObjectMethod": {
+        const lexicalThis =
+          value.kind === "FunctionExpression" &&
+          value.type === "ArrowFunctionExpression" &&
+          this.#currentFunction
+            ? this.#thisValues.get(this.#currentFunction)
+            : undefined;
+        if (lexicalThis) this.#thisValues.set(value.loweredFunc.func, lexicalThis);
         return this.#createClosure(value.loweredFunc.func);
+      }
       case "CallExpression":
         return this.#evaluateCallExpression(value, walkState);
       case "MethodCall":
@@ -2640,8 +2654,13 @@ export class Interpreter {
       case "NextPropertyOf":
       case "PropertyDelete":
       case "ComputedDelete":
-      case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
+      case "UnsupportedNode":
+        return (
+          (value.node.type === "ThisExpression" &&
+            this.#thisValues.get(this.getCurrentFunction())) ||
+          createUnknown(value.kind, value.loc)
+        );
       case "StartMemoize":
         this.memoStaleness.startMemoize(value);
         return UNDEFINED_VALUE;
