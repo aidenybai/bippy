@@ -55,6 +55,7 @@ export interface CompiledFile {
   loadModuleDeclaration: ModuleDeclarationLoader;
   loadImportUse: ImportUseLoader;
   importedNames: ImportedNames;
+  comparedComponents: ReadonlySet<string>;
 }
 
 const STOP = Symbol("stop");
@@ -104,6 +105,7 @@ interface ProgramFunctions {
   programPath: NodePath<types.Program> | null;
   namesByLocation: Map<string, string>;
   moduleFunctionPaths: Map<string, BabelFunction>;
+  comparedComponents: Set<string>;
 }
 
 const EMPTY_COMPILED_FILE: CompiledFile = {
@@ -120,6 +122,7 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
     reexportSources: [],
     isReadOnly: () => false,
   },
+  comparedComponents: new Set(),
 };
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
@@ -340,6 +343,7 @@ const compileProgramFunctions = (
     programPath: null,
     namesByLocation: new Map(),
     moduleFunctionPaths: new Map(),
+    comparedComponents: new Set(),
   };
   traverse(ast, {
     Program(path) {
@@ -356,6 +360,19 @@ const compileProgramFunctions = (
       if (path.node.loc)
         programFunctions.namesByLocation.set(getLocationKey(path.node.loc), functionName);
       if (isModuleScopeFunction(path)) programFunctions.moduleFunctionPaths.set(functionName, path);
+    },
+    CallExpression(path) {
+      const callee = path.node.callee;
+      const calleeName = types.isMemberExpression(callee) ? callee.property : callee;
+      if (!types.isIdentifier(calleeName, { name: "memo" }) || path.node.arguments.length < 2)
+        return;
+      const ancestor = path.findParent(
+        (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
+      );
+      if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
+        programFunctions.comparedComponents.add(ancestor.node.id.name);
+      if (ancestor?.isExportDefaultDeclaration())
+        programFunctions.comparedComponents.add("default");
     },
   });
   return programFunctions;
@@ -388,5 +405,6 @@ export const compileFile = (
     loadModuleDeclaration: createModuleDeclarationLoader(ast),
     loadImportUse: createImportUseLoader(ast),
     importedNames: collectImportedNames(ast),
+    comparedComponents: programFunctions.comparedComponents,
   };
 };

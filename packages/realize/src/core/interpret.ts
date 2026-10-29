@@ -70,6 +70,7 @@ import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
+import { ALL_PROPS } from "./utils/get-prop-holds";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
@@ -208,6 +209,8 @@ export interface ProjectLoaders {
   loadProjectHook: ProjectHookLoader;
   loadProjectFunction: ProjectHookLoader;
   loadProjectComponent: (declarationKey: string) => HIRFunction | null;
+  loadHeldProps: (declarationKey: string) => ReadonlySet<string>;
+  loadHeldContexts: () => ReadonlySet<string>;
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
   loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
   loadImportUse: (declarationKey: string) => ImportUse;
@@ -1943,6 +1946,18 @@ export class Interpreter {
     this.#functions.setCapturedValues(callback.functionId, [...keptValues, ...staleValues]);
   }
 
+  #captureHeldProps(props: Array<JsxProp | JsxSpreadProp>, heldProps: ReadonlySet<string>): void {
+    for (const prop of props)
+      if (
+        heldProps.has(ALL_PROPS) ||
+        (prop.kind === "JsxAttribute" ? heldProps.has(prop.name) : heldProps.size > 0)
+      )
+        forEachSymbolicValue(prop.value, (part) => {
+          if (part.kind === "Function")
+            this.#captureStaleReads(part, new PlaceMap(), new Set(), prop.loc);
+        });
+  }
+
   #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
     const readPlaces = new PlaceMap<true>();
     this.collectInputPlaces(memoized, readPlaces);
@@ -3303,8 +3318,10 @@ export class Interpreter {
       (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "value",
     );
     const contextKey = providedValue ? this.#resolver.getContextKey(element.tag.loc) : null;
-    if (providedValue && contextKey)
-      this.providedContexts.push({ contextKey, value: providedValue.value });
+    if (!providedValue || !contextKey) return;
+    if (this.#projectLoaders.loadHeldContexts().has(contextKey))
+      this.#captureHeldProps([providedValue], new Set([ALL_PROPS]));
+    this.providedContexts.push({ contextKey, value: providedValue.value });
   }
 
   #evaluateJsxElement(
@@ -3315,10 +3332,12 @@ export class Interpreter {
     this.#recordProvidedContext(element, props);
     const isBuiltinTag = element.tag.kind === "BuiltinTag";
     const reactExport = isBuiltinTag ? null : this.#resolver.getReactExportName(element.tag.loc);
+    const declaration = isBuiltinTag ? null : this.#resolver.getDeclarationKey(element.tag.loc);
+    if (declaration) this.#captureHeldProps(props, this.#projectLoaders.loadHeldProps(declaration));
     const jsxValue = buildJsx(
       this.#getJsxTag(element.tag),
       {
-        declaration: isBuiltinTag ? null : this.#resolver.getDeclarationKey(element.tag.loc),
+        declaration,
         isContext: !isBuiltinTag && this.#resolver.isContext(element.tag.loc),
         reactExport,
         props,

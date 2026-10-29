@@ -37,6 +37,7 @@ import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
 import { createImportIndex } from "./utils/create-import-index";
 import type { ImportIndex } from "./utils/create-import-index";
+import { ALL_PROPS, getPropHolds } from "./utils/get-prop-holds";
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
@@ -66,6 +67,8 @@ const compileProjectFiles = (
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const componentsByDeclaration = new Map<string, HIRFunction>();
+  const comparedDeclarations = new Set<string>();
+  const heldPropsByDeclaration = new Map<string, ReadonlySet<string>>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
   const importUseLoadersByPath = new Map<string, ImportUseLoader>();
@@ -88,6 +91,43 @@ const compileProjectFiles = (
       projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
     return projectFunctionsByDeclaration.get(declarationKey) ?? null;
   };
+  const getHeldProps = (declarationKey: string, visited: Set<string>): ReadonlySet<string> => {
+    if (comparedDeclarations.has(declarationKey)) return new Set([ALL_PROPS]);
+    const hirFunction = componentsByDeclaration.get(declarationKey);
+    if (!hirFunction || visited.has(declarationKey)) return new Set();
+    visited.add(declarationKey);
+    const holds = getPropHolds(hirFunction);
+    const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
+    const forwarded = holds.forwards.filter((forward) => {
+      const tagKey = resolver?.getDeclarationKey(forward.tagLoc);
+      const tagHeld = tagKey ? getHeldProps(tagKey, visited) : new Set<string>();
+      return (
+        tagHeld.has(ALL_PROPS) ||
+        (forward.attribute === ALL_PROPS ? tagHeld.size > 0 : tagHeld.has(forward.attribute))
+      );
+    });
+    return new Set([...holds.held, ...forwarded.map((forward) => forward.name)]);
+  };
+  const loadHeldProps = (declarationKey: string): ReadonlySet<string> => {
+    const cached = heldPropsByDeclaration.get(declarationKey);
+    if (cached) return cached;
+    const held = getHeldProps(declarationKey, new Set());
+    heldPropsByDeclaration.set(declarationKey, held);
+    return held;
+  };
+  const getHeldContexts = (): ReadonlySet<string> =>
+    new Set(
+      [...componentsByDeclaration].flatMap(([declarationKey, hirFunction]) => {
+        const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
+        const contextLocs = getPropHolds(hirFunction).contextLocs;
+        return [...loadHeldProps(declarationKey)].flatMap((name) => {
+          const loc = contextLocs.get(name);
+          return (loc && resolver?.getDeclarationKey(loc)) || [];
+        });
+      }),
+    );
+  let heldContexts: ReadonlySet<string> | null = null;
+  const loadHeldContexts = (): ReadonlySet<string> => (heldContexts ??= getHeldContexts());
   const summarizeMutatedParameters = (declarationKey: string): Map<number, boolean> => {
     const { path, name } = parseDeclarationKey(declarationKey);
     const hirFunction = lowerersByPath.get(path)?.(name);
@@ -138,6 +178,8 @@ const compileProjectFiles = (
     loadProjectHook,
     loadProjectFunction,
     loadProjectComponent: (declarationKey) => componentsByDeclaration.get(declarationKey) ?? null,
+    loadHeldProps,
+    loadHeldContexts,
     loadMutatedParameters,
     loadModuleDeclaration,
     loadImportUse,
@@ -162,6 +204,9 @@ const compileProjectFiles = (
     declarationLoadersByPath.set(sourceFile.path, compiled.loadModuleDeclaration);
     importUseLoadersByPath.set(sourceFile.path, compiled.loadImportUse);
     const exportNames = collectExportNames(sourceFile);
+    for (const name of compiled.comparedComponents)
+      for (const key of new Set([name, exportNames.get(name) ?? name]))
+        comparedDeclarations.add(createDeclarationKey(sourceFile.path, key));
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Component" && hir)
         for (const key of new Set([name, exportNames.get(name) ?? name]))
