@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
-import { collectHandlerIds } from "./utils/collect-handler-ids";
+import { collectHandlerIds } from "./collect-handler-ids";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getCommittedRefIds } from "./utils/get-committed-ref-ids";
 import type { ReachabilityContext } from "./reachable-constraints";

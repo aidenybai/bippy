@@ -9,7 +9,7 @@ import type {
   Domain,
   BindingPlace,
 } from "./types";
-import { dedupeAbstractValues } from "./constraints";
+import { dedupeAbstractValues } from "./abstract-values";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { createBindingValue } from "./symbolic-values";

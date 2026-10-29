@@ -1,4 +1,5 @@
-import { dedupeAbstractValues, EQUALITY_OPERATORS } from "./constraints";
+import { dedupeAbstractValues } from "./abstract-values";
+import { EQUALITY_OPERATORS } from "./comparison-operators";
 import type { AbstractValue, BindingValue, Domain, SymbolicValue } from "./types";
 import { getTruthiness } from "./utils/get-truthiness";
 import { getValuePlace } from "./utils/get-value-place";

@@ -81,7 +81,6 @@ import { getMemoRanges } from "./utils/get-memo-ranges";
 import { getLocationKey } from "./utils/get-location-key";
 import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getPropertyKeyForms } from "./utils/get-property-key-forms";
-import { hasUnknownPart } from "./constraints";
 import { getDomainPrimitive } from "./domains";
 import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
@@ -120,6 +119,7 @@ import {
   CALLABLE_KINDS,
   isCallableValue,
   getOriginValues,
+  hasUnknownPart,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";

@@ -1,8 +1,8 @@
-import { evaluateCondition } from "../constraints";
-import type { Constraints } from "../constraints";
-import type { JsxExpressionValue, SymbolicValue } from "../types";
-import { forEachJsxElement } from "./for-each-jsx-element";
-import { isDisabledEvent } from "./is-disabled-event";
+import { evaluateCondition } from "./constraints";
+import type { Constraints } from "./constraints";
+import type { JsxExpressionValue, SymbolicValue } from "./types";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { isDisabledEvent } from "./utils/is-disabled-event";
 
 const DISABLEABLE_TAGS = new Set(["button", "input", "select", "textarea"]);
 

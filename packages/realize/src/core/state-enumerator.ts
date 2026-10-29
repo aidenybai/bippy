@@ -1,7 +1,7 @@
+import { isComplementNegation } from "./bound-graph";
 import {
   assumeCondition,
   evaluateCondition,
-  isComplementNegation,
   getConstraintsKey,
   resolveLiteral,
 } from "./constraints";
