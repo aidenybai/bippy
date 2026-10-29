@@ -485,14 +485,22 @@ const getCandidateIndices = (afterHandler: Constraints, context: TransitionConte
     const outcome = test && evaluateCondition(test, afterHandler);
     if (outcome !== null) decidedOutcomes.set(branchKey, outcome);
   }
-  return context.stateBranches.flatMap((target, index) =>
-    [...target.outcomes].some(([branchKey, outcome]) => {
-      const decidedOutcome = decidedOutcomes.get(branchKey);
-      return outcome !== null && decidedOutcome !== undefined && decidedOutcome !== outcome;
-    })
-      ? []
-      : [index],
-  );
+  const candidates: number[] = [];
+  context.stateBranches.forEach((target, index) => {
+    if (!contradictsDecidedOutcomes(target, decidedOutcomes)) candidates.push(index);
+  });
+  return candidates;
+};
+
+const contradictsDecidedOutcomes = (
+  target: StateBranches,
+  decidedOutcomes: Map<string, boolean>,
+): boolean => {
+  for (const [branchKey, outcome] of target.outcomes) {
+    const decidedOutcome = decidedOutcomes.get(branchKey);
+    if (outcome !== null && decidedOutcome !== undefined && decidedOutcome !== outcome) return true;
+  }
+  return false;
 };
 
 const isReplayedTarget = (
