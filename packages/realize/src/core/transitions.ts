@@ -42,6 +42,7 @@ import {
   isLengthPreserving,
 } from "./reachable-constraints";
 import type { Alternative } from "./state-enumerator";
+import { getOutcomeKey, parseOutcomeKey } from "./branch-outcome";
 
 const MAX_UPDATE_SEQUENCES = 256;
 
@@ -419,7 +420,10 @@ const outcomeBranchesByKey = new Map<string, [string, string]>();
 const getOutcomeBranches = (branchKey: string): [string, string] => {
   const cached = outcomeBranchesByKey.get(branchKey);
   if (cached) return cached;
-  const outcomeBranches: [string, string] = [`${branchKey}:true`, `${branchKey}:false`];
+  const outcomeBranches: [string, string] = [
+    getOutcomeKey(branchKey, true),
+    getOutcomeKey(branchKey, false),
+  ];
   outcomeBranchesByKey.set(branchKey, outcomeBranches);
   return outcomeBranches;
 };
@@ -585,9 +589,7 @@ const collectBranchTests = (
 const getStateBranches = (alternative: Alternative): StateBranches => {
   const outcomes = new Map<string, boolean | null>();
   for (const branch of alternative.branches) {
-    const separator = branch.lastIndexOf(":");
-    const branchKey = branch.slice(0, separator);
-    const outcome = branch.slice(separator + 1) === "true";
+    const { branchKey, isTrue: outcome } = parseOutcomeKey(branch);
     outcomes.set(
       branchKey,
       outcomes.has(branchKey) && outcomes.get(branchKey) !== outcome ? null : outcome,
