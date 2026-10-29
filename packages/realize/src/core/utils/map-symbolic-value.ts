@@ -54,11 +54,23 @@ const mapChildren = (
     case "RegExp":
     case "Global":
     case "Unknown":
-    case "JsxExpression":
-    case "JsxFragment":
-    case "HookResult":
-    case "Bound":
       return value;
+    case "JsxExpression":
+      return {
+        ...value,
+        props: value.props.map((prop) => ({ ...prop, value: mapChild(prop.value) })),
+        children: value.children.map(mapChild),
+      };
+    case "JsxFragment":
+      return { ...value, children: value.children.map(mapChild) };
+    case "HookResult":
+      return { ...value, argumentValues: value.argumentValues.map(mapChild) };
+    case "Bound":
+      return {
+        ...value,
+        callee: mapChild(value.callee),
+        argumentValues: value.argumentValues.map(mapChild),
+      };
     default:
       return assertExhaustive(value, "Unhandled symbolic value");
   }
