@@ -1,6 +1,5 @@
 import { makeInstructionId } from "../react-compiler/HIR/HIR";
 import type { ArrayPattern, ObjectPattern, Place, SourceLocation } from "../react-compiler/HIR/HIR";
-import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { getHookBindingKind } from "./external-sources";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import {
@@ -20,10 +19,7 @@ import type {
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
-
-const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic"]);
-
-const REDUCER_HOOKS = new Set<HookKind>(["useReducer", "useActionState"]);
+import { getHookTraits } from "./hook-traits";
 
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
 
@@ -117,9 +113,9 @@ export class Destructurer {
           loc: value.loc,
           domain: this.#interpreter.resolver.getTupleElementDomain(value.loc, 0),
         };
-    if (STATE_HOOKS.has(value.hookKind) && slot)
+    if (getHookTraits(value.hookKind).slot === "state" && slot)
       return this.#destructureState(value, slot, setterPlace ?? null);
-    if (REDUCER_HOOKS.has(value.hookKind) && slot)
+    if (getHookTraits(value.hookKind).slot === "reducer" && slot)
       return this.#destructureReducer(value, slot, itemPlaces[2] ?? null, loc);
     return itemPlaces.map((place) => (place ? this.bindHookResult(place, value) : null));
   }

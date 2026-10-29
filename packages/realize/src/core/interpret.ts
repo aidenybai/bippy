@@ -145,6 +145,7 @@ import {
   getReassignedIds,
   getWrittenContextPlaces,
 } from "./utils/get-written-context-places";
+import { getHookTraits } from "./hook-traits";
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
@@ -223,7 +224,6 @@ export interface ProjectLoaders {
 const BOUND_RECEIVERS = new Set<string>([...CALLABLE_KINDS, "Binding", "Conditional"]);
 
 const MAX_INLINE_DEPTH = 4;
-const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SHORTENING_METHODS = new Set(["filter", "slice"]);
 const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
@@ -2176,7 +2176,7 @@ export class Interpreter {
   #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, argumentPlaces, loc } = callSite;
     const [firstArgument, secondArgument] = argumentValues;
-    if (EFFECT_HOOKS.has(hookKind)) {
+    if (getHookTraits(hookKind).isEffect) {
       if (firstArgument)
         this.callbacks.addEffectCall(hookKind, firstArgument, argumentPlaces[1], loc);
       return UNDEFINED_VALUE;
