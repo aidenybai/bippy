@@ -173,7 +173,7 @@ export const analyzeComponent = (
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
   const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
-  const readIds = getReadBindingIds(render, handlers, interpreter.claims, bindings);
+  const readIds = getReadBindingIds(render, handlers, interpreter.claimRecorder.claims, bindings);
   return {
     ...identity,
     loc: hir.loc,
@@ -192,7 +192,7 @@ export const analyzeComponent = (
     localRenders: interpreter.localRenders,
     handlers,
     renders: [...interpreter.renderedComponents],
-    claims: interpreter.claims,
+    claims: interpreter.claimRecorder.claims,
     bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings, readIds)],
     warnings: interpreter.diagnostics.warnings,
   };
