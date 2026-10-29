@@ -119,6 +119,7 @@ import {
   isMemoCacheCall,
   CALLABLE_KINDS,
   isCallableValue,
+  getOriginValues,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";
@@ -2027,17 +2028,7 @@ export class Interpreter {
   #getUnknownInputs(unknown: Extract<SymbolicValue, { kind: "Unknown" }>): SymbolicValue[] {
     const sources = this.#unknownSources.get(unknown) ?? [];
     const { origin } = unknown;
-    const originValues =
-      origin?.kind === "Member"
-        ? [origin.object]
-        : origin?.kind === "Call"
-          ? [origin.callee, ...origin.argumentValues]
-          : origin?.kind === "Settled"
-            ? [origin.promise]
-            : origin?.kind === "Value"
-              ? [origin.value]
-              : [];
-    return [...sources, ...originValues];
+    return [...sources, ...(origin ? getOriginValues(origin) : [])];
   }
 
   #hasHiddenInputs(value: SymbolicValue, seen = new Set<SymbolicValue>()): boolean {

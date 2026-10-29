@@ -1,4 +1,5 @@
 import type { SymbolicValue } from "../types";
+import { assertExhaustive } from "../../react-compiler/Utils/utils";
 
 const mapChildren = (
   value: SymbolicValue,
@@ -43,8 +44,23 @@ const mapChildren = (
           guards: write.guards.map(mapChild),
         })),
       };
-    default:
+    case "Primitive":
+    case "Binding":
+    case "JSXText":
+    case "Function":
+    case "Setter":
+    case "Dispatch":
+    case "Props":
+    case "RegExp":
+    case "Global":
+    case "Unknown":
+    case "JsxExpression":
+    case "JsxFragment":
+    case "HookResult":
+    case "Bound":
       return value;
+    default:
+      return assertExhaustive(value, "Unhandled symbolic value");
   }
 };
 
