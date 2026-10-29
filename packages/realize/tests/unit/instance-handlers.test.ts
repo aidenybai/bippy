@@ -4,14 +4,22 @@ import { analyzeFixture, getComponent } from "./helpers";
 describe("a handler read from a class instance field", () => {
   const project = analyzeFixture("conformance-repros", "instance-handlers");
 
-  it.each(["ParamField", "AssignedField", "ChosenField"])(
-    "lets %s run the field that sets 2",
+  it.each(["ParamField", "AssignedField", "ChosenField", "ChosenCallResult"])(
+    "lets a click in %s run the field that sets 2",
     (name) => {
-      const { states } = getComponent(project, name).report;
-      const twoIndex = states.findIndex((state) => state.conditions.includes("n === 2"));
+      const { analysis, report } = getComponent(project, name);
+      const eventIds = new Set(
+        analysis.handlers
+          .filter((handler) => handler.trigger.kind === "Event")
+          .map((handler) => handler.id),
+      );
+      const twoIndex = report.states.findIndex((state) => state.conditions.includes("n === 2"));
       expect(
-        states.some((state) =>
-          state.transitions.some((transition) => transition.targets.includes(twoIndex)),
+        report.states.some((state) =>
+          state.transitions.some(
+            (transition) =>
+              eventIds.has(transition.handlerId) && transition.targets.includes(twoIndex),
+          ),
         ),
       ).toBe(true);
     },
