@@ -36,7 +36,15 @@ import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./declaration-key";
 import { createImportIndex } from "./create-import-index";
 import type { ImportIndex } from "./create-import-index";
-import { ALL_PROPS, getPropHolds } from "../interpret/get-prop-holds";
+import {
+  ALL_HELD_PROPS,
+  ALL_PROPS,
+  NO_HELD_PROPS,
+  getPropHolds,
+  isPropHeld,
+  isSpreadHeld,
+} from "../interpret/get-prop-holds";
+import type { HeldProps } from "../interpret/get-prop-holds";
 import { memoizeByIdentity } from "../shared/memoize-by-identity";
 
 interface CompiledComponent {
@@ -68,7 +76,8 @@ const compileProjectFiles = (
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const componentsByDeclaration = new Map<string, HIRFunction>();
   const comparedDeclarations = new Set<string>();
-  const heldPropsByDeclaration = new Map<string, ReadonlySet<string>>();
+  const heldNamesByDeclaration = new Map<string, ReadonlySet<string>>();
+  const heldPropsByDeclaration = new Map<string, HeldProps>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
   const importUseLoadersByPath = new Map<string, ImportUseLoader>();
@@ -91,7 +100,16 @@ const compileProjectFiles = (
       projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
     return projectFunctionsByDeclaration.get(declarationKey) ?? null;
   };
-  const getHeldProps = (declarationKey: string, visited: Set<string>): ReadonlySet<string> => {
+  const getContextLocs = (declarationKey: string): ReadonlyMap<string, unknown> => {
+    const hirFunction = componentsByDeclaration.get(declarationKey);
+    return hirFunction ? getPropHolds(hirFunction).contextLocs : new Map();
+  };
+  const toHeldProps = (declarationKey: string, names: ReadonlySet<string>): HeldProps => {
+    if (names.has(ALL_PROPS)) return ALL_HELD_PROPS;
+    const contextLocs = getContextLocs(declarationKey);
+    return { kind: "Some", names: new Set([...names].filter((name) => !contextLocs.has(name))) };
+  };
+  const getHeldNames = (declarationKey: string, visited: Set<string>): ReadonlySet<string> => {
     if (comparedDeclarations.has(declarationKey)) return new Set([ALL_PROPS]);
     const hirFunction = componentsByDeclaration.get(declarationKey);
     if (!hirFunction || visited.has(declarationKey)) return new Set();
@@ -100,27 +118,33 @@ const compileProjectFiles = (
     const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
     const forwarded = holds.forwards.filter((forward) => {
       const tagKey = resolver?.getDeclarationKey(forward.tagLoc);
-      const tagHeld = tagKey ? getHeldProps(tagKey, visited) : new Set<string>();
-      return (
-        tagHeld.has(ALL_PROPS) ||
-        (forward.attribute === ALL_PROPS ? tagHeld.size > 0 : tagHeld.has(forward.attribute))
-      );
+      const tagHeld = tagKey ? toHeldProps(tagKey, getHeldNames(tagKey, visited)) : NO_HELD_PROPS;
+      return forward.attribute === ALL_PROPS
+        ? isSpreadHeld(tagHeld)
+        : isPropHeld(tagHeld, forward.attribute);
     });
     return new Set([...holds.held, ...forwarded.map((forward) => forward.name)]);
   };
-  const loadHeldProps = (declarationKey: string): ReadonlySet<string> => {
+  const loadHeldNames = (declarationKey: string): ReadonlySet<string> => {
+    const cached = heldNamesByDeclaration.get(declarationKey);
+    if (cached) return cached;
+    const held = getHeldNames(declarationKey, new Set());
+    heldNamesByDeclaration.set(declarationKey, held);
+    return held;
+  };
+  const loadHeldProps = (declarationKey: string): HeldProps => {
     const cached = heldPropsByDeclaration.get(declarationKey);
     if (cached) return cached;
-    const held = getHeldProps(declarationKey, new Set());
-    heldPropsByDeclaration.set(declarationKey, held);
-    return held;
+    const heldProps = toHeldProps(declarationKey, loadHeldNames(declarationKey));
+    heldPropsByDeclaration.set(declarationKey, heldProps);
+    return heldProps;
   };
   const getHeldContexts = (): ReadonlySet<string> =>
     new Set(
       [...componentsByDeclaration].flatMap(([declarationKey, hirFunction]) => {
         const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
         const contextLocs = getPropHolds(hirFunction).contextLocs;
-        return [...loadHeldProps(declarationKey)].flatMap((name) => {
+        return [...loadHeldNames(declarationKey)].flatMap((name) => {
           const loc = contextLocs.get(name);
           return (loc && resolver?.getDeclarationKey(loc)) || [];
         });

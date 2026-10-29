@@ -10,6 +10,18 @@ import { getHookTraits } from "./hook-traits";
 
 export const ALL_PROPS = "*";
 
+export type HeldProps = { kind: "All" } | { kind: "Some"; names: ReadonlySet<string> };
+
+export const ALL_HELD_PROPS: HeldProps = { kind: "All" };
+
+export const NO_HELD_PROPS: HeldProps = { kind: "Some", names: new Set() };
+
+export const isPropHeld = (heldProps: HeldProps, name: string): boolean =>
+  heldProps.kind === "All" || heldProps.names.has(name);
+
+export const isSpreadHeld = (heldProps: HeldProps): boolean =>
+  heldProps.kind === "All" || heldProps.names.size > 0;
+
 const CONTEXT_PREFIX = "#context:";
 
 const NO_DEPENDENCIES: ReadonlySet<DeclarationId> = new Set();

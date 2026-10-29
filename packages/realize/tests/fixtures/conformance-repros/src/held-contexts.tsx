@@ -75,3 +75,23 @@ export const LatestContext = () => {
     </LatestSteps.Provider>
   );
 };
+
+const LabelSteps = createContext("step");
+
+const ContextOnlyStep = ({ onStep }: { onStep: () => void }) => {
+  const label = useRef(useContext(LabelSteps));
+  return <button onClick={onStep}>{label.current}</button>;
+};
+
+export const SpreadToContextHolder = () => {
+  const [n, setN] = useState(0);
+  const handlers = { onStep: () => setN(n + 1) };
+  return (
+    <div>
+      {n === 1 ? <b>one</b> : <s>one</s>}
+      {n >= 2 ? <b>many</b> : <s>many</s>}
+      <ContextOnlyStep {...handlers} />
+      <button onClick={() => setN(n + 2)}>two</button>
+    </div>
+  );
+};

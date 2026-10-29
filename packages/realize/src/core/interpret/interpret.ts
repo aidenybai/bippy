@@ -69,7 +69,8 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { EVENT_ARGUMENT } from "../handlers/handler-predicates";
 import { isHandlerProp } from "../handlers/dom-events";
 import { PlaceMap } from "../values/place-map";
-import { ALL_PROPS } from "./get-prop-holds";
+import { ALL_HELD_PROPS } from "./get-prop-holds";
+import type { HeldProps } from "./get-prop-holds";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getClampRange } from "./get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./derived-calls";
@@ -210,7 +211,7 @@ export interface ProjectLoaders {
   loadProjectHook: ProjectHookLoader;
   loadProjectFunction: ProjectHookLoader;
   loadProjectComponent: (declarationKey: string) => HIRFunction | null;
-  loadHeldProps: (declarationKey: string) => ReadonlySet<string>;
+  loadHeldProps: (declarationKey: string) => HeldProps;
   loadHeldContexts: () => ReadonlySet<string>;
   loadMutatedParameters: (declarationKey: string) => Map<number, boolean>;
   loadModuleDeclaration: (declarationKey: string) => ProjectModuleDeclaration | null;
@@ -3051,7 +3052,7 @@ export class Interpreter {
     const contextKey = providedValue ? this.#resolver.getContextKey(element.tag.loc) : null;
     if (!providedValue || !contextKey) return;
     if (this.#projectLoaders.loadHeldContexts().has(contextKey))
-      this.memoStaleness.captureHeldProps([providedValue], new Set([ALL_PROPS]));
+      this.memoStaleness.captureHeldProps([providedValue], ALL_HELD_PROPS);
     this.providedContexts.push({ contextKey, value: providedValue.value });
   }
 
