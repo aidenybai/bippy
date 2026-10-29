@@ -29,6 +29,7 @@ import {
 import type { Alternative, FirstRenderOutcomes } from "./state-enumerator";
 import { StateEnumerator } from "./state-enumerator";
 import { createTransitionContext, getTransition, settleRenderUpdates } from "./transitions";
+import { parseOutcomeKey } from "./branch-outcome";
 
 export interface EnumerationContext extends ReachabilityContext {
   branchOutcomes: BranchOutcomes;
@@ -111,11 +112,9 @@ const isPossibleFirstRender = (
   firstRender: FirstRenderOutcomes,
 ): boolean =>
   [...alternative.branches].every((branch) => {
-    const separator = branch.lastIndexOf(":");
-    const outcome = firstRender.outcomesByBranchKey.get(branch.slice(0, separator));
-    return (
-      outcome === undefined || outcome === null || String(outcome) === branch.slice(separator + 1)
-    );
+    const { branchKey, isTrue } = parseOutcomeKey(branch);
+    const outcome = firstRender.outcomesByBranchKey.get(branchKey);
+    return outcome === undefined || outcome === null || outcome === isTrue;
   });
 
 const createRegion = (
