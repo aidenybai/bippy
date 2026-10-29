@@ -10,7 +10,7 @@ import type {
 } from "../core/types";
 import { forEachJsxElement } from "../core/utils/for-each-jsx-element";
 import { formatSymbolicValue } from "../core/format";
-import { isEffectHandler } from "../core/collect-handlers";
+import { isEffectHandler } from "../core/handler-predicates";
 import type { SourceReader } from "./source-text";
 import { truncate } from "./text";
 

@@ -1,3 +1,5 @@
+import { getBaseEvent } from "../dom-events";
+
 const MOUSE_BLOCKED_EVENTS = new Set([
   "onClick",
   "onDoubleClick",
@@ -16,11 +18,6 @@ const UNREACHABLE_EVENTS = new Set([
   "onInput",
   "onBeforeInput",
 ]);
-
-const CAPTURE_SUFFIX = "Capture";
-
-export const getBaseEvent = (propName: string): string =>
-  propName.endsWith(CAPTURE_SUFFIX) ? propName.slice(0, -CAPTURE_SUFFIX.length) : propName;
 
 export const isMouseBlockedEvent = (propName: string): boolean =>
   MOUSE_BLOCKED_EVENTS.has(getBaseEvent(propName));

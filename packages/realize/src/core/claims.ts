@@ -1,4 +1,4 @@
-import { isEffectHandler } from "./collect-handlers";
+import { isEffectHandler } from "./handler-predicates";
 import {
   assumeCondition,
   assumeGuards,
