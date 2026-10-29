@@ -15,7 +15,8 @@ import { getBindingPlace } from "../values/get-binding-place";
 import { getClosureMutatedLocals } from "./get-closure-mutated-locals";
 import { getDeclarationLocation } from "./get-declaration-location";
 import { getIdentifierName } from "./get-identifier-name";
-import { ALL_PROPS } from "./get-prop-holds";
+import { isPropHeld, isSpreadHeld } from "./get-prop-holds";
+import type { HeldProps } from "./get-prop-holds";
 import { getStoredLocals } from "./get-stored-locals";
 import { getValuePlace } from "../values/get-value-place";
 import { isPlacePrefix } from "../values/is-place-prefix";
@@ -177,12 +178,9 @@ export class MemoStaleness {
     ]);
   }
 
-  captureHeldProps(props: Array<JsxProp | JsxSpreadProp>, heldProps: ReadonlySet<string>): void {
+  captureHeldProps(props: Array<JsxProp | JsxSpreadProp>, heldProps: HeldProps): void {
     for (const prop of props)
-      if (
-        heldProps.has(ALL_PROPS) ||
-        (prop.kind === "JsxAttribute" ? heldProps.has(prop.name) : heldProps.size > 0)
-      )
+      if (prop.kind === "JsxAttribute" ? isPropHeld(heldProps, prop.name) : isSpreadHeld(heldProps))
         forEachSymbolicValue(prop.value, (part) => {
           if (part.kind === "Function")
             this.#captureStaleReads(part, new PlaceMap(), new Set(), prop.loc);

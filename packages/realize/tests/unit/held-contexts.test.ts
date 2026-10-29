@@ -24,4 +24,8 @@ describe("a consumer that holds an earlier context callback", () => {
   it("still runs the latest callback for a consumer that reads it each render", () => {
     expect(isOneReachedFromMany("LatestContext")).toBe(false);
   });
+
+  it("does not treat spread props as held when a child holds only a context value", () => {
+    expect(isOneReachedFromMany("SpreadToContextHolder")).toBe(false);
+  });
 });
