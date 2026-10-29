@@ -15,6 +15,7 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { isTreeLargerThan } from "./utils/is-tree-larger-than";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { negate } from "./utils/negate";
+import { getFiniteNumber } from "./utils/get-finite-number";
 
 interface Interval {
   min: number;
@@ -66,11 +67,6 @@ const union = (left: Interval, right: Interval): Interval => ({
 
 const isSame = (left: Interval, right: Interval): boolean =>
   left.min === right.min && left.max === right.max;
-
-const getNumber = (value: SymbolicValue): number | null =>
-  value.kind === "Primitive" && typeof value.value === "number" && Number.isFinite(value.value)
-    ? value.value
-    : null;
 
 const getGuardedUpdates = (binding: Binding, handlers: Handler[]): GuardedUpdate[] =>
   handlers.flatMap((handler) =>
@@ -138,8 +134,8 @@ const getExcludedLiteral = (
     ? condition.operator === "===" || condition.operator === "=="
     : condition.operator === "!==" || condition.operator === "!=";
   if (!excludes) return null;
-  if (isWholeBinding(condition.left, binding)) return getNumber(condition.right);
-  return isWholeBinding(condition.right, binding) ? getNumber(condition.left) : null;
+  if (isWholeBinding(condition.left, binding)) return getFiniteNumber(condition.right);
+  return isWholeBinding(condition.right, binding) ? getFiniteNumber(condition.left) : null;
 };
 
 const tighten = (
@@ -181,7 +177,7 @@ const getValueInterval = (
   isInteger: boolean,
   handlers: Handler[] | null,
 ): Interval | null => {
-  const literal = getNumber(value);
+  const literal = getFiniteNumber(value);
   if (literal !== null) return { min: literal, max: literal };
   if (isWholeBinding(value, binding)) return tighten(hypothesis, binding, guards, isInteger);
   const copied =
@@ -218,9 +214,9 @@ const getValueInterval = (
     };
   }
   if (value.kind === "BinaryExpression" && (value.operator === "+" || value.operator === "-")) {
-    const offset = getNumber(value.right);
+    const offset = getFiniteNumber(value.right);
     const term =
-      offset === null || getNumber(value.left) !== null
+      offset === null || getFiniteNumber(value.left) !== null
         ? null
         : getValueInterval(value.left, binding, hypothesis, guards, isInteger, handlers);
     if (!term || offset === null || Math.abs(offset) > Number.MAX_SAFE_INTEGER) return null;
@@ -228,9 +224,9 @@ const getValueInterval = (
     return { min: term.min + sign * offset, max: term.max + sign * offset };
   }
   if (value.kind === "BinaryExpression" && (value.operator === "*" || value.operator === "/")) {
-    const factor = getNumber(value.right);
+    const factor = getFiniteNumber(value.right);
     const term =
-      factor === null || factor === 0 || getNumber(value.left) !== null
+      factor === null || factor === 0 || getFiniteNumber(value.left) !== null
         ? null
         : getValueInterval(value.left, binding, hypothesis, guards, isInteger, handlers);
     if (!term || factor === null) return null;
@@ -239,7 +235,7 @@ const getValueInterval = (
     return { min: Math.min(...ends), max: Math.max(...ends) };
   }
   if (value.kind === "BinaryExpression" && value.operator === "%") {
-    const divisor = getNumber(value.right);
+    const divisor = getFiniteNumber(value.right);
     const term =
       divisor === null || divisor === 0
         ? null
@@ -319,7 +315,7 @@ export const getIntervalBounds = (
   if (
     getDomainPrimitive(binding.domain) !== "number" ||
     update.isRepeated ||
-    getNumber(value) !== null ||
+    getFiniteNumber(value) !== null ||
     isTreeLargerThan(value, MAX_INTERVAL_NODES)
   )
     return [];
@@ -363,7 +359,7 @@ const getUncachedReachableInterval = (
   binding: Binding,
   handlers: Handler[],
 ): ReachableInterval | null => {
-  const initial = binding.initial ? getNumber(binding.initial) : null;
+  const initial = binding.initial ? getFiniteNumber(binding.initial) : null;
   if (initial === null) return null;
   const updates = getGuardedUpdates(binding, handlers);
   if (updates.some(({ update }) => isTreeLargerThan(update.value, MAX_INTERVAL_NODES))) return null;

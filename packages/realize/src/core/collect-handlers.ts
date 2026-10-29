@@ -27,12 +27,13 @@ import {
   foldUnary,
   getContainedValues,
   getPassedCallbacks,
+  isCallableValue,
 } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
 import { mayCallPropsOutsideEvents } from "./utils/may-call-props-outside-events";
 import { getTargetMethodCalls } from "./utils/get-target-method-calls";
-import { isDisabledEvent, isMouseBlockedEvent } from "./utils/is-disabled-event";
+import { getBaseEvent, isDisabledEvent, isMouseBlockedEvent } from "./utils/is-disabled-event";
 import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "./build-jsx";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -100,13 +101,8 @@ export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
 
 const getTriggerEvent = (prop: JsxProp): string => FORM_ACTION_EVENTS.get(prop.name) ?? prop.name;
 
-const isCallable = (value: SymbolicValue): boolean =>
-  value.kind === "Setter" ||
-  value.kind === "Dispatch" ||
-  value.kind === "Function" ||
-  value.kind === "Bound";
-
-const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
+const isRefCallback = (prop: JsxProp): boolean =>
+  prop.name === "ref" && isCallableValue(prop.value);
 
 const getSpreadProperty = (spread: ObjectExpressionValue | null, key: string): SymbolicValue =>
   spread?.properties.find((property) => property.key === key)?.value ?? UNDEFINED_VALUE;
@@ -171,6 +167,32 @@ const getLaterPropKeys = (props: Array<JsxProp | JsxSpreadProp>): Array<Set<stri
   return laterKeys;
 };
 
+interface GuardedConditional {
+  test: SymbolicValue;
+  consequent: SymbolicValue;
+  alternate: SymbolicValue;
+  loc: SourceLocation;
+  file: string;
+  caseIndex: number;
+}
+
+const createGuardedConditional = ({
+  test,
+  consequent,
+  alternate,
+  loc,
+  file,
+  caseIndex,
+}: GuardedConditional): SymbolicValue => ({
+  kind: "Conditional",
+  test,
+  testKind: "truthy",
+  consequent,
+  alternate,
+  branch: { terminalId: makeInstructionId(0), probe: "none", loc, file, caseIndex },
+  guardKeys: [],
+});
+
 const chooseSpreadHandler = (
   handlers: ObjectExpressionValue,
   loc: SourceLocation,
@@ -179,18 +201,18 @@ const chooseSpreadHandler = (
   const [last, ...earlier] = [...handlers.properties].reverse();
   if (!last) return UNDEFINED_VALUE;
   return earlier.reduce<SymbolicValue>(
-    (alternate, property, caseIndex) => ({
-      kind: "Conditional",
-      test: createUnknown(`spread-event ${property.key}`, loc, {
-        kind: "Name",
-        name: property.key,
+    (alternate, property, caseIndex) =>
+      createGuardedConditional({
+        test: createUnknown(`spread-event ${property.key}`, loc, {
+          kind: "Name",
+          name: property.key,
+        }),
+        consequent: property.value,
+        alternate,
+        loc,
+        file,
+        caseIndex,
       }),
-      testKind: "truthy",
-      consequent: property.value,
-      alternate,
-      branch: { terminalId: makeInstructionId(0), probe: "none", loc, file, caseIndex },
-      guardKeys: [],
-    }),
     last.value,
   );
 };
@@ -200,41 +222,30 @@ const guardCallbacks = (
   reason: string,
   prop: JsxProp,
 ): SymbolicValue[] =>
-  callbacks.map((callback, caseIndex) => ({
-    kind: "Conditional",
-    test: createUnknown(reason, prop.loc),
-    testKind: "truthy",
-    consequent: callback,
-    alternate: UNDEFINED_VALUE,
-    branch: {
-      terminalId: makeInstructionId(0),
-      probe: "none",
+  callbacks.map((callback, caseIndex) =>
+    createGuardedConditional({
+      test: createUnknown(reason, prop.loc),
+      consequent: callback,
+      alternate: UNDEFINED_VALUE,
       loc: prop.loc,
       file: prop.file,
       caseIndex,
-    },
-    guardKeys: [],
-  }));
+    }),
+  );
 
 const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): SymbolicValue =>
   [
     ...new Map(callbacks.map((callback) => [getHandlerKey(callback), callback])).values(),
   ].reduceRight<SymbolicValue>(
-    (alternate, callback, caseIndex) => ({
-      kind: "Conditional",
-      test: createUnknown(`reachable-callback ${caseIndex}`, prop.loc),
-      testKind: "truthy",
-      consequent: callback,
-      alternate,
-      branch: {
-        terminalId: makeInstructionId(0),
-        probe: "none",
+    (alternate, callback, caseIndex) =>
+      createGuardedConditional({
+        test: createUnknown(`reachable-callback ${caseIndex}`, prop.loc),
+        consequent: callback,
+        alternate,
         loc: prop.loc,
         file: prop.file,
         caseIndex,
-      },
-      guardKeys: [],
-    }),
+      }),
     UNDEFINED_VALUE,
   );
 
@@ -245,26 +256,17 @@ const getRenderedBranch = (
   prop: JsxProp,
 ): SymbolicValue =>
   guards.reduceRight<SymbolicValue>(
-    (inner, test, caseIndex) => ({
-      kind: "Conditional",
-      test,
-      testKind: "truthy",
-      consequent: inner,
-      alternate,
-      branch: {
-        terminalId: makeInstructionId(0),
-        probe: "none",
+    (inner, test, caseIndex) =>
+      createGuardedConditional({
+        test,
+        consequent: inner,
+        alternate,
         loc: prop.loc,
         file: prop.file,
         caseIndex,
-      },
-      guardKeys: [],
-    }),
+      }),
     consequent,
   );
-
-const getBaseEvent = (name: string): string =>
-  name.endsWith(CAPTURE_SUFFIX) ? name.slice(0, -CAPTURE_SUFFIX.length) : name;
 
 const getBubblingEvent = (prop: JsxProp | JsxSpreadProp): string[] => {
   if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) return [];
