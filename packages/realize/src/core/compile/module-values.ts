@@ -312,6 +312,23 @@ const isMemberWrite = (path: NodePath): boolean => {
   );
 };
 
+const getOwnThisPaths = (init: NodePath<types.Expression | null | undefined>): NodePath[] => {
+  const callee = init.isNewExpression() ? init.get("callee") : null;
+  const classPath = callee?.isIdentifier() ? init.scope.getBinding(callee.node.name)?.path : null;
+  const owner = init.isObjectExpression()
+    ? init
+    : classPath?.isClassDeclaration()
+      ? classPath
+      : null;
+  const thisPaths: NodePath[] = [];
+  owner?.traverse({
+    ThisExpression(thisPath) {
+      thisPaths.push(thisPath);
+    },
+  });
+  return thisPaths;
+};
+
 const HOOK_INITIAL_ARGUMENTS = new Map([
   ["useState", 0],
   ["useReducer", 1],
@@ -400,6 +417,7 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
         binding !== undefined &&
         (binding.constantViolations.length > 0 ||
           binding.referencePaths.some(isMemberWrite) ||
+          getOwnThisPaths(path.get("init")).some(isMemberWrite) ||
           (value !== null && isReadThroughState(binding.referencePaths, value)));
       const isReadOnly =
         declaration.node.kind === "const" &&
