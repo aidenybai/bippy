@@ -1,8 +1,7 @@
-import { hasUnknownPart } from "./constraints";
 import { describeCases, withNullishCases } from "./domains";
 import { formatSymbolicValue } from "./format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { createUnknown, foldBinary } from "./symbolic-values";
+import { createUnknown, foldBinary, hasUnknownPart } from "./symbolic-values";
 import type { Claim, Domain, SourceLocation, SymbolicValue } from "./types";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getTestExpression } from "./utils/get-test-expression";

@@ -1,4 +1,4 @@
-import { dedupeAbstractValues } from "../constraints";
+import { dedupeAbstractValues } from "../abstract-values";
 import type { DerivedCall, Domain, PrimitiveValue, SymbolicValue } from "../types";
 import { applyPureFunctionToCases, isPureFunction } from "./pure-functions";
 
