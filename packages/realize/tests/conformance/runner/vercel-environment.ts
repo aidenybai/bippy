@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { gunzipSync } from "node:zlib";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
@@ -42,6 +43,7 @@ const ANALYZER_HEAP_MB = 8192;
 const OUTPUT_TAIL_LENGTH = 8000;
 const MAX_WAIT_ATTEMPTS = 5;
 const HELD_WAIT_MS = 60_000;
+const RETRY_DELAY_MS = 5_000;
 const MILLISECONDS_PER_MINUTE = 60_000;
 const RESULT_FILES = ["analysis.json", "summary.json", "verify.json"];
 const ANALYZER_SOURCE_PATHS = [
@@ -153,6 +155,7 @@ const waitForCommand = async (
     const isQuickFailure = Date.now() - startTime < HELD_WAIT_MS;
     const nextFailureCount = isQuickFailure ? quickFailureCount + 1 : 0;
     if (nextFailureCount >= MAX_WAIT_ATTEMPTS) throw error;
+    await delay(RETRY_DELAY_MS * (nextFailureCount + 1));
     return waitForCommand(command, nextFailureCount);
   }
 };
