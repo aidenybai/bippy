@@ -7,7 +7,7 @@ import { serializeProjectAnalysis } from "../core/serialize";
 import { createTracer, NO_TRACER } from "../core/tracer";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
-import type { AnalyzedComponent } from "../core/types";
+import type { ProjectAnalysis } from "../core/types";
 import { parsePositiveInteger } from "./parse-positive-integer";
 
 interface AnalyzeCliOptions {
@@ -28,8 +28,7 @@ const formatBailoutCounts = (reasons: string[]): string[] => {
 };
 
 const formatTotals = (
-  components: AnalyzedComponent[],
-  fileCount: number,
+  { components, fileCount, unparsedFiles }: ProjectAnalysis,
   elapsedMs: number,
 ): string[] => {
   const stateCount = components.reduce((total, { report }) => total + report.states.length, 0);
@@ -39,6 +38,7 @@ const formatTotals = (
   return [
     `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsedMs} ms`,
     ...(bailoutCounts.length > 0 ? [`bailouts: ${bailoutCounts.join(", ")}`] : []),
+    ...(unparsedFiles.length > 0 ? [`could not parse: ${unparsedFiles.join(", ")}`] : []),
   ];
 };
 
@@ -47,11 +47,13 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const configPath = resolve(tsconfig);
   const rootDirectory = dirname(configPath);
   const tracer = options.trace ? createTracer(rootDirectory) : NO_TRACER;
-  const { components: allComponents, fileCount } = analyzeProject(
-    configPath,
-    options.file ?? null,
-    tracer,
-  );
+  const {
+    components: allComponents,
+    fileCount,
+    unparsedFiles,
+  } = analyzeProject(configPath, options.file ?? null, tracer);
+  if (options.file && allComponents.length === 0)
+    throw new ConfigError(`No component is in a file matching ${options.file}`);
   const componentNames = options.component;
   const unmatchedNames = (componentNames ?? []).filter(
     (name) => !allComponents.some(({ analysis }) => analysis.name === name),
@@ -63,7 +65,7 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
     : allComponents;
   const output = tracer.span("output", options.json ? "json" : "mermaid", () =>
     options.json
-      ? serializeProjectAnalysis({ components, fileCount })
+      ? serializeProjectAnalysis({ components, fileCount, unparsedFiles })
       : components
           .flatMap((component) => [
             formatRenderTree(component, { rootDirectory, maxDepth: options.depth }),
@@ -75,7 +77,8 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   if (options.trace) writeFileSync(options.trace, JSON.stringify({ traceEvents: tracer.events }));
   if (options.json) return;
   const elapsedMs = Math.round(performance.now() - startTime);
-  for (const line of formatTotals(components, fileCount, elapsedMs)) console.error(line);
+  for (const line of formatTotals({ components, fileCount, unparsedFiles }, elapsedMs))
+    console.error(line);
 };
 
 new Command()

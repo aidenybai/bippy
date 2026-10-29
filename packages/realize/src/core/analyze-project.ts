@@ -286,6 +286,7 @@ const createReportLoader = (tracer: Tracer): ReportLoader => {
 export interface InterpretedProject {
   analyses: ComponentAnalysis[];
   fileCount: number;
+  unparsedFiles: string[];
 }
 
 export const interpretProject = (
@@ -306,13 +307,16 @@ export const interpretProject = (
       const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
         withContextFileNames(analysis, fileNamesByPath),
       );
-      return { analyses, fileCount: fileNames.length };
+      const unparsedFiles = fileContexts.flatMap(({ compiled, sourceFile }) =>
+        compiled.parseError === null ? [] : [sourceFile.fileName],
+      );
+      return { analyses, fileCount: fileNames.length, unparsedFiles };
     },
     tracer,
   );
 
 export const reportProject = (
-  { analyses, fileCount }: InterpretedProject,
+  { analyses, fileCount, unparsedFiles }: InterpretedProject,
   fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
 ): ProjectAnalysis => {
@@ -327,7 +331,7 @@ export const reportProject = (
     report: loadReport(analysis),
     ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
   }));
-  return { components, fileCount };
+  return { components, fileCount, unparsedFiles };
 };
 
 export const analyzeProject = (

@@ -2,6 +2,7 @@ import { getModuleType } from "./utils/get-module-type";
 import { parseSync, traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
 import { compileFn } from "../react-compiler/Entrypoint/Pipeline";
+import { CompilerError } from "../react-compiler/CompilerError";
 import { compileProgram } from "../react-compiler/Entrypoint/Program";
 import { ProgramContext } from "../react-compiler/Entrypoint/Imports";
 import { parsePluginOptions } from "../react-compiler/Entrypoint/Options";
@@ -48,6 +49,7 @@ export interface CompiledFunction {
 }
 
 export interface CompiledFile {
+  parseError: string | null;
   functions: CompiledFunction[];
   loadModuleFunction: ModuleFunctionLoader;
   lowerModuleFunction: ModuleFunctionLoader;
@@ -109,7 +111,7 @@ interface ProgramFunctions {
   comparedComponents: Set<string>;
 }
 
-const EMPTY_COMPILED_FILE: CompiledFile = {
+const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
   functions: [],
   loadModuleFunction: () => null,
   lowerModuleFunction: () => null,
@@ -196,9 +198,11 @@ const createPluginOptions = (
     logger,
   });
 
-const parseFile = (fileName: string, code: string): types.File | null => {
+type ParsedFile = { ast: types.File; error: null } | { ast: null; error: string };
+
+const parseFile = (fileName: string, code: string): ParsedFile => {
   try {
-    return parseSync(code, {
+    const ast = parseSync(code, {
       filename: fileName,
       babelrc: false,
       configFile: false,
@@ -208,8 +212,9 @@ const parseFile = (fileName: string, code: string): types.File | null => {
           : ["typescript", "jsx", "decorators-legacy"],
       },
     });
+    return ast ? { ast, error: null } : { ast: null, error: "empty file" };
   } catch (error) {
-    if (error instanceof SyntaxError) return null;
+    if (error instanceof SyntaxError) return { ast: null, error: error.message };
     throw error;
   }
 };
@@ -249,7 +254,7 @@ const lowerModuleFunction = (
       code,
     );
   } catch (error) {
-    if (error !== STOP) hir = null;
+    if (error !== STOP && !(error instanceof CompilerError)) throw error;
   }
   return hir;
 };
@@ -279,13 +284,16 @@ const createModuleFunctionLoader = (lower: ModuleFunctionLoader): ModuleFunction
 
 class CompiledFunctionCollector {
   readonly #compiledByLocation = new Map<string, CompiledFunction>();
+  readonly #stoppedLocationKeys = new Set<string>();
 
   readonly recordEvent = (_fileName: string | null, event: LoggerEvent): void => {
     if (!("fnLoc" in event) || !event.fnLoc) return;
+    const isStop =
+      event.kind === "PipelineError" &&
+      this.#stoppedLocationKeys.delete(getLocationKey(event.fnLoc));
     const compiled = this.#getCompiledFunction(event.fnLoc);
     const errorReason = describeEvent(event);
-    if (compiled.hir === null && errorReason && !errorReason.includes(STOP.toString()))
-      compiled.errors.push(errorReason);
+    if (compiled.hir === null && errorReason && !isStop) compiled.errors.push(errorReason);
   };
 
   readonly recordLowering: LoweringCapture = (hirFunction, hasErrors) => {
@@ -293,6 +301,7 @@ class CompiledFunctionCollector {
     if (typeof loc === "symbol") return false;
     const compiled = this.#getCompiledFunction(loc);
     compiled.functionType = hirFunction.fnType;
+    this.#stoppedLocationKeys.add(getLocationKey(loc));
     if (!hasErrors) {
       compiled.hir = hirFunction;
       return true;
@@ -380,8 +389,8 @@ export const compileFile = (
   code: string,
   environment: PluginOptions["environment"] = {},
 ): CompiledFile => {
-  const ast = parseFile(fileName, code);
-  if (!ast) return EMPTY_COMPILED_FILE;
+  const { ast, error } = parseFile(fileName, code);
+  if (!ast) return { ...EMPTY_COMPILED_FILE, parseError: error };
   lowerClassComponents(ast);
   const collector = new CompiledFunctionCollector();
   const pluginOptions = createPluginOptions(environment, {
@@ -391,6 +400,7 @@ export const compileFile = (
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
   return {
+    parseError: null,
     functions: [
       ...collector.getFunctions(programFunctions.namesByLocation),
       ...collectClassComponents(ast),

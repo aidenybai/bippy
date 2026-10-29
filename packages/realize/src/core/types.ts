@@ -459,4 +459,5 @@ export interface AnalyzedComponent {
 export interface ProjectAnalysis {
   components: AnalyzedComponent[];
   fileCount: number;
+  unparsedFiles: string[];
 }
