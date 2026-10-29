@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import picocolors from "picocolors";
-import type { CollectSummary } from "./collect";
+import { parseCollectSummary } from "./collect-summary";
+import type { CollectSummary } from "./collect-summary";
 import type { RepoConfig } from "./repos";
 import { formatMountFailures, sum } from "../verifier/verdict-report";
 
@@ -33,8 +34,8 @@ const TABLE_HEADER = [
 export const readRepoResult = (repo: RepoConfig, outputDirectory: string): RepoResult => {
   const summaryPath = join(outputDirectory, "summary.json");
   const errorPath = join(outputDirectory, "error.txt");
-  const summary: CollectSummary | null = existsSync(summaryPath)
-    ? JSON.parse(readFileSync(summaryPath, "utf8"))
+  const summary = existsSync(summaryPath)
+    ? parseCollectSummary(readFileSync(summaryPath, "utf8"))
     : null;
   const error = existsSync(errorPath)
     ? readFileSync(errorPath, "utf8")

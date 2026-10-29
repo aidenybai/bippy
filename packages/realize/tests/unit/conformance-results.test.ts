@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vite-plus/test";
-import type { CollectSummary } from "../conformance/runner/collect";
+import type { CollectSummary } from "../conformance/runner/collect-summary";
 import type { RepoConfig } from "../conformance/runner/repos";
 import { formatTable, hasFailure, readRepoResult } from "../conformance/runner/results";
 
