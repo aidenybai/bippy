@@ -1,5 +1,11 @@
 import { getBindingUpdates } from "./collect-handlers";
-import { addBounds, dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
+import {
+  addBounds,
+  dedupeAbstractValues,
+  evaluateCondition,
+  getLengthAtom,
+  isAtomAt,
+} from "./constraints";
 import type { Bound, Constraints } from "./constraints";
 import { getDomainPrimitive } from "./domains";
 import { decideGuards, getFieldCases } from "./field-cases";
@@ -17,6 +23,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { foldBinary, foldUnary } from "./symbolic-values";
+import { isObjectValue } from "./utils/is-object-value";
 import { applyPureFunction } from "./utils/pure-functions";
 import { appendToGroup } from "./utils/append-to-group";
 import { applyStringMethod } from "./utils/string-methods";
@@ -41,6 +48,8 @@ import { getNextDown } from "./utils/get-next-down";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { PlaceMap } from "./utils/place-map";
 import type { FirstRenderOutcomes } from "./state-enumerator";
+import { hasCastPart } from "./utils/has-cast-part";
+import { getFiniteNumber } from "./utils/get-finite-number";
 
 const MAX_REACHABILITY_ROUNDS = 8;
 const MAX_REACHABLE_CASES = 256;
@@ -162,22 +171,6 @@ const getCollectionUpdateCases = (
   });
 };
 
-const hasCastPart = (value: SymbolicValue): boolean => {
-  let isCast = false;
-  forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Unknown" && part.reason === "cast") isCast = true;
-  });
-  return isCast;
-};
-
-const NON_NULLISH_KINDS = new Set<SymbolicValue["kind"]>([
-  "ObjectExpression",
-  "ArrayExpression",
-  "Function",
-  "JsxExpression",
-  "JsxFragment",
-]);
-
 const getNonNullishCases = (typeCases: AbstractValue[] | null): AbstractValue[] | null => {
   const cases = typeCases?.filter((value) => value.kind !== "Literal" || !isNullish(value.value));
   return cases && cases.length > 0 ? cases : null;
@@ -221,7 +214,7 @@ const getValueCases = (
       : path.length === 0
         ? value
         : null;
-  return target && NON_NULLISH_KINDS.has(target.kind) ? getNonNullishCases(typeCases) : null;
+  return target && isObjectValue(target) ? getNonNullishCases(typeCases) : null;
 };
 
 const MAX_SHORTENED_LENGTH = 32;
@@ -667,18 +660,10 @@ export const getUpdateBounds = (
       )
     : getLengthBounds(value, binding);
 
-const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
-  atom !== null && isSamePlace(atom, place);
-
 interface AffineUpdate {
   scale: number;
   offset: number;
 }
-
-const getFiniteNumber = (value: SymbolicValue): number | null =>
-  value.kind === "Primitive" && typeof value.value === "number" && Number.isFinite(value.value)
-    ? value.value
-    : null;
 
 const isValueAt = (value: SymbolicValue, place: BindingPlace): boolean =>
   value.kind === "Binding" && isSamePlace(getBindingPlace(value.binding, value.path), place);

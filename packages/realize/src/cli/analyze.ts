@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { Command, InvalidArgumentError } from "commander";
+import { Command } from "commander";
 import { analyzeProject } from "../core/analyze-project";
 import { ConfigError } from "../core/config-error";
 import { serializeProjectAnalysis } from "../core/serialize";
@@ -8,6 +8,7 @@ import { createTracer, NO_TRACER } from "../core/tracer";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
 import type { AnalyzedComponent } from "../core/types";
+import { parsePositiveInteger } from "./parse-positive-integer";
 
 interface AnalyzeCliOptions {
   component?: string[];
@@ -17,13 +18,6 @@ interface AnalyzeCliOptions {
   json: boolean;
   trace?: string;
 }
-
-const parsePositiveInteger = (value: string): number => {
-  const integer = Number(value);
-  if (!Number.isInteger(integer) || integer < 1)
-    throw new InvalidArgumentError("Expected a positive integer.");
-  return integer;
-};
 
 const formatBailoutCounts = (reasons: string[]): string[] => {
   const countsByReason = new Map<string, number>();

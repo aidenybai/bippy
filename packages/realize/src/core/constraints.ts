@@ -1808,7 +1808,7 @@ export const addBounds = (constraints: Constraints, bounds: Bound[]): void => {
   constraints.bounds = [...constraints.bounds, ...bounds];
 };
 
-const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
+export const isAtomAt = (atom: BindingPlace | null, place: BindingPlace): boolean =>
   atom !== null && isSamePlace(atom, place);
 
 export const forgetBinding = (

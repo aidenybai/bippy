@@ -19,7 +19,7 @@ const UNREACHABLE_EVENTS = new Set([
 
 const CAPTURE_SUFFIX = "Capture";
 
-const getBaseEvent = (propName: string): string =>
+export const getBaseEvent = (propName: string): string =>
   propName.endsWith(CAPTURE_SUFFIX) ? propName.slice(0, -CAPTURE_SUFFIX.length) : propName;
 
 export const isMouseBlockedEvent = (propName: string): boolean =>

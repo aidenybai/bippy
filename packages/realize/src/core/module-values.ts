@@ -4,6 +4,7 @@ import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { PrimitiveValue, SymbolicValue } from "./types";
 import { isStatelessRegExp } from "./utils/is-stateless-regexp";
+import { isModuleLevel } from "./utils/is-module-level";
 
 export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
@@ -49,10 +50,6 @@ const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
   ["Set", "Set"],
   ["Map", "Map"],
 ]);
-
-const isModuleLevel = (path: NodePath | null): boolean =>
-  path !== null &&
-  (path.isProgram() || (path.isExportNamedDeclaration() && isModuleLevel(path.parentPath)));
 
 const allOrNone = <Item>(items: Array<Item | null>): Item[] | null => {
   const present = items.filter((item): item is Item => item !== null);
