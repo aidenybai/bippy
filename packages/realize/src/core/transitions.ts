@@ -562,11 +562,10 @@ export const getTransition = (
   };
 };
 
-const collectBranchTests = (
+const forEachRenderedConditional = (
   render: SymbolicValue,
-  regionBranches: RegionBranches,
-): Map<string, SymbolicValue | null> => {
-  const branchTests = new Map<string, SymbolicValue | null>();
+  visitConditional: (conditional: ConditionalValue) => boolean,
+): void => {
   const visited = new WeakSet<SymbolicValue>();
   const visit = (value: SymbolicValue): void => {
     if (visited.has(value)) return;
@@ -575,14 +574,24 @@ const collectBranchTests = (
       value.children.forEach(visit);
       return;
     }
-    if (value.kind !== "Conditional") return;
-    const branchKey = getBranchKey(value.branch);
-    if (!regionBranches.branchKeys.has(branchKey)) return;
-    branchTests.set(branchKey, branchTests.has(branchKey) ? null : getTestExpression(value));
+    if (value.kind !== "Conditional" || !visitConditional(value)) return;
     visit(value.consequent);
     visit(value.alternate);
   };
   visit(render);
+};
+
+const collectBranchTests = (
+  render: SymbolicValue,
+  regionBranches: RegionBranches,
+): Map<string, SymbolicValue | null> => {
+  const branchTests = new Map<string, SymbolicValue | null>();
+  forEachRenderedConditional(render, (conditional) => {
+    const branchKey = getBranchKey(conditional.branch);
+    if (!regionBranches.branchKeys.has(branchKey)) return false;
+    branchTests.set(branchKey, branchTests.has(branchKey) ? null : getTestExpression(conditional));
+    return true;
+  });
   return branchTests;
 };
 
@@ -614,21 +623,11 @@ const getRelevantBindingIds = (
   addBindingInputs: (bindingIds: Set<number>) => void,
 ): Set<number> => {
   const bindingIds = new Set(regionBranches.bindingIds);
-  const visited = new WeakSet<SymbolicValue>();
-  const visit = (value: SymbolicValue): void => {
-    if (visited.has(value)) return;
-    visited.add(value);
-    if (value.kind === "JsxExpression" || value.kind === "JsxFragment") {
-      value.children.forEach(visit);
-      return;
-    }
-    if (value.kind !== "Conditional") return;
-    if (regionBranches.branchKeys.has(getBranchKey(value.branch)))
-      addReadBindings(bindingIds, getTestExpression(value));
-    visit(value.consequent);
-    visit(value.alternate);
-  };
-  visit(render);
+  forEachRenderedConditional(render, (conditional) => {
+    if (regionBranches.branchKeys.has(getBranchKey(conditional.branch)))
+      addReadBindings(bindingIds, getTestExpression(conditional));
+    return true;
+  });
   addBindingInputs(bindingIds);
   return bindingIds;
 };

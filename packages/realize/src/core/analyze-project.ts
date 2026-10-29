@@ -23,7 +23,6 @@ import type {
   SymbolicValue,
   StoreModel,
   ProjectAnalysis,
-  StateReport,
 } from "./types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
@@ -38,6 +37,7 @@ import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-k
 import { createImportIndex } from "./utils/create-import-index";
 import type { ImportIndex } from "./utils/create-import-index";
 import { ALL_PROPS, getPropHolds } from "./utils/get-prop-holds";
+import { memoizeByIdentity } from "./utils/memoize-by-identity";
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
@@ -270,18 +270,12 @@ const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): Compone
   return analyses;
 };
 
-const createReportLoader = (tracer: Tracer): ReportLoader => {
-  const reports = new Map<ComponentAnalysis, StateReport>();
-  return (analysis) => {
-    const cached = reports.get(analysis);
-    if (cached) return cached;
-    const report = tracer.span("enumerate", analysis.name, () => enumerateStates(analysis), {
+const createReportLoader = (tracer: Tracer): ReportLoader =>
+  memoizeByIdentity((analysis: ComponentAnalysis) =>
+    tracer.span("enumerate", analysis.name, () => enumerateStates(analysis), {
       file: analysis.file,
-    });
-    reports.set(analysis, report);
-    return report;
-  };
-};
+    }),
+  );
 
 export interface InterpretedProject {
   analyses: ComponentAnalysis[];

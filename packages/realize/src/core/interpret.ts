@@ -1200,8 +1200,11 @@ export class Interpreter {
     const hookKind = getHookKind(this.getCurrentFunction().env, callSite.calleePlace.identifier);
     if (hookKind === "Custom") {
       const projectHook =
-        this.#findProjectHook(callSite.calleePlace) ??
-        this.#findProjectFunction(callSite.calleePlace);
+        this.#findProjectDeclaration(callSite.calleePlace, this.#projectLoaders.loadProjectHook) ??
+        this.#findProjectDeclaration(
+          callSite.calleePlace,
+          this.#projectLoaders.loadProjectFunction,
+        );
       if (projectHook)
         return this.#inlinedFunctions.size < MAX_INLINE_DEPTH
           ? { kind: "ProjectHook", projectHook }
@@ -1285,14 +1288,9 @@ export class Interpreter {
     return value?.kind === "Primitive" ? { value, inputIds } : null;
   }
 
-  #findProjectFunction(calleePlace: Place): ProjectHook | null {
+  #findProjectDeclaration(calleePlace: Place, load: ProjectHookLoader): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-    return declarationKey ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
-  }
-
-  #findProjectHook(calleePlace: Place): ProjectHook | null {
-    const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-    return declarationKey ? this.#projectLoaders.loadProjectHook(declarationKey) : null;
+    return declarationKey ? load(declarationKey) : null;
   }
 
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
@@ -1459,7 +1457,10 @@ export class Interpreter {
       return createUnknown("call", loc, { kind: "Call", callee, argumentValues });
     this.#forgetCallbackWrites(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
-      const helper = this.#findProjectFunction(callSite.calleePlace);
+      const helper = this.#findProjectDeclaration(
+        callSite.calleePlace,
+        this.#projectLoaders.loadProjectFunction,
+      );
       if (helper && this.#inlinedFunctions.size < MAX_INLINE_DEPTH) {
         this.functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
         return this.#inlineFunction(helper.hirFunction, callSite, walkState);
