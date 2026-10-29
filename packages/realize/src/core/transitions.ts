@@ -30,7 +30,7 @@ import { addReadBindings, createBindingInputsAdder } from "./utils/binding-input
 import { getBindingPlace } from "./utils/get-binding-place";
 import { isSamePlace } from "./utils/is-same-place";
 import { getValueKey } from "./utils/get-value-key";
-import type { EnumerationContext } from "./enumerate-states";
+import type { EnumerationContext } from "./enumeration-context";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
   getAppendedLengthBounds,

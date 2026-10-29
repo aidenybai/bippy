@@ -352,15 +352,13 @@ class HandlerCollector {
 
   constructor(
     interpreter: Interpreter,
-    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]> = new Map(),
-    renderGuards: Map<JsxExpressionValue, SymbolicValue[]> = new Map(),
+    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>,
+    renderGuards: Map<JsxExpressionValue, SymbolicValue[]>,
   ) {
     this.#interpreter = interpreter;
     this.#consumerCallbacks = this.#getConsumerCallbacks(ancestorsByElement);
     this.#ancestorsByElement = ancestorsByElement;
     this.#renderGuards = renderGuards;
-    interpreter.refEventDispatcher = (refId, methodName) =>
-      this.#getRefEventCallbacks(refId, methodName);
   }
 
   #getConsumerCallbacks(
@@ -706,7 +704,7 @@ class HandlerCollector {
     return propagated.length === 1 ? [] : propagated;
   }
 
-  #getRefEventCallbacks(refId: number, methodName: string): SymbolicValue[] {
+  getRefEventCallbacks(refId: number, methodName: string): SymbolicValue[] {
     const element = [...this.#ancestorsByElement.keys()].find((candidate) =>
       candidate.props.some(
         (prop) =>
@@ -1426,6 +1424,8 @@ const collectHandlersOnce = (
   const ancestorsByElement = getElementAncestors(render);
   const renderGuards = getRenderGuards(render);
   const collector = new HandlerCollector(interpreter, ancestorsByElement, renderGuards);
+  interpreter.refEventDispatcher = (refId, methodName) =>
+    collector.getRefEventCallbacks(refId, methodName);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
   const effectCalls = interpreter.effectCalls.filter(
     (effectCall) => !wrappedCallbacks.has(effectCall.callback),

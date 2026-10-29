@@ -26,17 +26,12 @@ import {
   getDependentsByBinding,
   getReachablePlacesByBinding,
 } from "./reachable-constraints";
-import type { Alternative, FirstRenderOutcomes } from "./state-enumerator";
+import type { Alternative } from "./state-enumerator";
+import type { FirstRenderOutcomes } from "./first-render-outcomes";
+import type { EnumerationContext } from "./enumeration-context";
 import { StateEnumerator } from "./state-enumerator";
 import { createTransitionContext, getTransition, settleRenderUpdates } from "./transitions";
 import { parseOutcomeKey } from "./branch-outcome";
-
-export interface EnumerationContext extends ReachabilityContext {
-  branchOutcomes: BranchOutcomes;
-  effectIds: Set<string>;
-  renderUpdates: StateUpdate[];
-  firstRender: FirstRenderOutcomes;
-}
 
 interface EnumeratedRegion {
   states: State[];
