@@ -69,6 +69,7 @@ const mapChildren = (
       return {
         ...value,
         callee: mapChild(value.callee),
+        receiver: mapChild(value.receiver),
         argumentValues: value.argumentValues.map(mapChild),
       };
     default:

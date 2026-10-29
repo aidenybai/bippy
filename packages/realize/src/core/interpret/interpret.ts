@@ -167,6 +167,7 @@ export interface CallSite {
   callee: SymbolicValue;
   calleePlace: Place;
   receiver?: SymbolicValue;
+  thisValue?: SymbolicValue;
   argumentValues: SymbolicValue[];
   argumentPlaces: Place[];
   loc: SourceLocation;
@@ -395,6 +396,11 @@ const nameUnknownArgument = (argument: SymbolicValue, name: string | null): Symb
     : argument;
 
 const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null => {
+  if (object.kind === "Conditional")
+    return (
+      getSetterAccessor(object.consequent, property) ??
+      getSetterAccessor(object.alternate, property)
+    );
   const literal =
     object.kind === "Binding" && object.path.length === 0 ? object.binding.initial : object;
   const setter =
@@ -863,6 +869,7 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
     walkState: WalkState,
+    thisValue?: SymbolicValue,
   ): SymbolicValue {
     const hirFunction = this.functions.get(callee.functionId);
     if (!hirFunction) return createUnknown("call", loc);
@@ -877,7 +884,13 @@ export class Interpreter {
     const previousCallLoc = this.#componentCallLoc;
     if (this.#resolver === this.#componentResolver) this.#componentCallLoc = loc;
     try {
-      return this.#evaluateCallee(hirFunction, argumentValues, walkState, callee.functionId);
+      return this.#evaluateCallee(
+        hirFunction,
+        argumentValues,
+        walkState,
+        callee.functionId,
+        thisValue,
+      );
     } finally {
       this.#inlinedFunctions.delete(hirFunction);
       this.#componentCallLoc = previousCallLoc;
@@ -1005,9 +1018,11 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
     walkState: WalkState,
+    thisValue?: SymbolicValue,
   ): void {
     const [firstArgument] = argumentValues;
-    if (stored.kind === "Function") this.callFunction(stored, argumentValues, loc, walkState);
+    if (stored.kind === "Function")
+      this.callFunction(stored, argumentValues, loc, walkState, thisValue);
     if (stored.kind === "Setter") this.#applySetter(stored, firstArgument, walkState);
     if (stored.kind === "Dispatch") this.#applyDispatch(stored, firstArgument, loc, walkState);
     if (stored.kind === "Bound")
@@ -1016,6 +1031,7 @@ export class Interpreter {
         [...stored.argumentValues, ...argumentValues],
         loc,
         walkState,
+        stored.receiver,
       );
   }
 
@@ -1080,9 +1096,16 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     walkState: WalkState,
     functionId: number,
+    thisValue?: SymbolicValue,
   ): SymbolicValue {
     const updateCount = this.#handlerEffects?.updateCount ?? 0;
-    const result = this.#evaluateFunction(hirFunction, argumentValues, walkState, functionId);
+    const result = this.#evaluateFunction(
+      hirFunction,
+      argumentValues,
+      walkState,
+      functionId,
+      thisValue,
+    );
     if (this.#mountClosureIds.has(functionId))
       this.#handlerEffects?.forgetRenderValues(updateCount);
     return result;
@@ -1369,13 +1392,14 @@ export class Interpreter {
         derived: { kind: "Call", callee: callee.name, operands: callSite.argumentValues },
       });
     switch (callee.kind) {
-      case "Function": {
-        const hirFunction = this.functions.get(callee.functionId);
-        if (hirFunction && callSite.receiver) this.#thisValues.set(hirFunction, callSite.receiver);
-        const result = this.callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
-        if (hirFunction) this.#thisValues.delete(hirFunction);
-        return result;
-      }
+      case "Function":
+        return this.callFunction(
+          callee,
+          callSite.argumentValues,
+          callSite.loc,
+          walkState,
+          callSite.thisValue ?? callSite.receiver,
+        );
       case "Conditional": {
         const test = getTestExpression(callee);
         return {
@@ -1401,6 +1425,7 @@ export class Interpreter {
           {
             ...callSite,
             callee: callee.callee,
+            thisValue: callee.receiver,
             argumentValues: [...callee.argumentValues, ...callSite.argumentValues],
           },
           walkState,
@@ -2155,6 +2180,7 @@ export class Interpreter {
         {
           callee: receiver,
           calleePlace: methodCall.receiver,
+          thisValue: argumentValues[0],
           argumentValues: invokedArguments,
           argumentPlaces: methodName === "call" ? argumentPlaces.slice(1) : [],
           loc: methodCall.loc,
@@ -2241,6 +2267,7 @@ export class Interpreter {
       return {
         kind: "Bound",
         callee: receiver,
+        receiver: argumentValues[0] ?? UNDEFINED_VALUE,
         argumentValues: argumentValues.slice(1),
         loc: methodCall.loc,
       };
@@ -2729,7 +2756,7 @@ export class Interpreter {
     const storedValue = this.read(store.value);
     if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
     const setter = getSetterAccessor(object, String(store.property));
-    if (setter) this.callFunction(setter, [storedValue], store.loc, walkState);
+    if (setter) this.callFunction(setter, [storedValue], store.loc, walkState, object);
     if (isRefCell(object, String(store.property))) {
       this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
       this.carryWrappedCallbacks(object.binding, storedValue);
@@ -3191,12 +3218,14 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     walkState: WalkState,
     functionId: number | null = null,
+    thisValue?: SymbolicValue,
   ): SymbolicValue {
     const previousFunction = this.#currentFunction;
     const previousResolver = this.#resolver;
     const previousFunctionScope = this.walker.functionScope;
     this.walker.functionScope = createFunctionScope();
     this.#currentFunction = hirFunction;
+    if (thisValue) this.#thisValues.set(hirFunction, thisValue);
     this.#resolver = this.functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
     const closureIds: number[] = [];
@@ -3241,6 +3270,7 @@ export class Interpreter {
             ]),
         );
       restoreLiveValues();
+      if (thisValue) this.#thisValues.delete(hirFunction);
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
       this.walker.functionScope = previousFunctionScope;
@@ -3260,6 +3290,7 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     visitedFunctionIds: Set<number>,
     walkState: WalkState = ROOT_WALK_STATE,
+    thisValue?: SymbolicValue,
   ): SymbolicValue | null {
     if (callback.kind === "Conditional") {
       const test = getTestExpression(callback);
@@ -3268,10 +3299,17 @@ export class Interpreter {
       this.#runCallback(
         callback.consequent,
         argumentValues,
-        visitedFunctionIds,
+        new Set(visitedFunctionIds),
         consequentWalkState,
+        thisValue,
       );
-      this.#runCallback(callback.alternate, argumentValues, visitedFunctionIds, alternateWalkState);
+      this.#runCallback(
+        callback.alternate,
+        argumentValues,
+        new Set(visitedFunctionIds),
+        alternateWalkState,
+        thisValue,
+      );
       return null;
     }
     if (callback.kind === "Bound")
@@ -3280,6 +3318,7 @@ export class Interpreter {
         [...callback.argumentValues, ...argumentValues],
         visitedFunctionIds,
         walkState,
+        callback.receiver,
       );
     if (callback.kind === "Setter")
       this.#handlerEffects?.recordSetterCall(
@@ -3307,6 +3346,7 @@ export class Interpreter {
       externalArguments,
       walkState,
       callback.functionId,
+      thisValue,
     );
     this.#runRenderedHandlers(result, visitedFunctionIds);
     return result;
