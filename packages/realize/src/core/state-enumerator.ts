@@ -14,6 +14,7 @@ import type { BranchOutcomes } from "./unreachable-branches";
 import { getTestExpression } from "./utils/get-test-expression";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { getFirstRenderOutcome } from "./reachable-constraints";
+import { getOutcomeKey } from "./branch-outcome";
 
 const MAX_ALTERNATIVES = 256;
 
@@ -160,7 +161,7 @@ export class StateEnumerator {
             conditionLabel === null
               ? alternative.conditions
               : [conditionLabel, ...alternative.conditions],
-          branches: new Set([...alternative.branches, `${branchKey}:${isTrue}`]),
+          branches: new Set([...alternative.branches, getOutcomeKey(branchKey, isTrue)]),
           distanceFromFirstRender: alternative.distanceFromFirstRender + (isFirstRenderArm ? 0 : 1),
           hasUndecidedBranch: alternative.hasUndecidedBranch || firstRenderOutcome === null,
         });
