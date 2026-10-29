@@ -1,10 +1,10 @@
+import { dedupeAbstractValues } from "./abstract-values";
+import { addBounds } from "./bound-graph";
 import {
-  addBounds,
   assumeBranchOutcome,
   assumeCondition,
   assumeGuards,
   cloneConstraints,
-  dedupeAbstractValues,
   evaluateCondition,
   forgetBinding,
   forgetUnknownAssumptions,

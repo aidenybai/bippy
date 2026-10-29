@@ -2,7 +2,7 @@ import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { SourceFile } from "typescript/unstable/ast";
 import type { CompiledFile, CompiledFunction } from "./compile";
 import type { SourceFileResolver } from "./source-file-resolver";
-import { EQUALITY_OPERATORS } from "./constraints";
+import { EQUALITY_OPERATORS } from "./comparison-operators";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";

@@ -1,12 +1,9 @@
 import { getBindingUpdates } from "./handler-predicates";
-import {
-  addBounds,
-  dedupeAbstractValues,
-  evaluateCondition,
-  getLengthAtom,
-  isAtomAt,
-} from "./constraints";
-import type { Bound, Constraints } from "./constraints";
+import { dedupeAbstractValues } from "./abstract-values";
+import { addBounds } from "./bound-graph";
+import type { Bound } from "./bound-graph";
+import { evaluateCondition, getLengthAtom, isAtomAt } from "./constraints";
+import type { Constraints } from "./constraints";
 import { getDomainPrimitive } from "./domains";
 import { decideGuards, getFieldCases } from "./field-cases";
 import { getReachableIntegers, getReachableRange } from "./reachable-ranges";

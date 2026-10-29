@@ -16,6 +16,8 @@ import { isObjectValue } from "./utils/is-object-value";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { negate } from "./utils/negate";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { memoizeByIdentity } from "./utils/memoize-by-identity";
 
 const MAX_OPTIONS_NESTING = 3;
 
@@ -285,3 +287,11 @@ export const getShortCircuit = (
   value.alternate.value === undefined
     ? { test: value.test, testKind: value.testKind }
     : null;
+
+export const hasUnknownPart = memoizeByIdentity((value: SymbolicValue): boolean => {
+  let hasUnknown = false;
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Unknown") hasUnknown = true;
+  });
+  return hasUnknown;
+});

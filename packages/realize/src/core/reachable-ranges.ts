@@ -1,6 +1,7 @@
 import { getDomainPrimitive } from "./domains";
-import { getBounds, isNumberAtom } from "./constraints";
-import type { Bound, Constraints } from "./constraints";
+import { getBounds, isNumberAtom } from "./bound-graph";
+import type { Bound } from "./bound-graph";
+import type { Constraints } from "./constraints";
 import type {
   AbstractValue,
   Binding,
