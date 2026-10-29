@@ -3,8 +3,6 @@ import type { Observation } from "./driver";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
 
-type ComponentStatus = "verified" | "not-exported" | "mount-failed";
-
 interface StateCounterexample {
   props: Record<string, Sample>;
   path: string[];
@@ -29,12 +27,13 @@ interface ValueCounterexample {
   predicted: string[];
 }
 
-export interface ComponentVerdict {
+type VerdictOutcome =
+  | { status: "verified" | "not-exported"; error: null; mountFailure: null }
+  | { status: "mount-failed"; error: string; mountFailure: MountFailure };
+
+interface VerdictCounts {
   name: string;
   file: string;
-  status: ComponentStatus;
-  error: string | null;
-  mountFailure: MountFailure | null;
   observationCount: number;
   renderErrorCount: number;
   predictedStateCount: number;
@@ -53,6 +52,13 @@ export interface ComponentVerdict {
   unwarnedMutations: string[];
   durationMs: number;
 }
+
+export type ComponentVerdict = VerdictCounts & VerdictOutcome;
+
+export type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
+
+export const isMountFailedVerdict = (verdict: ComponentVerdict): verdict is MountFailedVerdict =>
+  verdict.status === "mount-failed";
 
 export interface VerificationSummary {
   verifiedCount: number;

@@ -1,6 +1,7 @@
 import { formatStateLabel } from "../../../src/core/format";
 import type { Sample } from "../../../src/core/types";
 import type { MountFailure } from "./reasons";
+import { isMountFailedVerdict } from "./verdicts";
 import type { ComponentVerdict, VerificationSummary } from "./verdicts";
 
 export const MAX_RENDERED_LENGTH = 300;
@@ -82,11 +83,10 @@ export const summarizeVerdicts = (
   durationMs: number,
 ): VerificationSummary => {
   const verifiedVerdicts = verdicts.filter((verdict) => verdict.status === "verified");
-  const mountFailedVerdicts = verdicts.filter((verdict) => verdict.status === "mount-failed");
+  const mountFailedVerdicts = verdicts.filter(isMountFailedVerdict);
   const mountFailureCounts: Partial<Record<MountFailure, number>> = {};
   for (const verdict of mountFailedVerdicts) {
-    const failure = verdict.mountFailure ?? "other";
-    mountFailureCounts[failure] = (mountFailureCounts[failure] ?? 0) + 1;
+    mountFailureCounts[verdict.mountFailure] = (mountFailureCounts[verdict.mountFailure] ?? 0) + 1;
   }
   return {
     verifiedCount: verifiedVerdicts.length,

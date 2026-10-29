@@ -361,11 +361,14 @@ export interface ComponentAnalysis {
 
 export type ClaimKind = "cast" | "non-null" | "invariant" | "state";
 
+export type ClaimCheck =
+  | { kind: "Membership"; cases: AbstractValue[] }
+  | { kind: "Condition"; test: SymbolicValue };
+
 export interface Claim {
   kind: ClaimKind;
   subject: SymbolicValue;
-  cases: AbstractValue[] | null;
-  test: SymbolicValue | null;
+  check: ClaimCheck;
   guards: SymbolicValue[];
   description: string;
   loc: SourceLocation;
