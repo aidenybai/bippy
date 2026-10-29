@@ -31,6 +31,7 @@ import type {
 } from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
 import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
+import { isModuleLevel } from "./utils/is-module-level";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
@@ -153,10 +154,6 @@ const collectClassComponents = (ast: types.File): CompiledFunction[] => {
   });
   return classComponents;
 };
-
-const isModuleLevel = (path: NodePath | null): boolean =>
-  path !== null &&
-  (path.isProgram() || (path.isExportNamedDeclaration() && isModuleLevel(path.parentPath)));
 
 const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFunction => {
   const isAtModuleScope =

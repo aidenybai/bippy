@@ -36,6 +36,7 @@ import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isStateBinding } from "./utils/is-state-binding";
+import { hasCastPart } from "./utils/has-cast-part";
 
 interface ClaimContext {
   analysis: ComponentAnalysis;
@@ -265,14 +266,6 @@ const evaluateClaim = (
     ),
     context,
   );
-
-const hasCastPart = (value: SymbolicValue): boolean => {
-  let isCast = false;
-  forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Unknown" && part.reason === "cast") isCast = true;
-  });
-  return isCast;
-};
 
 const isLiteralValue = (value: SymbolicValue): boolean =>
   value.kind === "Primitive" ||

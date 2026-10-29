@@ -117,6 +117,8 @@ import {
   getPassedCallbacks,
   isStartTransition,
   isMemoCacheCall,
+  CALLABLE_KINDS,
+  isCallableValue,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";
@@ -217,9 +219,7 @@ export interface ProjectLoaders {
   isReadOnlyDeclaration: (declarationKey: string) => boolean;
 }
 
-const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
-
-const BOUND_RECEIVERS = new Set([...BOUND_CALLEES, "Binding", "Conditional"]);
+const BOUND_RECEIVERS = new Set<string>([...CALLABLE_KINDS, "Binding", "Conditional"]);
 
 const MAX_INLINE_DEPTH = 4;
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
@@ -253,8 +253,6 @@ const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
   "Dispatch",
   "Conditional",
 ]);
-
-const CALLABLE_KINDS = new Set<SymbolicValue["kind"]>(["Function", "Bound", "Setter", "Dispatch"]);
 
 const isBuiltinMember = (property: string): boolean =>
   property in Array.prototype || property in Object.prototype;
@@ -1364,7 +1362,7 @@ export class Interpreter {
     const isPure =
       declarationKey !== null &&
       this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
-      !callSite.argumentValues.some((argument) => BOUND_CALLEES.has(argument.kind)) &&
+      !callSite.argumentValues.some((argument) => isCallableValue(argument)) &&
       this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
     const helper = isPure ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
     if (helper)
@@ -1688,7 +1686,7 @@ export class Interpreter {
     return values.flatMap((value): SymbolicValue[] => {
       if (seen.has(value)) return [];
       seen.add(value);
-      if (CALLABLE_KINDS.has(value.kind)) return [value];
+      if (isCallableValue(value)) return [value];
       switch (value.kind) {
         case "Conditional":
           return this.#getSourceFunctions([value.consequent, value.alternate], seen);

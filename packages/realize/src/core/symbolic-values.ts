@@ -67,15 +67,18 @@ export const ONE_VALUE: SymbolicValue = { kind: "Primitive", value: 1 };
 
 export const EMPTY_STRING_VALUE: SymbolicValue = { kind: "Primitive", value: "" };
 
+export const CALLABLE_KINDS: ReadonlySet<SymbolicValue["kind"]> = new Set([
+  "Function",
+  "Bound",
+  "Setter",
+  "Dispatch",
+]);
+
+export const isCallableValue = (value: SymbolicValue): boolean => CALLABLE_KINDS.has(value.kind);
+
 export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
-    if (
-      value.kind === "Function" ||
-      value.kind === "Setter" ||
-      value.kind === "Dispatch" ||
-      value.kind === "Bound"
-    )
-      return [value];
+    if (isCallableValue(value)) return [value];
     if (value.kind === "Conditional")
       return getPassedCallbacks([value.consequent, value.alternate], depth);
     if (depth >= MAX_OPTIONS_NESTING) return [];
