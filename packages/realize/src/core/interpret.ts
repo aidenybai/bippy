@@ -1,12 +1,10 @@
 import type {
   BlockId,
-  DeclarationId,
   HIRFunction,
   IdentifierId,
   Instruction,
   InstructionId,
   InstructionValue,
-  ManualMemoDependency,
   ObjectPropertyKey,
   Place,
   SourceLocation,
@@ -28,6 +26,7 @@ import { CallbackPasser } from "./callback-passer";
 import { ClaimRecorder } from "./claim-recorder";
 import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
+import { MemoStaleness } from "./memo-staleness";
 import { MutationTracker } from "./mutation-tracker";
 import { PatternMatcher } from "./pattern-matcher";
 import type { BranchOperator } from "./control-flow-walker";
@@ -75,16 +74,13 @@ import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
 import { isPureFunction } from "./utils/pure-functions";
-import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { createDeclarationKey } from "./utils/declaration-key";
 import { getMemoRanges } from "./utils/get-memo-ranges";
 import { getLocationKey } from "./utils/get-location-key";
 import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getPropertyKeyForms } from "./utils/get-property-key-forms";
 import { getDomainPrimitive } from "./domains";
-import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
-import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { applyStringMethod, isStringMethod } from "./utils/string-methods";
 import {
   applyCollectionMethod,
@@ -128,6 +124,7 @@ import { Diagnostics } from "./diagnostics";
 import { EffectCollector } from "./effect-collector";
 import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
+import { StoreReads } from "./store-reads";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
 import type {
@@ -165,7 +162,7 @@ interface EffectCall {
   loc: SourceLocation;
 }
 
-interface CallSite {
+export interface CallSite {
   callee: SymbolicValue;
   calleePlace: Place;
   receiver?: SymbolicValue;
@@ -245,8 +242,6 @@ const createFieldUpdate = (
   properties,
   spreads: [base],
 });
-
-const STORE_METHODS = new Set(["getState", "setState"]);
 
 const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
   "Function",
@@ -366,32 +361,6 @@ const getArrayLiteralMember = (
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
-const getNullishTestPlaces = (
-  value: SymbolicValue,
-  capturedPlaces: PlaceMap<true>,
-): PlaceMap<true> => {
-  const nullishTests = new PlaceMap<number>();
-  const reads = new PlaceMap<number>();
-  forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Binding")
-      reads.set(getValuePlace(part), (reads.get(getValuePlace(part)) ?? 0) + 1);
-    if (
-      part.kind === "Conditional" &&
-      part.testKind === "nullish" &&
-      part.test.kind === "Binding"
-    ) {
-      const place = getValuePlace(part.test);
-      nullishTests.set(place, (nullishTests.get(place) ?? 0) + 1);
-    }
-  });
-  return new PlaceMap(
-    nullishTests
-      .places()
-      .filter((place) => nullishTests.get(place) === reads.get(place) && !capturedPlaces.has(place))
-      .map((place): [BindingPlace, true] => [place, true]),
-  );
-};
-
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
@@ -504,13 +473,13 @@ export class Interpreter {
   readonly claimRecorder = new ClaimRecorder(this);
   readonly callbacks = new CallbackPasser(this);
   cells = new Cells();
-  readonly #memoDependencies = new Map<number, Array<ManualMemoDependency> | null>();
+  readonly memoStaleness = new MemoStaleness(this);
   #componentFunction: HIRFunction | null = null;
-  #isInMemo = false;
   readonly iteration = new ArrayIteration(this);
   readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
   readonly externalSources: ExternalSources;
+  readonly storeReads = new StoreReads(this);
   readonly diagnostics = new Diagnostics();
   readonly effectCalls: EffectCall[] = [];
   refEventDispatcher: ((refId: number, methodName: string) => SymbolicValue[]) | null = null;
@@ -535,8 +504,6 @@ export class Interpreter {
   readonly #mountClosureIds = new Set<number>();
   readonly #storedFunctions = new PlaceMap<SymbolicValue[]>();
   #storedFunctionCount = 0;
-  readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
-  readonly #storedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
   readonly #bindingScopes: string[] = [];
 
@@ -631,11 +598,11 @@ export class Interpreter {
       }
       this.forgetHandlerWrites(callback);
       if (handlerEffects.callsOutside && !handlerEffects.mutatesModule)
-        this.#recordExternalStoreChanges(handlerEffects);
+        this.storeReads.recordExternalStoreChanges(handlerEffects);
       if (callback.kind === "Unknown" || callback.kind === "Global")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
-            this.#recordExternalUpdate(
+            this.storeReads.recordExternalUpdate(
               handlerEffects,
               createBindingValue(binding),
               ROOT_WALK_STATE,
@@ -681,30 +648,6 @@ export class Interpreter {
 
   #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
     return this.functions.register(hirFunction, this.#resolver, isSnapshot);
-  }
-
-  #bindMutatedMemo(finish: InstructionValueOfKind<"FinishMemoize">): void {
-    const memoized = this.read(finish.decl);
-    if (memoized.kind !== "ObjectExpression" && memoized.kind !== "ArrayExpression") return;
-    const local = this.#getClosureMutatedLocals().get(finish.decl.identifier.id);
-    if (!local) return;
-    const binding = this.createBinding(
-      getIdentifierName(local) ?? "memo",
-      "memo",
-      getDeclarationLocation(local),
-      { hookKind: "useMemo", initial: memoized },
-    );
-    this.addStoredFunctions(createBindingValue(binding), memoized);
-    this.write(finish.decl, createBindingValue(binding));
-  }
-
-  #getClosureMutatedLocals(): Map<IdentifierId, Place> {
-    const hirFunction = this.getCurrentFunction();
-    const cached = this.#closureMutatedLocals.get(hirFunction);
-    if (cached) return cached;
-    const locals = getClosureMutatedLocals(hirFunction);
-    this.#closureMutatedLocals.set(hirFunction, locals);
-    return locals;
   }
 
   #createClosure(hirFunction: HIRFunction): FunctionValue {
@@ -956,6 +899,10 @@ export class Interpreter {
     }
   }
 
+  getItemSources(item: Binding): PlaceMap<true> | undefined {
+    return this.#itemSources.get(item.id);
+  }
+
   addItemSource(item: Binding, array: SymbolicValue): void {
     const sources = this.#itemSources.get(item.id) ?? new PlaceMap<true>();
     this.collectInputPlaces(array, sources);
@@ -1196,7 +1143,7 @@ export class Interpreter {
     );
     const isRepeated =
       !this.#handlerEffects || (this.walker.loopDepth > 0 && setterArgument?.kind === "Function");
-    const isMemoized = !this.#handlerEffects && this.#isInMemo;
+    const isMemoized = !this.#handlerEffects && this.memoStaleness.isInMemo;
     collector.recordSetterCall(setter.binding, nextValue, {
       ...walkState,
       ...(isRepeated && { isRepeated }),
@@ -1287,65 +1234,6 @@ export class Interpreter {
       handlerHelper.hirFunction,
     );
     return { kind: "ModuleFunction", hirFunction: handlerHelper.hirFunction };
-  }
-
-  #readStore(
-    storeKey: string,
-    storeModel: StoreModel,
-    callSite: CallSite,
-    walkState: WalkState,
-  ): SymbolicValue {
-    const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
-    const storeBinding = this.#getStoreBinding(storeKey, storeModel, storeHookName, callSite.loc);
-    const [selector] = callSite.argumentValues;
-    return selector?.kind === "Function"
-      ? this.callFunction(selector, [createBindingValue(storeBinding)], callSite.loc, walkState)
-      : createBindingValue(storeBinding);
-  }
-
-  #getStoreBinding(
-    storeKey: string,
-    storeModel: StoreModel,
-    storeHookName: string,
-    loc: SourceLocation,
-  ): Binding {
-    return this.externalSources.getStoreBinding(storeKey, storeModel, () =>
-      this.createBinding(`${storeHookName}()`, "hook", loc, {
-        hookKind: "Custom",
-        domain: { kind: "Opaque", typeText: storeHookName },
-        initial: storeModel.initial,
-      }),
-    );
-  }
-
-  #evaluateStoreMethod(
-    methodCall: InstructionValueOfKind<"MethodCall">,
-    receiver: SymbolicValue,
-    methodName: string,
-    argumentValues: SymbolicValue[],
-    walkState: WalkState,
-  ): SymbolicValue | null {
-    if (receiver.kind !== "Global" || !STORE_METHODS.has(methodName)) return null;
-    const storeKey = this.#resolver.getDeclarationKey(methodCall.receiver.loc);
-    const storeModel = storeKey ? this.externalSources.getStoreModel(storeKey) : undefined;
-    if (!storeKey || !storeModel) return null;
-    const storeBinding = this.#getStoreBinding(storeKey, storeModel, receiver.name, methodCall.loc);
-    const state = createBindingValue(storeBinding);
-    if (methodName === "getState") return state;
-    const [nextState] = argumentValues;
-    const base = this.#getQueuedState(storeBinding, walkState);
-    const partial =
-      nextState?.kind === "Function"
-        ? this.callFunction(nextState, [base], methodCall.loc, walkState)
-        : nextState;
-    this.#handlerEffects?.recordSetterCall(
-      storeBinding,
-      partial?.kind === "ObjectExpression" && argumentValues.length === 1
-        ? { ...partial, spreads: [base, ...partial.spreads] }
-        : createUnknown("store", methodCall.loc),
-      walkState,
-    );
-    return UNDEFINED_VALUE;
   }
 
   #loadPureHelper(callSite: CallSite): ProjectHook | null {
@@ -1440,7 +1328,7 @@ export class Interpreter {
         );
       }
       case "Store":
-        return this.#readStore(target.storeKey, target.storeModel, callSite, walkState);
+        return this.storeReads.readStore(target.storeKey, target.storeModel, callSite, walkState);
       case "Hook":
         return this.#evaluateHookCall(target.hookKind, callSite, walkState);
       case "ModuleFunction":
@@ -1769,7 +1657,7 @@ export class Interpreter {
     const assignments =
       memberName && this.externalSources.getActionAssignments(binding, memberName);
     if (assignments) {
-      const base = this.#getQueuedState(binding, walkState);
+      const base = this.getQueuedState(binding, walkState);
       const readField = (field: string) => this.evaluatePropertyLoad(base, field, binding.loc);
       this.#handlerEffects?.recordSetterCall(
         binding,
@@ -1793,7 +1681,7 @@ export class Interpreter {
       return;
     }
     if (isExternalSource(binding) && this.#handlerEffects)
-      this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
+      this.storeReads.recordExternalUpdate(this.#handlerEffects, callee, walkState);
   }
 
   #setContextField(
@@ -1803,7 +1691,7 @@ export class Interpreter {
     walkState: WalkState,
   ): void {
     if (!this.#handlerEffects) return;
-    const base = this.#getQueuedState(binding, walkState);
+    const base = this.getQueuedState(binding, walkState);
     const previousValue = this.evaluatePropertyLoad(base, field, binding.loc);
     const nextValue = this.#getSetterNextValue(
       setterArgument,
@@ -1827,175 +1715,8 @@ export class Interpreter {
     return spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE;
   }
 
-  #getQueuedState(binding: Binding, walkState: WalkState): SymbolicValue {
+  getQueuedState(binding: Binding, walkState: WalkState): SymbolicValue {
     return this.#handlerEffects?.getQueuedValue(binding, walkState) ?? createBindingValue(binding);
-  }
-
-  #recordExternalStoreChanges(handlerEffects: EffectCollector): void {
-    for (const binding of this.bindingTable.bindings)
-      if (this.externalSources.isExternalStore(binding) && !handlerEffects.hasUpdate(binding))
-        handlerEffects.addUpdate(
-          binding,
-          createUnknown("external", GeneratedSource),
-          getAsyncWalkState(ROOT_WALK_STATE),
-        );
-  }
-
-  #recordExternalUpdate(
-    handlerEffects: EffectCollector,
-    callee: BindingValue,
-    walkState: WalkState,
-  ): void {
-    handlerEffects.addDelegate(formatPlace(callee.binding, callee.path));
-    const affectedBindings = this.bindingTable.bindings.filter(
-      (binding) =>
-        binding.id === callee.binding.id ||
-        this.externalSources.isFromSameModule(callee.binding, binding),
-    );
-    for (const binding of affectedBindings)
-      if (!handlerEffects.hasUpdate(binding))
-        handlerEffects.addUpdate(
-          binding,
-          createUnknown("external", GeneratedSource),
-          getAsyncWalkState(walkState),
-        );
-  }
-
-  #finishMemoize(finish: InstructionValueOfKind<"FinishMemoize">): void {
-    const dependencies = this.#memoDependencies.get(finish.manualMemoId);
-    if (!dependencies) return;
-    const memoized = this.read(finish.decl);
-    const dependencyPlaces = new PlaceMap<true>();
-    const dependencyDeclarations = new Set<DeclarationId>();
-    for (const dependency of dependencies) {
-      if (dependency.root.kind !== "NamedLocal") continue;
-      dependencyDeclarations.add(dependency.root.value.identifier.declarationId);
-      const root = this.read(dependency.root.value);
-      if (root.kind !== "Binding") continue;
-      const path = [...root.path, ...dependency.path.map((entry) => String(entry.property))];
-      dependencyPlaces.set(getBindingPlace(root.binding, path), true);
-    }
-    if (memoized.kind === "Function") {
-      this.#captureStaleReads(memoized, dependencyPlaces, dependencyDeclarations, finish.loc);
-      return;
-    }
-    if (!this.#isStaleMemo(memoized, dependencyPlaces)) return;
-    forEachSymbolicValue(memoized, (part) => {
-      if (part.kind === "Function")
-        this.#captureStaleReads(part, dependencyPlaces, dependencyDeclarations, finish.loc);
-    });
-    this.write(finish.decl, this.#createStaleMemo(memoized, finish.decl));
-  }
-
-  #createStaleMemo(memoized: SymbolicValue, decl: Place): SymbolicValue {
-    const hirFunction = this.getCurrentFunction();
-    const storedLocals = this.#storedLocals.get(hirFunction) ?? getStoredLocals(hirFunction);
-    this.#storedLocals.set(hirFunction, storedLocals);
-    const local = storedLocals.get(decl.identifier.id) ?? decl;
-    const inputPlaces = new PlaceMap<true>();
-    this.collectInputPlaces(memoized, inputPlaces);
-    const memo = createBindingValue(
-      this.createBinding(
-        getIdentifierName(local) ?? "memo",
-        "call",
-        getDeclarationLocation(local),
-        {
-          hookKind: "useMemo",
-          initial: memoized,
-          inputPlaces: inputPlaces.places(),
-        },
-      ),
-    );
-    this.addStoredFunctions(memo, memoized);
-    return memo;
-  }
-
-  #captureStaleReads(
-    callback: FunctionValue,
-    dependencyPlaces: PlaceMap<true>,
-    dependencyDeclarations: Set<DeclarationId>,
-    loc: SourceLocation,
-    visitedFunctionIds = new Set<number>(),
-  ): void {
-    if (visitedFunctionIds.has(callback.functionId)) return;
-    visitedFunctionIds.add(callback.functionId);
-    const context = this.functions.get(callback.functionId)?.context ?? [];
-    const capturedValues = new Map(
-      this.functions
-        .getCapturedValues(callback.functionId)
-        .map(([place, value]) => [place.identifier.id, value]),
-    );
-    const staleValues = context.flatMap((place): CapturedValue[] => {
-      const value = capturedValues.get(place.identifier.id) ?? this.read(place);
-      if (dependencyDeclarations.has(place.identifier.declarationId)) return [];
-      if (value.kind === "Function") {
-        this.#captureStaleReads(
-          value,
-          dependencyPlaces,
-          dependencyDeclarations,
-          loc,
-          visitedFunctionIds,
-        );
-        return [];
-      }
-      if (value.kind !== "Unknown" && !this.#isStaleMemo(value, dependencyPlaces)) return [];
-      return [[place, createUnknown("memo", loc)]];
-    });
-    if (staleValues.length === 0) return;
-    const staleIds = new Set(staleValues.map(([place]) => place.identifier.id));
-    const keptValues = this.functions
-      .getCapturedValues(callback.functionId)
-      .filter(([place]) => !staleIds.has(place.identifier.id));
-    this.functions.setCapturedValues(callback.functionId, [...keptValues, ...staleValues]);
-  }
-
-  #captureHeldProps(props: Array<JsxProp | JsxSpreadProp>, heldProps: ReadonlySet<string>): void {
-    for (const prop of props)
-      if (
-        heldProps.has(ALL_PROPS) ||
-        (prop.kind === "JsxAttribute" ? heldProps.has(prop.name) : heldProps.size > 0)
-      )
-        forEachSymbolicValue(prop.value, (part) => {
-          if (part.kind === "Function")
-            this.#captureStaleReads(part, new PlaceMap(), new Set(), prop.loc);
-        });
-  }
-
-  #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
-    const readPlaces = new PlaceMap<true>();
-    this.collectInputPlaces(memoized, readPlaces);
-    const bindingsById = new Map(
-      this.bindingTable.bindings.map((binding) => [binding.id, binding]),
-    );
-    const capturedPlaces = new PlaceMap<true>();
-    forEachSymbolicValue(memoized, (part) => {
-      if (part.kind !== "Function") return;
-      for (const capturedPlace of this.functions.get(part.functionId)?.context ?? [])
-        this.collectInputPlaces(this.read(capturedPlace), capturedPlaces);
-    });
-    const nullishTestPlaces = getNullishTestPlaces(memoized, capturedPlaces);
-    const isCovered = (place: BindingPlace, visited = new Set<number>()): boolean => {
-      if (dependencyPlaces.places().some((dependency) => isPlacePrefix(dependency, place)))
-        return true;
-      const isOptionalChainBase =
-        nullishTestPlaces.has(place) &&
-        dependencyPlaces.places().some((dependency) => isPlacePrefix(place, dependency));
-      if (isOptionalChainBase) return true;
-      const binding = bindingsById.get(place.bindingId);
-      if (!binding || binding.kind === "ref" || visited.has(binding.id))
-        return binding?.kind === "ref";
-      visited.add(binding.id);
-      const inputPlaces =
-        binding.kind === "item"
-          ? (this.#itemSources.get(binding.id)?.places() ?? [])
-          : binding.kind === "call" || binding.kind === "loop"
-            ? binding.inputPlaces
-            : [];
-      return (
-        inputPlaces.length > 0 && inputPlaces.every((inputPlace) => isCovered(inputPlace, visited))
-      );
-    };
-    return readPlaces.places().some((place) => !isCovered(place));
   }
 
   collectInputPlaces(
@@ -2384,7 +2105,7 @@ export class Interpreter {
       walkState,
     });
     if (matched) return matched;
-    const storeResult = this.#evaluateStoreMethod(
+    const storeResult = this.storeReads.evaluateStoreMethod(
       methodCall,
       receiver,
       methodName,
@@ -2763,7 +2484,7 @@ export class Interpreter {
     const { value } = instruction;
     const componentFunction = this.#componentFunction;
     if (componentFunction && this.#currentFunction === componentFunction)
-      this.#isInMemo = getMemoRanges(componentFunction).some(
+      this.memoStaleness.isInMemo = getMemoRanges(componentFunction).some(
         (range) => instruction.id > range.start && instruction.id < range.finish,
       );
     this.#recordLoadedProperty(instruction);
@@ -2920,11 +2641,11 @@ export class Interpreter {
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
       case "StartMemoize":
-        this.#memoDependencies.set(value.manualMemoId, value.deps);
+        this.memoStaleness.startMemoize(value);
         return UNDEFINED_VALUE;
       case "FinishMemoize":
-        this.#finishMemoize(value);
-        this.#bindMutatedMemo(value);
+        this.memoStaleness.finishMemoize(value);
+        this.memoStaleness.bindMutatedMemo(value);
         return UNDEFINED_VALUE;
       case "Debugger":
         return UNDEFINED_VALUE;
@@ -3329,7 +3050,7 @@ export class Interpreter {
     const contextKey = providedValue ? this.#resolver.getContextKey(element.tag.loc) : null;
     if (!providedValue || !contextKey) return;
     if (this.#projectLoaders.loadHeldContexts().has(contextKey))
-      this.#captureHeldProps([providedValue], new Set([ALL_PROPS]));
+      this.memoStaleness.captureHeldProps([providedValue], new Set([ALL_PROPS]));
     this.providedContexts.push({ contextKey, value: providedValue.value });
   }
 
@@ -3342,7 +3063,8 @@ export class Interpreter {
     const isBuiltinTag = element.tag.kind === "BuiltinTag";
     const reactExport = isBuiltinTag ? null : this.#resolver.getReactExportName(element.tag.loc);
     const declaration = isBuiltinTag ? null : this.#resolver.getDeclarationKey(element.tag.loc);
-    if (declaration) this.#captureHeldProps(props, this.#projectLoaders.loadHeldProps(declaration));
+    if (declaration)
+      this.memoStaleness.captureHeldProps(props, this.#projectLoaders.loadHeldProps(declaration));
     const jsxValue = buildJsx(
       this.#getJsxTag(element.tag),
       {
