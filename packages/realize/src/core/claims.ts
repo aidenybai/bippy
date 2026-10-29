@@ -146,9 +146,9 @@ const checkCondition = (test: SymbolicValue, constraints: Constraints): Check =>
 };
 
 const checkNarrowedClaim = (claim: Claim, narrowed: Constraints): Check => {
-  if (claim.cases) return checkMembership(claim, claim.cases, narrowed);
-  if (claim.test) return checkCondition(claim.test, narrowed);
-  return { outcome: null, witness: null };
+  return claim.check.kind === "Membership"
+    ? checkMembership(claim, claim.check.cases, narrowed)
+    : checkCondition(claim.check.test, narrowed);
 };
 
 const checkClaim = (claim: Claim, constraints: Constraints): Check | null => {
@@ -262,7 +262,11 @@ const evaluateClaim = (
       getClaimStates(claim, handler, context),
       context,
       (constraints) => checkClaim(claim, constraints),
-      [claim.subject, ...claim.guards, ...(claim.test ? [claim.test] : [])],
+      [
+        claim.subject,
+        ...claim.guards,
+        ...(claim.check.kind === "Condition" ? [claim.check.test] : []),
+      ],
     ),
     context,
   );
@@ -308,8 +312,7 @@ const checkUpdate = (
 const createStateClaim = (binding: Binding, cases: AbstractValue[]): Claim => ({
   kind: "state",
   subject: { kind: "Binding", binding, path: [] },
-  cases,
-  test: null,
+  check: { kind: "Membership", cases },
   guards: [],
   description: `${binding.name} stays within ${describeCases(cases)}`,
   loc: binding.loc,

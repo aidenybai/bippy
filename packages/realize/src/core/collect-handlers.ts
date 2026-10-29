@@ -539,8 +539,8 @@ const getHandlerContentKey = (handler: Handler): string =>
     handler.claims.map((claim) => [
       claim.kind,
       getValueKey(claim.subject),
-      claim.cases,
-      claim.test && getValueKey(claim.test),
+      claim.check.kind === "Membership" ? claim.check.cases : null,
+      claim.check.kind === "Condition" ? getValueKey(claim.check.test) : null,
       getValueKeys(claim.guards),
       claim.description,
       getLocationKey(claim.loc),
