@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/mfts/papermark",
+  "revision": "ed19717ec02a1ac79aecf5569159aa9d2d869312",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund --legacy-peer-deps --allow-remote=all"
+}

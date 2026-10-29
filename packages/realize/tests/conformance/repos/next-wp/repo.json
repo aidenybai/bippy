@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/9d8dev/next-wp",
+  "revision": "4a2caeb1e14191fe58113b94326c2ad92106ff8b",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@11.20.0 install --frozen-lockfile --ignore-scripts"
+}

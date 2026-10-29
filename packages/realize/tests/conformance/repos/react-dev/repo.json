@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/reactjs/react.dev",
+  "revision": "046f17d04295ba047bb5739026b4ac3110f17028",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts"
+}

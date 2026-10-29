@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2023",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "bippy": ["../bippy/src/index.ts"],
+      "@babel/types": ["./node_modules/@babel/types"],
+      "@babel/traverse": ["./node_modules/@types/babel__traverse"]
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src", "scripts", "tests/unit", "tests/conformance", "vite.config.ts"],
+  "exclude": ["tests/conformance/repos/*/verify/*.tsx", "tests/conformance/results", "viewer"]
+}

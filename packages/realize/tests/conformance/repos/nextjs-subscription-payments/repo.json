@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/vercel/nextjs-subscription-payments",
+  "revision": "bdd0813206e47e6b218d42f15a7976c8a0d3c3eb",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@8.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/mckaywrigley/chatbot-ui",
+  "revision": "81328b61d2a4ab597a7a057be70e785cf756d9f8",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

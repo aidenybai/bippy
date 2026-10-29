@@ -1,0 +1,146 @@
+@import "tailwindcss";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-background: var(--ground);
+  --color-foreground: var(--ink);
+  --color-card: var(--ground);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--ground);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--ink);
+  --color-primary-foreground: var(--ground);
+  --color-secondary: var(--well);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--well);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--well);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--alarm);
+  --color-border: var(--rule);
+  --color-input: var(--rule);
+  --color-ring: var(--faint);
+  --color-text-2: var(--text-2);
+  --color-faint: var(--faint);
+  --color-well-2: var(--well-2);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --shadow-card: var(--card-shadow);
+  --shadow-focus: var(--card-shadow), 0 0 0 3px var(--well-2);
+  --ease-out-soft: cubic-bezier(0.22, 0.75, 0.2, 1);
+  --animate-spinner-line: spinner-line 1s linear infinite;
+  @keyframes spinner-line {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.15;
+    }
+  }
+}
+
+:root {
+  --ground: #ffffff;
+  --ink: #1c1917;
+  --text-2: #57534e;
+  --muted: #8a8580;
+  --faint: #bdb8b2;
+  --rule: #ebe9e6;
+  --well: #f4f3f1;
+  --well-2: #e9e7e3;
+  --alarm: #c0392b;
+  --card-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 2px 8px -2px rgb(0 0 0 / 0.06);
+  color-scheme: light;
+}
+
+:root.dark {
+  --ground: #0a0a0a;
+  --ink: #ededed;
+  --text-2: #a1a1a1;
+  --muted: #737373;
+  --faint: #4a4a4a;
+  --rule: #1f1f1f;
+  --well: #141414;
+  --well-2: #222222;
+  --alarm: #f06a5c;
+  --card-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans text-[13px]/[19px] font-normal tracking-[-0.01em] antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  ::selection {
+    background: var(--well-2);
+  }
+  code,
+  kbd {
+    @apply font-mono;
+  }
+  [data-slot="code"] > span {
+    color: var(--hls-light);
+  }
+  .dark [data-slot="code"] > span {
+    color: var(--hls-dark);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--well-2) transparent;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  input,
+  [role="tab"],
+  [role="separator"] {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+    }
+    [data-slot="spinner"] svg rect {
+      animation-duration: 2.4s;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-color: var(--well-2);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--faint);
+  }
+}

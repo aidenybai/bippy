@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ibelick/motion-primitives",
+  "revision": "120f64f6ca60348e251f929e9c81f11ccbe45eda",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/kubernetes-sigs/headlamp",
+  "revision": "d87c4264896b89fbd4366254f0da1cd1e446e9a0",
+  "workingDirectory": "frontend",
+  "tsconfig": "tsconfig.json",
+  "install": "cd frontend && npm ci --ignore-scripts --no-audit --no-fund --allow-remote=all"
+}

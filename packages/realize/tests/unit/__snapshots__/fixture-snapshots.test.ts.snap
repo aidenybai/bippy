@@ -1,0 +1,3270 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixture analysis > App keeps its render tree and handlers 1`] = `
+"---
+title: App src/counter.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["App"]
+  n2{"isLoading"}
+  n1 --> n2
+  n3["#lt;Loading#gt;"]
+  n2 -->|✓| n3
+  n4["#lt;Button#gt; {count}"]
+  n2 -->|✗| n4
+  n5(["onClick ⇒ count = count + 1"]):::event
+  n4 -.-> n5"
+`;
+
+exports[`fixture analysis > App keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: App src/counter.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: isLoading · #lt;Loading#gt;
+  S2: !isLoading · #lt;Button#gt; {count}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
+"---
+title: Box src/ref-props.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Box"]
+  n2["#lt;button#gt; {count}"]
+  n1 --> n2
+  n3(["onClick ⇒ count = count + 1"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Box keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Box src/ref-props.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {count}
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: prop-mutation L24 mutates prop box
+  }"
+`;
+
+exports[`fixture analysis > Button keeps its render tree and handlers 1`] = `
+"---
+title: Button src/counter.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Button"]
+  n2["#lt;button#gt; {children}"]
+  n1 --> n2
+  n3(["onClick ⇒ calls onClick"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Button keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Button src/counter.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {children}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Card keeps its render tree and handlers 1`] = `
+"---
+title: Card src/chains.tsx:13
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Card"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"note"}
+  n2 --> n3
+  n4["#lt;p#gt; {note}"]
+  n3 -->|✓| n4"
+`;
+
+exports[`fixture analysis > Card keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Card src/chains.tsx:13
+---
+stateDiagram-v2
+  direction LR
+  S1: note · #lt;div#gt; #lt;p#gt; {note}
+  S2: !note · #lt;div#gt;
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > CardEditor keeps its render tree and handlers 1`] = `
+"---
+title: CardEditor src/mutating-helpers.tsx:14
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CardEditor"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ options = Unknown(mutated)"]):::event
+  n2 -.-> n3
+  n4{"options.shape != null"}
+  n2 --> n4
+  n5["{options.shape}"]
+  n4 -->|✓| n5
+  n6["{#quot;auto#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > CardEditor keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CardEditor src/mutating-helpers.tsx:14
+---
+stateDiagram-v2
+  direction LR
+  S1: options.shape != null · #lt;button#gt; {options.shape}
+  S2: options.shape == null · #lt;button#gt; {"auto"}
+  [*] --> S2
+  S1 --> S2: fillDefaults(options, 120)
+  S2 --> S1: fillDefaults(options, 120)
+  state "warnings" as warnings {
+    warnings1: state-mutation L16 mutates options without setting it, so the change shows only on the next render
+  }"
+`;
+
+exports[`fixture analysis > CardGrid keeps its render tree and handlers 1`] = `
+"---
+title: CardGrid src/mutating-helpers.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CardGrid"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"options.shape != null"}
+  n2 --> n3
+  n4["{options.shape}"]
+  n3 -->|✓| n4
+  n5["{#quot;auto#quot;}"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > CardGrid keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CardGrid src/mutating-helpers.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: options.shape != null · #lt;p#gt; {options.shape}
+  S2: options.shape == null · #lt;p#gt; {"auto"}
+  [*] --> S1
+  [*] --> S2
+  state "warnings" as warnings {
+    warnings1: prop-mutation L10 mutates prop options
+  }"
+`;
+
+exports[`fixture analysis > ClickStats keeps its render tree and handlers 1`] = `
+"---
+title: ClickStats src/mutation.tsx:41
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ClickStats"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3{"stats.clicks #gt; 0"}
+  n2 --> n3
+  n4["{#quot;Clicked#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Not clicked#quot;}"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ClickStats src/mutation.tsx:41
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {"Not clicked"}
+  [*] --> S1
+  state "unreachable branches" as unreachable {
+    unreachable1: never stats.clicks #gt; 0 L49
+  }
+  state "warnings" as warnings {
+    warnings1: state-mutation L46 mutates stats without setting it, so the change shows only on the next render
+  }"
+`;
+
+exports[`fixture analysis > Coalesced keeps its render tree and handlers 1`] = `
+"---
+title: Coalesced src/claims.tsx:49
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Coalesced"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"checked"}
+  n2 --> n3
+  n4["{#quot;on#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;off#quot;}"]
+  n3 -->|✗| n5
+  n6(["after serverChecked changes ⇒ checked = flags?.some(function) ?? false"]):::event
+  n1 -.-> n6"
+`;
+
+exports[`fixture analysis > Coalesced keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Coalesced src/claims.tsx:49
+---
+stateDiagram-v2
+  direction LR
+  S1: checked · #lt;p#gt; {"on"}
+  S2: !checked · #lt;p#gt; {"off"}
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: after serverChecked changes
+  S2 --> S1: after serverChecked changes
+  state "claims" as claims {
+    claims1: holds checked stays within false | true L51
+  }"
+`;
+
+exports[`fixture analysis > CommandInput keeps its render tree and handlers 1`] = `
+"---
+title: CommandInput src/compared-strings.tsx:16
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CommandInput"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ command = event.target.value"]):::event
+  n3 -.-> n4
+  n5{"command === #quot;help#quot;"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Type a command#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > CommandInput keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CommandInput src/compared-strings.tsx:16
+---
+stateDiagram-v2
+  direction LR
+  S1: command === "help" · #lt;div#gt; #lt;input#gt; #lt;p#gt; "Type a command"
+  S2: command !== "help" · #lt;div#gt; #lt;input#gt;
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: setCommand(event.target.value)
+  S2 --> S1: setCommand(event.target.value)"
+`;
+
+exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
+"---
+title: Composer src/guards.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Composer"]
+  n2{"isSent"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Sent#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;div#gt;"]
+  n2 -->|✗| n4
+  n5["#lt;input#gt;"]
+  n4 --> n5
+  n6(["onChange ⇒ draft = event.target.value"]):::event
+  n5 -.-> n6
+  n7["#lt;button#gt; #quot;Send#quot;"]
+  n4 --> n7
+  n8(["onClick ⇒ if draft: isSent = true"]):::event
+  n7 -.-> n8"
+`;
+
+exports[`fixture analysis > Composer keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Composer src/guards.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: isSent · #lt;p#gt; "Sent"
+  S2: !isSent · #lt;div#gt; #lt;input#gt; #lt;button#gt; "Send"
+  [*] --> S2
+  S2 --> S1: "Send"
+  state "claims" as claims {
+    claims1: holds isSent stays within false | true L5
+  }"
+`;
+
+exports[`fixture analysis > Countdown keeps its render tree and handlers 1`] = `
+"---
+title: Countdown src/loops.tsx:39
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Countdown"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"steps === 0"}
+  n2 --> n3
+  n4["{#quot;Done#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Counted#quot;}"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > Countdown keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Countdown src/loops.tsx:39
+---
+stateDiagram-v2
+  direction LR
+  S1: steps === 0 · #lt;p#gt; {"Done"}
+  S2: steps !== 0 · #lt;p#gt; {"Counted"}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > CountedList keeps its render tree and handlers 1`] = `
+"---
+title: CountedList src/counted-lists.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CountedList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"items.length #gt; 0"}
+  n2 --> n3
+  n4["#lt;ul#gt;"]
+  n3 -->|✓| n4
+  n5[["↻ each of items"]]
+  n4 --> n5
+  n6["#lt;li#gt; {item}"]
+  n5 --> n6
+  n7{"items.length"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Has items#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;Empty#quot;"]
+  n7 -->|✗| n9
+  n10{"count #gt; 0"}
+  n2 --> n10
+  n11["#lt;b#gt; {count}"]
+  n10 -->|✓| n11
+  n12{"!count"}
+  n2 --> n12
+  n13["#lt;i#gt; #quot;None#quot;"]
+  n12 -->|✓| n13"
+`;
+
+exports[`fixture analysis > CountedList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CountedList src/counted-lists.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  state "CountedList" as regions {
+    %% items.length
+    S1: items.length #gt; 0 · #lt;ul#gt; ↻ items #lt;p#gt; "Has items"
+    S2: items.length #lt;= 0 · #lt;p#gt; "Empty"
+    [*] --> S1
+    [*] --> S2
+    --
+    %% count
+    S3: count #gt; 0 · #lt;b#gt; {count}
+    S4: !(count #gt; 0) ∧ !count · #lt;i#gt; "None"
+    S5: !(count #gt; 0) ∧ count · ∅
+    [*] --> S3
+    [*] --> S4
+    [*] --> S5
+  }"
+`;
+
+exports[`fixture analysis > CountedLoop keeps its render tree and handlers 1`] = `
+"---
+title: CountedLoop src/loops.tsx:49
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CountedLoop"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ isDone = true"]):::event
+  n2 -.-> n3
+  n4{"isDone"}
+  n2 --> n4
+  n5["{#quot;Done#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;Start#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > CountedLoop keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CountedLoop src/loops.tsx:49
+---
+stateDiagram-v2
+  direction LR
+  S1: isDone · #lt;button#gt; {"Done"}
+  S2: !isDone · #lt;button#gt; {"Start"}
+  [*] --> S2
+  S2 --> S1: finish
+  state "claims" as claims {
+    claims1: holds isDone stays within false | true L50
+  }"
+`;
+
+exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
+"---
+title: Dashboard src/dashboard.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Dashboard"]
+  n2{"status === #quot;loading#quot;"}
+  n1 --> n2
+  n3["#lt;Spinner#gt;"]
+  n2 -->|✓| n3
+  n4{"!user"}
+  n2 -->|✗| n4
+  n5["#lt;SignIn#gt;"]
+  n4 -->|✓| n5
+  n6["#lt;main#gt;"]
+  n4 -->|✗| n6
+  n7["#lt;h1#gt; {user.name}"]
+  n6 --> n7
+  n8{"items.length #gt; 0"}
+  n6 --> n8
+  n9["#lt;List#gt;"]
+  n8 -->|✓| n9
+  n10["#lt;Empty#gt;"]
+  n8 -->|✗| n10
+  n11["#lt;button#gt; {count}"]
+  n6 --> n11
+  n12(["onClick ⇒ count = count + 1"]):::event
+  n11 -.-> n12
+  n13(["after first render ⇒ if [{ id: #quot;1#quot;, title: #quot;First#quot; }] resolves: items = await […"]):::event
+  n1 -.-> n13"
+`;
+
+exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Dashboard src/dashboard.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "loading" · #lt;Spinner#gt;
+  S2: status !== "loading" ∧ !user · #lt;SignIn#gt;
+  S3: status !== "loading" ∧ user ∧ items.length #gt; 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;List#gt; #lt;button#gt; {count}
+  S4: status !== "loading" ∧ user ∧ items.length #lt;= 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;Empty#gt; #lt;button#gt; {count}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S4
+  S3 --> S4: after first render (async)
+  S4 --> S3: after first render (async)"
+`;
+
+exports[`fixture analysis > Deck keeps its render tree and handlers 1`] = `
+"---
+title: Deck src/possible-mutation.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Deck"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"cards.length === 0"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Empty#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;p#gt; #quot;Cards#quot;"]
+  n3 -->|✗| n5
+  n6["#lt;button#gt;"]
+  n2 --> n6
+  n7(["onClick ⇒ count = count + 1 · cards = Unknown(mutated)"]):::event
+  n6 -.-> n7
+  n8["#quot;Shuffle #quot;"]
+  n6 --> n8
+  n9["{count}"]
+  n6 --> n9"
+`;
+
+exports[`fixture analysis > Deck keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Deck src/possible-mutation.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: cards.length === 0 · #lt;div#gt; #lt;p#gt; "Empty" #lt;button#gt; "Shuffle " {count}
+  S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
+  [*] --> S1
+  S1 --> S2: "Shuffle"
+  S2 --> S1: "Shuffle""
+`;
+
+exports[`fixture analysis > Dialog keeps its render tree and handlers 1`] = `
+"---
+title: Dialog src/expression-defaults.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Dialog"]
+  n2{"!isOpen"}
+  n1 --> n2
+  n3["∅"]
+  n2 -->|✓| n3
+  n4["#lt;div#gt;"]
+  n2 -->|✗| n4
+  n5["#lt;button#gt;"]
+  n4 --> n5
+  n6(["onClick ⇒ isOpen = false"]):::event
+  n5 -.-> n6
+  n7{"icon === undefined"}
+  n5 --> n7
+  n8["#lt;span#gt; #quot;×#quot;"]
+  n7 -->|✓| n8
+  n9["{icon}"]
+  n7 -->|✗| n9"
+`;
+
+exports[`fixture analysis > Dialog keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Dialog src/expression-defaults.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: !isOpen · ∅
+  S2: isOpen ∧ icon === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
+  S3: isOpen ∧ icon !== undefined · #lt;div#gt; #lt;button#gt; {icon}
+  [*] --> S2
+  [*] --> S3
+  S2 --> S1: setIsOpen(false)
+  S3 --> S1: setIsOpen(false)
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L18
+  }"
+`;
+
+exports[`fixture analysis > EarlyReturn keeps its render tree and handlers 1`] = `
+"---
+title: EarlyReturn src/loops.tsx:82
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EarlyReturn"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ picked = 3"]):::event
+  n2 -.-> n3
+  n4{"picked === 0"}
+  n2 --> n4
+  n5["{#quot;Pick#quot;}"]
+  n4 -->|✓| n5
+  n6{"picked === 3"}
+  n4 -->|✗| n6
+  n7["{#quot;Third#quot;}"]
+  n6 -->|✓| n7
+  n8["{#quot;Other#quot;}"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > EarlyReturn keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EarlyReturn src/loops.tsx:82
+---
+stateDiagram-v2
+  direction LR
+  S1: picked === 0 · #lt;button#gt; {"Pick"}
+  S2: picked !== 0 · #lt;button#gt; {"Third"}
+  [*] --> S1
+  S1 --> S2: setPicked(findFirstSquare())
+  state "unreachable branches" as unreachable {
+    unreachable1: never picked !== 3 L90
+  }"
+`;
+
+exports[`fixture analysis > EditButton keeps its render tree and handlers 1`] = `
+"---
+title: EditButton src/access.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EditButton"]
+  n2{"!(role === #quot;admin#quot; || false)"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Read only#quot;"]
+  n2 -->|✓| n3
+  n4{"isEditing"}
+  n2 -->|✗| n4
+  n5["#lt;button#gt; #quot;Save#quot;"]
+  n4 -->|✓| n5
+  n6(["onClick ⇒ isEditing = false"]):::event
+  n5 -.-> n6
+  n7["#lt;button#gt; #quot;Edit#quot;"]
+  n4 -->|✗| n7
+  n8(["onClick ⇒ isEditing = true"]):::event
+  n7 -.-> n8"
+`;
+
+exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EditButton src/access.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: !(role === "admin" || false) · #lt;p#gt; "Read only"
+  S2: role === "admin" || false ∧ isEditing · #lt;button#gt; "Save"
+  S3: role === "admin" || false ∧ !isEditing · #lt;button#gt; "Edit"
+  [*] --> S1
+  [*] --> S3
+  S2 --> S3: "Save"
+  S3 --> S2: "Edit"
+  state "claims" as claims {
+    claims1: holds isEditing stays within false | true L6
+  }"
+`;
+
+exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
+"---
+title: Empty src/dashboard.tsx:43
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Empty"]
+  n2["#lt;p#gt; #quot;No items#quot;"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Empty src/dashboard.tsx:43
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "No items"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > EmptyObjectCast keeps its render tree and handlers 1`] = `
+"---
+title: EmptyObjectCast src/claims.tsx:58
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EmptyObjectCast"]
+  n2["#lt;p#gt; ⚠ raw"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > EmptyObjectCast keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EmptyObjectCast src/claims.tsx:58
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; ⚠ raw
+  [*] --> S1
+  state "claims" as claims {
+    claims1: unproven raw as "a" | "b" L58 · raw = undefined | {}
+  }"
+`;
+
+exports[`fixture analysis > FabRow keeps its render tree and handlers 1`] = `
+"---
+title: FabRow src/or-conditions.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FabRow"]
+  n2["#lt;p#gt; {value}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > FabRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FabRow src/or-conditions.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {value}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > FeatureBadge keeps its render tree and handlers 1`] = `
+"---
+title: FeatureBadge src/logical-chains.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FeatureBadge"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"isEnabled(#quot;search#quot;) || isEnabled(#quot;sync#quot;) || isEnabled(#quot;share#quot;)"}
+  n2 --> n3
+  n4["{#quot;Features on#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Features off#quot;}"]
+  n3 -->|✗| n5
+  n6{"isEnabled(#quot;sync#quot;) && isEnabled(#quot;offline#quot;)"}
+  n2 --> n6
+  n7["{#quot;Full sync#quot;}"]
+  n6 -->|✓| n7"
+`;
+
+exports[`fixture analysis > FeatureBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FeatureBadge src/logical-chains.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  state "FeatureBadge" as regions {
+    %% isEnabled("search"), isEnabled("sync"), isEnabled("share")
+    S1: isEnabled("search") || isEnabled("sync") || isEnabled("share") · {"Features on"}
+    S2: !(isEnabled("search") || isEnabled("sync") || isEnabled("share")) · {"Features off"}
+    [*] --> S1
+    [*] --> S2
+    --
+    %% isEnabled("sync"), isEnabled("offline")
+    S3: isEnabled("sync") && isEnabled("offline") · {"Full sync"}
+    S4: !(isEnabled("sync") && isEnabled("offline")) · ∅
+    [*] --> S3
+    [*] --> S4
+  }"
+`;
+
+exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
+"---
+title: Feed src/chains.tsx:17
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Feed"]
+  n2{"!pages?.map(…)?.length"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Nothing yet#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt;"]
+  n2 -->|✗| n4
+  n5["⚠ items.length"]
+  n4 --> n5
+  n6["#quot; items#quot;"]
+  n4 --> n6"
+`;
+
+exports[`fixture analysis > Feed keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Feed src/chains.tsx:17
+---
+stateDiagram-v2
+  direction LR
+  S1: !pages?.map(…)?.length · #lt;p#gt; "Nothing yet"
+  S2: pages?.map(…)?.length · #lt;p#gt; ⚠ items.length " items"
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
+"---
+title: FileRow src/helpers.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FileRow"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ opened = opened + 1"]):::event
+  n2 -.-> n3
+  n4{"path.endsWith(#quot;.ts#quot;)"}
+  n2 --> n4
+  n5["#lt;span#gt; #quot;TS#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;span#gt; #quot;File#quot;"]
+  n4 -->|✗| n6
+  n7["#quot; #quot;"]
+  n2 --> n7
+  n8["{path}"]
+  n2 --> n8
+  n9["#quot; #quot;"]
+  n2 --> n9
+  n10{"opened #gt; 0"}
+  n2 --> n10
+  n11["#lt;b#gt; {opened}"]
+  n10 -->|✓| n11"
+`;
+
+exports[`fixture analysis > FileRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FileRow src/helpers.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  state "FileRow" as regions {
+    %% path.endsWith(".ts")
+    S1: path.endsWith(".ts") · #lt;span#gt; "TS"
+    S2: !path.endsWith(".ts") · #lt;span#gt; "File"
+    [*] --> S1
+    [*] --> S2
+    --
+    %% opened
+    S3: opened #gt; 0 · #lt;b#gt; {opened}
+    S4: opened #lt;= 0 · ∅
+    [*] --> S4
+    S4 --> S3: setOpened(opened + 1)
+  }"
+`;
+
+exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
+"---
+title: FilterLabel src/literals.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FilterLabel"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;p#gt; {filter}"]
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Active#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ filter = #quot;active#quot;"]):::event
+  n4 -.-> n5
+  n6["#lt;button#gt; #quot;Done#quot;"]
+  n2 --> n6
+  n7(["onClick ⇒ filter = #quot;done#quot;"]):::event
+  n6 -.-> n7"
+`;
+
+exports[`fixture analysis > FilterLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FilterLabel src/literals.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt; #lt;p#gt; {filter} #lt;button#gt; "Active" #lt;button#gt; "Done"
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds filter stays within "active" | "all" | "done" L7
+  }"
+`;
+
+exports[`fixture analysis > FirstMatch keeps its render tree and handlers 1`] = `
+"---
+title: FirstMatch src/loops.tsx:27
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FirstMatch"]
+  n2{"found === null"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;No match#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt;"]
+  n2 -->|✗| n4
+  n5["#quot;Found #quot;"]
+  n4 --> n5
+  n6["{found}"]
+  n4 --> n6"
+`;
+
+exports[`fixture analysis > FirstMatch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FirstMatch src/loops.tsx:27
+---
+stateDiagram-v2
+  direction LR
+  S1: found === null · #lt;p#gt; "No match"
+  S2: found !== null · #lt;p#gt; "Found " {found}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > FoundOfState keeps its render tree and handlers 1`] = `
+"---
+title: FoundOfState src/loops.tsx:109
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FoundOfState"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;score#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ scores = [0, 3]"]):::event
+  n3 -.-> n4
+  n5{"found === null"}
+  n2 --> n5
+  n6["#lt;i#gt; #quot;none#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;b#gt; {found}"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > FoundOfState keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FoundOfState src/loops.tsx:109
+---
+stateDiagram-v2
+  direction LR
+  S1: found === null · #lt;div#gt; #lt;button#gt; "score" #lt;i#gt; "none"
+  S2: found !== null · #lt;div#gt; #lt;button#gt; "score" #lt;b#gt; {found}
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: "score"
+  S2 --> S1: "score""
+`;
+
+exports[`fixture analysis > FromLength keeps its render tree and handlers 1`] = `
+"---
+title: FromLength src/rows-from-length.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FromLength"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of { length: count }"]]
+  n2 --> n3
+  n4["#lt;li#gt; {index}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > FromLength keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FromLength src/rows-from-length.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ { length#58; count }
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Gallery keeps its render tree and handlers 1`] = `
+"---
+title: Gallery src/linked.tsx:31
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Gallery"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;StatusBadge#gt;"]
+  n2 --> n3
+  n4["#lt;StatusBadge#gt;"]
+  n2 --> n4"
+`;
+
+exports[`fixture analysis > Gallery keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Gallery src/linked.tsx:31
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;StatusBadge#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Greeting keeps its render tree and handlers 1`] = `
+"---
+title: Greeting src/option-defaults.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Greeting"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"auth.user"}
+  n2 --> n3
+  n4["#lt;p#gt; {auth.user.name}"]
+  n3 -->|✓| n4
+  n5["#lt;p#gt; #quot;Signed out#quot;"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > Greeting keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Greeting src/option-defaults.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: auth.user · #lt;div#gt; #lt;p#gt; {auth.user.name}
+  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out"
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
+"---
+title: GuardedCast src/claims.tsx:26
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["GuardedCast"]
+  n2["#lt;button#gt; {status}"]
+  n1 --> n2
+  n3(["onClick ⇒ if next: status = Unknown(cast) · checks next as #quot;idle#quot; | #quot;saving#quot;"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > GuardedCast keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: GuardedCast src/claims.tsx:26
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {status}
+  [*] --> S1
+  state "claims" as claims {
+    claims1: unproven next as "idle" | "saving" L30 in S1 · next = string
+    claims2: unproven status stays within "idle" | "saving" L27 in S1 · set through a cast
+  }"
+`;
+
+exports[`fixture analysis > GuardedWrite keeps its render tree and handlers 1`] = `
+"---
+title: GuardedWrite src/claims.tsx:41
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["GuardedWrite"]
+  n2["#lt;button#gt; {status}"]
+  n1 --> n2
+  n3(["onClick ⇒ if next: status = next"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > GuardedWrite keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: GuardedWrite src/claims.tsx:41
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {status}
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "idle" | "saving" L42
+  }"
+`;
+
+exports[`fixture analysis > HiddenHandler keeps its render tree and handlers 1`] = `
+"---
+title: HiddenHandler src/claims.tsx:35
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["HiddenHandler"]
+  n2{"kind === #quot;c#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;c#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;button#gt; {picked}"]
+  n2 -->|✗| n4
+  n5(["onClick ⇒ picked = kind · checks kind as #quot;a#quot; | #quot;b#quot;"]):::event
+  n4 -.-> n5"
+`;
+
+exports[`fixture analysis > HiddenHandler keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: HiddenHandler src/claims.tsx:35
+---
+stateDiagram-v2
+  direction LR
+  S1: kind === "c" · #lt;p#gt; "c"
+  S2: kind !== "c" · #lt;button#gt; {picked}
+  [*] --> S1
+  [*] --> S2
+  state "claims" as claims {
+    claims1: holds kind as "a" | "b" L38
+    claims2: holds picked stays within "a" | "b" L36
+  }"
+`;
+
+exports[`fixture analysis > HintField keeps its render tree and handlers 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["HintField"]
+  n2["#lt;label#gt;"]
+  n1 --> n2
+  n3{"!hint"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Add a hint#quot;"]
+  n3 -->|✓| n4
+  n5{"hint"}
+  n2 --> n5
+  n6["#lt;small#gt; {hint}"]
+  n5 -->|✓| n6
+  n7["#lt;small#gt; #quot;No hint yet#quot;"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > HintField keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  S1: !hint · #lt;label#gt; #lt;p#gt; "Add a hint" #lt;small#gt; "No hint yet"
+  S2: hint · #lt;label#gt; #lt;small#gt; {hint}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
+"---
+title: Inbox src/literals.tsx:17
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Inbox"]
+  n2["#lt;section#gt;"]
+  n1 --> n2
+  n3["#lt;em#gt; #quot;Empty#quot;"]
+  n2 --> n3"
+`;
+
+exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Inbox src/literals.tsx:17
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;section#gt; #lt;em#gt; "Empty"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > KindSwitch keeps its render tree and handlers 1`] = `
+"---
+title: KindSwitch src/or-conditions.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["KindSwitch"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;FAB#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ kind = #quot;fab#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Extended#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ kind = #quot;extendedFab#quot;"]):::event
+  n5 -.-> n6
+  n7{"kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;"}
+  n2 --> n7
+  n8["#lt;FabRow#gt;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;Chip#quot;"]
+  n7 -->|✗| n9
+  n10{"kind !== #quot;chip#quot; && !(kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;)"}
+  n2 --> n10
+  n11["#lt;p#gt; #quot;Unreachable#quot;"]
+  n10 -->|✓| n11"
+`;
+
+exports[`fixture analysis > KindSwitch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: KindSwitch src/or-conditions.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: kind === "fab" || kind === "extendedFab" · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;FabRow#gt;
+  S2: !(kind === "fab" || kind === "extendedFab") · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;p#gt; "Chip"
+  [*] --> S2
+  S2 --> S1: "FAB"
+  S2 --> S1: "Extended"
+  state "claims" as claims {
+    claims1: holds kind as "extendedFab" | "fab" L15
+    claims2: holds kind stays within "chip" | "extendedFab" | "fab" L9
+  }
+  state "unreachable branches" as unreachable {
+    unreachable1: never kind !== "chip" && !(kind === "fab" || kind === "extendedFab") L16
+  }"
+`;
+
+exports[`fixture analysis > Latest keeps its render tree and handlers 1`] = `
+"---
+title: Latest src/ref-props.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Latest"]
+  n2["#lt;button#gt; {count}"]
+  n1 --> n2
+  n3(["onClick ⇒ count = count + 1"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Latest keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Latest src/ref-props.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {count}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > List keeps its render tree and handlers 1`] = `
+"---
+title: List src/dashboard.tsx:47
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["List"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of items"]]
+  n2 --> n3
+  n4["#lt;li#gt; {item.title}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: List src/dashboard.tsx:47
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ items
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > ListSummary keeps its render tree and handlers 1`] = `
+"---
+title: ListSummary src/option-defaults.tsx:26
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ListSummary"]
+  n2["#lt;p#gt; {#quot;some#quot;}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > ListSummary keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ListSummary src/option-defaults.tsx:26
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {"some"}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Loader keeps its render tree and handlers 1`] = `
+"---
+title: Loader src/linked.tsx:15
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Loader"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;StatusBadge#gt;"]
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Start#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ status = #quot;loading#quot; · count = count + 1"]):::event
+  n4 -.-> n5
+  n6["#lt;button#gt; #quot;Finish#quot;"]
+  n2 --> n6
+  n7(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n6 -.-> n7"
+`;
+
+exports[`fixture analysis > Loader keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Loader src/linked.tsx:15
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;button#gt; "Start" #lt;button#gt; "Finish"
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "done" | "idle" | "loading" L16
+  }"
+`;
+
+exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
+"---
+title: Loading src/counter.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Loading"]
+  n2["#lt;p#gt; #quot;Loading…#quot;"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > Loading keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Loading src/counter.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "Loading…"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > LongLoop keeps its render tree and handlers 1`] = `
+"---
+title: LongLoop src/loops.tsx:95
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["LongLoop"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ isFull = total === 100"]):::event
+  n2 -.-> n3
+  n4{"isFull"}
+  n2 --> n4
+  n5["{#quot;Full#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;Fill#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > LongLoop keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: LongLoop src/loops.tsx:95
+---
+stateDiagram-v2
+  direction LR
+  S1: isFull · #lt;button#gt; {"Full"}
+  S2: !isFull · #lt;button#gt; {"Fill"}
+  [*] --> S2
+  S1 --> S2: fill
+  S2 --> S1: fill
+  state "claims" as claims {
+    claims1: holds isFull stays within false | true L96
+  }"
+`;
+
+exports[`fixture analysis > LoopList keeps its render tree and handlers 1`] = `
+"---
+title: LoopList src/loops.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["LoopList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;ul#gt;"]
+  n2 --> n3
+  n4[["↻ each of Unknown(mutation)"]]
+  n3 --> n4
+  n5["#lt;li#gt; {item}"]
+  n4 --> n5
+  n6{"hasLong"}
+  n2 --> n6
+  n7["#lt;p#gt; #quot;Long#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;button#gt;"]
+  n2 --> n8
+  n9(["onClick ⇒ if item && item: isSelected = true"]):::event
+  n8 -.-> n9
+  n10{"isSelected"}
+  n8 --> n10
+  n11["{#quot;Selected#quot;}"]
+  n10 -->|✓| n11
+  n12["{#quot;Select#quot;}"]
+  n10 -->|✗| n12"
+`;
+
+exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: LoopList src/loops.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  state "LoopList" as regions {
+    %% hasLong
+    S1: hasLong · #lt;p#gt; "Long"
+    S2: !hasLong · ∅
+    [*] --> S1
+    [*] --> S2
+    --
+    %% isSelected
+    S3: isSelected · {"Selected"}
+    S4: !isSelected · {"Select"}
+    [*] --> S4
+    S4 --> S3: selectAll
+  }
+  state "claims" as claims {
+    claims1: holds isSelected stays within false | true L4
+  }"
+`;
+
+exports[`fixture analysis > NameForm keeps its render tree and handlers 1`] = `
+"---
+title: NameForm src/form-actions.tsx:29
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["NameForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ name = typeof data.get(#quot;name#quot;) === #quot;string#quot; ? data.get(#quot;name#quot;) : name"]):::event
+  n2 -.-> n3
+  n4{"isPending"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Saving…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt;"]
+  n4 -->|✗| n6
+  n7{"name === #quot;#quot;"}
+  n6 --> n7
+  n8["{#quot;No name yet#quot;}"]
+  n7 -->|✓| n8
+  n9["{name}"]
+  n7 -->|✗| n9
+  n10["#lt;button#gt; #quot;Save#quot;"]
+  n2 --> n10"
+`;
+
+exports[`fixture analysis > NameForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: NameForm src/form-actions.tsx:29
+---
+stateDiagram-v2
+  direction LR
+  S1: isPending · #lt;form#gt; #lt;p#gt; "Saving…" #lt;button#gt; "Save"
+  S2: !isPending ∧ name === "" · #lt;form#gt; #lt;p#gt; {"No name yet"} #lt;button#gt; "Save"
+  S3: !isPending ∧ name !== "" · #lt;form#gt; #lt;p#gt; {name} #lt;button#gt; "Save"
+  [*] --> S1
+  [*] --> S2
+  S2 --> S3: "Save"
+  S3 --> S2: "Save""
+`;
+
+exports[`fixture analysis > NavLinks keeps its render tree and handlers 1`] = `
+"---
+title: NavLinks src/compared-strings.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["NavLinks"]
+  n2["#lt;nav#gt;"]
+  n1 --> n2
+  n3{"pathname === #quot;/#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; #quot;Home#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;a#gt; #quot;Home#quot;"]
+  n3 -->|✗| n5
+  n6{"pathname === #quot;/blog#quot;"}
+  n2 --> n6
+  n7["#lt;b#gt; #quot;Blog#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;a#gt; #quot;Blog#quot;"]
+  n6 -->|✗| n8
+  n9{"pathname === #quot;/about#quot;"}
+  n2 --> n9
+  n10["#lt;b#gt; #quot;About#quot;"]
+  n9 -->|✓| n10
+  n11["#lt;a#gt; #quot;About#quot;"]
+  n9 -->|✗| n11"
+`;
+
+exports[`fixture analysis > NavLinks keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: NavLinks src/compared-strings.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: pathname === "/" · #lt;nav#gt; #lt;b#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
+  S2: pathname === "/blog" · #lt;nav#gt; #lt;a#gt; "Home" #lt;b#gt; "Blog" #lt;a#gt; "About"
+  S3: pathname === "/about" · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;b#gt; "About"
+  S4: pathname ∉ {"/", "/blog", "/about"} · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
+`;
+
+exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
+"---
+title: OpaqueCallback src/claims.tsx:60
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["OpaqueCallback"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"user?.name"}
+  n2 --> n3
+  n4["#lt;i#gt; #quot;named#quot;"]
+  n3 -->|✓| n4
+  n5["⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…"]
+  n2 --> n5
+  n6(["hook callback ⇒ checks user!"]):::event
+  n1 -.-> n6"
+`;
+
+exports[`fixture analysis > OpaqueCallback keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: OpaqueCallback src/claims.tsx:60
+---
+stateDiagram-v2
+  direction LR
+  S1: user?.name · #lt;div#gt; #lt;i#gt; "named" ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  S2: !(user?.name) ∧ user != null · #lt;div#gt; {user.name} ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  S3: !(user?.name) ∧ user == null · #lt;div#gt; ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  state "claims" as claims {
+    claims1: unproven user! L64 · user = null
+  }
+  state "bailouts" as bailouts {
+    bailouts1: unknown-call L63 call returns JSX the analysis can't see into
+  }"
+`;
+
+exports[`fixture analysis > OptionRow keeps its render tree and handlers 1`] = `
+"---
+title: OptionRow src/claims.tsx:82
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["OptionRow"]
+  n2["#lt;li#gt;"]
+  n1 --> n2
+  n3{"options[index].icon"}
+  n2 --> n3
+  n4["#lt;i#gt; {options[index].icon}"]
+  n3 -->|✓| n4
+  n5["{options[index].label}"]
+  n2 --> n5"
+`;
+
+exports[`fixture analysis > OptionRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: OptionRow src/claims.tsx:82
+---
+stateDiagram-v2
+  direction LR
+  S1: options[index].icon · #lt;li#gt; #lt;i#gt; {options[index].icon} {options[index].label}
+  S2: !options[index].icon · #lt;li#gt; {options[index].label}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
+"---
+title: Page src/plain.jsx:13
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Page"]
+  n2["#lt;Toggle#gt;"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Page src/plain.jsx:13
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;Toggle#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Panels keeps its render tree and handlers 1`] = `
+"---
+title: Panels src/chains.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Panels"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Details#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ isOpen = !isOpen"]):::event
+  n3 -.-> n4
+  n5{"isOpen"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;More details#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;button#gt; #quot;Theme#quot;"]
+  n2 --> n7
+  n8(["onClick ⇒ isDark = !isDark"]):::event
+  n7 -.-> n8
+  n9{"isDark"}
+  n2 --> n9
+  n10["#lt;span#gt; #quot;Dark#quot;"]
+  n9 -->|✓| n10
+  n11["#lt;span#gt; #quot;Light#quot;"]
+  n9 -->|✗| n11"
+`;
+
+exports[`fixture analysis > Panels keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Panels src/chains.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  state "Panels" as regions {
+    %% isOpen
+    S1: isOpen · #lt;p#gt; "More details"
+    S2: !isOpen · ∅
+    [*] --> S2
+    S1 --> S2: "Details"
+    S2 --> S1: "Details"
+    --
+    %% isDark
+    S3: isDark · #lt;span#gt; "Dark"
+    S4: !isDark · #lt;span#gt; "Light"
+    [*] --> S4
+    S3 --> S4: "Theme"
+    S4 --> S3: "Theme"
+  }
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L24
+    claims2: holds isDark stays within false | true L25
+  }"
+`;
+
+exports[`fixture analysis > Picker keeps its render tree and handlers 1`] = `
+"---
+title: Picker src/mapped-rows.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Picker"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3{"data != null"}
+  n2 --> n3
+  n4[["↻ each of data.rows"]]
+  n3 -->|✓| n4
+  n5["#lt;li#gt;"]
+  n4 --> n5
+  n6["#lt;button#gt; {row.id}"]
+  n5 --> n6
+  n7(["onClick ⇒ selected = row.id"]):::event
+  n6 -.-> n7
+  n8{"selected"}
+  n2 --> n8
+  n9["#lt;p#gt; {selected}"]
+  n8 -->|✓| n9"
+`;
+
+exports[`fixture analysis > Picker keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Picker src/mapped-rows.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  state "Picker" as regions {
+    %% data
+    S1: data != null · ↻ data.rows
+    S2: data == null · ∅
+    [*] --> S1
+    [*] --> S2
+    --
+    %% selected
+    S3: selected · #lt;p#gt; {selected}
+    S4: !selected · {selected}
+    [*] --> S4
+    S3 --> S4: setSelected(row.id)
+    S4 --> S3: setSelected(row.id)
+  }
+  state "claims" as claims {
+    claims1: holds selected stays within null | string L8
+  }"
+`;
+
+exports[`fixture analysis > PlanForm keeps its render tree and handlers 1`] = `
+"---
+title: PlanForm src/watched-form.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PlanForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3["#lt;select#gt;"]
+  n2 --> n3
+  n4(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
+  n3 -.-> n4
+  n5["#lt;option#gt; #quot;Free#quot;"]
+  n3 --> n5
+  n6["#lt;option#gt; #quot;Pro#quot;"]
+  n3 --> n6
+  n7{"watch(#quot;plan#quot;) === #quot;pro#quot;"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Billed monthly#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;No charge#quot;"]
+  n7 -->|✗| n9"
+`;
+
+exports[`fixture analysis > PlanForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PlanForm src/watched-form.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: watch("plan") === "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "Billed monthly"
+  S2: watch("plan") !== "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "No charge"
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: #lt;select#gt; {...} (async)
+  S2 --> S1: #lt;select#gt; {...} (async)"
+`;
+
+exports[`fixture analysis > PriceTag keeps its render tree and handlers 1`] = `
+"---
+title: PriceTag src/typeof-checks.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PriceTag"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"typeof price === #quot;string#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; {price}"]
+  n3 -->|✓| n4
+  n5{"typeof price === #quot;number#quot;"}
+  n2 --> n5
+  n6["#lt;i#gt; ⚠ price.toFixed(2)"]
+  n5 -->|✓| n6
+  n7{"price === null"}
+  n2 --> n7
+  n8["#lt;s#gt; #quot;Free#quot;"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > PriceTag keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PriceTag src/typeof-checks.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: typeof price === "string" · #lt;p#gt; #lt;b#gt; {price}
+  S2: typeof price === "number" · #lt;p#gt; #lt;i#gt; ⚠ price.toFixed(2)
+  S3: typeof price ∉ {"string", "number"} · #lt;p#gt; #lt;s#gt; "Free"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
+`;
+
+exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
+"---
+title: Profile src/claims.tsx:11
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Profile"]
+  n2{"status === #quot;saving#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt;"]
+  n2 -->|✓| n3
+  n4["#quot;Saving #quot;"]
+  n3 --> n4
+  n5["{user.name}"]
+  n3 --> n5
+  n6["#lt;div#gt;"]
+  n2 -->|✗| n6
+  n7["#lt;p#gt; {step}"]
+  n6 --> n7
+  n8["#lt;button#gt; #quot;Save#quot;"]
+  n6 --> n8
+  n9(["onClick ⇒ status = user.name ? #quot;saving#quot; : #quot;idle#quot; · checks user!"]):::event
+  n8 -.-> n9
+  n10["#lt;button#gt; #quot;Next#quot;"]
+  n6 --> n10
+  n11(["onClick ⇒ step = #quot;b#quot;"]):::event
+  n10 -.-> n11
+  n12["#lt;button#gt; #quot;Finish#quot;"]
+  n6 --> n12
+  n13(["onClick ⇒ status = #quot;done#quot; · checks #quot;done#quot; as #quot;idle#quot; | #quot;saving#quot;"]):::event
+  n12 -.-> n13"
+`;
+
+exports[`fixture analysis > Profile keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Profile src/claims.tsx:11
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "saving" · #lt;p#gt; "Saving " {user.name}
+  S2: status !== "saving" · #lt;div#gt; #lt;p#gt; {step} #lt;button#gt; "Save" #lt;button#gt; "Next" #lt;button#gt; "Finish"
+  [*] --> S2
+  S2 --> S1: "Save"
+  state "claims" as claims {
+    claims1: unproven invariant(mode === "view" || user !== null) L14 · mode = "edit", user = null
+    claims2: unproven user as User L15 in S1 after "Save" · user = null
+    claims3: holds step as "a" | "b" L18
+    claims4: unproven user! L19 in S2 · user = null
+    claims5: broken "done" as "idle" | "saving" L21 in S2 · "done" = "done"
+    claims6: broken status stays within "idle" | "saving" L12 in S2 · set to "done"
+    claims7: holds step stays within "a" | "b" | "c" L13
+  }"
+`;
+
+exports[`fixture analysis > ProfileCard keeps its render tree and handlers 1`] = `
+"---
+title: ProfileCard src/query.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ProfileCard"]
+  n2{"query.isPending"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Loading#quot;"]
+  n2 -->|✓| n3
+  n4{"query.isError"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt;"]
+  n4 -->|✓| n5
+  n6["#quot;Error: #quot;"]
+  n5 --> n6
+  n7["{query.error.message}"]
+  n5 --> n7
+  n8["#lt;div#gt;"]
+  n4 -->|✗| n8
+  n9["{query.data.name}"]
+  n8 --> n9
+  n10{"query.data.isAdmin"}
+  n8 --> n10
+  n11["#lt;span#gt; #quot;Admin#quot;"]
+  n10 -->|✓| n11"
+`;
+
+exports[`fixture analysis > ProfileCard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ProfileCard src/query.tsx:10
+---
+stateDiagram-v2
+  direction LR
+  S1: query.isPending · #lt;p#gt; "Loading"
+  S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error#58; " {query.error.message}
+  S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
+  S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
+`;
+
+exports[`fixture analysis > ProfileStatus keeps its render tree and handlers 1`] = `
+"---
+title: ProfileStatus src/query.tsx:22
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ProfileStatus"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"useQuery().isPending"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Loading#quot;"]
+  n3 -->|✓| n4
+  n5{"useQuery().isError"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Error#quot;"]
+  n5 -->|✓| n6
+  n7{"useQuery().data"}
+  n2 --> n7
+  n8["#lt;p#gt; {useQuery().data.name}"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > ProfileStatus keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ProfileStatus src/query.tsx:22
+---
+stateDiagram-v2
+  direction LR
+  S1: useQuery().isPending · #lt;div#gt; #lt;p#gt; "Loading"
+  S2: !useQuery().isPending ∧ useQuery().isError ∧ useQuery().data · #lt;div#gt; #lt;p#gt; "Error" #lt;p#gt; {useQuery().data.name}
+  S3: !useQuery().isPending ∧ useQuery().isError ∧ !useQuery().data · #lt;div#gt; #lt;p#gt; "Error"
+  S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
+`;
+
+exports[`fixture analysis > PublishResult keeps its render tree and handlers 1`] = `
+"---
+title: PublishResult src/and-guards.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PublishResult"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; {step}"]
+  n2 --> n3
+  n4(["onClick ⇒ if isReady: step = #quot;done#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Publish#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ success.authorName = #quot;Ada#quot;"]):::event
+  n5 -.-> n6
+  n7{"success"}
+  n2 --> n7
+  n8["#lt;p#gt; {success.authorName}"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > PublishResult keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PublishResult src/and-guards.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish" #lt;p#gt; {success.authorName}
+  S2: !success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish"
+  [*] --> S2
+  S1 --> S2: "Publish"
+  S2 --> S1: "Publish"
+  state "claims" as claims {
+    claims1: holds success! L10
+    claims2: holds step stays within "done" | "form" L9
+  }"
+`;
+
+exports[`fixture analysis > ResourceDetails keeps its render tree and handlers 1`] = `
+"---
+title: ResourceDetails src/claims.tsx:71
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ResourceDetails"]
+  n2{"user === null"}
+  n1 --> n2
+  n3["#lt;p#gt;"]
+  n2 -->|✓| n3
+  n4["#quot;Loading #quot;"]
+  n3 --> n4
+  n5{"renderExtra"}
+  n3 --> n5
+  n6["{renderExtra(user)}"]
+  n5 -->|✓| n6
+  n7["#lt;p#gt;"]
+  n2 -->|✗| n7
+  n8{"renderExtra"}
+  n7 --> n8
+  n9["{renderExtra(user)}"]
+  n8 -->|✓| n9"
+`;
+
+exports[`fixture analysis > ResourceDetails keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ResourceDetails src/claims.tsx:71
+---
+stateDiagram-v2
+  direction LR
+  S1: user === null ∧ renderExtra · #lt;p#gt; "Loading " {renderExtra(user)}
+  S2: user === null ∧ !renderExtra · #lt;p#gt; "Loading "
+  S3: user !== null ∧ renderExtra · #lt;p#gt; {renderExtra(user)}
+  S4: user !== null ∧ !renderExtra · #lt;p#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
+  state "claims" as claims {
+    claims1: broken user! L73 in S1 · user = null
+  }"
+`;
+
+exports[`fixture analysis > RetryForm keeps its render tree and handlers 1`] = `
+"---
+title: RetryForm src/catch-after-await.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["RetryForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ error = null · if Unknown(throws): error = #quot;Failed#quot; (async)"]):::event
+  n2 -.-> n3
+  n4["#lt;button#gt; #quot;Save#quot;"]
+  n2 --> n4
+  n5{"error"}
+  n2 --> n5
+  n6["#lt;p#gt; {error}"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > RetryForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: RetryForm src/catch-after-await.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: error · #lt;form#gt; #lt;button#gt; "Save" #lt;p#gt; {"Failed"}
+  S2: !error · #lt;form#gt; #lt;button#gt; "Save"
+  [*] --> S2
+  S1 --> S2: "Save" (async)
+  S2 --> S1: "Save" (async)
+  state "claims" as claims {
+    claims1: holds error stays within null | string L8
+  }"
+`;
+
+exports[`fixture analysis > RoleBadge keeps its render tree and handlers 1`] = `
+"---
+title: RoleBadge src/literals.tsx:30
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["RoleBadge"]
+  n2{"role === #quot;admin#quot;"}
+  n1 --> n2
+  n3["#lt;strong#gt; #quot;Admin#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;span#gt; #quot;Member#quot;"]
+  n2 -->|✗| n4"
+`;
+
+exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: RoleBadge src/literals.tsx:30
+---
+stateDiagram-v2
+  direction LR
+  S1: role === "admin" · #lt;strong#gt; "Admin"
+  S2: role !== "admin" · #lt;span#gt; "Member"
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > SaveForm keeps its render tree and handlers 1`] = `
+"---
+title: SaveForm src/form-actions.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SaveForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ loading = true · if Unknown(throws): loading = false (async) · if !Un…"]):::event
+  n2 -.-> n3
+  n4{"loading"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Saving…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;button#gt; #quot;Save#quot;"]
+  n4 -->|✗| n6
+  n7(["formAction ⇒ loading = true · if Unknown(throws): loading = false (async) · if …"]):::event
+  n6 -.-> n7"
+`;
+
+exports[`fixture analysis > SaveForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SaveForm src/form-actions.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: loading · #lt;form#gt; #lt;p#gt; "Saving…"
+  S2: !loading · #lt;form#gt; #lt;button#gt; "Save"
+  [*] --> S2
+  S1 --> S2: submit, "Save" (async)
+  S2 --> S1: submit, "Save" (async)
+  state "claims" as claims {
+    claims1: holds loading stays within false | true L8
+  }"
+`;
+
+exports[`fixture analysis > SearchList keeps its render tree and handlers 1`] = `
+"---
+title: SearchList src/search.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SearchList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ query = event.target.value"]):::event
+  n3 -.-> n4
+  n5{"items.length === 0"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;No items#quot;"]
+  n5 -->|✓| n6
+  n7{"items.filter(function).length #gt; 0"}
+  n2 --> n7
+  n8["#lt;ul#gt;"]
+  n7 -->|✓| n8
+  n9[["↻ each of items.filter(function)"]]
+  n8 --> n9
+  n10["#lt;li#gt; {match}"]
+  n9 --> n10"
+`;
+
+exports[`fixture analysis > SearchList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SearchList src/search.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: items.length === 0 · #lt;div#gt; #lt;input#gt; #lt;p#gt; "No items"
+  S2: items.length !== 0 ∧ items.filter(function).length #gt; 0 · #lt;div#gt; #lt;input#gt; #lt;ul#gt; ↻ items.filter(function)
+  S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  S2 --> S3: setQuery(event.target.value)
+  S3 --> S2: setQuery(event.target.value)"
+`;
+
+exports[`fixture analysis > SearchPanel keeps its render tree and handlers 1`] = `
+"---
+title: SearchPanel src/or-conditions.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SearchPanel"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onFocus ⇒ isFocused = true"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; {count}"]
+  n2 --> n5
+  n6(["onClick ⇒ count = count + 1"]):::event
+  n5 -.-> n6
+  n7{"isFocused && Unknown(call).enoughChars"}
+  n2 --> n7
+  n8["#lt;ul#gt;"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > SearchPanel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SearchPanel src/or-conditions.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  S1: isFocused && Unknown(call).enoughChars · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count} #lt;ul#gt;
+  S2: !(isFocused && Unknown(call).enoughChars) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count}
+  [*] --> S2
+  S1 --> S2: setIsFocused(true)
+  S2 --> S1: setIsFocused(true)
+  S1 --> S2: setCount(count + 1)
+  S2 --> S1: setCount(count + 1)
+  state "claims" as claims {
+    claims1: holds isFocused stays within false | true L25
+  }"
+`;
+
+exports[`fixture analysis > Seen keeps its render tree and handlers 1`] = `
+"---
+title: Seen src/ref-props.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Seen"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ shown = true · calls seen.current.add"]):::event
+  n2 -.-> n3
+  n4{"shown"}
+  n2 --> n4
+  n5["{#quot;shown#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;show#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > Seen keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Seen src/ref-props.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: shown · #lt;button#gt; {"shown"}
+  S2: !shown · #lt;button#gt; {"show"}
+  [*] --> S2
+  S2 --> S1: show
+  state "claims" as claims {
+    claims1: holds shown stays within false | true L13
+  }"
+`;
+
+exports[`fixture analysis > ShareButton keeps its render tree and handlers 1`] = `
+"---
+title: ShareButton src/share-dialog.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ShareButton"]
+  n2{"!dialog.isOpen"}
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Share#quot;"]
+  n2 -->|✓| n3
+  n4(["onClick ⇒ dialog.isOpen = true, dialog.type = #quot;share#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;p#gt; {dialog.type}"]
+  n2 -->|✗| n5"
+`;
+
+exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ShareButton src/share-dialog.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: !dialog.isOpen · #lt;button#gt; "Share"
+  S2: dialog.isOpen · #lt;p#gt; {"share"}
+  [*] --> S1
+  S1 --> S2: "Share""
+`;
+
+exports[`fixture analysis > SignIn keeps its render tree and handlers 1`] = `
+"---
+title: SignIn src/dashboard.tsx:39
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SignIn"]
+  n2["#lt;a#gt; #quot;Sign in#quot;"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > SignIn keeps its render tree and handlers 2`] = `
+"---
+title: SignIn src/submit-wrapper.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SignIn"]
+  n2{"status === #quot;sent#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Check your inbox#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;form#gt;"]
+  n2 -->|✗| n4
+  n5(["onSubmit ⇒ if Unknown(wrapped-call): form = Unknown(external) (async) · if Unkn…"]):::event
+  n4 -.-> n5
+  n6["#lt;input#gt;"]
+  n4 --> n6
+  n7(["{...} ⇒ form = Unknown(external) (async) · calls form"]):::event
+  n6 -.-> n7
+  n8["#lt;button#gt; #quot;Send#quot;"]
+  n4 --> n8"
+`;
+
+exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SignIn src/dashboard.tsx:39
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;a#gt; "Sign in"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 2`] = `
+"---
+title: SignIn src/submit-wrapper.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "sent" · #lt;p#gt; "Check your inbox"
+  S2: status !== "sent" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Send"
+  [*] --> S2
+  S2 --> S1: "Send" (async)
+  state "claims" as claims {
+    claims1: holds status stays within "editing" | "sent" L9
+  }"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its render tree and handlers 1`] = `
+"---
+title: SizeLabel src/expression-defaults.tsx:29
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SizeLabel"]
+  n2{"size === sizes.small"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Small#quot;"]
+  n2 -->|✓| n3
+  n4{"size === sizes.large"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Large#quot;"]
+  n4 -->|✓| n5"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its render tree and handlers 2`] = `
+"---
+title: SizeLabel src/literal-constants.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SizeLabel"]
+  n2{"size === #quot;sm#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Small#quot;"]
+  n2 -->|✓| n3
+  n4{"size === #quot;lg#quot;"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Large#quot;"]
+  n4 -->|✓| n5"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SizeLabel src/expression-defaults.tsx:29
+---
+stateDiagram-v2
+  direction LR
+  S1: size === sizes.small · #lt;p#gt; "Small"
+  S2: size === sizes.large · #lt;p#gt; "Large"
+  S3: size ∉ {sizes.small, sizes.large} · ∅
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 2`] = `
+"---
+title: SizeLabel src/literal-constants.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: size === "sm" · #lt;p#gt; "Small"
+  S2: size !== "sm" · #lt;p#gt; "Large"
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > SkippedSteps keeps its render tree and handlers 1`] = `
+"---
+title: SkippedSteps src/loops.tsx:63
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SkippedSteps"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ steps = 3"]):::event
+  n2 -.-> n3
+  n4{"steps === 0"}
+  n2 --> n4
+  n5["{#quot;None#quot;}"]
+  n4 -->|✓| n5
+  n6{"steps === 3"}
+  n4 -->|✗| n6
+  n7["{#quot;Three#quot;}"]
+  n6 -->|✓| n7
+  n8["{#quot;Other#quot;}"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > SkippedSteps keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SkippedSteps src/loops.tsx:63
+---
+stateDiagram-v2
+  direction LR
+  S1: steps === 0 · #lt;button#gt; {"None"}
+  S2: steps !== 0 · #lt;button#gt; {"Three"}
+  [*] --> S1
+  S1 --> S2: advance
+  state "unreachable branches" as unreachable {
+    unreachable1: never steps !== 3 L77
+  }"
+`;
+
+exports[`fixture analysis > Slot keeps its render tree and handlers 1`] = `
+"---
+title: Slot src/typeof-checks.tsx:11
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Slot"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"typeof render === #quot;function#quot;"}
+  n2 --> n3
+  n4["⚠ render()"]
+  n3 -->|✓| n4
+  n5["{render}"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > Slot keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Slot src/typeof-checks.tsx:11
+---
+stateDiagram-v2
+  direction LR
+  S1: typeof render === "function" · #lt;div#gt; ⚠ render()
+  S2: typeof render !== "function" · #lt;div#gt; {render}
+  [*] --> S1
+  [*] --> S2
+  state "bailouts" as bailouts {
+    bailouts1: unknown-call L12 call returns JSX the analysis can't see into
+  }"
+`;
+
+exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
+"---
+title: SortedList src/mutation.tsx:30
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SortedList"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of items"]]
+  n2 --> n3
+  n4["#lt;li#gt; {item}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > SortedList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SortedList src/mutation.tsx:30
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ items
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: prop-mutation L31 mutates prop items
+  }"
+`;
+
+exports[`fixture analysis > Spinner keeps its render tree and handlers 1`] = `
+"---
+title: Spinner src/dashboard.tsx:35
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Spinner"]
+  n2["#lt;div#gt;"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Spinner src/dashboard.tsx:35
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > SpreadArray keeps its render tree and handlers 1`] = `
+"---
+title: SpreadArray src/rows-from-length.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SpreadArray"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of [...Array(count)]"]]
+  n2 --> n3
+  n4["#lt;li#gt; {index}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > SpreadArray keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SpreadArray src/rows-from-length.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ [...Array(count)]
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > StatusBadge keeps its render tree and handlers 1`] = `
+"---
+title: StatusBadge src/linked.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusBadge"]
+  n2{"status === #quot;error#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Failed#quot;"]
+  n2 -->|✓| n3
+  n4{"status === #quot;loading#quot;"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Loading…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt;"]
+  n4 -->|✗| n6
+  n7{"status === #quot;done#quot;"}
+  n6 --> n7
+  n8["{#quot;Done#quot;}"]
+  n7 -->|✓| n8
+  n9["{#quot;Idle#quot;}"]
+  n7 -->|✗| n9
+  n10["#quot; #quot;"]
+  n6 --> n10
+  n11["{count}"]
+  n6 --> n11"
+`;
+
+exports[`fixture analysis > StatusBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusBadge src/linked.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "error" · #lt;p#gt; "Failed"
+  S2: status === "loading" · #lt;p#gt; "Loading…"
+  S3: status === "done" · #lt;p#gt; {"Done"} " " {count}
+  S4: status ∉ {"error", "loading", "done"} · #lt;p#gt; {"Idle"} " " {count}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
+"---
+title: StatusBanner src/literals.tsx:22
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusBanner"]
+  n2{"status === #quot;error#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Error#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt; #quot;Fine#quot;"]
+  n2 -->|✗| n4"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusBanner src/literals.tsx:22
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "Fine"
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "error" | "ok" L23
+  }
+  state "unreachable branches" as unreachable {
+    unreachable1: never status === "error" L24
+  }"
+`;
+
+exports[`fixture analysis > StatusView keeps its render tree and handlers 1`] = `
+"---
+title: StatusView src/pattern-match.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusView"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"status === #quot;idle#quot;"}
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Start#quot;"]
+  n3 -->|✓| n4
+  n5(["onClick ⇒ status = #quot;loading#quot;"]):::event
+  n4 -.-> n5
+  n6{"status === #quot;loading#quot;"}
+  n3 -->|✗| n6
+  n7["#lt;button#gt; #quot;Finish#quot;"]
+  n6 -->|✓| n7
+  n8(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n7 -.-> n8
+  n9["#lt;p#gt; #quot;Done#quot;"]
+  n6 -->|✗| n9"
+`;
+
+exports[`fixture analysis > StatusView keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusView src/pattern-match.tsx:10
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "idle" · #lt;div#gt; #lt;button#gt; "Start"
+  S2: status === "loading" · #lt;div#gt; #lt;button#gt; "Finish"
+  S3: status ∉ {"idle", "loading"} · #lt;div#gt; #lt;p#gt; "Done"
+  [*] --> S1
+  S1 --> S2: "Start"
+  S2 --> S3: "Finish"
+  state "claims" as claims {
+    claims1: holds status stays within "done" | "idle" | "loading" L11
+  }"
+`;
+
+exports[`fixture analysis > StepView keeps its render tree and handlers 1`] = `
+"---
+title: StepView src/pattern-match.tsx:24
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StepView"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"step === #quot;panel#quot;"}
+  n2 --> n3
+  n4["#lt;aside#gt; #quot;panel#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;ul#gt;"]
+  n3 -->|✗| n5
+  n6{"!!user"}
+  n2 --> n6
+  n7["#lt;b#gt; {user.name}"]
+  n6 -->|✓| n7
+  n8["#lt;i#gt; #quot;anonymous#quot;"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > StepView keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StepView src/pattern-match.tsx:24
+---
+stateDiagram-v2
+  direction LR
+  state "StepView" as regions {
+    %% step
+    S1: step === "panel" · #lt;aside#gt; "panel"
+    S2: step !== "panel" · #lt;ul#gt;
+    [*] --> S1
+    [*] --> S2
+    --
+    %% user
+    S3: !!user · #lt;b#gt; {user.name}
+    S4: !user · #lt;i#gt; "anonymous"
+    [*] --> S3
+    [*] --> S4
+  }
+  state "claims" as claims {
+    claims1: holds user! L31
+  }"
+`;
+
+exports[`fixture analysis > Subscribe keeps its render tree and handlers 1`] = `
+"---
+title: Subscribe src/submit-wrapper.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Subscribe"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["onSubmit ⇒ if Unknown(wrapped-call): useForm() = Unknown(external) (async) · if…"]):::event
+  n2 -.-> n3
+  n4["#lt;input#gt;"]
+  n2 --> n4
+  n5(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
+  n4 -.-> n5
+  n6{"useForm().formState.errors.email"}
+  n2 --> n6
+  n7["#lt;p#gt; {useForm().formState.errors.email.message}"]
+  n6 -->|✓| n7
+  n8["#lt;button#gt; #quot;Subscribe#quot;"]
+  n2 --> n8"
+`;
+
+exports[`fixture analysis > Subscribe keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Subscribe src/submit-wrapper.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  S1: useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;p#gt; {useForm().formState.errors.email.message} #lt;button#gt; "Subscribe"
+  S2: !useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Subscribe"
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: "Subscribe" (async)
+  S2 --> S1: "Subscribe" (async)
+  S1 --> S2: #lt;input#gt; {...} (async)
+  S2 --> S1: #lt;input#gt; {...} (async)
+  state "claims" as claims {
+    claims1: holds isSubscribed stays within false | true L24
+  }"
+`;
+
+exports[`fixture analysis > Switch keeps its render tree and handlers 1`] = `
+"---
+title: Switch src/callback-arguments.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Switch"]
+  n2["#lt;input#gt;"]
+  n1 --> n2
+  n3(["onChange ⇒ calls onChange"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Switch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Switch src/callback-arguments.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;input#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
+"---
+title: TagEditor src/local-mutations.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TagEditor"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;h2#gt; {title}"]
+  n2 --> n3
+  n4{"tags.length === 0"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;No tags#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt; #quot;Some tags#quot;"]
+  n4 -->|✗| n6
+  n7["#lt;button#gt; #quot;Add#quot;"]
+  n2 --> n7
+  n8(["onClick ⇒ tags = [...tags, #quot;tag#quot;]"]):::event
+  n7 -.-> n8"
+`;
+
+exports[`fixture analysis > TagEditor keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TagEditor src/local-mutations.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tags.length === 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "No tags" #lt;button#gt; "Add"
+  S2: tags.length !== 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
+  [*] --> S1
+  S1 --> S2: "Add""
+`;
+
+exports[`fixture analysis > TagList keeps its render tree and handlers 1`] = `
+"---
+title: TagList src/mutation.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TagList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Push#quot;"]
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Copy#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ tags = [...Unknown(mutated)]"]):::event
+  n4 -.-> n5
+  n6{"tags.length === 0"}
+  n2 --> n6
+  n7["#lt;p#gt; #quot;No tags#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;ul#gt;"]
+  n6 -->|✗| n8
+  n9[["↻ each of tags"]]
+  n8 --> n9
+  n10["#lt;li#gt; {tag}"]
+  n9 --> n10"
+`;
+
+exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TagList src/mutation.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
+  S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
+  [*] --> S1
+  S1 --> S2: "Copy"
+  S2 --> S1: "Copy"
+  state "warnings" as warnings {
+    warnings1: lost-update L6 sets tags to the array or object it mutated, so React skips the update
+    warnings2: state-mutation L10 mutates tags in place before setting it
+  }"
+`;
+
+exports[`fixture analysis > TitleCard keeps its render tree and handlers 1`] = `
+"---
+title: TitleCard src/literals.tsx:27
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TitleCard"]
+  n2{"title === #quot;#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Untitled#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;h1#gt; {title}"]
+  n2 -->|✗| n4"
+`;
+
+exports[`fixture analysis > TitleCard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TitleCard src/literals.tsx:27
+---
+stateDiagram-v2
+  direction LR
+  S1: title === "" · #lt;p#gt; "Untitled"
+  S2: title !== "" · #lt;h1#gt; {title}
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > TodoApp keeps its render tree and handlers 1`] = `
+"---
+title: TodoApp src/todo.tsx:11
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TodoApp"]
+  n2["#lt;section#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ draft = event.target.value"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Add#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ if draft.trim(): todos = [...todos, { id: Date.now(), text: draft, is…"]):::event
+  n5 -.-> n6
+  n7{"todos.length === 0"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Nothing to do#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;ul#gt;"]
+  n2 --> n9
+  n10[["↻ each of todos.filter(function)"]]
+  n9 --> n10
+  n11["#lt;li#gt;"]
+  n10 --> n11
+  n12(["onClick ⇒ todos = todos.map(…)"]):::event
+  n11 -.-> n12
+  n13{"todo.isDone"}
+  n11 --> n13
+  n14["#lt;s#gt; {todo.text}"]
+  n13 -->|✓| n14
+  n15["{todo.text}"]
+  n13 -->|✗| n15
+  n16["#lt;footer#gt;"]
+  n2 --> n16
+  n17["#lt;button#gt; #quot;All#quot;"]
+  n16 --> n17
+  n18(["onClick ⇒ filter = #quot;all#quot;"]):::event
+  n17 -.-> n18
+  n19["#lt;button#gt; #quot;Active#quot;"]
+  n16 --> n19
+  n20(["onClick ⇒ filter = #quot;active#quot;"]):::event
+  n19 -.-> n20
+  n21["#lt;button#gt; #quot;Done#quot;"]
+  n16 --> n21
+  n22(["onClick ⇒ filter = #quot;done#quot;"]):::event
+  n21 -.-> n22
+  n23{"isEditing"}
+  n2 --> n23
+  n24["#lt;button#gt; #quot;Save#quot;"]
+  n23 -->|✓| n24
+  n25(["onClick ⇒ isEditing = false"]):::event
+  n24 -.-> n25
+  n26["#lt;button#gt; #quot;Edit#quot;"]
+  n23 -->|✗| n26
+  n27(["onClick ⇒ isEditing = true"]):::event
+  n26 -.-> n27"
+`;
+
+exports[`fixture analysis > TodoApp keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TodoApp src/todo.tsx:11
+---
+stateDiagram-v2
+  direction LR
+  state "TodoApp" as regions {
+    %% todos.length
+    S1: todos.length === 0 · #lt;p#gt; "Nothing to do"
+    S2: todos.length !== 0 · ∅
+    [*] --> S1
+    S1 --> S2: "Add"
+    --
+    %% isEditing
+    S3: isEditing · #lt;button#gt; "Save"
+    S4: !isEditing · #lt;button#gt; "Edit"
+    [*] --> S4
+    S3 --> S4: "Save"
+    S4 --> S3: "Edit"
+  }
+  state "claims" as claims {
+    claims1: holds filter stays within "active" | "all" | "done" L14
+    claims2: holds isEditing stays within false | true L15
+  }"
+`;
+
+exports[`fixture analysis > Toggle keeps its render tree and handlers 1`] = `
+"---
+title: Toggle src/plain.jsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Toggle"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; {label}"]
+  n2 --> n3
+  n4(["onClick ⇒ isOpen = !isOpen"]):::event
+  n3 -.-> n4
+  n5{"isOpen"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Details#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > Toggle keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Toggle src/plain.jsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: isOpen · #lt;div#gt; #lt;button#gt; {"More"} #lt;p#gt; "Details"
+  S2: !isOpen · #lt;div#gt; #lt;button#gt; {"More"}
+  [*] --> S2
+  S1 --> S2: setIsOpen(!isOpen)
+  S2 --> S1: setIsOpen(!isOpen)
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L4
+  }"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its render tree and handlers 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneBadge"]
+  n2["#lt;span#gt;"]
+  n1 --> n2
+  n3{"tone === #quot;info#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; #quot;Info#quot;"]
+  n3 -->|✓| n4
+  n5{"tone === #quot;warning#quot;"}
+  n2 --> n5
+  n6["#lt;i#gt; #quot;Warning#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: tone === "info" · #lt;span#gt; #lt;b#gt; "Info"
+  S2: tone === "warning" · #lt;span#gt; #lt;i#gt; "Warning"
+  S3: tone ∉ {"info", "warning"} · #lt;span#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
+`;
+
+exports[`fixture analysis > ToneCounter keeps its render tree and handlers 1`] = `
+"---
+title: ToneCounter src/unchanged-props.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneCounter"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"tone === #quot;info#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt;"]
+  n3 -->|✓| n4
+  n5{"count #gt; 0"}
+  n4 --> n5
+  n6["{#quot;Info again#quot;}"]
+  n5 -->|✓| n6
+  n7["{#quot;Info#quot;}"]
+  n5 -->|✗| n7
+  n8["#lt;i#gt;"]
+  n3 -->|✗| n8
+  n9{"count #gt; 0"}
+  n8 --> n9
+  n10["{#quot;Other again#quot;}"]
+  n9 -->|✓| n10
+  n11["{#quot;Other#quot;}"]
+  n9 -->|✗| n11
+  n12["#lt;button#gt; {count}"]
+  n2 --> n12
+  n13(["onClick ⇒ count = count + 1"]):::event
+  n12 -.-> n13"
+`;
+
+exports[`fixture analysis > ToneCounter keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneCounter src/unchanged-props.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tone === "info" ∧ count #gt; 0 · #lt;div#gt; #lt;b#gt; {"Info again"} #lt;button#gt; {count}
+  S2: tone === "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;b#gt; {"Info"} #lt;button#gt; {count}
+  S3: tone !== "info" ∧ count #gt; 0 · #lt;div#gt; #lt;i#gt; {"Other again"} #lt;button#gt; {count}
+  S4: tone !== "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;i#gt; {"Other"} #lt;button#gt; {count}
+  [*] --> S2
+  [*] --> S4
+  S2 --> S1: setCount(count + 1)
+  S4 --> S3: setCount(count + 1)"
+`;
+
+exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `
+"---
+title: ToneLabel src/literal-constants.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneLabel"]
+  n2{"(tone === undefined ? #quot;calm#quot; : tone) === #quot;loud#quot;"}
+  n1 --> n2
+  n3["#lt;strong#gt; #quot;Loud#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;span#gt; #quot;Calm#quot;"]
+  n2 -->|✗| n4"
+`;
+
+exports[`fixture analysis > ToneLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneLabel src/literal-constants.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: (tone === undefined ? "calm" #58; tone) === "loud" · #lt;strong#gt; "Loud"
+  S2: (tone === undefined ? "calm" #58; tone) !== "loud" · #lt;span#gt; "Calm"
+  [*] --> S1
+  [*] --> S2"
+`;
+
+exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
+"---
+title: Toolbar src/groups.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Toolbar"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"role === #quot;admin#quot;"}
+  n2 --> n3
+  n4["#lt;span#gt; #quot;Admin#quot;"]
+  n3 -->|✓| n4
+  n5{"role === #quot;admin#quot; || false"}
+  n2 --> n5
+  n6["#lt;button#gt; #quot;Edit#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;span#gt; #quot;Read only#quot;"]
+  n5 -->|✗| n7
+  n8{"status.isSaving"}
+  n2 --> n8
+  n9["#lt;span#gt; #quot;Saving#quot;"]
+  n8 -->|✓| n9
+  n10{"status.error"}
+  n2 --> n10
+  n11["#lt;p#gt; {status.error}"]
+  n10 -->|✓| n11
+  n12["#lt;button#gt; #quot;Help#quot;"]
+  n2 --> n12
+  n13(["onClick ⇒ isHelpOpen = !isHelpOpen"]):::event
+  n12 -.-> n13
+  n14{"isHelpOpen"}
+  n2 --> n14
+  n15["#lt;p#gt; #quot;Press E to edit#quot;"]
+  n14 -->|✓| n15"
+`;
+
+exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Toolbar src/groups.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  state "Toolbar" as regions {
+    %% role
+    S1: role === "admin" · #lt;span#gt; "Admin" #lt;button#gt; "Edit"
+    S2: role !== "admin" · #lt;span#gt; "Read only"
+    [*] --> S1
+    [*] --> S2
+    --
+    %% status.isSaving, status.error
+    S3: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
+    S4: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
+    S5: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
+    S6: !status.isSaving ∧ !status.error · ∅
+    [*] --> S3
+    [*] --> S4
+    [*] --> S5
+    [*] --> S6
+    --
+    %% isHelpOpen
+    S7: isHelpOpen · #lt;p#gt; "Press E to edit"
+    S8: !isHelpOpen · ∅
+    [*] --> S8
+    S7 --> S8: "Help"
+    S8 --> S7: "Help"
+  }
+  state "claims" as claims {
+    claims1: holds isHelpOpen stays within false | true L14
+  }"
+`;
+
+exports[`fixture analysis > UploadForm keeps its render tree and handlers 1`] = `
+"---
+title: UploadForm src/catch-after-await.tsx:25
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["UploadForm"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Upload#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ step = #quot;uploading#quot; · if !Unknown(throws): step = #quot;processing#quot; (async)…"]):::event
+  n3 -.-> n4
+  n5["#lt;p#gt; {step}"]
+  n2 --> n5
+  n6{"error"}
+  n2 --> n6
+  n7["#lt;p#gt; {error}"]
+  n6 -->|✓| n7"
+`;
+
+exports[`fixture analysis > UploadForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: UploadForm src/catch-after-await.tsx:25
+---
+stateDiagram-v2
+  direction LR
+  S1: error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step} #lt;p#gt; {"Failed"}
+  S2: !error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step}
+  [*] --> S2
+  S2 --> S1: "Upload" (async)
+  state "claims" as claims {
+    claims1: holds step stays within "done" | "idle" | "processing" | "uploading" L26
+    claims2: holds error stays within null | string L27
+  }"
+`;
+
+exports[`fixture analysis > WarningFilter keeps its render tree and handlers 1`] = `
+"---
+title: WarningFilter src/callback-arguments.tsx:16
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["WarningFilter"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;Switch#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ isChecked = checked"]):::event
+  n3 -.-> n4
+  n5{"isChecked"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Warnings only#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;p#gt; #quot;All events#quot;"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > WarningFilter keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: WarningFilter src/callback-arguments.tsx:16
+---
+stateDiagram-v2
+  direction LR
+  S1: isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "Warnings only"
+  S2: !isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "All events"
+  [*] --> S2
+  S1 --> S2: (_event, checked) =#gt; setIsChecked(check…
+  S2 --> S1: (_event, checked) =#gt; setIsChecked(check…
+  state "claims" as claims {
+    claims1: holds isChecked stays within false | true L17
+  }"
+`;
+
+exports[`fixture analysis > Wizard keeps its render tree and handlers 1`] = `
+"---
+title: Wizard src/reducer.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Wizard"]
+  n2{"state.step === #quot;done#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Thanks!#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;form#gt;"]
+  n2 -->|✗| n4
+  n5{"state.hasError"}
+  n4 --> n5
+  n6["#lt;p#gt; #quot;Something went wrong#quot;"]
+  n5 -->|✓| n6
+  n7{"state.step === #quot;details#quot;"}
+  n4 --> n7
+  n8["#lt;input#gt;"]
+  n7 -->|✓| n8
+  n9["#lt;input#gt;"]
+  n7 -->|✗| n9
+  n10{"state.step === #quot;payment#quot;"}
+  n4 --> n10
+  n11["#lt;button#gt; #quot;Back#quot;"]
+  n10 -->|✓| n11
+  n12(["onClick ⇒ state.step = #quot;details#quot;"]):::event
+  n11 -.-> n12
+  n13["#lt;button#gt; #quot;Next#quot;"]
+  n4 --> n13
+  n14(["onClick ⇒ state.step = state.step === #quot;details#quot; ? #quot;payment#quot; : #quot;done#quot;, state.has…"]):::event
+  n13 -.-> n14"
+`;
+
+exports[`fixture analysis > Wizard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Wizard src/reducer.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: state.step === "done" · #lt;p#gt; "Thanks!"
+  S2: state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
+  S3: state.step ∉ {"done", "details"} · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
+  [*] --> S2
+  S2 --> S3: "Next"
+  S3 --> S1: "Next"
+  S3 --> S2: "Back"
+  state "unreachable branches" as unreachable {
+    unreachable1: never state.hasError L26
+  }"
+`;

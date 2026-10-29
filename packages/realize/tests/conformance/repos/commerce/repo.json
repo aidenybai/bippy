@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/vercel/commerce",
+  "revision": "3761e52e60df9c6a316e067dbfd7032e494d3634",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

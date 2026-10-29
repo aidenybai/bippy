@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/adrianhajdin/ai_saas_app",
+  "revision": "f82bfdd03c97000eea0d7fada94a307e61b58b5f",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

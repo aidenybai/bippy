@@ -16,11 +16,21 @@ jobs:
   checks:
     name: ${{ matrix.task }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        task: [build, check, test, typecheck]
+        include:
+          - task: build
+            command: pnpm run build
+          - task: check
+            command: pnpm run check
+          - task: typecheck
+            command: pnpm run typecheck
+          - task: test bippy
+            command: pnpm --filter bippy test
+          - task: test realize
+            command: pnpm --filter realize exec vp test run
 
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +39,19 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
+      - uses: actions/cache@v4
+        with:
+          path: packages/realize/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run ${{ matrix.task }}
+      - if: startsWith(matrix.task, 'test')
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: startsWith(matrix.task, 'test')
+        run: pnpm --filter realize exec playwright install --with-deps chromium
+      - run: ${{ matrix.command }}
       - if: matrix.task == 'build'
         run: |
           pnpm --filter bippy exec tsx scripts/check-built.ts

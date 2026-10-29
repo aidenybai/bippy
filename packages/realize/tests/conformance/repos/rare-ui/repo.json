@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/swamimalode07/rare-ui",
+  "revision": "efa5a651fd214fa77c5fc042dcf9152e74334226",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

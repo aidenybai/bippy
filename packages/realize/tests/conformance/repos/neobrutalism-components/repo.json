@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ekmas/neobrutalism-components",
+  "revision": "3306a802724874a85f93079702b2795370a279d4",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.6.0 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

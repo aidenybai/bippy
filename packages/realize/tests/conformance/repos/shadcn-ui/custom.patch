@@ -1,0 +1,15 @@
+diff --git a/apps/v4/tsconfig.conformance.json b/apps/v4/tsconfig.conformance.json
+new file mode 100644
+--- /dev/null
++++ b/apps/v4/tsconfig.conformance.json
+@@ -0,0 +1,10 @@
++{
++  "extends": "./tsconfig.json",
++  "include": [
++    "next-env.d.ts",
++    "registry/new-york-v4/**/*.ts",
++    "registry/new-york-v4/**/*.tsx",
++    "components/**/*.ts",
++    "components/**/*.tsx"
++  ]
++}

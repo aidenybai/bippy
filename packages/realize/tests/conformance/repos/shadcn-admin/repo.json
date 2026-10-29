@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/satnaing/shadcn-admin",
+  "revision": "e16c87f213a5ba5e45964e9b67c792105ec74d26",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.app.json",
+  "install": "npx --yes pnpm@10.32.1 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

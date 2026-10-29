@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/shadcn-ui/ui",
+  "revision": "993eb2c3151997ce08a49635c10fd8c8ef3713c7",
+  "workingDirectory": "apps/v4",
+  "tsconfig": "tsconfig.conformance.json",
+  "install": "npx --yes pnpm@10.33.4 install --frozen-lockfile --ignore-scripts --filter v4... && npx --yes pnpm@10.33.4 --filter \"v4^...\" build && cd apps/v4 && npx --yes tsx ./scripts/build-registry.mts --style all"
+}

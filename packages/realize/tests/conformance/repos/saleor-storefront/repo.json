@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/saleor/storefront",
+  "revision": "05641e1fa8b87a6ba0a403d2d323164872422fa5",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.28.1 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

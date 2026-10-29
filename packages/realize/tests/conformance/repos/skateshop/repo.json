@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/sadmann7/skateshop",
+  "revision": "e954d54379a7a6f798d3f49ffc6664449220adfc",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.5.0 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

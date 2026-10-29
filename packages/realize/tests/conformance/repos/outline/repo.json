@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/outline/outline",
+  "revision": "316e4a47d8a0d858a7cd743f9702d6aa59293ca4",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "YARN_ENABLE_SCRIPTS=0 npx --yes corepack@0.34.0 yarn@4.18.0 install --immutable"
+}

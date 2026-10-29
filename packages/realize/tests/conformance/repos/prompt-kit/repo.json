@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ibelick/prompt-kit",
+  "revision": "5a9496635cc0e1bf7679fe2a9e35d9b36b99c08a",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

@@ -1,0 +1,104 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Command } from "commander";
+import { analyzeProject } from "../../../src/core/project/analyze-project";
+import { serializeProjectAnalysis } from "../../../src/core/project/serialize";
+import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
+import { sum, summarizeVerdicts } from "../verifier/verdict-report";
+import type { VerificationSummary } from "../verifier/verdicts";
+import type { CollectSummary } from "./collect-summary";
+import { parsePositiveInteger } from "../../../src/cli/parse-positive-integer";
+import { verifyProject } from "../verifier/verify";
+import type { LineLogger } from "./repos";
+
+const summarize = (
+  components: AnalyzedComponent[],
+  fileCount: number,
+  durationMs: number,
+  verification: VerificationSummary | null,
+): CollectSummary => {
+  const bailoutCountsByReason: Partial<Record<BailoutReason, number>> = {};
+  for (const { analysis } of components)
+    for (const { reason } of analysis.bailouts)
+      bailoutCountsByReason[reason] = (bailoutCountsByReason[reason] ?? 0) + 1;
+  const bindings = components.flatMap(({ analysis }) => analysis.bindings);
+  return {
+    fileCount,
+    componentCount: components.length,
+    stateCount: sum(components, ({ report }) => report.states.length),
+    handlerCount: sum(components, ({ analysis }) => analysis.handlers.length),
+    unreachableBranchCount: sum(components, ({ report }) => report.unreachableBranches.length),
+    truncatedComponentCount: components.filter(({ report }) => report.isTruncated).length,
+    bindingCount: bindings.length,
+    untypedBindingCount: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
+    unresolvedTypeBindingCount: bindings.filter(
+      (binding) => binding.domain.kind === "Unknown" && binding.domain.reason === "unresolved",
+    ).length,
+    bailoutCountsByReason,
+    durationMs,
+    verification,
+  };
+};
+
+export const collect = async (
+  tsconfigPath: string,
+  outputDirectory: string,
+  shouldVerify: boolean,
+  setupDirectory: string | null,
+  onProgress?: LineLogger,
+  componentBudgetMs?: number,
+): Promise<CollectSummary> => {
+  const startTime = performance.now();
+  const configPath = resolve(tsconfigPath);
+  const projectAnalysis = analyzeProject(configPath);
+  const { components, fileCount } = projectAnalysis;
+  const analysisDuration = Math.round(performance.now() - startTime);
+  mkdirSync(outputDirectory, { recursive: true });
+  writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
+  let verification: VerificationSummary | null = null;
+  if (shouldVerify) {
+    const report = await verifyProject(configPath, {
+      analyzed: components,
+      componentBudgetMs,
+      setupDirectory,
+      onStart: (componentName) =>
+        onProgress?.(`${Math.round(performance.now() - startTime)} ms starting ${componentName}`),
+      onComponent: (verdict) =>
+        onProgress?.(
+          `${Math.round(performance.now() - startTime)} ms ${verdict.status} ${verdict.name}`,
+        ),
+    });
+    writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
+    verification = summarizeVerdicts(report.verdicts, report.durationMs);
+  }
+  const summary = summarize(components, fileCount, analysisDuration, verification);
+  writeFileSync(join(outputDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
+  return summary;
+};
+
+if (process.argv[1] === fileURLToPath(import.meta.url))
+  await new Command()
+    .name("collect")
+    .argument("<tsconfig>")
+    .argument("<outputDirectory>")
+    .option("--verify", "mount components in a browser to check the analysis", false)
+    .option("--setup <directory>", "harness setup directory")
+    .option("--component-budget <ms>", "time budget per component", parsePositiveInteger)
+    .action(
+      async (
+        tsconfigPath: string,
+        outputDirectory: string,
+        options: { verify: boolean; setup?: string; componentBudget?: number },
+      ) => {
+        await collect(
+          tsconfigPath,
+          outputDirectory,
+          options.verify,
+          options.setup ?? null,
+          (line) => console.error(line),
+          options.componentBudget,
+        );
+      },
+    )
+    .parseAsync();

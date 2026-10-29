@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ln-dev7/circle",
+  "revision": "b0ba7ddcc3d0f4c16092236ca6a01b56c0614810",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

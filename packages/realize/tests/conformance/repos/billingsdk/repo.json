@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/dodopayments/billingsdk",
+  "revision": "1c62dc1f3dea47316b0257253430c1f53d19a53e",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}
