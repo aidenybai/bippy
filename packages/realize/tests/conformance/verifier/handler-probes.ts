@@ -1,5 +1,5 @@
 import type { ComponentAnalysis } from "../../../src/core/types";
-import { forEachJsxElement } from "../../../src/core/utils/for-each-jsx-element";
+import { forEachJsxElement } from "../../../src/core/states/for-each-jsx-element";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Probe } from "./types";
 

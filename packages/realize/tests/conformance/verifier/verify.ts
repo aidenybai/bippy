@@ -2,9 +2,12 @@ import { availableParallelism } from "node:os";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
-import { analyzeProject } from "../../../src/core/analyze-project";
+import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
-import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
+import {
+  createDeclarationKey,
+  parseDeclarationKey,
+} from "../../../src/core/project/declaration-key";
 import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectHandlerProbes } from "./handler-probes";

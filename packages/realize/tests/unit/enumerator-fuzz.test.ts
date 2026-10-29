@@ -5,8 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import type { FunctionComponent } from "react";
 import { transformWithEsbuild } from "vite";
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBranchKey } from "../../src/core/control-flow";
+import { analyzeProject } from "../../src/core/project/analyze-project";
+import { getBranchKey } from "../../src/core/interpret/control-flow";
 import type { AnalyzedComponent } from "../../src/core/types";
 
 type FuzzValue = string | boolean | number | null;

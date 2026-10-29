@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
+import { analyzeProject } from "../../src/core/project/analyze-project";
 import { getComponent } from "./helpers";
 
 const BRANCH_COUNT = 1000;

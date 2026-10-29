@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
-import { createBindingValue, createUnknown } from "../../src/core/symbolic-values";
+import { createBindingValue, createUnknown } from "../../src/core/values/symbolic-values";
 import type { SymbolicValue } from "../../src/core/types";
-import { forEachSymbolicValue } from "../../src/core/utils/for-each-symbolic-value";
-import { mapSymbolicValue } from "../../src/core/utils/map-symbolic-value";
+import { forEachSymbolicValue } from "../../src/core/values/for-each-symbolic-value";
+import { mapSymbolicValue } from "../../src/core/values/map-symbolic-value";
 import { createTestBinding } from "./helpers";
 
 const count = createBindingValue(createTestBinding({ id: 0, name: "count" }));

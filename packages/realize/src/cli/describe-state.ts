@@ -1,7 +1,11 @@
 import type { State, SymbolicValue } from "../core/types";
-import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL, formatSymbolicValue } from "../core/format";
-import { getTestExpression } from "../core/utils/get-test-expression";
-import { isRenderingNothing } from "../core/utils/is-rendering-nothing";
+import {
+  CONDITION_SEPARATOR,
+  UNCONDITIONAL_LABEL,
+  formatSymbolicValue,
+} from "../core/values/format";
+import { getTestExpression } from "../core/values/get-test-expression";
+import { isRenderingNothing } from "../core/states/is-rendering-nothing";
 import { simplifyConditions } from "./simplify-conditions";
 import type { SourceReader } from "./source-text";
 import { truncate } from "./text";

@@ -5,7 +5,7 @@ import type {
   ComponentAnalysis,
   Region,
 } from "../../../src/core/types";
-import { isStateBinding } from "../../../src/core/utils/is-state-binding";
+import { isStateBinding } from "../../../src/core/values/is-state-binding";
 import type { Observation } from "./driver";
 import { matchesExpected, normalizeShapes } from "./match";
 import { TRUNCATED_VALUE } from "./types";

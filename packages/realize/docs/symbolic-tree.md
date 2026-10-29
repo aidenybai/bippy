@@ -35,57 +35,57 @@ Labels use a few symbols:
 
 ## What it does
 
-The pipeline runs the React Compiler's own front end, then our passes. Read `src/core` in this order:
+The pipeline runs the React Compiler's own front end, then our passes. Read `src/core` in this order. Each stage has its own folder, with its helpers next to it:
 
-| File                              | Stage                                                                            |
-| --------------------------------- | -------------------------------------------------------------------------------- |
-| `analyze-project.ts`              | Opens the TS project, compiles each file, runs each component, then lists states |
-| `compile.ts`                      | Runs the React Compiler on a file and keeps each function's HIR                  |
-| `analyze-component.ts`            | Runs our passes on one component's HIR                                           |
-| `type-provider.ts`                | Types the compiler's HIR from the TS checker                                     |
-| `interpret.ts`                    | Runs the HIR symbolically: the render tree, with every branch kept               |
-| `control-flow-walker.ts`          | Walks the HIR blocks: branches, switches, loops, phis and catch handlers         |
-| `destructurer.ts`                 | Binds what a destructuring takes from props, a hook result or a literal          |
-| `mutation-tracker.ts`             | Which mutations in an instruction touch props, state or a literal being built    |
-| `utils/get-mutated-parameters.ts` | Which parameters a function writes into                                          |
-| `callback-passer.ts`              | Callbacks handed to effects, promises and calls the analysis can't see into      |
-| `array-iteration.ts`              | Rows mapped from an array and callbacks run per item                             |
-| `claim-recorder.ts`               | Records a cast, a non-null assertion or an invariant call where it is made       |
-| `pattern-matcher.ts`              | Turns a ts-pattern match chain into branches on its subject                      |
-| `walk-state.ts`                   | The guards and async flag a walk carries                                         |
-| `binding-table.ts`                | The interpreter's bindings, one per declaration, and each place's domain         |
-| `function-registry.ts`            | Functions values refer to, the file each came from, and closure captures         |
-| `external-sources.ts`             | Hooks, contexts and stores: values that change from outside                      |
-| `effect-collector.ts`             | The updates and mutations one handler or effect makes                            |
-| `build-jsx.ts`                    | The element each JSX tag renders                                                 |
-| `diagnostics.ts`                  | Bailouts and warnings, each reported once                                        |
-| `symbolic-values.ts`              | Builds and folds the values the interpreter produces                             |
-| `control-flow.ts`                 | Branch outcomes and the conditionals they merge into                             |
-| `source-file-resolver.ts`         | Reads types, names and source text at a compiler location                        |
-| `domains.ts`                      | Turns a TS type into the values it can take, and tests membership in them        |
-| `type-samples.ts`                 | Turns a TS type into sample values to mount props with                           |
-| `infer-props.ts`                  | Samples untyped props from what they read and what callers pass                  |
-| `link-components.ts`              | Records what each parent passes to each child it renders                         |
-| `value-domains.ts`                | Turns a parent-side value into the finite set of values it can take              |
-| `instance-states.ts`              | Lists a child's states again with its props narrowed to one parent's values      |
-| `claims.ts`                       | Checks render, handler and state-domain claims in every state where they run     |
-| `field-cases.ts`                  | Reads the literal values an update or initial value can take                     |
-| `reachable-ranges.ts`             | The numeric range a state can reach through its updates                          |
-| `module-values.ts`                | Module constants, and the module variables a file writes                         |
-| `context-setter-fields.ts`        | Which context fields set which state, across the providers that supply them      |
-| `store-actions.ts`                | What each zustand store action sets                                              |
-| `string-samples.ts`               | Strings a component may parse, picked by name                                    |
-| `collect-handlers.ts`             | What each event handler and effect updates                                       |
-| `regions.ts`                      | Groups branches that test the same data into regions                             |
-| `enumerate-states.ts`             | Lists each region's states and transitions                                       |
-| `reachable-constraints.ts`        | The values every binding can reach, from its initial value and every update      |
-| `state-enumerator.ts`             | Walks the render tree under a region's constraints and lists its alternatives    |
-| `transitions.ts`                  | Which states a handler's updates lead to, with its update sequences cached       |
-| `unreachable-branches.ts`         | Reports branch sides no state reaches                                            |
-| `constraints.ts`                  | What a path assumes: possible values, branch outcomes, numeric bounds            |
-| `format.ts`, `serialize.ts`       | Printing and JSON output                                                         |
-| `types.ts`                        | The data passed between stages                                                   |
-| `utils/`                          | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS    |
+| File                                       | Stage                                                                            |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `project/analyze-project.ts`               | Opens the TS project, compiles each file, runs each component, then lists states |
+| `compile/compile.ts`                       | Runs the React Compiler on a file and keeps each function's HIR                  |
+| `project/analyze-component.ts`             | Runs our passes on one component's HIR                                           |
+| `type-checker/type-provider.ts`            | Types the compiler's HIR from the TS checker                                     |
+| `interpret/interpret.ts`                   | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `interpret/control-flow-walker.ts`         | Walks the HIR blocks: branches, switches, loops, phis and catch handlers         |
+| `interpret/destructurer.ts`                | Binds what a destructuring takes from props, a hook result or a literal          |
+| `interpret/mutation-tracker.ts`            | Which mutations in an instruction touch props, state or a literal being built    |
+| `project/get-mutated-parameters.ts`        | Which parameters a function writes into                                          |
+| `interpret/callback-passer.ts`             | Callbacks handed to effects, promises and calls the analysis can't see into      |
+| `interpret/array-iteration.ts`             | Rows mapped from an array and callbacks run per item                             |
+| `interpret/claim-recorder.ts`              | Records a cast, a non-null assertion or an invariant call where it is made       |
+| `interpret/pattern-matcher.ts`             | Turns a ts-pattern match chain into branches on its subject                      |
+| `interpret/walk-state.ts`                  | The guards and async flag a walk carries                                         |
+| `interpret/binding-table.ts`               | The interpreter's bindings, one per declaration, and each place's domain         |
+| `compile/function-registry.ts`             | Functions values refer to, the file each came from, and closure captures         |
+| `interpret/external-sources.ts`            | Hooks, contexts and stores: values that change from outside                      |
+| `interpret/effect-collector.ts`            | The updates and mutations one handler or effect makes                            |
+| `interpret/build-jsx.ts`                   | The element each JSX tag renders                                                 |
+| `interpret/diagnostics.ts`                 | Bailouts and warnings, each reported once                                        |
+| `values/symbolic-values.ts`                | Builds and folds the values the interpreter produces                             |
+| `interpret/control-flow.ts`                | Branch outcomes and the conditionals they merge into                             |
+| `type-checker/source-file-resolver.ts`     | Reads types, names and source text at a compiler location                        |
+| `type-checker/domains.ts`                  | Turns a TS type into the values it can take, and tests membership in them        |
+| `type-checker/type-samples.ts`             | Turns a TS type into sample values to mount props with                           |
+| `linking/infer-props.ts`                   | Samples untyped props from what they read and what callers pass                  |
+| `linking/link-components.ts`               | Records what each parent passes to each child it renders                         |
+| `type-checker/value-domains.ts`            | Turns a parent-side value into the finite set of values it can take              |
+| `linking/instance-states.ts`               | Lists a child's states again with its props narrowed to one parent's values      |
+| `states/claims.ts`                         | Checks render, handler and state-domain claims in every state where they run     |
+| `solver/field-cases.ts`                    | Reads the literal values an update or initial value can take                     |
+| `solver/reachable-ranges.ts`               | The numeric range a state can reach through its updates                          |
+| `compile/module-values.ts`                 | Module constants, and the module variables a file writes                         |
+| `interpret/context-setter-fields.ts`       | Which context fields set which state, across the providers that supply them      |
+| `interpret/store-actions.ts`               | What each zustand store action sets                                              |
+| `type-checker/string-samples.ts`           | Strings a component may parse, picked by name                                    |
+| `handlers/collect-handlers.ts`             | What each event handler and effect updates                                       |
+| `states/regions.ts`                        | Groups branches that test the same data into regions                             |
+| `states/enumerate-states.ts`               | Lists each region's states and transitions                                       |
+| `solver/reachable-constraints.ts`          | The values every binding can reach, from its initial value and every update      |
+| `states/state-enumerator.ts`               | Walks the render tree under a region's constraints and lists its alternatives    |
+| `states/transitions.ts`                    | Which states a handler's updates lead to, with its update sequences cached       |
+| `states/unreachable-branches.ts`           | Reports branch sides no state reaches                                            |
+| `solver/constraints.ts`                    | What a path assumes: possible values, branch outcomes, numeric bounds            |
+| `values/format.ts`, `project/serialize.ts` | Printing and JSON output                                                         |
+| `types.ts`                                 | The data passed between stages                                                   |
+| `shared/`                                  | Helpers with importers in many stages: memoizing, grouping, location keys        |
 
 The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 

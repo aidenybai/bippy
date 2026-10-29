@@ -2,8 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { ConfigError } from "../../src/core/config-error";
+import { analyzeProject } from "../../src/core/project/analyze-project";
+import { ConfigError } from "../../src/core/project/config-error";
 
 describe("config errors", () => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-config-"));

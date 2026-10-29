@@ -1,15 +1,15 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { CompilerTypeProvider } from "../../src/core/type-provider";
-import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
-import { withProject } from "../../src/core/utils/with-project";
-import { compileFile } from "../../src/core/compile";
-import { interpretProject, reportProject } from "../../src/core/analyze-project";
-import type { InterpretedProject } from "../../src/core/analyze-project";
+import { CompilerTypeProvider } from "../../src/core/type-checker/type-provider";
+import { isProjectSourceFile } from "../../src/core/project/is-project-source-file";
+import { withProject } from "../../src/core/project/with-project";
+import { compileFile } from "../../src/core/compile/compile";
+import { interpretProject, reportProject } from "../../src/core/project/analyze-project";
+import type { InterpretedProject } from "../../src/core/project/analyze-project";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
-import { isFunctionCreation } from "../../src/core/utils/is-function-creation";
+import { isFunctionCreation } from "../../src/core/interpret/is-function-creation";
 import type {
   AbstractValue,
   AnalyzedComponent,
@@ -19,8 +19,8 @@ import type {
   ProjectAnalysis,
   StateReport,
 } from "../../src/core/types";
-import { createEmptyAnalysis } from "../../src/core/analyze-component";
-import { PlaceMap } from "../../src/core/utils/place-map";
+import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
+import { PlaceMap } from "../../src/core/values/place-map";
 import { collectHandlerProbes } from "../conformance/verifier/handler-probes";
 import type { Capture } from "../conformance/verifier/types";
 

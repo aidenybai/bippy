@@ -1,6 +1,9 @@
 import { sep } from "node:path";
 import type { ComponentAnalysis } from "../../../src/core/types";
-import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
+import {
+  createDeclarationKey,
+  parseDeclarationKey,
+} from "../../../src/core/project/declaration-key";
 import { getDefaultProps } from "./props";
 import { extractParentNameFromError } from "./reasons";
 import type { ExportedName, ProjectIndex, Wrapper, WrapperSource } from "./types";

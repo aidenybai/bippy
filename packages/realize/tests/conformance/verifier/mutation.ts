@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { Binding, ComponentAnalysis, Warning } from "../../../src/core/types";
-import { formatLine } from "../../../src/core/format";
+import { formatLine } from "../../../src/core/values/format";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";

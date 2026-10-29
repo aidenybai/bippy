@@ -8,9 +8,9 @@ import type {
   SourceLocation,
   SymbolicValue,
 } from "../core/types";
-import { forEachJsxElement } from "../core/utils/for-each-jsx-element";
-import { formatSymbolicValue } from "../core/format";
-import { isEffectHandler } from "../core/handler-predicates";
+import { forEachJsxElement } from "../core/states/for-each-jsx-element";
+import { formatSymbolicValue } from "../core/values/format";
+import { isEffectHandler } from "../core/handlers/handler-predicates";
 import type { SourceReader } from "./source-text";
 import { truncate } from "./text";
 

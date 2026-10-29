@@ -2,7 +2,7 @@ import { dirname } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { DEFAULT_MAX_STATES, formatMermaid } from "../../src/cli/mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tree";
-import { analyzeProject } from "../../src/core/analyze-project";
+import { analyzeProject } from "../../src/core/project/analyze-project";
 import { getFixtureConfig } from "./helpers";
 
 const FIXTURE_CONFIG = getFixtureConfig("symbolic-tree");

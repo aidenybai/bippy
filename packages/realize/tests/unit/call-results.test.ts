@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import type { ProjectAnalysis } from "../../src/core/types";
-import { formatSymbolicValue } from "../../src/core/format";
+import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("typed call results", () => {

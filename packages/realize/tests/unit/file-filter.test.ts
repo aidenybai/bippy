@@ -1,7 +1,7 @@
 import { dirname } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { createTracer } from "../../src/core/tracer";
+import { analyzeProject } from "../../src/core/project/analyze-project";
+import { createTracer } from "../../src/core/project/tracer";
 import { getFixtureConfig } from "./helpers";
 
 describe("a file filter", () => {

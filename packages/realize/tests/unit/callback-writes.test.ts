@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import { formatSymbolicValue } from "../../src/core/format";
-import { forEachRenderNode } from "../../src/core/utils/for-each-render-node";
-import { getTestExpression } from "../../src/core/utils/get-test-expression";
+import { formatSymbolicValue } from "../../src/core/values/format";
+import { forEachRenderNode } from "../../src/core/states/for-each-render-node";
+import { getTestExpression } from "../../src/core/values/get-test-expression";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("callback writes", () => {

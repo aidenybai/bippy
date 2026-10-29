@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { formatSymbolicValue } from "../../src/core/format";
-import { forEachSymbolicValue } from "../../src/core/utils/for-each-symbolic-value";
+import { formatSymbolicValue } from "../../src/core/values/format";
+import { forEachSymbolicValue } from "../../src/core/values/for-each-symbolic-value";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("local mutations", () => {

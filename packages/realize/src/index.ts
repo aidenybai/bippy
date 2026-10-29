@@ -1,7 +1,7 @@
-export { analyzeProject } from "./core/analyze-project";
-export { serializeProjectAnalysis } from "./core/serialize";
-export { enumerateStates } from "./core/enumerate-states";
-export { formatSymbolicValue } from "./core/format";
+export { analyzeProject } from "./core/project/analyze-project";
+export { serializeProjectAnalysis } from "./core/project/serialize";
+export { enumerateStates } from "./core/states/enumerate-states";
+export { formatSymbolicValue } from "./core/values/format";
 export type {
   AbstractValue,
   AnalyzedComponent,

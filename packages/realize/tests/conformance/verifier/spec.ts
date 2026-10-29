@@ -2,7 +2,7 @@ import { join } from "node:path";
 import playwrightTest, { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
-import { analyzeProject } from "../../../src/core/analyze-project";
+import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent, ComponentAnalysis, Sample, State } from "../../../src/core/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
@@ -13,7 +13,7 @@ import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
-import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/format";
+import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/values/format";
 
 interface VerifyProject extends ProjectHarness {
   components: AnalyzedComponent[];

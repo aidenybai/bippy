@@ -1,4 +1,4 @@
-import { formatStateLabel } from "../../../src/core/format";
+import { formatStateLabel } from "../../../src/core/values/format";
 import type { Sample } from "../../../src/core/types";
 import type { MountFailure } from "./reasons";
 import { isMountFailedVerdict } from "./verdicts";
