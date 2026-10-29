@@ -279,7 +279,7 @@ const getProjection = (bindingValue: BindingValue): Projection | null => {
     return { owner, project: (ownerValue) => projectString(ownerValue, (text) => text.length) };
   if (field === SIZE_FIELD) return { owner, project: projectSize };
   const { derived } = bindingValue.binding;
-  if (bindingValue.path.length > 0 || !derived || "operands" in derived) return null;
+  if (bindingValue.path.length > 0 || !derived || derived.kind === "Call") return null;
   const { method, argumentValues } = derived;
   return {
     owner: derived.receiver,
@@ -319,7 +319,7 @@ export const getPossibleValues = (
   const projection = getProjection(value);
   const projectedValues = projection && getProjectedValues(projection, constraints);
   const derivedValues =
-    isDerived && "operands" in derived ? getCallValues(derived, constraints) : projectedValues;
+    isDerived && derived.kind === "Call" ? getCallValues(derived, constraints) : projectedValues;
   const placeValues = constraints.possibleValues.get(getValuePlace(value));
   if (isDerived && derivedValues) return derivedValues;
   const lengthCases = projectedValues?.length ? projectedValues : null;
@@ -643,7 +643,7 @@ const MAX_CASE_COMBINATIONS = 16;
 const getPureCall = (value: SymbolicValue): DerivedCall | null => {
   const derived =
     value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
-  return derived && "callee" in derived && isPureFunction(derived.callee) ? derived : null;
+  return derived && derived.kind === "Call" && isPureFunction(derived.callee) ? derived : null;
 };
 
 const isPlainBinding = (value: SymbolicValue): boolean =>

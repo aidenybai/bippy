@@ -80,7 +80,7 @@ const isIntegerBinding = (value: BindingValue, binding: Binding): boolean => {
   if (value.path.at(-1) === "length") return true;
   if (value.binding.id === binding.id && value.path.length === 0) return true;
   const { derived, range } = value.binding;
-  if (derived && "callee" in derived)
+  if (derived && derived.kind === "Call")
     return (
       INTEGER_CALLEES.has(derived.callee) ||
       (INTEGER_PRESERVING_CALLEES.has(derived.callee) &&
@@ -202,8 +202,8 @@ const getValueInterval = (
   }
   const derived =
     value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
-  const extreme = derived && "callee" in derived ? EXTREMES.get(derived.callee) : undefined;
-  if (derived && "callee" in derived && extreme && derived.operands.length > 0) {
+  const extreme = derived && derived.kind === "Call" ? EXTREMES.get(derived.callee) : undefined;
+  if (derived && derived.kind === "Call" && extreme && derived.operands.length > 0) {
     const operands = derived.operands.map((operand) =>
       getValueInterval(operand, binding, hypothesis, guards, isInteger, handlers),
     );

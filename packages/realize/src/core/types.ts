@@ -91,12 +91,14 @@ export interface NumberRange {
 }
 
 export interface DerivedString {
+  kind: "String";
   method: string;
   receiver: BindingValue;
   argumentValues: PrimitiveValue[];
 }
 
 export interface DerivedCall {
+  kind: "Call";
   callee: string;
   operands: SymbolicValue[];
 }

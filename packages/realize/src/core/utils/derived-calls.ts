@@ -7,7 +7,7 @@ export const getMathCall = (
   argumentValues: SymbolicValue[],
 ): DerivedCall | null =>
   isPureFunction(`Math.${methodName}`)
-    ? { callee: `Math.${methodName}`, operands: argumentValues }
+    ? { kind: "Call", callee: `Math.${methodName}`, operands: argumentValues }
     : null;
 
 export const getLiteralArrayCall = (
@@ -24,7 +24,7 @@ export const getLiteralArrayCall = (
     searched &&
     argumentValues.length === 1 &&
     isPureFunction(`Array.${methodName}`)
-    ? { callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
+    ? { kind: "Call", callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
     : null;
 };
 
