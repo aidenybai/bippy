@@ -352,6 +352,7 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
     case "Binding":
       return value.binding.kind === "prop" ||
         value.binding.kind === "ref" ||
+        value.binding.hookKind === "useMemo" ||
         isStateBinding(value.binding) ||
         isExternalSource(value.binding)
         ? `binding:${value.binding.id}:${value.path.join(".")}`

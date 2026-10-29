@@ -159,6 +159,8 @@ export class Destructurer {
       initial: initialArgument ?? null,
       ...(slot.domain && { domain: slot.domain }),
     });
+    if (initialArgument)
+      this.#interpreter.addStoredFunctions(createBindingValue(binding), initialArgument);
     const reducer = reducerArgument
       ? this.#interpreter.resolveModuleFunction(reducerArgument)
       : createUnknown("reducer", loc);
