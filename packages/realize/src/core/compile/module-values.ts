@@ -312,6 +312,37 @@ const isMemberWrite = (path: NodePath): boolean => {
   );
 };
 
+const isMethodReceiver = (path: NodePath): boolean => {
+  const member = path.parentPath;
+  const call = member?.parentPath;
+  return (
+    member !== null &&
+    (member.isMemberExpression({ object: path.node }) ||
+      member.isOptionalMemberExpression({ object: path.node })) &&
+    (call?.isCallExpression({ callee: member.node }) === true ||
+      call?.isOptionalCallExpression({ callee: member.node }) === true)
+  );
+};
+
+const isFunctionLike = (node: types.Node | null | undefined): boolean =>
+  types.isFunctionExpression(node) ||
+  types.isArrowFunctionExpression(node) ||
+  types.isClassExpression(node);
+
+const isLocalConstruction = (init: NodePath<types.Expression | null | undefined>): boolean => {
+  if (!init.isCallExpression() && !init.isNewExpression()) return false;
+  const callee = init.node.callee;
+  const declaration = types.isIdentifier(callee)
+    ? init.scope.getBinding(callee.name)?.path.node
+    : null;
+  return (
+    isFunctionLike(callee) ||
+    types.isFunctionDeclaration(declaration) ||
+    types.isClassDeclaration(declaration) ||
+    (types.isVariableDeclarator(declaration) && isFunctionLike(declaration.init))
+  );
+};
+
 const getOwnThisPaths = (init: NodePath<types.Expression | null | undefined>): NodePath[] => {
   const callee = init.isNewExpression() ? init.get("callee") : null;
   const classPath = callee?.isIdentifier() ? init.scope.getBinding(callee.node.name)?.path : null;
@@ -418,6 +449,8 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
         (binding.constantViolations.length > 0 ||
           binding.referencePaths.some(isMemberWrite) ||
           getOwnThisPaths(path.get("init")).some(isMemberWrite) ||
+          (isLocalConstruction(path.get("init")) &&
+            binding.referencePaths.some(isMethodReceiver)) ||
           (value !== null && isReadThroughState(binding.referencePaths, value)));
       const isReadOnly =
         declaration.node.kind === "const" &&
