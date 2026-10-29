@@ -1677,6 +1677,10 @@ export class Interpreter {
     return origin.kind === "Call" ? this.#getSourceFunctions([origin.callee]) : [];
   }
 
+  getSourceFunctions(value: SymbolicValue): SymbolicValue[] {
+    return this.#getSourceFunctions([value]);
+  }
+
   #getSourceFunctions(
     values: SymbolicValue[],
     seen = new Set<SymbolicValue | number>(),
@@ -1692,6 +1696,14 @@ export class Interpreter {
           return this.#getSourceFunctions([...value.elements, ...value.spreads], seen);
         case "ArrayMap":
           return this.#getSourceFunctions([value.item, value.array], seen);
+        case "Collection":
+          return this.#getSourceFunctions(
+            [
+              ...(value.source ? [value.source] : []),
+              ...value.writes.flatMap((write) => write.argumentValues),
+            ],
+            seen,
+          );
         case "ObjectExpression":
           return this.#getSourceFunctions(
             [...value.properties.map((property) => property.value), ...value.spreads],
@@ -2459,6 +2471,14 @@ export class Interpreter {
       walkState,
     );
     if (found) return found;
+    const reduced = this.iteration.evaluateLiteralReduce(
+      methodName,
+      receiver,
+      argumentValues,
+      methodCall.loc,
+      walkState,
+    );
+    if (reduced) return reduced;
     const setItems =
       this.#handlerEffects !== null && methodName === "forEach" && callback?.kind === "Function"
         ? getSetItems(receiver, methodCall.loc)
@@ -3192,7 +3212,15 @@ export class Interpreter {
         continue;
       }
       const key = this.#getPropertyKey(property.key);
-      if (key === null) return createUnknown("computed-key", objectLiteral.loc);
+      if (key === null)
+        return createUnknown("computed-key", objectLiteral.loc, {
+          kind: "Value",
+          value: {
+            kind: "ArrayExpression",
+            elements: objectLiteral.properties.map((entry) => this.read(entry.place)),
+            spreads: [],
+          },
+        });
       define([{ key, value: this.read(property.place) }]);
     }
     return { kind: "ObjectExpression", properties, spreads };

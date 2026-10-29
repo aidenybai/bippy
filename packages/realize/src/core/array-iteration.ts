@@ -320,6 +320,38 @@ export class ArrayIteration {
     return chooseFirstMatch(UNDEFINED_VALUE);
   }
 
+  evaluateLiteralReduce(
+    methodName: string,
+    receiver: SymbolicValue,
+    [callback, ...initial]: SymbolicValue[],
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    if (
+      this.#interpreter.handlerEffects !== null ||
+      methodName !== "reduce" ||
+      callback?.kind !== "Function" ||
+      receiver.kind !== "ArrayExpression" ||
+      receiver.spreads.length > 0 ||
+      receiver.elements.length > MAX_LITERAL_ROWS
+    )
+      return null;
+    const [start, ...items] =
+      initial.length > 0 ? [initial[0], ...receiver.elements] : receiver.elements;
+    if (!start) return null;
+    const offset = receiver.elements.length - items.length;
+    return items.reduce<SymbolicValue>(
+      (accumulator, item, index) =>
+        this.#interpreter.callFunction(
+          callback,
+          [accumulator, item, { kind: "Primitive", value: index + offset }, receiver],
+          loc,
+          walkState,
+        ),
+      start,
+    );
+  }
+
   evaluateArrayFrom(
     callee: SymbolicValue,
     argumentValues: SymbolicValue[],

@@ -216,6 +216,28 @@ const guardCallbacks = (
     guardKeys: [],
   }));
 
+const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): SymbolicValue =>
+  [
+    ...new Map(callbacks.map((callback) => [getHandlerKey(callback), callback])).values(),
+  ].reduceRight<SymbolicValue>(
+    (alternate, callback, caseIndex) => ({
+      kind: "Conditional",
+      test: createUnknown(`reachable-callback ${caseIndex}`, prop.loc),
+      testKind: "truthy",
+      consequent: callback,
+      alternate,
+      branch: {
+        terminalId: makeInstructionId(0),
+        probe: "none",
+        loc: prop.loc,
+        file: prop.file,
+        caseIndex,
+      },
+      guardKeys: [],
+    }),
+    UNDEFINED_VALUE,
+  );
+
 const getRenderedBranch = (
   guards: SymbolicValue[],
   consequent: SymbolicValue,
@@ -774,8 +796,15 @@ class HandlerCollector {
     ancestors: JsxExpressionValue[],
   ): void {
     const unwrapped = this.#unwrapCallback(prop.value);
-    const callback =
+    const resolved =
       element.tag.kind === "BuiltinTag" ? unwrapped : getIndependentCallbacks(unwrapped);
+    const reachable =
+      getHandlerKey(resolved) === null
+        ? this.#interpreter
+            .getSourceFunctions(prop.value)
+            .filter((candidate) => getHandlerKey(candidate) !== null)
+        : [];
+    const callback = reachable.length > 0 ? chooseReachableCallback(reachable, prop) : resolved;
     const callbackKey = getHandlerKey(callback);
     if (callbackKey === null) return;
     if (element.tag.kind === "Component" && this.#mayCallOutsideEvents(element.tag.declaration))
