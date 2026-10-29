@@ -13,7 +13,7 @@ import { getTestExpression } from "../core/utils/get-test-expression";
 import { isRenderingNothing } from "../core/utils/is-rendering-nothing";
 import { isRenderingNothingWhenFalse } from "../core/utils/is-rendering-nothing-when-false";
 import { isUnchangedField } from "../core/utils/is-unchanged-field";
-import { isEffectHandler } from "../core/collect-handlers";
+import { isEffectHandler } from "../core/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
 import { getEffectTriggerLabel } from "./trigger-labels";
