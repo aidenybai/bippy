@@ -1,4 +1,4 @@
-import { isEffectHandler } from "../../../src/core/collect-handlers";
+import { isEffectHandler } from "../../../src/core/handler-predicates";
 import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/format";
 import type { Binding, ComponentAnalysis, Sample, StateReport } from "../../../src/core/types";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";

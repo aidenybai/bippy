@@ -1,5 +1,5 @@
 import { evaluateClaims } from "./claims";
-import { isEffectHandler, isRenderHandler } from "./collect-handlers";
+import { isEffectHandler, isRenderHandler } from "./handler-predicates";
 import { cloneConstraints, evaluateCondition, joinConstraints } from "./constraints";
 import type { Constraints } from "./constraints";
 import { findPropWitnesses } from "./prop-witnesses";

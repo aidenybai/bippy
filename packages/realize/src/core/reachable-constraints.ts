@@ -1,4 +1,4 @@
-import { getBindingUpdates } from "./collect-handlers";
+import { getBindingUpdates } from "./handler-predicates";
 import {
   addBounds,
   dedupeAbstractValues,
