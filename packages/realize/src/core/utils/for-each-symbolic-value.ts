@@ -1,4 +1,5 @@
 import type { SymbolicValue } from "../types";
+import { assertExhaustive } from "../../react-compiler/Utils/utils";
 
 export const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
   switch (value.kind) {
@@ -27,8 +28,19 @@ export const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
         ...(value.source ? [value.source] : []),
         ...value.writes.flatMap((write) => [...write.argumentValues, ...write.guards]),
       ];
-    default:
+    case "Primitive":
+    case "Binding":
+    case "JSXText":
+    case "Function":
+    case "Setter":
+    case "Dispatch":
+    case "Props":
+    case "RegExp":
+    case "Global":
+    case "Unknown":
       return [];
+    default:
+      return assertExhaustive(value, "Unhandled symbolic value");
   }
 };
 

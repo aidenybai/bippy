@@ -15,6 +15,7 @@ import { isNullish } from "./utils/is-nullish";
 import { isObjectValue } from "./utils/is-object-value";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { negate } from "./utils/negate";
+import { assertExhaustive } from "../react-compiler/Utils/utils";
 
 const MAX_OPTIONS_NESTING = 3;
 
@@ -66,6 +67,23 @@ export const isStartTransition = (value: SymbolicValue): boolean =>
 export const ONE_VALUE: SymbolicValue = { kind: "Primitive", value: 1 };
 
 export const EMPTY_STRING_VALUE: SymbolicValue = { kind: "Primitive", value: "" };
+
+export const getOriginValues = (origin: UnknownOrigin): SymbolicValue[] => {
+  switch (origin.kind) {
+    case "Name":
+      return [];
+    case "Member":
+      return [origin.object];
+    case "Call":
+      return [origin.callee, ...origin.argumentValues];
+    case "Settled":
+      return [origin.promise];
+    case "Value":
+      return [origin.value];
+    default:
+      return assertExhaustive(origin, "Unhandled unknown origin");
+  }
+};
 
 export const CALLABLE_KINDS: ReadonlySet<SymbolicValue["kind"]> = new Set([
   "Function",
