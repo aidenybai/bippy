@@ -53,7 +53,7 @@ const resolveUnchanged = (cases: FieldCases, walk: FieldWalk): AbstractValue[] |
 const getFirstRenderCases = (value: SymbolicValue, walk: FieldWalk): FieldCases => {
   const derived =
     value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
-  if (derived && "callee" in derived && isPureFunction(derived.callee)) {
+  if (derived && derived.kind === "Call" && isPureFunction(derived.callee)) {
     const operandCases = derived.operands.map((operand) =>
       getLiterals(getCases(operand, [], walk)),
     );

@@ -20,9 +20,9 @@ export const createBindingInputsAdder = (
       if (binding.lengthLimit) bindingIds.add(binding.lengthLimit.arrayLength.bindingId);
       addReadBindings(bindingIds, binding.alias);
       addReadBindings(bindingIds, binding.range?.inner ?? null);
-      if (binding.derived && "operands" in binding.derived)
+      if (binding.derived && binding.derived.kind === "Call")
         binding.derived.operands.forEach((operand) => addReadBindings(bindingIds, operand));
-      if (binding.derived && "receiver" in binding.derived)
+      if (binding.derived && binding.derived.kind === "String")
         addReadBindings(bindingIds, binding.derived.receiver);
     }
   };

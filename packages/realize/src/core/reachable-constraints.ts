@@ -97,7 +97,7 @@ const substitutePlace = (
     case "Binding": {
       if (isSamePlace(getValuePlace(value), place)) return { kind: "Primitive", value: current };
       const { derived } = value.binding;
-      if (value.path.length === 0 && derived !== null && "operands" in derived) {
+      if (value.path.length === 0 && derived !== null && derived.kind === "Call") {
         const operands = derived.operands.map((operand) =>
           substitutePlace(operand, place, current),
         );
@@ -113,7 +113,7 @@ const substitutePlace = (
       const isDerivedFromPlace =
         value.path.length === 0 &&
         derived !== null &&
-        "receiver" in derived &&
+        derived.kind === "String" &&
         isSamePlace(getValuePlace(derived.receiver), place);
       return isDerivedFromPlace && typeof current === "string"
         ? {
@@ -522,7 +522,7 @@ const getFirstMethodValue = (
   bindingsById: Map<number, Binding>,
 ): PrimitiveValue | null => {
   const { derived } = binding;
-  if (!derived || "operands" in derived || derived.receiver.path.length > 0) return null;
+  if (!derived || derived.kind === "Call" || derived.receiver.path.length > 0) return null;
   const receiver = bindingsById.get(derived.receiver.binding.id);
   const firstValue =
     receiver && isStateBinding(receiver) ? getFirstValue(receiver, bindingsById) : null;

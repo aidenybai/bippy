@@ -762,7 +762,7 @@ export class Interpreter {
     return createBindingValue(
       this.createBinding(`(${formatSymbolicValue(text)}).length`, "call", loc, {
         inputPlaces: inputPlaces.places(),
-        derived: { callee: "String.concat.length", operands: parts },
+        derived: { kind: "Call", callee: "String.concat.length", operands: parts },
       }),
     );
   }
@@ -1364,7 +1364,7 @@ export class Interpreter {
     const [firstArgument] = callSite.argumentValues;
     if (callee.kind === "Global" && callee.module === null && isPureFunction(callee.name))
       return this.#createCallResult(callSite, {
-        derived: { callee: callee.name, operands: callSite.argumentValues },
+        derived: { kind: "Call", callee: callee.name, operands: callSite.argumentValues },
       });
     switch (callee.kind) {
       case "Function":
@@ -1870,7 +1870,7 @@ export class Interpreter {
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
-    const domain = derived && "operands" in derived ? getDerivedDomain(derived) : null;
+    const domain = derived && derived.kind === "Call" ? getDerivedDomain(derived) : null;
     const binding = this.createBinding(
       isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
       "call",
@@ -2443,7 +2443,7 @@ export class Interpreter {
       return this.#readCollection(receiver, methodName, argumentValues, callSite);
     if (receiver.kind !== "Binding") return null;
     return this.#createCallResult(callSite, {
-      derived: { method: methodName, receiver, argumentValues },
+      derived: { kind: "String", method: methodName, receiver, argumentValues },
     });
   }
 
