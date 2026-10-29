@@ -148,10 +148,11 @@ export class CallbackPasser {
       hookKind,
       callback,
       callbackArguments: [],
-      dependencies: dependenciesPlace
-        ? (this.#interpreter.resolver.getSourceText(dependenciesPlace.loc) ??
-          (isEmptyList ? "[]" : null))
-        : null,
+      dependencies: isEmptyList
+        ? "[]"
+        : dependenciesPlace
+          ? this.#interpreter.resolver.getSourceText(dependenciesPlace.loc)
+          : null,
       dependencyPlaces: dependenciesPlace ? dependencyPlaces.places() : null,
       loc,
     });
