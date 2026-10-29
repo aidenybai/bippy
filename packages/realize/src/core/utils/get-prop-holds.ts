@@ -5,19 +5,12 @@ import type {
   Place,
   SourceLocation,
 } from "../../react-compiler/HIR/HIR";
-import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import { getPlaceOrSpread } from "./get-place-or-spread";
+import { getHookTraits } from "../hook-traits";
 
 export const ALL_PROPS = "*";
 
 const CONTEXT_PREFIX = "#context:";
-
-const INITIALIZING_HOOKS = new Map<HookKind, number[]>([
-  ["useRef", [0]],
-  ["useState", [0]],
-  ["useReducer", [1, 2]],
-  ["Custom", [0, 1, 2, 3]],
-]);
 
 const NO_DEPENDENCIES: ReadonlySet<DeclarationId> = new Set();
 
@@ -158,7 +151,7 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
           getCaptured(places[1]),
           elementsByDeclaration.get(handleDependencies.identifier.declarationId) ?? NO_DEPENDENCIES,
         );
-      for (const index of (hookKind && INITIALIZING_HOOKS.get(hookKind)) ?? [])
+      for (const index of hookKind ? getHookTraits(hookKind).heldArgumentIndices : [])
         for (const place of places[index] ? [places[index]] : [])
           hold([place, ...getCaptured(place)], NO_DEPENDENCIES);
     }

@@ -1,19 +1,7 @@
 import { getHookKind } from "../../react-compiler/HIR/HIR";
 import type { HIRFunction, IdentifierId } from "../../react-compiler/HIR/HIR";
-import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import { isFunctionCreation } from "./is-function-creation";
-
-const EVENT_ONLY_HOOKS = new Set<HookKind>([
-  "useContext",
-  "useState",
-  "useActionState",
-  "useReducer",
-  "useRef",
-  "useMemo",
-  "useCallback",
-  "useTransition",
-  "useOptimistic",
-]);
+import { getHookTraits } from "../hook-traits";
 
 const resultsByFunction = new WeakMap<HIRFunction, boolean>();
 
@@ -36,7 +24,7 @@ const scanFunction = (hirFunction: HIRFunction): boolean => {
             ? value.property
             : null;
       const hookKind = callee ? getHookKind(hirFunction.env, callee.identifier) : null;
-      if (hookKind !== null && !EVENT_ONLY_HOOKS.has(hookKind)) return true;
+      if (hookKind !== null && !getHookTraits(hookKind).callsPropsOnlyInEvents) return true;
       if (value.kind !== "JsxExpression") continue;
       if (value.tag.kind !== "BuiltinTag") return true;
       const hasRefCallback = value.props.some(
