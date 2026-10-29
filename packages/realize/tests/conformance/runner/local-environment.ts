@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { collect } from "./collect";
-import type { CollectSummary } from "./collect";
+import type { CollectSummary } from "./collect-summary";
 import { CACHE_DIRECTORY } from "./repos";
 import type { LineLogger, RepoConfig } from "./repos";
 

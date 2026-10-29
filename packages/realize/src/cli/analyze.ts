@@ -53,6 +53,11 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
     tracer,
   );
   const componentNames = options.component;
+  const unmatchedNames = (componentNames ?? []).filter(
+    (name) => !allComponents.some(({ analysis }) => analysis.name === name),
+  );
+  if (unmatchedNames.length > 0)
+    throw new ConfigError(`No component named ${unmatchedNames.join(", ")}`);
   const components = componentNames
     ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
     : allComponents;

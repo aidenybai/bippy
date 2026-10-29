@@ -1,28 +1,16 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Command } from "commander";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import { serializeProjectAnalysis } from "../../../src/core/serialize";
 import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
 import { sum, summarizeVerdicts } from "../verifier/verdict-report";
 import type { VerificationSummary } from "../verifier/verdicts";
+import type { CollectSummary } from "./collect-summary";
+import { parsePositiveInteger } from "../../../src/cli/parse-positive-integer";
 import { verifyProject } from "../verifier/verify";
 import type { LineLogger } from "./repos";
-
-export interface CollectSummary {
-  fileCount: number;
-  componentCount: number;
-  stateCount: number;
-  handlerCount: number;
-  unreachableBranchCount: number;
-  truncatedComponentCount: number;
-  bindingCount: number;
-  untypedBindingCount: number;
-  unresolvedTypeBindingCount: number;
-  bailoutCountsByReason: Partial<Record<BailoutReason, number>>;
-  durationMs: number;
-  verification: VerificationSummary | null;
-}
 
 const summarize = (
   components: AnalyzedComponent[],
@@ -89,24 +77,28 @@ export const collect = async (
   return summary;
 };
 
-const getFlagValue = (flag: string): string | undefined => {
-  const index = process.argv.indexOf(flag);
-  return index === -1 ? undefined : process.argv[index + 1];
-};
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [tsconfigPath, outputDirectory] = process.argv.slice(2);
-  if (!tsconfigPath || !outputDirectory)
-    throw new Error(
-      "Usage: collect.ts <tsconfig> <outputDirectory> [--verify] [--setup <dir>] [--component-budget <ms>]",
-    );
-  const budget = getFlagValue("--component-budget");
-  await collect(
-    tsconfigPath,
-    outputDirectory,
-    process.argv.includes("--verify"),
-    getFlagValue("--setup") ?? null,
-    (line) => console.error(line),
-    budget === undefined ? undefined : Number(budget),
-  );
-}
+if (process.argv[1] === fileURLToPath(import.meta.url))
+  await new Command()
+    .name("collect")
+    .argument("<tsconfig>")
+    .argument("<outputDirectory>")
+    .option("--verify", "mount components in a browser to check the analysis", false)
+    .option("--setup <directory>", "harness setup directory")
+    .option("--component-budget <ms>", "time budget per component", parsePositiveInteger)
+    .action(
+      async (
+        tsconfigPath: string,
+        outputDirectory: string,
+        options: { verify: boolean; setup?: string; componentBudget?: number },
+      ) => {
+        await collect(
+          tsconfigPath,
+          outputDirectory,
+          options.verify,
+          options.setup ?? null,
+          (line) => console.error(line),
+          options.componentBudget,
+        );
+      },
+    )
+    .parseAsync();
