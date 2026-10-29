@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
-import { forEachRenderNode } from "../../src/core/utils/for-each-render-node";
+import { forEachRenderNode } from "../../src/core/states/for-each-render-node";
 import type { SymbolicValue } from "../../src/core/types";
 
 const countMappedRows = (render: SymbolicValue): number => {

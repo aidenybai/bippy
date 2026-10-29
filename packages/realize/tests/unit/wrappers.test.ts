@@ -3,7 +3,7 @@ import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { ComponentAnalysis, Sample } from "../../src/core/types";
 import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
-import { createEmptyAnalysis } from "../../src/core/analyze-component";
+import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
 import {
   findRootParts,
   proposeParents,

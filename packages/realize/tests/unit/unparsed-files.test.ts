@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { compileFile } from "../../src/core/compile";
+import { compileFile } from "../../src/core/compile/compile";
 
 describe("a file the parser rejects", () => {
   it("reports the parse error instead of dropping the file silently", () => {

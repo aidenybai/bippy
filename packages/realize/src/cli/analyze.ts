@@ -1,10 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
-import { analyzeProject } from "../core/analyze-project";
-import { ConfigError } from "../core/config-error";
-import { serializeProjectAnalysis } from "../core/serialize";
-import { createTracer, NO_TRACER } from "../core/tracer";
+import { analyzeProject } from "../core/project/analyze-project";
+import { ConfigError } from "../core/project/config-error";
+import { serializeProjectAnalysis } from "../core/project/serialize";
+import { createTracer, NO_TRACER } from "../core/project/tracer";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
 import type { ProjectAnalysis } from "../core/types";

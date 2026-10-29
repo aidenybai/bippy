@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { formatSymbolicValue } from "../../src/core/format";
+import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("calling a function chosen by a condition", () => {

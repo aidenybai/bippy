@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { analyzeProject } from "../../../src/core/analyze-project";
+import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
 import { admitsOutput, admitsSequentialOutput } from "./match-output";
 import { PROJECT_DIRECTORY, writeFixtureProject } from "./fixtures";

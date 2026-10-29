@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { AnalyzedComponent, ClaimOutcome, Region, StateReport } from "../core/types";
-import { formatLine, formatStateLabel } from "../core/format";
+import { formatLine, formatStateLabel } from "../core/values/format";
 import { describeState, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
 import { collectTriggerLabels } from "./trigger-labels";

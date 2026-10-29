@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { PlaceMap } from "../../src/core/utils/place-map";
-import { isPlacePrefix } from "../../src/core/utils/is-place-prefix";
+import { PlaceMap } from "../../src/core/values/place-map";
+import { isPlacePrefix } from "../../src/core/values/is-place-prefix";
 
 describe("places", () => {
   it("keeps a field whose name has a dot apart from a nested field", () => {

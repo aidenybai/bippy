@@ -2,7 +2,7 @@ import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionId, InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR";
 
 export type { SourceLocation };
-import type { PlaceMap } from "./utils/place-map";
+import type { PlaceMap } from "./values/place-map";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 

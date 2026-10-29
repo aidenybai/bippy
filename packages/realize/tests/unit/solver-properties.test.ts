@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { assumeCondition, evaluateCondition } from "../../src/core/constraints";
-import type { Constraints } from "../../src/core/constraints";
-import { formatSymbolicValue } from "../../src/core/format";
-import { createBindingValue, foldBinary, foldUnary } from "../../src/core/symbolic-values";
+import { assumeCondition, evaluateCondition } from "../../src/core/solver/constraints";
+import type { Constraints } from "../../src/core/solver/constraints";
+import { formatSymbolicValue } from "../../src/core/values/format";
+import { createBindingValue, foldBinary, foldUnary } from "../../src/core/values/symbolic-values";
 import type {
   AbstractValue,
   BinaryOperator,
@@ -11,8 +11,8 @@ import type {
   SymbolicValue,
   TestKind,
 } from "../../src/core/types";
-import { getBindingPlace } from "../../src/core/utils/get-binding-place";
-import { PlaceMap } from "../../src/core/utils/place-map";
+import { getBindingPlace } from "../../src/core/values/get-binding-place";
+import { PlaceMap } from "../../src/core/values/place-map";
 import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/HIR/HIR";
 import { createTestBinding } from "./helpers";
 

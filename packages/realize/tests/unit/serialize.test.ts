@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { serializeProjectAnalysis } from "../../src/core/serialize";
+import { serializeProjectAnalysis } from "../../src/core/project/serialize";
 import { analyzeFixture } from "./helpers";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

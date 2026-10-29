@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/HIR/HIR";
-import { formatSymbolicValue } from "../../src/core/format";
+import { formatSymbolicValue } from "../../src/core/values/format";
 import type { SymbolicValue } from "../../src/core/types";
 
 const createSharedChoice = (depth: number): SymbolicValue => {

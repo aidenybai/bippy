@@ -1,6 +1,6 @@
 import { diffArrays } from "diff";
 import type { JsxExpressionValue, JsxTag, SymbolicValue } from "../../../src/core/types";
-import { isRenderingNothing } from "../../../src/core/utils/is-rendering-nothing";
+import { isRenderingNothing } from "../../../src/core/states/is-rendering-nothing";
 import type { Shape } from "./types";
 
 export type ExpectedShape =

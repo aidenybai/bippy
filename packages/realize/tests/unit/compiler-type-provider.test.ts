@@ -1,7 +1,7 @@
 import { SymbolFlags } from "typescript/unstable/sync";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
-import { withProject } from "../../src/core/utils/with-project";
+import { isProjectSourceFile } from "../../src/core/project/is-project-source-file";
+import { withProject } from "../../src/core/project/with-project";
 import type { MutableCollection } from "../../src/react-compiler/HIR/Environment";
 import { Effect, ValueKind } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Type } from "../../src/react-compiler/HIR/HIR";
@@ -11,7 +11,7 @@ import {
   BuiltInMixedReadonlyId,
   BuiltInSetId,
 } from "../../src/react-compiler/HIR/ObjectShape";
-import { CompilerTypeProvider } from "../../src/core/type-provider";
+import { CompilerTypeProvider } from "../../src/core/type-checker/type-provider";
 import { getFixtureConfig, getLocalTypesByName, getHirFunctionsByName } from "./helpers";
 
 const COLLECTIONS: MutableCollection[] = ["Array", "Map", "Set"];

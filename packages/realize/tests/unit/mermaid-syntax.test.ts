@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import type { Browser, Page } from "playwright";
 import { formatMermaid } from "../../src/cli/mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tree";
-import { analyzeProject } from "../../src/core/analyze-project";
+import { analyzeProject } from "../../src/core/project/analyze-project";
 import { getFixtureConfig } from "./helpers";
 
 const MERMAID_SCRIPT = createRequire(import.meta.url).resolve("mermaid/dist/mermaid.min.js");
