@@ -15,6 +15,7 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { getFirstRenderOutcome } from "./reachable-constraints";
 import { getOutcomeKey } from "./branch-outcome";
+import type { FirstRenderOutcomes } from "./first-render-outcomes";
 
 const MAX_ALTERNATIVES = 256;
 
@@ -26,11 +27,6 @@ export interface Alternative {
   branches: ReadonlySet<string>;
   distanceFromFirstRender: number;
   hasUndecidedBranch: boolean;
-}
-
-export interface FirstRenderOutcomes {
-  constraints: Constraints;
-  outcomesByBranchKey: Map<string, boolean | null>;
 }
 
 interface PartialChildren extends Omit<Alternative, "render"> {

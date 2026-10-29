@@ -44,7 +44,7 @@ import { isWholeBinding } from "./utils/is-whole-binding";
 import { getNextDown } from "./utils/get-next-down";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { PlaceMap } from "./utils/place-map";
-import type { FirstRenderOutcomes } from "./state-enumerator";
+import type { FirstRenderOutcomes } from "./first-render-outcomes";
 import { hasCastPart } from "./utils/has-cast-part";
 import { getFiniteNumber } from "./utils/get-finite-number";
 

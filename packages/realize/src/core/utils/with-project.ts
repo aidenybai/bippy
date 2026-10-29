@@ -17,8 +17,9 @@ const isPathMap = (value: unknown): value is Record<string, string[]> =>
 const parseConfigOptions = (api: API, configPath: string): Record<string, unknown> => {
   try {
     return api.parseConfigFile(configPath).options;
-  } catch {
-    throw new ConfigError(`could not read ${configPath}`);
+  } catch (error) {
+    const reason = error instanceof Error ? `: ${error.message}` : "";
+    throw new ConfigError(`could not read ${configPath}${reason}`, { cause: error });
   }
 };
 
@@ -58,16 +59,16 @@ export const withProject = <Result>(
   tracer: Tracer = NO_TRACER,
 ): Result => {
   const api = new API({ cwd: dirname(configPath) });
-  const paths = getBaseUrlPaths(api, configPath);
-  const shimDirectory = paths ? mkdtempSync(join(tmpdir(), "bippy-tsconfig-")) : null;
-  const projectConfigPath = shimDirectory ? join(shimDirectory, "tsconfig.json") : configPath;
-  if (shimDirectory) {
-    writeFileSync(
-      projectConfigPath,
-      JSON.stringify({ extends: resolve(configPath), compilerOptions: { paths } }),
-    );
-  }
+  let shimDirectory: string | null = null;
   try {
+    const paths = getBaseUrlPaths(api, configPath);
+    shimDirectory = paths ? mkdtempSync(join(tmpdir(), "bippy-tsconfig-")) : null;
+    const projectConfigPath = shimDirectory ? join(shimDirectory, "tsconfig.json") : configPath;
+    if (shimDirectory)
+      writeFileSync(
+        projectConfigPath,
+        JSON.stringify({ extends: resolve(configPath), compilerOptions: { paths } }),
+      );
     const project = tracer.span(
       "typescript",
       "program",
