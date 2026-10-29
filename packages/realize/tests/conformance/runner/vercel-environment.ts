@@ -33,7 +33,7 @@ const APP_DIRECTORY = `${SANDBOX_ROOT}/app`;
 const ANALYZER_DIRECTORY = `${SANDBOX_ROOT}/analyzer`;
 const OUTPUT_DIRECTORY = `${SANDBOX_ROOT}/out`;
 const PATCH_PATH = `${SANDBOX_ROOT}/custom.patch`;
-const RUNTIME = "node24";
+const IMAGE = "vercel/sandbox/node:24";
 const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 180 * 60 * 1000;
 const SANDBOX_RESOURCES = { vcpus: 8 };
@@ -133,7 +133,7 @@ const getAnalyzerPackageJson = (): string => {
 
 const getSnapshotKey = (repo: RepoConfig): string =>
   createHash("sha256")
-    .update(JSON.stringify([getSetupKey(repo), getAnalyzerPackageJson(), RUNTIME]))
+    .update(JSON.stringify([getSetupKey(repo), getAnalyzerPackageJson(), IMAGE]))
     .digest("hex");
 
 const listFiles = (path: string): string[] =>
@@ -252,7 +252,8 @@ const prepareSnapshot = async (
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)} in a new sandbox`);
   const sandbox = await Sandbox.create({
     ...credentials,
-    runtime: RUNTIME,
+    image: IMAGE,
+    persistent: false,
     resources: SANDBOX_RESOURCES,
     timeout: SETUP_TIMEOUT_MS,
   });
@@ -338,6 +339,7 @@ export const runVercel = async (
     Sandbox.create({
       ...credentials,
       source: { type: "snapshot", snapshotId },
+      persistent: false,
       resources: SANDBOX_RESOURCES,
       timeout: RUN_TIMEOUT_MS,
     }),
