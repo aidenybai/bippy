@@ -44,8 +44,7 @@ const createNonNullClaim = (
 ): Claim => ({
   kind: "non-null",
   subject,
-  cases: null,
-  test: createNotNullishTest(subject),
+  check: { kind: "Condition", test: createNotNullishTest(subject) },
   guards,
   description: `${formatSymbolicValue(subject)}!`,
   loc,
@@ -62,13 +61,19 @@ const createCastClaim = (
   if (targetText === null) return null;
   const description = `${formatSymbolicValue(subject)} as ${targetText}`;
   if (target.kind === "Cases" && target.cases.every((value) => value.kind === "Literal"))
-    return { kind: "cast", subject, cases: target.cases, test: null, guards, description, loc };
+    return {
+      kind: "cast",
+      subject,
+      check: { kind: "Membership", cases: target.cases },
+      guards,
+      description,
+      loc,
+    };
   if (hasNullishCase(source) && !hasNullishCase(target))
     return {
       kind: "cast",
       subject,
-      cases: null,
-      test: createNotNullishTest(subject),
+      check: { kind: "Condition", test: createNotNullishTest(subject) },
       guards,
       description,
       loc,
@@ -129,8 +134,7 @@ export class ClaimRecorder {
     this.record({
       kind: "invariant",
       subject: test,
-      cases: null,
-      test,
+      check: { kind: "Condition", test },
       guards: getClaimGuards(walkState),
       description: `${name}(${describeCondition(test)})`,
       loc,
@@ -148,8 +152,9 @@ export class ClaimRecorder {
   }
 
   #widenForNonStrictNulls(claim: Claim): Claim {
-    if (this.#interpreter.resolver.isStrictNullChecks || !claim.cases) return claim;
-    return { ...claim, cases: withNullishCases(claim.cases) };
+    if (this.#interpreter.resolver.isStrictNullChecks || claim.check.kind !== "Membership")
+      return claim;
+    return { ...claim, check: { kind: "Membership", cases: withNullishCases(claim.check.cases) } };
   }
 
   #isCheckable(value: SymbolicValue): boolean {

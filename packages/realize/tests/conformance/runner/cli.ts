@@ -116,7 +116,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
   if (verdict.status === "not-exported")
     return picocolors.dim(`${verdict.name}  not exported, skipped`);
   if (verdict.status === "mount-failed")
-    return `${verdict.name}  ${picocolors.yellow(`couldn't mount (${verdict.mountFailure ?? "other"})`)} ${picocolors.dim(verdict.error ?? "")}`;
+    return `${verdict.name}  ${picocolors.yellow(`couldn't mount (${verdict.mountFailure})`)} ${picocolors.dim(verdict.error)}`;
   const counterexampleCount = countCounterexamples(verdict);
   const lines = [
     `${picocolors.bold(verdict.name)}  ${
