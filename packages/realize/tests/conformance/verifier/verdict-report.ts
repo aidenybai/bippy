@@ -42,25 +42,25 @@ const formatPath = (path: string[]): string => path.join(" → ") || "mount";
 export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
   ...verdict.renderCounterexamples.map(
     (counterexample) =>
-      `no model state renders this after [${formatPath(counterexample.path)}] with ${formatProps(counterexample.props)}: ${[...counterexample.sides, ...counterexample.values].join(", ") || "nothing observed"}`,
+      `no model state renders this after [${formatPath(counterexample.path)}] with ${formatProps(counterexample.props)}: ${[...counterexample.edges, ...counterexample.values].join(", ") || "nothing observed"}`,
   ),
   ...verdict.transitionCounterexamples.map(
     (counterexample) =>
       `no model transition explains ${counterexample.action} after [${formatPath(counterexample.path)}] (ran ${counterexample.handlers.join(", ")})`,
   ),
-  ...verdict.valueCounterexamples.map(
+  ...verdict.domainCounterexamples.map(
     (counterexample) =>
       `${counterexample.variable} = ${counterexample.value} is outside the domain ${counterexample.domain.join(" | ")}`,
   ),
-  ...verdict.reachedUnreachableSides.map((side) => `unreachable branch ran: ${side}`),
+  ...verdict.unreachableEdgesTaken.map((edge) => `unreachable branch ran: ${edge}`),
   ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
 ];
 
 export const countCounterexamples = (verdict: ComponentVerdict): number =>
   verdict.renderCounterexamples.length +
   verdict.transitionCounterexamples.length +
-  verdict.valueCounterexamples.length +
-  verdict.reachedUnreachableSides.length +
+  verdict.domainCounterexamples.length +
+  verdict.unreachableEdgesTaken.length +
   verdict.refutedWarnings.length;
 
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
@@ -91,8 +91,8 @@ export const summarizeVerdicts = (
     counterexampleCount: sum(verifiedVerdicts, countCounterexamples),
     viewCount: sum(verifiedVerdicts, (verdict) => verdict.viewCount),
     coveredViewCount: sum(verifiedVerdicts, (verdict) => verdict.coveredViews.length),
-    branchSideCount: sum(verifiedVerdicts, (verdict) => verdict.branchSideCount),
-    coveredBranchSideCount: sum(verifiedVerdicts, (verdict) => verdict.coveredBranchSideCount),
+    branchEdgeCount: sum(verifiedVerdicts, (verdict) => verdict.branchEdgeCount),
+    coveredBranchEdgeCount: sum(verifiedVerdicts, (verdict) => verdict.coveredBranchEdgeCount),
     warningCount: sum(verifiedVerdicts, (verdict) => verdict.warningCount),
     coveredWarningCount: sum(verifiedVerdicts, (verdict) => verdict.coveredWarningCount),
     unwarnedMutationCount: sum(verifiedVerdicts, (verdict) => verdict.unwarnedMutations.length),

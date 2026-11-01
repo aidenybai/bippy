@@ -15,15 +15,15 @@ const MUTATING_ARRAY_METHODS = new Set([
 ]);
 
 let propWrites = new Set<string>();
-const propOwners = new WeakMap<object, string>();
+const propOrigins = new WeakMap<object, string>();
 const writeCounts = new WeakMap<object, number>();
 const writeTrackers = new WeakMap<object, object>();
 const trackedTargets = new WeakMap<object, object>();
 
 const recordWrite = (target: object): void => {
   writeCounts.set(target, (writeCounts.get(target) ?? 0) + 1);
-  const owner = propOwners.get(target);
-  if (owner && !isWrittenByLibrary()) propWrites.add(owner);
+  const origin = propOrigins.get(target);
+  if (origin && !isWrittenByLibrary()) propWrites.add(origin);
 };
 
 const isMutatingMethod = (target: object, key: string | symbol): boolean =>
@@ -101,11 +101,11 @@ export const findTrackedTarget = (value: object): object | undefined => trackedT
 
 export const getWriteCount = (target: object): number => writeCounts.get(target) ?? 0;
 
-export const setPropOwner = (target: object, owner: string): void => {
-  propOwners.set(target, owner);
+export const setPropOrigin = (target: object, origin: string): void => {
+  propOrigins.set(target, origin);
 };
 
-export const findPropOwner = (target: object): string | undefined => propOwners.get(target);
+export const findPropOrigin = (target: object): string | undefined => propOrigins.get(target);
 
 export const getPropWrites = (): Set<string> => propWrites;
 

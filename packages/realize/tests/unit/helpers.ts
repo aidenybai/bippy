@@ -17,7 +17,7 @@ import type {
   ProjectAnalysis,
 } from "../../src/core/types";
 import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
-import { collectHandlerProbes } from "../conformance/verifier/handler-probes";
+import { collectHandlerCounters } from "../conformance/verifier/handler-counters";
 import type { Capture } from "../conformance/verifier/types";
 
 export const getFixtureConfig = (fixture: string): string =>
@@ -52,12 +52,11 @@ export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
 
 export const createCapture = (overrides: Partial<Capture>): Capture => ({
   shapes: [],
-  hookStates: [],
-  probes: [],
-  handlerHits: [],
+  stateValues: [],
+  branchHits: [],
+  handlerCalls: [],
   mutationHits: [],
-  mutatedOwners: [],
-  firstCommitShapes: null,
+  mutatedOrigins: [],
   error: null,
   errorDepth: null,
   failure: null,
@@ -84,16 +83,19 @@ export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedCo
   return component;
 };
 
-export const getHandlerProbeId = (component: AnalyzedComponent, handlerSource: string): string => {
-  const matching = collectHandlerProbes(component.analysis).filter(({ probe }) =>
-    readFileSync(probe.file, "utf8").slice(probe.start, probe.end).startsWith(handlerSource),
+export const getHandlerCounterId = (
+  component: AnalyzedComponent,
+  handlerSource: string,
+): string => {
+  const matching = collectHandlerCounters(component.analysis).filter(({ counter }) =>
+    readFileSync(counter.file, "utf8").slice(counter.start, counter.end).startsWith(handlerSource),
   );
-  const [handlerProbe] = matching;
-  if (!handlerProbe || matching.length > 1)
+  const [handlerCounter] = matching;
+  if (!handlerCounter || matching.length > 1)
     throw new Error(
       `${matching.length} handlers start with ${handlerSource} in ${component.analysis.name}`,
     );
-  return handlerProbe.probe.id;
+  return handlerCounter.counter.id;
 };
 
 export const getBinding = (component: AnalyzedComponent, name: string): Binding => {

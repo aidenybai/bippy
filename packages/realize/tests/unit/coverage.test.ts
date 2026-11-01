@@ -1,37 +1,36 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
-import { getProbeId } from "../conformance/verifier/branch-probes";
+import { getBranchId } from "../conformance/verifier/branch-counters";
 import type { Observation } from "../conformance/verifier/driver";
-import { scoreComponent } from "../conformance/verifier/score";
+import { checkComponent } from "../conformance/verifier/check";
 import type { Action, Capture } from "../conformance/verifier/types";
 import { formatCounterexamples } from "../conformance/verifier/verdict-report";
-import { analyzeFixture, getComponent, getHandlerProbeId } from "./helpers";
+import { analyzeFixture, getComponent, getHandlerCounterId } from "./helpers";
 
 describe("conformance coverage", () => {
   const wizard = getComponent(analyzeFixture("symbolic-tree"), "Wizard");
-  const nextProbeId = getHandlerProbeId(wizard, '() => dispatch({ type: "next" })');
+  const nextCounterId = getHandlerCounterId(wizard, '() => dispatch({ type: "next" })');
 
-  const getSideProbeId = (test: string): string => {
+  const getTestBranchId = (test: string): string => {
     const branch = wizard.model.branches.find((candidate) => candidate.test === test);
     if (!branch || branch.loc === GeneratedSource) throw new Error(`No branch tests ${test}`);
-    return getProbeId(branch.file, branch.loc);
+    return getBranchId(branch.file, branch.loc);
   };
 
   const capture = (
     step: string,
-    sides: Record<string, boolean>,
-    { hasError = false, handlerHits = [] as string[] } = {},
+    edges: Record<string, boolean>,
+    { hasError = false, handlerCalls = [] as string[] } = {},
   ): Capture => ({
     shapes: [{ kind: "element", tag: "form", children: [] }],
-    hookStates: [{ step, hasError }],
-    probes: Object.entries(sides).map(([test, isTrueSide]) => ({
-      id: getSideProbeId(test),
-      isTrueSide,
+    stateValues: [{ step, hasError }],
+    branchHits: Object.entries(edges).map(([test, isConsequent]) => ({
+      id: getTestBranchId(test),
+      isConsequent,
     })),
-    handlerHits,
+    handlerCalls,
     mutationHits: [],
-    mutatedOwners: [],
-    firstCommitShapes: null,
+    mutatedOrigins: [],
     error: null,
     errorDepth: null,
     failure: null,
@@ -42,7 +41,6 @@ describe("conformance coverage", () => {
     kind: "click",
     tag: "button",
     label: "Next",
-    isInChild: false,
   };
 
   const mount = (after: Capture): Observation => ({
@@ -76,11 +74,11 @@ describe("conformance coverage", () => {
       'state.step === "details"': false,
       'state.step === "payment"': true,
     },
-    { handlerHits: [nextProbeId] },
+    { handlerCalls: [nextCounterId] },
   );
 
   const score = (observations: Observation[]) =>
-    scoreComponent(wizard.analysis, wizard.model, observations);
+    checkComponent(wizard.analysis, wizard.model, observations);
 
   it("accepts renders and transitions the model reaches", () => {
     const verdict = score([mount(details), click(details, payment)]);
@@ -89,13 +87,13 @@ describe("conformance coverage", () => {
     expect(verdict.coveredViews.length).toBeGreaterThan(0);
   });
 
-  it("reports a branch side the model calls unreachable", () => {
+  it("reports a branch edge the model calls unreachable", () => {
     const failed = capture(
       "details",
       { 'state.step === "done"': false, "state.hasError": true },
       { hasError: true },
     );
-    expect(score([mount(failed)]).reachedUnreachableSides).toEqual(["state.hasError is true L26"]);
+    expect(score([mount(failed)]).unreachableEdgesTaken).toEqual(["state.hasError is true L26"]);
   });
 
   it("reports a state value outside its domain", () => {
@@ -111,7 +109,11 @@ describe("conformance coverage", () => {
   });
 
   it("reports a transition with no model path", () => {
-    const done = capture("done", { 'state.step === "done"': true }, { handlerHits: [nextProbeId] });
+    const done = capture(
+      "done",
+      { 'state.step === "done"': true },
+      { handlerCalls: [nextCounterId] },
+    );
     expect(score([mount(details), click(details, done)]).transitionCounterexamples).toEqual([
       { path: ["next"], action: "Next", handlers: ["t2"] },
     ]);

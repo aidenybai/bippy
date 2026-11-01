@@ -1,6 +1,7 @@
 import type { JsxExpressionValue, JsxTag, SymbolicValue } from "../../../src/core/types";
 import { isRenderingNothing } from "../../../src/core/render/is-rendering-nothing";
-import { normalizeText } from "../verifier/shapes";
+
+const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
 
 export type ExpectedShape =
   | { kind: "element"; tag: string; children: ExpectedShape[] }

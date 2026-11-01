@@ -5,11 +5,11 @@ import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
 import type { ComponentVerdict } from "./verdicts";
-import { getPropOwner, getStateOwner, parseOwner } from "./types";
-import type { Probe } from "./types";
+import { getPropOrigin, getStateOrigin, parseOrigin } from "./types";
+import type { Counter } from "./types";
 
-interface OwnerPredicate {
-  (owner: string | null): boolean;
+interface OriginPredicate {
+  (origin: string | null): boolean;
 }
 
 interface WarningScore extends Pick<
@@ -17,20 +17,20 @@ interface WarningScore extends Pick<
   "coveredWarningCount" | "refutedWarnings" | "unwarnedMutations"
 > {}
 
-interface ProbedWarning {
+interface InstrumentedWarning {
   warning: Warning;
-  probe: Probe | null;
-  isOwner: OwnerPredicate;
+  counter: Counter | null;
+  isOrigin: OriginPredicate;
 }
 
 const PLACE_PATTERN = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
 const MEMBER_ACCESS_PATTERN = /^!?(\?\.|\.|\[)/;
 
-export const createMutationProbe = (
+export const createMutationCounter = (
   file: string,
   sourceText: string,
   loc: SourceLocation,
-): Probe | null => {
+): Counter | null => {
   if (loc === GeneratedSource) return null;
   const text = sourceText.slice(loc.start.index, loc.end.index);
   if (!PLACE_PATTERN.test(text) || !MEMBER_ACCESS_PATTERN.test(sourceText.slice(loc.end.index)))
@@ -40,31 +40,31 @@ export const createMutationProbe = (
     file,
     start: loc.start.index,
     end: loc.end.index,
-    mode: "mutation",
+    kind: "mutation",
   };
 };
 
-const getOwnerPredicate = (
+const getOriginPredicate = (
   warning: Warning,
   bindings: Binding[],
   stateBindings: Binding[] | null,
   placeText: string | null,
-): OwnerPredicate => {
+): OriginPredicate => {
   const rootName = placeText?.split(".")[0];
   if (warning.kind === "prop-mutation") {
     const propName = bindings.find(
       (binding) => binding.kind === "prop" && binding.name === rootName,
     )?.propName;
-    return (owner) =>
+    return (origin) =>
       propName
-        ? owner === getPropOwner(propName)
-        : owner !== null && parseOwner(owner).kind === "prop";
+        ? origin === getPropOrigin(propName)
+        : origin !== null && parseOrigin(origin).kind === "prop";
   }
   const hookIndex = stateBindings?.findIndex((binding) => binding.name === rootName) ?? -1;
-  return (owner) =>
+  return (origin) =>
     hookIndex >= 0
-      ? owner === getStateOwner(hookIndex)
-      : owner !== null && parseOwner(owner).kind === "state";
+      ? origin === getStateOrigin(hookIndex)
+      : origin !== null && parseOrigin(origin).kind === "state";
 };
 
 const createSourceReader = (): ((file: string) => string) => {
@@ -76,58 +76,67 @@ const createSourceReader = (): ((file: string) => string) => {
   };
 };
 
-const getProbedWarnings = (
+const getInstrumentedWarnings = (
   analysis: ComponentAnalysis,
   stateBindings: Binding[] | null,
-): ProbedWarning[] => {
+): InstrumentedWarning[] => {
   const readSource = createSourceReader();
   return analysis.warnings.map((warning) => {
     const sourceText = readSource(warning.file);
-    const probe = createMutationProbe(warning.file, sourceText, warning.loc);
-    const placeText = probe ? sourceText.slice(probe.start, probe.end) : null;
+    const counter = createMutationCounter(warning.file, sourceText, warning.loc);
+    const placeText = counter ? sourceText.slice(counter.start, counter.end) : null;
     return {
       warning,
-      probe,
-      isOwner: getOwnerPredicate(warning, analysis.bindings, stateBindings, placeText),
+      counter,
+      isOrigin: getOriginPredicate(warning, analysis.bindings, stateBindings, placeText),
     };
   });
 };
 
-export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] =>
-  getProbedWarnings(analysis, null).flatMap((probed) => probed.probe ?? []);
+export const collectMutationCounters = (analysis: ComponentAnalysis): Counter[] =>
+  getInstrumentedWarnings(analysis, null).flatMap((instrumented) => instrumented.counter ?? []);
 
 const formatWarning = (warning: Warning): string =>
   `${[warning.kind, formatLine(warning.loc)].filter(Boolean).join(" ")}: ${warning.message}`;
 
-const formatOwner = (owner: string, stateBindings: Binding[] | null): string => {
-  const { kind, name } = parseOwner(owner);
+const formatOrigin = (origin: string, stateBindings: Binding[] | null): string => {
+  const { kind, name } = parseOrigin(origin);
   if (kind === "prop") return `prop ${name}`;
   const binding = stateBindings?.[Number(name)];
   return binding ? `state ${binding.name}` : `state hook ${name}`;
 };
 
-const isWarningWitnessed = (probed: ProbedWarning, observations: Observation[]): boolean | null => {
-  const probeId = probed.probe?.id;
-  if (probeId === undefined) return null;
+const isWarningWitnessed = (
+  instrumented: InstrumentedWarning,
+  observations: Observation[],
+): boolean | null => {
+  const counterId = instrumented.counter?.id;
+  if (counterId === undefined) return null;
   const hits = observations.flatMap((observation) =>
-    observation.after.mutationHits.filter((hit) => hit.id === probeId && probed.isOwner(hit.owner)),
+    observation.after.mutationHits.filter(
+      (hit) => hit.id === counterId && instrumented.isOrigin(hit.origin),
+    ),
   );
   if (hits.length === 0) return null;
-  return hits.some((hit) => (probed.warning.kind === "lost-update" ? hit.isLost : hit.isWritten));
+  return hits.some((hit) =>
+    instrumented.warning.kind === "lost-update" ? hit.isLost : hit.isWritten,
+  );
 };
 
 const collectUnwarnedMutations = (
   observations: Observation[],
-  probedWarnings: ProbedWarning[],
+  instrumentedWarnings: InstrumentedWarning[],
   stateBindings: Binding[] | null,
 ): string[] => {
   const unwarned = new Map<string, string>();
   for (const observation of observations) {
-    for (const owner of observation.after.mutatedOwners) {
+    for (const origin of observation.after.mutatedOrigins) {
       const isWarned =
-        observation.after.mutationHits.some((hit) => hit.owner === owner && hit.isWritten) ||
-        probedWarnings.some((probed) => !probed.probe && probed.isOwner(owner));
-      const description = formatOwner(owner, stateBindings);
+        observation.after.mutationHits.some((hit) => hit.origin === origin && hit.isWritten) ||
+        instrumentedWarnings.some(
+          (instrumented) => !instrumented.counter && instrumented.isOrigin(origin),
+        );
+      const description = formatOrigin(origin, stateBindings);
       if (!isWarned && !unwarned.has(description))
         unwarned.set(
           description,
@@ -138,22 +147,22 @@ const collectUnwarnedMutations = (
   return [...unwarned.values()];
 };
 
-export const scoreWarnings = (
+export const checkWarnings = (
   analysis: ComponentAnalysis,
   observations: Observation[],
   stateBindings: Binding[] | null,
 ): WarningScore => {
-  const probedWarnings = getProbedWarnings(analysis, stateBindings);
+  const instrumentedWarnings = getInstrumentedWarnings(analysis, stateBindings);
   let coveredWarningCount = 0;
   const refutedWarnings: string[] = [];
-  for (const probed of probedWarnings) {
-    const isWitnessed = isWarningWitnessed(probed, observations);
+  for (const instrumented of instrumentedWarnings) {
+    const isWitnessed = isWarningWitnessed(instrumented, observations);
     if (isWitnessed === true) coveredWarningCount++;
-    if (isWitnessed === false) refutedWarnings.push(formatWarning(probed.warning));
+    if (isWitnessed === false) refutedWarnings.push(formatWarning(instrumented.warning));
   }
   return {
     coveredWarningCount,
     refutedWarnings,
-    unwarnedMutations: collectUnwarnedMutations(observations, probedWarnings, stateBindings),
+    unwarnedMutations: collectUnwarnedMutations(observations, instrumentedWarnings, stateBindings),
   };
 };

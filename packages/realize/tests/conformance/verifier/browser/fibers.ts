@@ -66,18 +66,6 @@ export const getQueuedHooks = (fiber: Fiber): MemoizedState[] => {
   return hooks;
 };
 
-const isMountedType = (type: unknown): boolean =>
-  type !== null &&
-  (type === mountedType ||
-    type === Reflect.get(Object(mountedType), "type") ||
-    type === Reflect.get(Object(mountedType), "render"));
-
-export const isRenderedByChild = (fiber: Fiber): boolean => {
-  const owner: unknown = Reflect.get(fiber, "_debugOwner");
-  const ownerType: unknown = owner && typeof owner === "object" ? Reflect.get(owner, "type") : null;
-  return ownerType !== null && ownerType !== undefined && !isMountedType(ownerType);
-};
-
 const getLanes = (root: FiberRoot, key: string): number => {
   const lanes: unknown = Reflect.get(root, key);
   return typeof lanes === "number" ? lanes : 0;

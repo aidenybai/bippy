@@ -29,13 +29,13 @@ import { createStubPlugin } from "./harness/stubs";
 import {
   createCommonJsPlugin,
   createImportMetaUrlFilterPlugin,
-  createProbePlugin,
+  createCoveragePlugin,
   createRequirePlugin,
   createJsxInScriptPlugin,
   createServerActionPlugin,
 } from "./harness/transforms";
 import { ENTRY_PATH, PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
-import type { Probe, SourceIndex } from "./types";
+import type { Counter, SourceIndex } from "./types";
 
 export interface Harness {
   url: string;
@@ -159,7 +159,7 @@ interface HarnessContext {
   nextDirectory: string | null;
   appImporter: string;
   componentFiles: string[];
-  probes: Probe[];
+  counters: Counter[];
   references: SourceReferences;
   providers: ProviderSpec[];
   setup: HarnessSetup;
@@ -207,7 +207,7 @@ const createHarnessPlugins = (
     ...(isDependencyDeclared(appDirectory, "worker-loader") ? [createWorkerImportPlugin()] : []),
     createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
     createMissingModulePlugin(),
-    createProbePlugin(context.probes),
+    createCoveragePlugin(context.counters),
     ...(nextDirectory ? [createNextImagePlugin()] : []),
     createJsxInScriptPlugin(),
     createServerActionPlugin(),
@@ -283,7 +283,7 @@ const getServerPort = (server: ViteDevServer): number => {
 
 export const startHarness = async (
   appDirectory: string,
-  probes: Probe[],
+  counters: Counter[],
   componentFiles: string[],
   setup: HarnessSetup,
   localNamesByFile: Map<string, string[]>,
@@ -295,7 +295,7 @@ export const startHarness = async (
     nextDirectory,
     appImporter: componentFiles[0] ?? join(appDirectory, "index.ts"),
     componentFiles,
-    probes,
+    counters,
     references,
     providers: getInstalledProviders(appDirectory, nextDirectory, references.reduxStore),
     setup,

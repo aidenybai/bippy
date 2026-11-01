@@ -10,10 +10,10 @@ import {
 } from "../../../src/core/project/declaration-key";
 import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
-import { collectHandlerProbes } from "./handler-probes";
-import { collectMutationProbes } from "./mutation";
-import { collectProbes } from "./branch-probes";
-import { scoreComponent } from "./score";
+import { collectHandlerCounters } from "./handler-counters";
+import { collectMutationCounters } from "./mutation";
+import { collectBranchCounters } from "./branch-counters";
+import { checkComponent } from "./check";
 import { createEmptyVerdict } from "./verdicts";
 import type { ComponentVerdict } from "./verdicts";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
@@ -75,9 +75,9 @@ export const startProjectHarness = async (
   const harness = await startHarness(
     appDirectory,
     exported.flatMap(({ analysis }) => [
-      ...collectProbes(analysis),
-      ...collectMutationProbes(analysis),
-      ...collectHandlerProbes(analysis).map(({ probe }) => probe),
+      ...collectBranchCounters(analysis),
+      ...collectMutationCounters(analysis),
+      ...collectHandlerCounters(analysis).map(({ counter }) => counter),
     ]),
     [...new Set(exported.map(({ analysis }) => analysis.file))],
     readHarnessSetup(setupDirectory),
@@ -173,7 +173,7 @@ const verifyComponent = async (
         )
       : [];
     return {
-      verdict: scoreComponent(component.analysis, component.model, observations),
+      verdict: checkComponent(component.analysis, component.model, observations),
       isPageBroken: false,
     };
   } catch (error) {

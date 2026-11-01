@@ -7,7 +7,7 @@ import type { MountFailure } from "./reasons";
 interface RenderCounterexample {
   props: Record<string, Sample>;
   path: string[];
-  sides: string[];
+  edges: string[];
   values: string[];
 }
 
@@ -17,7 +17,7 @@ interface TransitionCounterexample {
   handlers: string[];
 }
 
-interface ValueCounterexample {
+interface DomainCounterexample {
   path: string[];
   variable: string;
   value: string;
@@ -28,7 +28,7 @@ type VerdictOutcome =
   | { status: "verified" | "not-exported"; error: null; mountFailure: null }
   | { status: "mount-failed"; error: string; mountFailure: MountFailure };
 
-interface VerdictCounts {
+interface VerdictFields {
   name: string;
   file: string;
   isTruncated: boolean;
@@ -37,12 +37,12 @@ interface VerdictCounts {
   viewCount: number;
   coveredViews: string[];
   checkedTransitionCount: number;
-  branchSideCount: number;
-  coveredBranchSideCount: number;
-  reachedUnreachableSides: string[];
+  branchEdgeCount: number;
+  coveredBranchEdgeCount: number;
+  unreachableEdgesTaken: string[];
   renderCounterexamples: RenderCounterexample[];
   transitionCounterexamples: TransitionCounterexample[];
-  valueCounterexamples: ValueCounterexample[];
+  domainCounterexamples: DomainCounterexample[];
   warningCount: number;
   coveredWarningCount: number;
   refutedWarnings: string[];
@@ -50,7 +50,7 @@ interface VerdictCounts {
   durationMs: number;
 }
 
-export type ComponentVerdict = VerdictCounts & VerdictOutcome;
+export type ComponentVerdict = VerdictFields & VerdictOutcome;
 
 type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
 
@@ -64,8 +64,8 @@ export interface VerificationSummary {
   counterexampleCount: number;
   viewCount: number;
   coveredViewCount: number;
-  branchSideCount: number;
-  coveredBranchSideCount: number;
+  branchEdgeCount: number;
+  coveredBranchEdgeCount: number;
   warningCount: number;
   coveredWarningCount: number;
   unwarnedMutationCount: number;
@@ -88,12 +88,12 @@ export const createEmptyVerdict = (
   viewCount: model.stateSpace.reachableViews.length,
   coveredViews: [],
   checkedTransitionCount: 0,
-  branchSideCount: 0,
-  coveredBranchSideCount: 0,
-  reachedUnreachableSides: [],
+  branchEdgeCount: 0,
+  coveredBranchEdgeCount: 0,
+  unreachableEdgesTaken: [],
   renderCounterexamples: [],
   transitionCounterexamples: [],
-  valueCounterexamples: [],
+  domainCounterexamples: [],
   warningCount: analysis.warnings.length,
   coveredWarningCount: 0,
   refutedWarnings: [],

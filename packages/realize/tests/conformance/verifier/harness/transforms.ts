@@ -1,7 +1,7 @@
 import MagicString from "magic-string";
 import { parseAst, transformWithEsbuild } from "vite";
 import type { Plugin, Rollup } from "vite";
-import type { Probe } from "../types";
+import type { Counter } from "../types";
 import { isAppSourceModule, stripQuery } from "./packages";
 
 interface RequireCall {
@@ -182,13 +182,13 @@ export const createRequirePlugin = (): Plugin => ({
   },
 });
 
-export const createProbePlugin = (probes: Probe[]): Plugin => {
+export const createCoveragePlugin = (counters: Counter[]): Plugin => {
   const probesByFile = Map.groupBy(
-    new Map(probes.map((probe) => [probe.id, probe])).values(),
-    (probe) => probe.file,
+    new Map(counters.map((counter) => [counter.id, counter])).values(),
+    (counter) => counter.file,
   );
   return {
-    name: "bippy-verify-probes",
+    name: "bippy-verify-coverage",
     enforce: "pre",
     transform: (code, id) => {
       const fileProbes = probesByFile.get(stripQuery(id));
@@ -197,12 +197,12 @@ export const createProbePlugin = (probes: Probe[]): Plugin => {
       const innermostFirst = [...fileProbes].sort(
         (left, right) => left.end - left.start - (right.end - right.start),
       );
-      for (const probe of innermostFirst) {
+      for (const counter of innermostFirst) {
         source.prependRight(
-          probe.start,
-          `__bippyProbe(${JSON.stringify(probe.id)}, ${JSON.stringify(probe.mode)}, (`,
+          counter.start,
+          `__bippyCoverage(${JSON.stringify(counter.id)}, ${JSON.stringify(counter.kind)}, (`,
         );
-        source.appendLeft(probe.end, "))");
+        source.appendLeft(counter.end, "))");
       }
       return { code: source.toString(), map: source.generateMap({ hires: true }) };
     },

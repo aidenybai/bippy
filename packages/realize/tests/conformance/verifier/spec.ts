@@ -8,7 +8,7 @@ import type { View } from "../../../src/core/model/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
-import { createCoverage, isShowingView, observe, scoreComponent } from "./score";
+import { indexModel, canShowView, abstractCapture, checkComponent } from "./check";
 import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
@@ -105,10 +105,10 @@ const expectShowingView = (session: Session, capture: Capture, label: string): v
     labelledViews.length,
     `${analysis.name} has no view labelled "${label}". Its views are:\n${model.views.map((view) => view.label).join("\n")}`,
   ).toBeGreaterThan(0);
-  const coverage = createCoverage(analysis, model, session.observations);
-  const observed = observe(coverage, capture);
+  const modelIndex = indexModel(analysis, model, session.observations);
+  const observed = abstractCapture(modelIndex, capture);
   expect(
-    labelledViews.some((view) => isShowingView(coverage, observed, view)),
+    labelledViews.some((view) => canShowView(modelIndex, observed, view)),
     `${analysis.name} isn't showing "${label}"`,
   ).toBe(true);
 };
@@ -191,7 +191,7 @@ const startSession = async (
 };
 
 const expectNoCounterexamples = (session: Session): void => {
-  const verdict = scoreComponent(
+  const verdict = checkComponent(
     session.component.analysis,
     session.component.model,
     session.observations,

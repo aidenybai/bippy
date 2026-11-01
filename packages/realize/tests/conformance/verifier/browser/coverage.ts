@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement } from "react";
-import type { ProbeHit } from "../types";
+import type { BranchHit } from "../types";
 import { isRendering } from "../write-origins";
-import { recordMutationProbe } from "./mutations";
+import { recordMutationHit } from "./mutations";
 
 interface HandlerFunction {
   (...handlerArguments: unknown[]): unknown;
@@ -9,8 +9,8 @@ interface HandlerFunction {
 
 const EVENT_PROP_PATTERN = /^on[A-Z]/;
 
-let probeHits: ProbeHit[] = [];
-let handlerHits: string[] = [];
+let branchHits: BranchHit[] = [];
+let handlerCalls: string[] = [];
 const handlerProxies = new WeakMap<object, Map<string, object>>();
 
 const wrapRenderedHandlers = (id: string, rendered: unknown): unknown => {
@@ -40,7 +40,7 @@ const callHandler = (
 ): unknown => {
   if (isRendering())
     return wrapRenderedHandlers(id, Reflect.apply(handler, thisArgument, callArguments));
-  handlerHits.push(id);
+  handlerCalls.push(id);
   return Reflect.apply(handler, thisArgument, callArguments);
 };
 
@@ -97,29 +97,29 @@ const wrapHandler = (id: string, value: unknown, isEveryCallbackAHandler = false
   return proxy;
 };
 
-export const resetProbeHits = (): void => {
-  probeHits = [];
+export const resetBranchHits = (): void => {
+  branchHits = [];
 };
 
-export const takeProbeHits = (): ProbeHit[] => {
-  const hits = probeHits;
-  resetProbeHits();
+export const takeBranchHits = (): BranchHit[] => {
+  const hits = branchHits;
+  resetBranchHits();
   return hits;
 };
 
-export const takeHandlerHits = (): string[] => {
-  const hits = [...new Set(handlerHits)];
-  handlerHits = [];
+export const takeHandlerCalls = (): string[] => {
+  const hits = [...new Set(handlerCalls)];
+  handlerCalls = [];
   return hits;
 };
 
-globalThis.__bippyProbe = (id, mode, value) => {
-  if (mode === "mutation") return recordMutationProbe(id, value);
-  if (mode === "handler" || mode === "callbacks")
-    return wrapHandler(id, value, mode === "callbacks");
-  probeHits.push({
+globalThis.__bippyCoverage = (id, kind, value) => {
+  if (kind === "mutation") return recordMutationHit(id, value);
+  if (kind === "host-handler" || kind === "component-callbacks")
+    return wrapHandler(id, value, kind === "component-callbacks");
+  branchHits.push({
     id,
-    isTrueSide: mode === "nullish" ? value !== null && value !== undefined : Boolean(value),
+    isConsequent: kind === "nullish" ? value !== null && value !== undefined : Boolean(value),
   });
   return value;
 };

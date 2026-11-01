@@ -1,6 +1,5 @@
 import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
-import { normalizeShapes } from "./shapes";
 import { HarnessError, getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
 import type {
@@ -259,15 +258,15 @@ export const resolveWrappers = async (
 };
 
 const getCaptureKey = (capture: Capture): string =>
-  JSON.stringify([normalizeShapes(capture.shapes), capture.hookStates]);
+  JSON.stringify([capture.shapes, capture.stateValues]);
 
 const isUnchangedBy = (action: Action, before: Capture, after: Capture): boolean =>
   action.kind !== "change" &&
   !after.error &&
-  after.handlerHits.length === 0 &&
-  after.probes.length === 0 &&
+  after.handlerCalls.length === 0 &&
+  after.branchHits.length === 0 &&
   after.mutationHits.length === 0 &&
-  after.mutatedOwners.length === 0 &&
+  after.mutatedOrigins.length === 0 &&
   getCaptureKey(after) === getCaptureKey(before);
 
 const replayPath = async (

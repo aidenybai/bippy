@@ -125,7 +125,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
         : picocolors.green("0 counterexamples")
     }  ` +
       picocolors.dim(
-        `views ${verdict.coveredViews.length}/${verdict.viewCount} covered · transitions ${verdict.checkedTransitionCount} checked · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
+        `views ${verdict.coveredViews.length}/${verdict.viewCount} covered · transitions ${verdict.checkedTransitionCount} checked · branch edges ${verdict.coveredBranchEdgeCount}/${verdict.branchEdgeCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
       ),
   ];
   for (const counterexample of formatCounterexamples(verdict))
