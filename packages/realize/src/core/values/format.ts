@@ -43,8 +43,6 @@ const ELIDED_TEXT = "…";
 export const CONDITION_SEPARATOR = " ∧ ";
 export const UNCONDITIONAL_LABEL = "always";
 
-export const formatStateLabel = (stateIndex: number): string => `S${stateIndex + 1}`;
-
 export const formatLine = (loc: SourceLocation): string =>
   loc === GeneratedSource ? "" : `L${loc.start.line}`;
 

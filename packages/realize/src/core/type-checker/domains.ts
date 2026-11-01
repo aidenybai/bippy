@@ -124,11 +124,3 @@ export const getDomainPrimitive = (domain: Domain): PrimitiveTypeName | null => 
   const [first, ...rest] = domain.cases.map(getCasePrimitive);
   return first !== undefined && rest.every((primitive) => primitive === first) ? first : null;
 };
-
-export const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
-  cases.every(
-    (value) => value.kind === "Literal" || (value.kind === "Type" && value.primitive !== null),
-  );
-
-export const isBooleanDomain = (cases: AbstractValue[]): boolean =>
-  cases.every((value) => value.kind === "Literal" && typeof value.value === "boolean");

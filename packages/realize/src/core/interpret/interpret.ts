@@ -87,7 +87,6 @@ import {
 } from "../interpret/literal-receivers";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { isStateBinding } from "../values/is-state-binding";
 import { getLiteralRead } from "./literal-reads";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";

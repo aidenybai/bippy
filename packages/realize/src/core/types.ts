@@ -20,8 +20,6 @@ export type AbstractValue =
 
 export type CollectionContents = Extract<AbstractValue, { kind: "Collection" }>;
 
-export type Truthiness = "truthy" | "falsy" | "either";
-
 export type TestKind = "truthy" | "nullish";
 
 type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";

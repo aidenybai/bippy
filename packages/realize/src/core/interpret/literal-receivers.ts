@@ -59,20 +59,6 @@ export const isCollectionRead = (methodName: string): boolean => COLLECTION_READ
 const copyCollection = (collection: LiteralCollection): LiteralCollection =>
   collection instanceof Set ? new Set(collection) : new Map(collection);
 
-const getEntryKey = ([key]: [PrimitiveValue, PrimitiveValue]): string =>
-  `${typeof key}:${String(key)}`;
-
-const toContents = (
-  collection: LiteralCollection,
-  kind: CollectionValue["collection"],
-): CollectionContents => ({
-  kind: "Collection",
-  collection: kind,
-  entries: [...collection.entries()].sort((left, right) =>
-    getEntryKey(left).localeCompare(getEntryKey(right)),
-  ),
-});
-
 const fromContents = (contents: CollectionContents): LiteralCollection =>
   contents.collection === "Set"
     ? new Set(contents.entries.map(([key]) => key))
@@ -158,41 +144,6 @@ export const getLiteralCollection = (value: CollectionValue): LiteralCollection 
   const cases = getCases(value, LITERAL_READER);
   return cases?.length === 1 ? cases[0].collection : null;
 };
-
-export const getCollectionCases = (
-  value: CollectionValue,
-  reader: CollectionReader,
-): CollectionContents[] | null =>
-  getCases(value, reader)?.map(({ collection }) => toContents(collection, value.collection)) ??
-  null;
-
-export const getContentsField = (
-  contents: CollectionContents[],
-  path: string[],
-): AbstractValue[] | null => {
-  if (path.length === 0) return contents;
-  return path.length === 1 && path[0] === "size"
-    ? contents.map((value): AbstractValue => ({ kind: "Literal", value: value.entries.length }))
-    : null;
-};
-
-export const readContents = (
-  contents: AbstractValue,
-  methodName: string,
-  argumentValues: PrimitiveValue[],
-): PrimitiveValue | null =>
-  contents.kind === "Collection" && isCollectionRead(methodName)
-    ? applyMethod(fromContents(contents), methodName, argumentValues)
-    : null;
-
-export const applyArrayMethod = (
-  methodName: string,
-  receiver: PrimitiveValue[],
-  argumentValues: PrimitiveValue[],
-): PrimitiveValue | null =>
-  Reflect.has(Array.prototype, methodName)
-    ? applyMethod(receiver, methodName, argumentValues)
-    : null;
 
 export const applyCollectionMethod = (
   value: CollectionValue,
