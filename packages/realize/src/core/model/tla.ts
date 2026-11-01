@@ -42,7 +42,7 @@ const formatChoice = (choice: Choice, lane: string): string => {
     case "Cells":
       return formatSet(choice.cells);
     case "If":
-      return `(IF ${formatCondition(choice.condition)} THEN ${formatChoice(choice.then, lane)} ELSE ${formatChoice(choice.otherwise, lane)})`;
+      return `(IF ${formatCondition(choice.condition)} THEN ${formatChoice(choice.consequent, lane)} ELSE ${formatChoice(choice.alternate, lane)})`;
   }
 };
 

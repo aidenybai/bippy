@@ -9,7 +9,7 @@ import { analyzeFixture, getComponent, getHandlerProbeId } from "./helpers";
 
 describe("conformance coverage", () => {
   const wizard = getComponent(analyzeFixture("symbolic-tree"), "Wizard");
-  const nextProbeId = getHandlerProbeId(wizard, "() => dispatch({ type: \"next\" })");
+  const nextProbeId = getHandlerProbeId(wizard, '() => dispatch({ type: "next" })');
 
   const getSideProbeId = (test: string): string => {
     const arm = wizard.model.arms.find((candidate) => candidate.test === test);
@@ -95,9 +95,7 @@ describe("conformance coverage", () => {
       { 'state.step === "done"': false, "state.hasError": true },
       { hasError: true },
     );
-    expect(score([mount(failed)]).reachedUnreachableSides).toEqual([
-      "state.hasError is true L26",
-    ]);
+    expect(score([mount(failed)]).reachedUnreachableSides).toEqual(["state.hasError is true L26"]);
   });
 
   it("reports a state value outside every cell", () => {
@@ -113,11 +111,7 @@ describe("conformance coverage", () => {
   });
 
   it("reports a transition with no model path", () => {
-    const done = capture(
-      "done",
-      { 'state.step === "done"': true },
-      { handlerHits: [nextProbeId] },
-    );
+    const done = capture("done", { 'state.step === "done"': true }, { handlerHits: [nextProbeId] });
     expect(score([mount(details), click(details, done)]).transitionCounterexamples).toEqual([
       { path: ["next"], action: "Next", handlers: ["t2"] },
     ]);

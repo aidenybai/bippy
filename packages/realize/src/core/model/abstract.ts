@@ -7,6 +7,14 @@ export const COMPARISONS = new Set<string>(["===", "!==", "==", "!=", "<", "<=",
 
 export const ANY: Abstract = { kind: "Any" };
 
+const isNullish = (value: PrimitiveValue): value is null | undefined =>
+  value === null || value === undefined;
+
+const isLooselyEqual = (left: PrimitiveValue, right: PrimitiveValue): boolean => {
+  if (isNullish(left) || isNullish(right)) return isNullish(left) && isNullish(right);
+  return typeof left === typeof right ? left === right : Number(left) === Number(right);
+};
+
 const compareExact = (
   left: PrimitiveValue,
   operator: Comparison,
@@ -18,9 +26,9 @@ const compareExact = (
     case "!==":
       return left !== right;
     case "==":
-      return left == right;
+      return isLooselyEqual(left, right);
     case "!=":
-      return left != right;
+      return !isLooselyEqual(left, right);
     case "<":
       return (left as number) < (right as number);
     case "<=":

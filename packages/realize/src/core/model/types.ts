@@ -45,7 +45,7 @@ export type Condition =
 export type Choice =
   | { kind: "Cells"; cells: string[] }
   | { kind: "Keep" }
-  | { kind: "If"; condition: Condition; then: Choice; otherwise: Choice };
+  | { kind: "If"; condition: Condition; consequent: Choice; alternate: Choice };
 
 export type ActionPhase = "run" | "resolves" | "rejects" | "input";
 

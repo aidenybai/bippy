@@ -6,11 +6,11 @@ export const FALSE: Condition = { kind: "False" };
 
 export const KEEP: Choice = { kind: "Keep" };
 
-export const choose = (condition: Condition, then: Choice, otherwise: Choice): Choice => {
-  if (condition.kind === "True") return then;
-  if (condition.kind === "False") return otherwise;
-  if (JSON.stringify(then) === JSON.stringify(otherwise)) return then;
-  return { kind: "If", condition, then, otherwise };
+export const choose = (condition: Condition, consequent: Choice, alternate: Choice): Choice => {
+  if (condition.kind === "True") return consequent;
+  if (condition.kind === "False") return alternate;
+  if (JSON.stringify(consequent) === JSON.stringify(alternate)) return consequent;
+  return { kind: "If", condition, consequent, alternate };
 };
 
 export const not = (condition: Condition): Condition => {
@@ -157,7 +157,7 @@ export const evaluateChoice = (
       return choice.cells;
     case "If":
       return evaluateCondition(choice.condition, cellOf)
-        ? evaluateChoice(choice.then, current, cellOf)
-        : evaluateChoice(choice.otherwise, current, cellOf);
+        ? evaluateChoice(choice.consequent, current, cellOf)
+        : evaluateChoice(choice.alternate, current, cellOf);
   }
 };

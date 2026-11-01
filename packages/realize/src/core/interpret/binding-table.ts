@@ -1,13 +1,7 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
-import type {
-  Binding,
-  BindingKind,
-  BindingValue,
-  Domain,
-  BindingPlace,
-} from "../types";
+import type { Binding, BindingKind, BindingValue, Domain, BindingPlace } from "../types";
 import { dedupeAbstractValues } from "../values/abstract-values";
 import { PlaceMap } from "../values/place-map";
 import { getBindingPlace } from "../values/get-binding-place";
@@ -16,13 +10,7 @@ import { createBindingValue } from "../values/symbolic-values";
 export interface BindingOptions extends Partial<
   Pick<
     Binding,
-    | "hookKind"
-    | "propName"
-    | "initial"
-    | "inputPlaces"
-    | "isDerived"
-    | "domain"
-    | "alias"
+    "hookKind" | "propName" | "initial" | "inputPlaces" | "isDerived" | "domain" | "alias"
   >
 > {
   identityKey?: string;

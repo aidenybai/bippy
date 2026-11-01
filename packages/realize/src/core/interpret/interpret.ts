@@ -1829,12 +1829,7 @@ export class Interpreter {
     const isDerivedResult =
       isDerived || pureCall !== null || this.#isLengthLimited(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
-    if (
-      !isDerivedResult &&
-      !initial &&
-      inputPlaces.size === 0 &&
-      !hasFiniteResult
-    ) {
+    if (!isDerivedResult && !initial && inputPlaces.size === 0 && !hasFiniteResult) {
       const unknownResult = createUnknown("call", callSite.loc);
       this.addUnknownSource(unknownResult, {
         kind: "ArrayExpression",
@@ -1845,8 +1840,7 @@ export class Interpreter {
     }
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     if (initial) this.collectInputPlaces(initial, inputPlaces);
-    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !isDerivedResult)
-      return initial;
+    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !isDerivedResult) return initial;
     const sourceValues = [
       callSite.callee,
       ...callSite.argumentValues,

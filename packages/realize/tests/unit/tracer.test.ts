@@ -14,9 +14,7 @@ describe("tracing an analysis", () => {
     expect([...categories]).toEqual(
       expect.arrayContaining(["typescript", "compile", "interpret", "model"]),
     );
-    const modeled = spans
-      .filter((event) => event.cat === "model")
-      .map((event) => event.name);
+    const modeled = spans.filter((event) => event.cat === "model").map((event) => event.name);
     expect(modeled).toEqual(
       expect.arrayContaining(project.components.map((component) => component.analysis.name)),
     );

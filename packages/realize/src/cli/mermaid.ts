@@ -21,7 +21,9 @@ const escapeText = (text: string): string =>
 
 const indent = (line: string): string => `${INDENT}${line}`;
 
-const groupEdges = (edges: ScreenEdge[]): Map<string, { from: string; to: string; labels: string[] }> => {
+const groupEdges = (
+  edges: ScreenEdge[],
+): Map<string, { from: string; to: string; labels: string[] }> => {
   const groups = new Map<string, { from: string; to: string; labels: string[] }>();
   for (const edge of edges) {
     const key = `${edge.from}\0${edge.to}`;
@@ -49,7 +51,8 @@ export const formatMermaid = (component: AnalyzedComponent, options: MermaidOpti
     ({ from, to, labels }) => `${getId(from)} --> ${getId(to)}: ${escapeText(labels.join(", "))}`,
   );
   const laneLines = model.lanes.map(
-    (lane) => `%% ${lane.name} = ${lane.label} (${lane.source}): ${lane.cells.map((cell) => cell.label).join(" | ")}`,
+    (lane) =>
+      `%% ${lane.name} = ${lane.label} (${lane.source}): ${lane.cells.map((cell) => cell.label).join(" | ")}`,
   );
   const findingLines = model.findings.map(
     (finding) =>
