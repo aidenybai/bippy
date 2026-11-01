@@ -1664,7 +1664,7 @@ index 942c852..90526dc 100644
            value = t.tsSatisfiesExpression(
              codegenPlaceToExpression(cx, instrValue.value),
 diff --git a/TypeInference/InferTypes.ts b/TypeInference/InferTypes.ts
-index 5b6b059..065ee4b 100644
+index 5b6b059..1a26e8d 100644
 --- a/TypeInference/InferTypes.ts
 +++ b/TypeInference/InferTypes.ts
 @@ -17,7 +17,9 @@ import {
@@ -1677,8 +1677,12 @@ index 5b6b059..065ee4b 100644
    Type,
    typeEquals,
    TypeId,
-@@ -66,9 +68,92 @@ export function inferTypes(func: HIRFunction): void {
-   for (const e of generate(func)) {
+@@ -63,12 +65,101 @@ function isPrimitiveBinaryOp(op: t.BinaryExpression['operator']): boolean {
+ 
+ export function inferTypes(func: HIRFunction): void {
+   const unifier = new Unifier(func.env);
+-  for (const e of generate(func)) {
++  for (const e of generate(func, unifier)) {
      unifier.unify(e.left, e.right);
    }
 +  unifyRemainingTypeScriptTypes(func, unifier);
@@ -1711,13 +1715,19 @@ index 5b6b059..065ee4b 100644
 + * these in program order types receivers like `form.tags` before
 + * `form.tags.push` is resolved against them. Functions are left to
 + * `unifyRemainingTypeScriptTypes` so methods keep the compiler's signatures.
++ * A value the compiler already typed is skipped: unifying it with TypeScript's
++ * type would change nothing, and each query is a round trip to the checker.
 + */
 +function* generateTypeScriptEquations(
 +  env: Environment,
 +  places: Iterable<Place>,
 +  loc: SourceLocation,
++  unifier: Unifier,
 +): Generator<TypeEquation, void, undefined> {
 +  for (const place of places) {
++    if (unifier.get(place.identifier.type).kind !== 'Type') {
++      continue;
++    }
 +    const type = env.getTypeScriptType(
 +      getTypeScriptLocation(place.identifier, loc),
 +    );
@@ -1770,7 +1780,15 @@ index 5b6b059..065ee4b 100644
  function apply(func: HIRFunction, unifier: Unifier): void {
    for (const [_, block] of func.body.blocks) {
      for (const phi of block.phis) {
-@@ -127,6 +212,12 @@ function* generate(
+@@ -110,6 +201,7 @@ function equation(left: Type, right: Type): TypeEquation {
+ 
+ function* generate(
+   func: HIRFunction,
++  unifier: Unifier,
+ ): Generator<TypeEquation, void, undefined> {
+   if (func.fnType === 'Component') {
+     const [props, ref] = func.params;
+@@ -127,6 +219,13 @@ function* generate(
      }
    }
  
@@ -1778,22 +1796,52 @@ index 5b6b059..065ee4b 100644
 +    func.env,
 +    func.params.map(param => (param.kind === 'Identifier' ? param : param.place)),
 +    func.loc,
++    unifier,
 +  );
 +
    const names = new Map();
    const returnTypes: Array<Type> = [];
    for (const [_, block] of func.body.blocks) {
-@@ -139,6 +230,13 @@ function* generate(
+@@ -138,7 +237,15 @@ function* generate(
+     }
  
      for (const instr of block.instructions) {
-       yield* generateInstructionTypes(func.env, names, instr);
+-      yield* generateInstructionTypes(func.env, names, instr);
++      yield* generateInstructionTypes(func.env, names, instr, unifier);
 +      if (!isMemoMarker(instr)) {
 +        yield* generateTypeScriptEquations(
 +          func.env,
 +          eachInstructionLValue(instr),
 +          instr.loc,
++          unifier,
 +        );
 +      }
      }
      const terminal = block.terminal;
      if (terminal.kind === 'return') {
+@@ -173,6 +280,7 @@ function* generateInstructionTypes(
+   env: Environment,
+   names: Map<IdentifierId, string>,
+   instr: Instruction,
++  unifier: Unifier,
+ ): Generator<TypeEquation, void, undefined> {
+   const {lvalue, value} = instr;
+   const left = lvalue.identifier.type;
+@@ -422,7 +530,7 @@ function* generateInstructionTypes(
+     }
+ 
+     case 'FunctionExpression': {
+-      yield* generate(value.loweredFunc.func);
++      yield* generate(value.loweredFunc.func, unifier);
+       yield equation(left, {
+         kind: 'Function',
+         shapeId: BuiltInFunctionId,
+@@ -438,7 +546,7 @@ function* generateInstructionTypes(
+     }
+ 
+     case 'ObjectMethod': {
+-      yield* generate(value.loweredFunc.func);
++      yield* generate(value.loweredFunc.func, unifier);
+       yield equation(left, {kind: 'ObjectMethod'});
+       break;
+     }
