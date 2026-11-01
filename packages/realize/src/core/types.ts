@@ -71,27 +71,8 @@ export interface Binding {
   samples: Sample[];
   initial: SymbolicValue | null;
   inputPlaces: BindingPlace[];
-  lengthLimit: LengthLimit | null;
-  derived: DerivedString | DerivedCall | null;
+  isDerived: boolean;
   alias: SymbolicValue | null;
-}
-
-export interface DerivedString {
-  kind: "String";
-  method: string;
-  receiver: BindingValue;
-  argumentValues: PrimitiveValue[];
-}
-
-export interface DerivedCall {
-  kind: "Call";
-  callee: string;
-  operands: SymbolicValue[];
-}
-
-export interface LengthLimit {
-  arrayLength: BindingPlace;
-  isSameLength: boolean;
 }
 
 export interface Branch {

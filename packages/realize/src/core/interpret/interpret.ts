@@ -42,8 +42,6 @@ import type {
   CollectionValue,
   Branch,
   ContextSetterFields,
-  DerivedCall,
-  DerivedString,
   DispatchValue,
   Domain,
   FunctionValue,
@@ -51,7 +49,6 @@ import type {
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
-  LengthLimit,
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
@@ -70,7 +67,8 @@ import { PlaceMap } from "../values/place-map";
 import { ALL_HELD_PROPS } from "./get-prop-holds";
 import type { HeldProps } from "./get-prop-holds";
 import { getBindingPlace } from "../values/get-binding-place";
-import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./derived-calls";
+import { getLiteralArrayCall, getMathCall, getPureCallDomain } from "./derived-calls";
+import type { PureCall } from "./derived-calls";
 import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
 import { getMemoRanges } from "./get-memo-ranges";
@@ -765,7 +763,7 @@ export class Interpreter {
     return createBindingValue(
       this.createBinding(`(${formatSymbolicValue(text)}).length`, "call", loc, {
         inputPlaces: inputPlaces.places(),
-        derived: { kind: "Call", callee: "String.concat.length", operands: parts },
+        isDerived: true,
       }),
     );
   }
@@ -1360,7 +1358,7 @@ export class Interpreter {
     const [firstArgument] = callSite.argumentValues;
     if (callee.kind === "Global" && callee.module === null && isPureFunction(callee.name))
       return this.#createCallResult(callSite, {
-        derived: { kind: "Call", callee: callee.name, operands: callSite.argumentValues },
+        pureCall: { callee: callee.name, operands: callSite.argumentValues },
       });
     switch (callee.kind) {
       case "Function":
@@ -1782,17 +1780,12 @@ export class Interpreter {
     return getBindingPlace(callee.binding, callee.path.slice(0, -1));
   }
 
-  #getLengthLimit(callSite: CallSite, receiverPlace: BindingPlace | null): LengthLimit | null {
+  #isLengthLimited(callSite: CallSite, receiverPlace: BindingPlace | null): boolean {
     const methodName = callSite.callee.kind === "Binding" ? callSite.callee.path.at(-1) : undefined;
-    if (!receiverPlace || methodName === undefined) return null;
-    const isSameLength = LENGTH_PRESERVING_METHODS.has(methodName);
-    const isLengthLimited = isSameLength || SHORTENING_METHODS.has(methodName);
-    if (!isLengthLimited || !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
-      return null;
-    return {
-      arrayLength: { ...receiverPlace, path: [...receiverPlace.path, "length"] },
-      isSameLength,
-    };
+    if (!receiverPlace || methodName === undefined) return false;
+    const isLengthMethod =
+      LENGTH_PRESERVING_METHODS.has(methodName) || SHORTENING_METHODS.has(methodName);
+    return isLengthMethod && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
   }
 
   #getLongCallKey(callSite: CallSite): string {
@@ -1811,10 +1804,12 @@ export class Interpreter {
   #createCallResult(
     callSite: CallSite,
     {
-      derived = null,
+      pureCall = null,
+      isDerived = false,
       initial = null,
     }: {
-      derived?: DerivedString | DerivedCall | null;
+      pureCall?: PureCall | null;
+      isDerived?: boolean;
       initial?: SymbolicValue | null;
     } = {},
   ): SymbolicValue {
@@ -1831,11 +1826,11 @@ export class Interpreter {
       this.collectInputPlaces(callSite.receiver, inputPlaces);
     const hasUnknownReceiver = !receiverPlace && callSite.receiver?.kind === "Unknown";
     if (hasUnknownReceiver && inputPlaces.size === 0) return createUnknown("call", callSite.loc);
-    const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
+    const isDerivedResult =
+      isDerived || pureCall !== null || this.#isLengthLimited(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
     if (
-      !lengthLimit &&
-      !derived &&
+      !isDerivedResult &&
       !initial &&
       inputPlaces.size === 0 &&
       !hasFiniteResult
@@ -1850,7 +1845,7 @@ export class Interpreter {
     }
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     if (initial) this.collectInputPlaces(initial, inputPlaces);
-    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !derived)
+    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !isDerivedResult)
       return initial;
     const sourceValues = [
       callSite.callee,
@@ -1869,18 +1864,17 @@ export class Interpreter {
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
-    const domain = derived && derived.kind === "Call" ? getDerivedDomain(derived) : null;
+    const domain = pureCall ? getPureCallDomain(pureCall) : null;
     const binding = this.createBinding(
       isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
       "call",
       callSite.loc,
       {
         inputPlaces: inputPlaces.places(),
-        lengthLimit,
+        isDerived: isDerivedResult,
         identityKey:
           this.#getRepeatableCallKey(callSite) ??
           (isLongName ? this.#getLongCallKey(callSite) : undefined),
-        derived,
         initial,
         ...(domain && { domain }),
       },
@@ -2246,10 +2240,10 @@ export class Interpreter {
         : null;
     if (membership) return membership;
     const isMath = receiver.kind === "Global" && receiver.name === "Math";
-    const derived = isMath
+    const pureCall = isMath
       ? getMathCall(methodName, argumentValues)
       : getLiteralArrayCall(receiver, methodName, argumentValues);
-    if (derived) return this.#createCallResult(callSite, { derived });
+    if (pureCall) return this.#createCallResult(callSite, { pureCall });
     const getFirstValue = () =>
       this.iteration.getFirstValue(
         methodName,
@@ -2426,7 +2420,7 @@ export class Interpreter {
       return this.#readCollection(receiver, methodName, argumentValues, callSite);
     if (receiver.kind !== "Binding") return null;
     return this.#createCallResult(callSite, {
-      derived: { kind: "String", method: methodName, receiver, argumentValues },
+      isDerived: true,
     });
   }
 

@@ -20,8 +20,7 @@ export interface BindingOptions extends Partial<
     | "propName"
     | "initial"
     | "inputPlaces"
-    | "lengthLimit"
-    | "derived"
+    | "isDerived"
     | "domain"
     | "alias"
   >
@@ -68,8 +67,7 @@ export class BindingTable {
       samples: kind === "prop" ? resolver.getSamples(loc, options.propName ?? name) : [],
       initial: options.initial ?? null,
       inputPlaces: options.inputPlaces ?? [],
-      lengthLimit: options.lengthLimit ?? null,
-      derived: options.derived ?? null,
+      isDerived: options.isDerived ?? false,
       alias: options.alias ?? null,
     };
     this.#bindingsByKey.set(declarationKey, binding);
