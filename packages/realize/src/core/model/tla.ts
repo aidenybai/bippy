@@ -9,10 +9,7 @@ const quote = (text: string): string => `"${text.replace(/\\/g, "\\\\").replace(
 
 const formatSet = (cells: string[]): string => `{${cells.map(quote).join(", ")}}`;
 
-const getLaneCells = (lanes: Lane[], name: string): string[] =>
-  lanes.find((lane) => lane.name === name)?.cells.map((cell) => cell.label) ?? [];
-
-export const formatCondition = (condition: Condition, lanes: Lane[]): string => {
+export const formatCondition = (condition: Condition): string => {
   switch (condition.kind) {
     case "True":
       return "TRUE";
@@ -20,52 +17,46 @@ export const formatCondition = (condition: Condition, lanes: Lane[]): string => 
       return "FALSE";
     case "In": {
       if (condition.cells.length === 1) return `${condition.lane} = ${quote(condition.cells[0])}`;
-      const excluded = getLaneCells(lanes, condition.lane).filter(
-        (cell) => !condition.cells.includes(cell),
-      );
+      const excluded = condition.allCells.filter((cell) => !condition.cells.includes(cell));
       if (excluded.length === 1) return `${condition.lane} /= ${quote(excluded[0])}`;
       return `${condition.lane} \\in ${formatSet(condition.cells)}`;
     }
-    case "Not": {
-      const inner = condition.condition;
-      if (inner.kind !== "In") return `~(${formatCondition(inner, lanes)})`;
-      const complement = getLaneCells(lanes, inner.lane).filter((cell) => !inner.cells.includes(cell));
-      return formatCondition({ kind: "In", lane: inner.lane, cells: complement }, lanes);
-    }
+    case "Not":
+      return `~(${formatCondition(condition.condition)})`;
     case "And":
-      return condition.conditions.map((part) => formatPart(part, lanes)).join(" /\\ ");
+      return condition.conditions.map(formatPart).join(" /\\ ");
     case "Or":
-      return condition.conditions.map((part) => formatPart(part, lanes)).join(" \\/ ");
+      return condition.conditions.map(formatPart).join(" \\/ ");
   }
 };
 
-const formatPart = (condition: Condition, lanes: Lane[]): string =>
+const formatPart = (condition: Condition): string =>
   condition.kind === "And" || condition.kind === "Or"
-    ? `(${formatCondition(condition, lanes)})`
-    : formatCondition(condition, lanes);
+    ? `(${formatCondition(condition)})`
+    : formatCondition(condition);
 
-const formatChoice = (choice: Choice, lane: string, lanes: Lane[]): string => {
+const formatChoice = (choice: Choice, lane: string): string => {
   switch (choice.kind) {
     case "Keep":
       return `{${lane}}`;
     case "Cells":
       return formatSet(choice.cells);
     case "If":
-      return `(IF ${formatCondition(choice.condition, lanes)} THEN ${formatChoice(choice.then, lane, lanes)} ELSE ${formatChoice(choice.otherwise, lane, lanes)})`;
+      return `(IF ${formatCondition(choice.condition)} THEN ${formatChoice(choice.then, lane)} ELSE ${formatChoice(choice.otherwise, lane)})`;
   }
 };
 
-const formatWrite = (lane: string, choice: Choice, lanes: Lane[]): string =>
+const formatWrite = (lane: string, choice: Choice): string =>
   choice.kind === "Cells" && choice.cells.length === 1
     ? `${lane}' = ${quote(choice.cells[0])}`
-    : `${lane}' \\in ${formatChoice(choice, lane, lanes)}`;
+    : `${lane}' \\in ${formatChoice(choice, lane)}`;
 
 const formatAction = (action: Action, lanes: Lane[]): string[] => {
   const written = new Set(action.writes.map(({ lane }) => lane));
   const unchanged = lanes.filter((lane) => !written.has(lane.name)).map((lane) => lane.name);
   const conjuncts = [
-    formatCondition(action.guard, lanes),
-    ...action.writes.map(({ lane, choice }) => formatWrite(lane, choice, lanes)),
+    formatCondition(action.guard),
+    ...action.writes.map(({ lane, choice }) => formatWrite(lane, choice)),
     ...(unchanged.length > 0 ? [`UNCHANGED <<${unchanged.join(", ")}>>`] : []),
   ].filter((conjunct) => conjunct !== "TRUE");
   return [
@@ -84,10 +75,10 @@ const formatScreen = (model: ComponentModel): string[] => {
   if (model.screens.length === 0) return ['screen == "nothing"'];
   const [first, ...rest] = model.screens;
   return [
-    `screen == CASE ${formatCondition(first.condition, model.lanes)} -> ${quote(first.label)}`,
+    `screen == CASE ${formatCondition(first.condition)} -> ${quote(first.label)}`,
     ...rest.map(
       (screen) =>
-        `            [] ${formatCondition(screen.condition, model.lanes)} -> ${quote(screen.label)}`,
+        `            [] ${formatCondition(screen.condition)} -> ${quote(screen.label)}`,
     ),
     `            [] OTHER -> "nothing"`,
   ];
@@ -121,6 +112,11 @@ export const formatTla = (
     `Next == ${actions.length > 0 ? actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",
+    ...model.properties.flatMap((property) => [
+      "",
+      `\\* ${property.label.replace(/\s+/g, " ")}`,
+      `${property.name} == ${formatCondition(property.condition)}`,
+    ]),
     ...invariants.flatMap((invariant) => ["", `${invariant.name} == ${invariant.expression}`]),
     "====",
   ];

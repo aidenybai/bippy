@@ -56,11 +56,17 @@ const describeRoot = (value: SymbolicValue): string | null => {
 
 const multiply = (left: Variant[], right: Variant[]): Variant[] =>
   left.flatMap((leftVariant) =>
-    right.map((rightVariant) => ({
-      condition: and([leftVariant.condition, rightVariant.condition]),
-      conditions: [...leftVariant.conditions, ...rightVariant.conditions],
-      parts: [...leftVariant.parts, ...rightVariant.parts],
-    })),
+    right.flatMap((rightVariant) => {
+      const condition = and([leftVariant.condition, rightVariant.condition]);
+      if (condition.kind === "False") return [];
+      return [
+        {
+          condition,
+          conditions: [...leftVariant.conditions, ...rightVariant.conditions],
+          parts: [...leftVariant.parts, ...rightVariant.parts],
+        },
+      ];
+    }),
   );
 
 export const collectScreens = (
@@ -100,11 +106,17 @@ export const collectScreens = (
     variants: Variant[],
   ): Variant[] => {
     const part = describeRoot(arm);
-    return variants.map((variant) => ({
-      condition: and([test, variant.condition]),
-      conditions: [text, ...variant.conditions],
-      parts: part ? [part, ...variant.parts] : variant.parts,
-    }));
+    return variants.flatMap((variant) => {
+      const condition = and([test, variant.condition]);
+      if (condition.kind === "False") return [];
+      return [
+        {
+          condition,
+          conditions: [text, ...variant.conditions],
+          parts: part ? [part, ...variant.parts] : variant.parts,
+        },
+      ];
+    });
   };
 
   const collectChildren = (

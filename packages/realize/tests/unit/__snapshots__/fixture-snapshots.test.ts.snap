@@ -648,22 +648,12 @@ VARIABLES items_length, count
 
 vars == <<items_length, count>>
 
-screen == CASE items_length = ">0" /\\ items_length = ">0" /\\ count = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > b > i \\"None\\""
-            [] items_length = ">0" /\\ items_length = ">0" /\\ count = ">0" /\\ count /= "0" -> "div > ul > p \\"Has items\\" > b"
-            [] items_length = ">0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
-            [] items_length = ">0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count /= "0" -> "div > ul > p \\"Has items\\""
-            [] items_length = ">0" /\\ items_length = "0" /\\ count = ">0" /\\ count = "0" -> "div > ul > p \\"Empty\\" > b > i \\"None\\""
-            [] items_length = ">0" /\\ items_length = "0" /\\ count = ">0" /\\ count /= "0" -> "div > ul > p \\"Empty\\" > b"
-            [] items_length = ">0" /\\ items_length = "0" /\\ count /= ">0" /\\ count = "0" -> "div > ul > p \\"Empty\\" > i \\"None\\""
-            [] items_length = ">0" /\\ items_length = "0" /\\ count /= ">0" /\\ count /= "0" -> "div > ul > p \\"Empty\\""
-            [] items_length = "0" /\\ items_length = ">0" /\\ count = ">0" /\\ count = "0" -> "div > p \\"Has items\\" > b > i \\"None\\""
-            [] items_length = "0" /\\ items_length = ">0" /\\ count = ">0" /\\ count /= "0" -> "div > p \\"Has items\\" > b"
-            [] items_length = "0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count = "0" -> "div > p \\"Has items\\" > i \\"None\\""
-            [] items_length = "0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count /= "0" -> "div > p \\"Has items\\""
-            [] items_length = "0" /\\ items_length = "0" /\\ count = ">0" /\\ count = "0" -> "div > p \\"Empty\\" > b > i \\"None\\""
-            [] items_length = "0" /\\ items_length = "0" /\\ count = ">0" /\\ count /= "0" -> "div > p \\"Empty\\" > b"
-            [] items_length = "0" /\\ items_length = "0" /\\ count /= ">0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
-            [] items_length = "0" /\\ items_length = "0" /\\ count /= ">0" /\\ count /= "0" -> "div > p \\"Empty\\""
+screen == CASE items_length = ">0" /\\ count = ">0" -> "div > ul > p \\"Has items\\" > b"
+            [] items_length = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
+            [] items_length = ">0" /\\ count = "<0" -> "div > ul > p \\"Has items\\""
+            [] items_length = "0" /\\ count = ">0" -> "div > p \\"Empty\\" > b"
+            [] items_length = "0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
+            [] items_length = "0" /\\ count = "<0" -> "div > p \\"Empty\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -1110,8 +1100,8 @@ VARIABLES picked
 vars == <<picked>>
 
 screen == CASE picked = "0" -> "button > \\"Pick\\""
-            [] picked /= "0" /\\ picked = "3" -> "button > \\"Third\\""
-            [] picked /= "0" /\\ picked /= "3" -> "button > \\"Other\\""
+            [] picked = "3" -> "button > \\"Third\\""
+            [] picked \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -1174,9 +1164,9 @@ VARIABLES role, isEditing
 
 vars == <<role, isEditing>>
 
-screen == CASE ~(role = "admin" /\\ role = "admin") -> "p \\"Read only\\""
-            [] role = "admin" /\\ role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
-            [] role = "admin" /\\ role = "admin" /\\ isEditing = "false" -> "button \\"Edit\\""
+screen == CASE role = "viewer" -> "p \\"Read only\\""
+            [] role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
+            [] role = "admin" /\\ isEditing = "false" -> "button \\"Edit\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -1185,13 +1175,13 @@ Init ==
 
 \\* "Save"
 t1 ==
-  /\\ role = "admin" /\\ role = "admin" /\\ isEditing = "true"
+  /\\ role = "admin" /\\ isEditing = "true"
   /\\ isEditing' = "false"
   /\\ UNCHANGED <<role>>
 
 \\* "Edit"
 t2 ==
-  /\\ role = "admin" /\\ role = "admin" /\\ isEditing = "false"
+  /\\ role = "admin" /\\ isEditing = "false"
   /\\ isEditing' = "true"
   /\\ UNCHANGED <<role>>
 
@@ -1379,10 +1369,10 @@ VARIABLES isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, i
 
 vars == <<isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline>>
 
-screen == CASE ((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features on\\" > \\"Full sync\\""
-            [] ((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features on\\""
-            [] ~((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features off\\" > \\"Full sync\\""
-            [] ~((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features off\\""
+screen == CASE (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features on\\" > \\"Full sync\\""
+            [] (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features on\\""
+            [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features off\\" > \\"Full sync\\""
+            [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features off\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -2130,10 +2120,8 @@ VARIABLES hint
 
 vars == <<hint>>
 
-screen == CASE hint /= "other string" /\\ hint = "other string" -> "label > p \\"Add a hint\\" > small"
-            [] hint /= "other string" /\\ hint /= "other string" -> "label > p \\"Add a hint\\" > small \\"No hint yet\\""
-            [] hint = "other string" /\\ hint = "other string" -> "label > small"
-            [] hint = "other string" /\\ hint /= "other string" -> "label > small \\"No hint yet\\""
+screen == CASE hint /= "other string" -> "label > p \\"Add a hint\\" > small \\"No hint yet\\""
+            [] hint = "other string" -> "label > small"
             [] OTHER -> "nothing"
 
 Init ==
@@ -2234,10 +2222,10 @@ VARIABLES kind
 
 vars == <<kind>>
 
-screen == CASE ((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > FabRow > p \\"Unreachable\\""
-            [] ((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ~((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > FabRow"
-            [] ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > p \\"Chip\\" > p \\"Unreachable\\""
-            [] ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ~((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > p \\"Chip\\""
+screen == CASE (kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab") -> "div > FabRow > p \\"Unreachable\\""
+            [] (kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > FabRow"
+            [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" -> "div > p \\"Chip\\" > p \\"Unreachable\\""
+            [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > p \\"Chip\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -2254,6 +2242,9 @@ t2 ==
 Next == t1 \\/ t2
 
 Spec == Init /\\ [][Next]_vars
+
+\\* kind as "extendedFab" | "fab"
+Claim1 == ~(kind = "fab" \\/ kind = "extendedFab") \\/ kind = "extendedFab" \\/ kind = "fab"
 ===="
 `;
 
@@ -2615,7 +2606,7 @@ Init ==
 
 \\* selectAll
 t1 ==
-  /\\ isSelected' \\in (IF item = "other string" /\\ item = "other string" THEN {"true"} ELSE {isSelected})
+  /\\ isSelected' \\in (IF item = "other string" THEN {"true"} ELSE {isSelected})
   /\\ UNCHANGED <<hasLong, item>>
 
 \\* hasLong changes
@@ -2801,14 +2792,10 @@ VARIABLES pathname
 
 vars == <<pathname>>
 
-screen == CASE pathname = "/" /\\ pathname = "/blog" /\\ pathname = "/about" -> "nav > b \\"Home\\" > b \\"Blog\\" > b \\"About\\""
-            [] pathname = "/" /\\ pathname = "/blog" /\\ pathname /= "/about" -> "nav > b \\"Home\\" > b \\"Blog\\" > a \\"About\\""
-            [] pathname = "/" /\\ pathname /= "/blog" /\\ pathname = "/about" -> "nav > b \\"Home\\" > a \\"Blog\\" > b \\"About\\""
-            [] pathname = "/" /\\ pathname /= "/blog" /\\ pathname /= "/about" -> "nav > b \\"Home\\" > a \\"Blog\\" > a \\"About\\""
-            [] pathname /= "/" /\\ pathname = "/blog" /\\ pathname = "/about" -> "nav > a \\"Home\\" > b \\"Blog\\" > b \\"About\\""
-            [] pathname /= "/" /\\ pathname = "/blog" /\\ pathname /= "/about" -> "nav > a \\"Home\\" > b \\"Blog\\" > a \\"About\\""
-            [] pathname /= "/" /\\ pathname /= "/blog" /\\ pathname = "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > b \\"About\\""
-            [] pathname /= "/" /\\ pathname /= "/blog" /\\ pathname /= "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+screen == CASE pathname = "/" -> "nav > b \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+            [] pathname = "/blog" -> "nav > a \\"Home\\" > b \\"Blog\\" > a \\"About\\""
+            [] pathname = "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > b \\"About\\""
+            [] pathname = "other string" -> "nav > a \\"Home\\" > a \\"Blog\\" > a \\"About\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -3429,9 +3416,10 @@ exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
 "---- MODULE Profile ----
 \\* status: status (state), 2 cells
 \\* user_name: user.name (input), 2 cells
-VARIABLES status, user_name
+\\* step: step (state), 3 cells
+VARIABLES status, user_name, step
 
-vars == <<status, user_name>>
+vars == <<status, user_name, step>>
 
 screen == CASE status = "saving" -> "p \\"Saving\\""
             [] status = "idle" -> "div"
@@ -3440,32 +3428,40 @@ screen == CASE status = "saving" -> "p \\"Saving\\""
 Init ==
   /\\ status = "idle"
   /\\ user_name \\in {"empty", "other string"}
+  /\\ step = "a"
 
 \\* "Save"
 t1 ==
   /\\ status = "idle"
   /\\ status' \\in (IF user_name = "empty" THEN {"idle"} ELSE {"saving"})
-  /\\ UNCHANGED <<user_name>>
+  /\\ UNCHANGED <<user_name, step>>
 
 \\* "Next"
 t2 ==
   /\\ status = "idle"
+  /\\ step' = "b"
   /\\ UNCHANGED <<status, user_name>>
 
 \\* "Finish"
 t3 ==
   /\\ status = "idle"
   /\\ status' \\in {"idle", "saving"}
-  /\\ UNCHANGED <<user_name>>
+  /\\ UNCHANGED <<user_name, step>>
 
 \\* parent changes user.name
 change_user_name ==
   /\\ user_name' \\in {"empty", "other string"}
-  /\\ UNCHANGED <<status>>
+  /\\ UNCHANGED <<status, step>>
 
 Next == t1 \\/ t2 \\/ t3 \\/ change_user_name
 
 Spec == Init /\\ [][Next]_vars
+
+\\* step as "a" | "b"
+Claim1 == status = "saving" \\/ step = "a" \\/ step = "b"
+
+\\* "done" as "idle" | "saving"
+Claim2 == status = "saving"
 ===="
 `;
 
@@ -3508,14 +3504,16 @@ title: Profile src/claims.tsx:11
 ---
 stateDiagram-v2
   direction LR
-  %% 4 states
+  %% 8 states
   %% status = status (state): idle | saving
   %% user_name = user.name (input): empty | other string
+  %% step = step (state): a | b | c
   S1: div
   S2: p "Saving"
   [*] --> S1
   S1 --> S1: "Save", "Next", "Finish"
-  S1 --> S2: "Finish", "Save""
+  S1 --> S2: "Finish", "Save"
+  %% ⚠ "done" as "idle" | "saving" can fail (L21)"
 `;
 
 exports[`fixture analysis > ProfileCard keeps its TLA+ module 1`] = `
@@ -3773,6 +3771,9 @@ change_isReady ==
 Next == t1 \\/ t2 \\/ change_isReady
 
 Spec == Init /\\ [][Next]_vars
+
+\\* success!
+Claim1 == success = "null" \\/ success = "Success"
 ===="
 `;
 
@@ -4232,8 +4233,8 @@ VARIABLES isFocused, test_Unknown_call_enoughChars
 
 vars == <<isFocused, test_Unknown_call_enoughChars>>
 
-screen == CASE (isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") \\/ (isFocused = "false" /\\ isFocused = "true") -> "div > ul"
-            [] ~((isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") \\/ (isFocused = "false" /\\ isFocused = "true")) -> "div"
+screen == CASE isFocused = "true" /\\ test_Unknown_call_enoughChars = "true" -> "div > ul"
+            [] ~(isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") -> "div"
             [] OTHER -> "nothing"
 
 Init ==
@@ -4617,8 +4618,7 @@ VARIABLES size
 vars == <<size>>
 
 screen == CASE size = "sm" -> "p \\"Small\\""
-            [] size = "lg" /\\ size = "lg" -> "p \\"Large\\""
-            [] size = "lg" /\\ size = "sm" -> "nothing"
+            [] size = "lg" -> "p \\"Large\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -4716,8 +4716,8 @@ VARIABLES steps
 vars == <<steps>>
 
 screen == CASE steps = "0" -> "button > \\"None\\""
-            [] steps /= "0" /\\ steps = "3" -> "button > \\"Three\\""
-            [] steps /= "0" /\\ steps /= "3" -> "button > \\"Other\\""
+            [] steps = "3" -> "button > \\"Three\\""
+            [] steps \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -4962,9 +4962,9 @@ VARIABLES status
 vars == <<status>>
 
 screen == CASE status = "error" -> "p \\"Failed\\""
-            [] status /= "error" /\\ status = "loading" -> "p \\"Loading…\\""
-            [] status /= "error" /\\ status /= "loading" /\\ status = "done" -> "p > \\"Done\\""
-            [] status /= "error" /\\ status /= "loading" /\\ status /= "done" -> "p > \\"Idle\\""
+            [] status = "loading" -> "p \\"Loading…\\""
+            [] status = "done" -> "p > \\"Done\\""
+            [] status = "idle" -> "p > \\"Idle\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -5095,8 +5095,8 @@ VARIABLES status
 vars == <<status>>
 
 screen == CASE status = "idle" -> "div > button \\"Start\\""
-            [] status /= "idle" /\\ status = "loading" -> "div > button \\"Finish\\""
-            [] status /= "idle" /\\ status /= "loading" -> "div > p \\"Done\\""
+            [] status = "loading" -> "div > button \\"Finish\\""
+            [] status = "done" -> "div > p \\"Done\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -5109,7 +5109,7 @@ t1 ==
 
 \\* "Finish"
 t2 ==
-  /\\ status /= "idle" /\\ status = "loading"
+  /\\ status = "loading"
   /\\ status' = "done"
 
 Next == t1 \\/ t2
@@ -5812,10 +5812,9 @@ VARIABLES tone
 
 vars == <<tone>>
 
-screen == CASE tone = "info" /\\ tone = "warning" -> "span > b \\"Info\\" > i \\"Warning\\""
-            [] tone = "info" /\\ tone /= "warning" -> "span > b \\"Info\\""
-            [] tone /= "info" /\\ tone = "warning" -> "span > i \\"Warning\\""
-            [] tone /= "info" /\\ tone /= "warning" -> "span"
+screen == CASE tone = "info" -> "span > b \\"Info\\""
+            [] tone = "warning" -> "span > i \\"Warning\\""
+            [] tone \\in {"undefined", "other string"} -> "span"
             [] OTHER -> "nothing"
 
 Init ==
@@ -6037,38 +6036,22 @@ VARIABLES role, status_isSaving, status_error, isHelpOpen
 
 vars == <<role, status_isSaving, status_error, isHelpOpen>>
 
-screen == CASE role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\""
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > p"
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p"
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > p"
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > span \\"Saving\\" > p"
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > span \\"Saving\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > p"
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\" > p"
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > p"
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\""
+screen == CASE role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
+            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\""
+            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > p"
+            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\""
+            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\" > p"
+            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\""
+            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > p"
+            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -6268,7 +6251,7 @@ t1 ==
 \\* "Upload" resolves
 t1_resolves ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF test_Unknown_throws = "false" /\\ test_Unknown_throws = "true" THEN {"other string"} ELSE (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error}))
+  /\\ error' \\in (IF FALSE THEN {"other string"} ELSE (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error}))
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<test_Unknown_throws>>
 
@@ -6400,14 +6383,10 @@ VARIABLES state_step, state_hasError
 vars == <<state_step, state_hasError>>
 
 screen == CASE state_step = "done" -> "p \\"Thanks!\\""
-            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step = "details" /\\ state_step = "payment" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\""
-            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step = "details" /\\ state_step /= "payment" -> "form > p \\"Something went wrong\\" > input"
-            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step /= "details" /\\ state_step = "payment" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\" (2)"
-            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step /= "details" /\\ state_step /= "payment" -> "form > p \\"Something went wrong\\" > input (2)"
-            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step = "details" /\\ state_step = "payment" -> "form > input > button \\"Back\\""
-            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step = "details" /\\ state_step /= "payment" -> "form > input"
-            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step /= "details" /\\ state_step = "payment" -> "form > input > button \\"Back\\" (2)"
-            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step /= "details" /\\ state_step /= "payment" -> "form > input (2)"
+            [] state_step = "details" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input"
+            [] state_step = "payment" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\""
+            [] state_step = "details" /\\ state_hasError = "false" -> "form > input"
+            [] state_step = "payment" /\\ state_hasError = "false" -> "form > input > button \\"Back\\""
             [] OTHER -> "nothing"
 
 Init ==
@@ -6416,7 +6395,7 @@ Init ==
 
 \\* "Back"
 t1 ==
-  /\\ state_step /= "done" /\\ state_step = "payment"
+  /\\ state_step = "payment"
   /\\ state_step' = "details"
   /\\ state_hasError' \\in (IF (state_step = "details" /\\ state_hasError = "false") \\/ (state_step = "done" /\\ state_hasError = "false") \\/ (state_step = "payment" /\\ state_hasError = "false") THEN {"false"} ELSE {"true"})
 
@@ -6477,7 +6456,7 @@ stateDiagram-v2
   %% state_step = state.step (state): details | done | payment
   %% state_hasError = state.hasError (state): false | true
   S1: form #gt; input
-  S2: form #gt; input #gt; button "Back" (2)
+  S2: form #gt; input #gt; button "Back"
   S3: p "Thanks!"
   [*] --> S1
   S1 --> S2: "Next"

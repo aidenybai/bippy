@@ -23,7 +23,7 @@ const FLIPPED: Record<Comparison, Comparison> = {
   ">=": "<=",
 };
 
-const STATE_KINDS = new Set(["state", "reducer"]);
+export const STATE_KINDS = new Set(["state", "reducer"]);
 
 const DERIVED_KINDS = new Set(["call", "memo"]);
 
@@ -219,7 +219,7 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
 
   const opaque = (value: SymbolicValue): Condition => {
     const lane = getOpaqueLane(value);
-    return { kind: "In", lane: lane.name, cells: ["true"] };
+    return inCells(lane.name, ["true"], ["false", "true"]);
   };
 
   const selectCells = (

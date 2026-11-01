@@ -7,10 +7,49 @@ export const FALSE: Condition = { kind: "False" };
 export const KEEP: Choice = { kind: "Keep" };
 
 export const not = (condition: Condition): Condition => {
+  if (condition.kind === "In")
+    return inCells(
+      condition.lane,
+      condition.allCells.filter((cell) => !condition.cells.includes(cell)),
+      condition.allCells,
+    );
   if (condition.kind === "True") return FALSE;
   if (condition.kind === "False") return TRUE;
   if (condition.kind === "Not") return condition.condition;
   return { kind: "Not", condition };
+};
+
+const dedupe = (parts: Condition[]): Condition[] => {
+  const seen = new Set<string>();
+  return parts.filter((part) => {
+    const key = JSON.stringify(part);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const intersectCells = (parts: Condition[]): Condition[] | null => {
+  const merged = new Map<string, Extract<Condition, { kind: "In" }>>();
+  const result: Condition[] = [];
+  for (const part of parts) {
+    if (part.kind !== "In") {
+      result.push(part);
+      continue;
+    }
+    const current = merged.get(part.lane);
+    if (!current) {
+      merged.set(part.lane, part);
+      result.push(part);
+      continue;
+    }
+    const cells = current.cells.filter((cell) => part.cells.includes(cell));
+    if (cells.length === 0) return null;
+    const narrowed = { ...current, cells };
+    merged.set(part.lane, narrowed);
+    result[result.indexOf(current)] = narrowed;
+  }
+  return result;
 };
 
 export const and = (conditions: Condition[]): Condition => {
@@ -18,7 +57,9 @@ export const and = (conditions: Condition[]): Condition => {
     condition.kind === "And" ? condition.conditions : [condition],
   );
   if (parts.some((part) => part.kind === "False")) return FALSE;
-  const kept = parts.filter((part) => part.kind !== "True");
+  const intersected = intersectCells(parts.filter((part) => part.kind !== "True"));
+  if (intersected === null) return FALSE;
+  const kept = dedupe(intersected);
   if (kept.length === 0) return TRUE;
   if (kept.length === 1) return kept[0];
   return { kind: "And", conditions: kept };
@@ -29,7 +70,7 @@ export const or = (conditions: Condition[]): Condition => {
     condition.kind === "Or" ? condition.conditions : [condition],
   );
   if (parts.some((part) => part.kind === "True")) return TRUE;
-  const kept = parts.filter((part) => part.kind !== "False");
+  const kept = dedupe(parts.filter((part) => part.kind !== "False"));
   if (kept.length === 0) return FALSE;
   if (kept.length === 1) return kept[0];
   return { kind: "Or", conditions: kept };
@@ -38,7 +79,7 @@ export const or = (conditions: Condition[]): Condition => {
 export const inCells = (lane: string, cells: string[], allCells: string[]): Condition => {
   if (cells.length === 0) return FALSE;
   if (allCells.every((cell) => cells.includes(cell))) return TRUE;
-  return { kind: "In", lane, cells };
+  return { kind: "In", lane, cells, allCells };
 };
 
 export const evaluateCondition = (

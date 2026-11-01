@@ -1,5 +1,5 @@
 import type { Handler, HandlerTrigger, StateUpdate, SymbolicValue } from "../types";
-import { KEEP, TRUE, and } from "./conditions";
+import { KEEP, TRUE, and, inCells } from "./conditions";
 import { compileChoice } from "./evaluate";
 import type { LaneTable } from "./lanes";
 import type { Action, ActionPhase, Choice, Condition, Lane } from "./types";
@@ -88,11 +88,12 @@ const createPendingLane = (handler: Handler): Lane => ({
   initial: [IDLE],
 });
 
-const isPending = (lane: Lane, cell: string): Condition => ({
-  kind: "In",
-  lane: lane.name,
-  cells: [cell],
-});
+const isPending = (lane: Lane, cell: string): Condition =>
+  inCells(
+    lane.name,
+    [cell],
+    lane.cells.map((pendingCell) => pendingCell.label),
+  );
 
 const setPending = (lane: Lane, cell: string): { lane: string; choice: Choice } => ({
   lane: lane.name,

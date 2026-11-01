@@ -2,7 +2,7 @@ import type { SymbolicValue } from "../types";
 import { getChildValues } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
-import { and, collectConditionLanes, evaluateCondition, or } from "./conditions";
+import { and, collectConditionLanes, evaluateCondition, inCells, or } from "./conditions";
 import type { LaneTable } from "./lanes";
 import type { Abstract, Choice, Condition, Lane } from "./types";
 
@@ -210,15 +210,24 @@ const forEachAssignment = (
 const countAssignments = (dependencies: Lane[]): number =>
   dependencies.reduce((total, lane) => total * lane.cells.length, 1);
 
-const toAssignmentCondition = (assignments: Array<Map<string, string>>): Condition => {
+const toAssignmentCondition = (
+  dependencies: Lane[],
+  assignments: Array<Map<string, string>>,
+): Condition => {
+  const getAllCells = (name: string): string[] =>
+    dependencies.find((lane) => lane.name === name)?.cells.map((cell) => cell.label) ?? [];
   const [first] = assignments;
   if (first && first.size === 1) {
     const [lane] = first.keys();
-    return { kind: "In", lane, cells: assignments.map((assignment) => assignment.get(lane) ?? "") };
+    return inCells(
+      lane,
+      assignments.map((assignment) => assignment.get(lane) ?? ""),
+      getAllCells(lane),
+    );
   }
   return or(
     assignments.map((assignment) =>
-      and([...assignment].map(([lane, cell]) => ({ kind: "In", lane, cells: [cell] }))),
+      and([...assignment].map(([lane, cell]) => inCells(lane, [cell], getAllCells(lane)))),
     ),
   );
 };
@@ -249,7 +258,7 @@ export const compileChoice = (table: LaneTable, lane: Lane, value: SymbolicValue
   return ordered.reduceRight<Choice>(
     (otherwise, group) => ({
       kind: "If",
-      condition: toAssignmentCondition(group.assignments),
+      condition: toAssignmentCondition(dependencies, group.assignments),
       then: { kind: "Cells", cells: group.cells },
       otherwise,
     }),

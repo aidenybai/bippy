@@ -37,7 +37,7 @@ export interface Lane {
 export type Condition =
   | { kind: "True" }
   | { kind: "False" }
-  | { kind: "In"; lane: string; cells: string[] }
+  | { kind: "In"; lane: string; cells: string[]; allCells: string[] }
   | { kind: "Not"; condition: Condition }
   | { kind: "And"; conditions: Condition[] }
   | { kind: "Or"; conditions: Condition[] };
@@ -101,7 +101,14 @@ export interface Exploration {
   edges: ScreenEdge[];
 }
 
-export type FindingKind = "unreachable-arm" | "silent-action" | "invariant";
+export interface Property {
+  name: string;
+  label: string;
+  condition: Condition;
+  loc: SourceLocation;
+}
+
+export type FindingKind = "unreachable-arm" | "silent-action" | "claim";
 
 export interface Finding {
   kind: FindingKind;
@@ -115,6 +122,7 @@ export interface ComponentModel {
   actions: Action[];
   screens: Screen[];
   arms: Arm[];
+  properties: Property[];
   exploration: Exploration;
   findings: Finding[];
 }
