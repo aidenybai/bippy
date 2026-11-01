@@ -59,6 +59,7 @@ describe("mapping a symbolic value", () => {
       {
         kind: "Bound",
         callee: { kind: "Global", name: "save", module: null },
+        receiver: { kind: "Primitive", value: undefined },
         argumentValues: [count],
         loc: GeneratedSource,
       },

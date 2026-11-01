@@ -253,7 +253,7 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       const calleeKey = getHandlerKey(value.callee);
       return calleeKey === null
         ? null
-        : `bound:${calleeKey}:${value.argumentValues.map(getValueKey).join(",")}`;
+        : `bound:${calleeKey}:${getValueKey(value.receiver)}:${value.argumentValues.map(getValueKey).join(",")}`;
     }
     case "ArrayExpression":
       return `array:${value.elements.map(getHandlerKey).join(",")}`;

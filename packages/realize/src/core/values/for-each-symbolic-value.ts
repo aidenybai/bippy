@@ -22,7 +22,7 @@ export const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
     case "HookResult":
       return value.argumentValues;
     case "Bound":
-      return [value.callee, ...value.argumentValues];
+      return [value.callee, value.receiver, ...value.argumentValues];
     case "Collection":
       return [
         ...(value.source ? [value.source] : []),
