@@ -1,8 +1,8 @@
 # realize
 
-Builds a model of every state a React component can be in by reading its source, checks properties against it with TLA+, and checks the model against real renders. See [GOAL.md](GOAL.md) for why.
+Builds a model of every state a React component can be in by reading its source, checks invariants against it with TLA+, and checks the model against real renders. See [GOAL.md](GOAL.md) for why.
 
-- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it builds a model of lanes, screens and actions, then prints Mermaid, JSON or a TLA+ module. It checks invariants with [tla-ts](https://www.npmjs.com/package/tla-ts). See [docs/architecture.md](docs/architecture.md).
+- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it builds a model of variables, views and actions, then prints Mermaid, JSON or a TLA+ module. It checks invariants with [tla-ts](https://www.npmjs.com/package/tla-ts). See [docs/architecture.md](docs/architecture.md).
 - **Viewer** (`viewer`) shows a component's source with the analysis over it. It still reads the old state report and needs porting to the model. See [viewer/README.md](viewer/README.md).
 - **Verifier** (`tests/conformance/verifier`) checks in a real browser that the model covers every render and transition.
 - **Conformance** (`tests/conformance`) runs both on pinned open-source repos. See [tests/conformance/README.md](tests/conformance/README.md).
@@ -18,20 +18,20 @@ pnpm --filter realize conformance run -n 4
 
 ## How verification works
 
-The model claims that every render a component can produce is one of its reachable states. For each exported component, the verifier tests that claim in five steps.
+The model over-approximates: every render a component can produce should be one of its reachable states. For each exported component, the verifier checks this in five steps.
 
-1. **Instrument.** A Vite dev server serves the app's own code. It adds a probe on every branch the analyzer modeled, every place a mutation warning points at, and every handler passed as a JSX prop, including the callbacks inside an object a component receives, so the page reports which handlers each action ran.
+1. **Instrument.** A Vite dev server serves the app's own code. It adds a coverage counter on every branch the analyzer modeled, every place a mutation warning points at, and every handler passed as a JSX prop, including the callbacks inside an object a component receives, so the page reports which handlers each action ran.
 2. **Mount.** Playwright opens a page that loads bippy before React, then mounts the component. See [Mounting](#mounting).
 3. **Choose props** from each prop's type. See [Props](#props).
-4. **Explore.** The page clicks every enabled handler, submits every form that has an `onSubmit` or an `action` function, clicks every button with a `formAction`, types into every input, presses Enter and Escape on elements with `onKeyDown`, focuses and blurs elements with `onFocus` or `onBlur`, and hovers in and out of elements with enter or leave handlers, breadth-first, a few steps deep. A submit goes through `requestSubmit`, so React runs the form's action and the harness only cancels the navigation afterwards. It waits for requests and React's pending updates to settle after each step, then reads the fiber tree, hook values and probes.
-5. **Check coverage.** Each capture becomes a condition on the model: the side each branch took, and the cell each `useState` or `useReducer` value falls in. A branch whose probe fired both ways during one action is left out, since it rendered more than once.
+4. **Explore.** The page clicks every enabled handler, submits every form that has an `onSubmit` or an `action` function, clicks every button with a `formAction`, types into every input, presses Enter and Escape on elements with `onKeyDown`, focuses and blurs elements with `onFocus` or `onBlur`, and hovers in and out of elements with enter or leave handlers, breadth-first, a few steps deep. A submit goes through `requestSubmit`, so React runs the form's action and the harness only cancels the navigation afterwards. It waits for requests and React's pending updates to settle after each step, then reads the fiber tree, hook values and counters.
+5. **Check coverage.** Each capture becomes a condition on the model: the edge each branch took, and the abstract value each `useState` or `useReducer` value falls in. A branch whose counter hit both edges during one action is left out, since it rendered more than once.
 
 | Check       | Counterexample when                                                                                 |
 | ----------- | --------------------------------------------------------------------------------------------------- |
-| Render      | No reachable model state agrees with the branch sides and state values the page showed.             |
+| Render      | No reachable model state agrees with the branch edges and state values the page showed.             |
 | Transition  | No path of at most three model actions leads from the state before an action to the state after it. |
-| Value       | A `useState` or `useReducer` value fits no cell of its lane.                                        |
-| Unreachable | A branch side the model calls unreachable ran.                                                      |
+| Domain      | A `useState` or `useReducer` value falls outside the domain of its variable.                        |
+| Unreachable | A branch edge the model calls unreachable ran.                                                      |
 | Mutation    | A warned mutation never wrote to its state or prop, or a lost update re-rendered.                   |
 
 A transition path may use each handler the action ran once, plus effects, async results and changes to inputs other than props. A truncated model is not checked for renders or transitions.
@@ -101,4 +101,4 @@ Untyped props, as in plain JavaScript, take the literals their call sites pass. 
 
 A string a component parses has no type to say so, so its name picks a valid sample. A string named like a date, such as `createdAt`, is an ISO date, and one named `currencyCode` is a currency code.
 
-Up to 12 combinations of these samples are mounted. A state that needs several props at once, or a field of an object prop, may go unseen. That shows as a screen the run didn't cover, not as a counterexample.
+Up to 12 combinations of these samples are mounted. A state that needs several props at once, or a field of an object prop, may go unseen. That shows as a view the run didn't cover, not as a counterexample.

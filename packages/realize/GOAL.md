@@ -1,6 +1,6 @@
 # Goal
 
-Derive a state chart of a React app from its source, without running it, and check properties against it.
+Derive a state chart of a React app from its source, without running it, and check invariants against it.
 
 ## Why
 
@@ -18,23 +18,23 @@ function App({ isLoading }) {
 The model:
 
 ```text
-lanes    isLoading: false | true (a prop, so it can change at any time)
-screens  isLoading → <Loading />
-         !isLoading → <Button>
-actions  click, when !isLoading: changes nothing the render tests
+variables  isLoading: false | true (a prop, so it can change at any time)
+views      isLoading → <Loading />
+           !isLoading → <Button>
+actions    click, when !isLoading: changes nothing the render tests
 ```
 
-`count` can be any number, but no branch tests it, so it isn't a lane. The model only tracks values that decide what renders. The click still shows as an edge from `<Button>` to itself.
+`count` can be any number, but no branch tests it, so it isn't a variable. The model only tracks values that decide what renders. The click still shows as a transition from `<Button>` to itself.
 
 ## The source is the spec
 
 The model comes from the code, so it can't tell you the code is right. It can tell you three things the code didn't intend:
 
-- **Dead branches.** A branch no reachable state renders, like an error alert nothing sets.
-- **Silent actions.** A handler or failed request that never changes the screen.
-- **Broken assertions.** A `x!`, `as` or `invariant()` the code makes that a reachable state violates.
+- **Unreachable branches.** A branch no reachable state renders, like an error alert nothing sets.
+- **Stuttering actions.** A handler or failed request that never changes the render.
+- **Violated assertions.** A `x!`, `as` or `invariant()` the code makes that a reachable state violates.
 
-For anything else, you write the property. `analyze -i 'Name: expression'` checks a TLA+ invariant on every reachable state and prints a trace when it fails. The property is your spec, and the model is what the code does.
+For anything else, you write the invariant. `analyze -i 'Name: expression'` checks a TLA+ invariant on every reachable state and prints a trace when it fails. The invariant is your spec, and the model is what the code does.
 
 ## How we check the model
 
@@ -43,6 +43,6 @@ The model over-approximates: every render the component can produce should be on
 ## Rules so far
 
 - Split a value only where a branch or handler tests it.
-- Use TypeScript types for the possible values. `boolean` gives two cells, `User | null` gives two, and `any` gives one.
+- Use TypeScript types for the possible values. `boolean` gives two values, `User | null` gives two, and `any` gives one.
 - Treat props, hooks, context and stores as inputs that can change at any time.
 - Stay with React for now. Its rules, pure render and state only through setters, keep the number of states small.

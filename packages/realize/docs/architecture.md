@@ -1,6 +1,6 @@
 # Architecture
 
-realize reads a React project with the TypeScript 7 checker and builds a model of each component: a small state machine whose states decide what renders. It never runs the code. You can print the model as Mermaid, JSON or a TLA+ module, and check your own properties against it with [tla-ts](https://www.npmjs.com/package/tla-ts).
+realize reads a React project with the TypeScript 7 checker and builds a model of each component: a small state machine whose states decide what renders. It never runs the code. You can print the model as Mermaid, JSON or a TLA+ module, and check your own invariants against it with [tla-ts](https://www.npmjs.com/package/tla-ts).
 
 The source is the spec here. The model is an over-approximation of what the code can do, so it can't prove the code right. It can show you a path to a state you didn't expect, a branch that never renders, or an assertion the code itself makes that can fail.
 
@@ -16,18 +16,18 @@ pnpm analyze path/to/app/tsconfig.json -f features/ --json
 
 Run these from `packages/realize`.
 
-| Option                       | Effect                                                               |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `-c, --component <names...>` | Show only these components                                           |
-| `-f, --file <filter>`        | Model only components in files whose path contains this text         |
-| `-d, --depth <n>`            | Cut the render tree off at this depth (default: 12)                  |
-| `--json`                     | Print the analyses and models as JSON                                |
-| `--tla`                      | Print each model as a TLA+ module                                    |
-| `-i, --invariant <...>`      | Check invariants written as `Name: expression` over lanes and screen |
+| Option                       | Effect                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `-c, --component <names...>` | Show only these components                                                   |
+| `-f, --file <filter>`        | Model only components in files whose path contains this text                 |
+| `-d, --depth <n>`            | Cut the render tree off at this depth (default: 12)                          |
+| `--json`                     | Print the analyses and models as JSON                                        |
+| `--tla`                      | Print each model as a TLA+ module                                            |
+| `-i, --invariant <...>`      | Check invariants written as `Name: expression` over the variables and `view` |
 
 By default you get two Mermaid diagrams per component. The first is a `flowchart` of the render tree. It shows every element the component can render, a diamond at each branch with its `✓` and `✗` arms, and a dashed pill for what each handler does to state, like `onClick ⇒ step = "details"`. An expression the analyzer couldn't evaluate is shown as written and marked `⚠`.
 
-The second is a `stateDiagram-v2` of the model's reachable screens. Each arrow is labelled with the button text or handler that causes it, and `[*]` points at the screens the component can first render. Comments list each lane with its cells and each finding. The counts go to stderr.
+The second is a `stateDiagram-v2` of the model's reachable views. Each arrow is labelled with the button text or handler that causes it, and `[*]` points at the views the component can first render. Comments list each variable with its domain and each finding. The counts go to stderr.
 
 ## Pipeline
 
@@ -40,12 +40,12 @@ Read `src/core` in this order. Each stage has its own folder, with its helpers n
 | `type-checker/`                              | Types the HIR from the TS checker and turns types into the values they allow   |
 | `interpret/`                                 | Runs the HIR symbolically: the render tree with every branch kept              |
 | `handlers/collect-handlers.ts`               | What each event handler and effect updates                                     |
-| `model/lanes.ts`, `model/cells.ts`           | One lane per tested place, split into cells                                    |
-| `model/screens.ts`                           | The screens a render can show and the condition of each branch side            |
-| `model/actions.ts`, `model/evaluate.ts`      | Each handler as guarded writes to lanes                                        |
-| `model/explore.ts`                           | Every reachable state, the edges between screens, and witness traces           |
+| `model/variables.ts`, `model/domains.ts`     | One variable per tested place, with its domain of abstract values              |
+| `model/views.ts`                             | The views a render can show and the predicate of each branch edge              |
+| `model/actions.ts`, `model/evaluate.ts`      | Each handler as a guarded action that writes variables                         |
+| `model/explore.ts`                           | The state graph: every reachable state, the transitions between views, traces  |
 | `model/build-model.ts`                       | Puts the model together and reports findings                                   |
-| `model/tla.ts`, `model/check-invariants.ts`  | The TLA+ module and invariant checks through tla-ts                            |
+| `model/tla.ts`, `model/check-invariant.ts`   | The TLA+ module and invariant checks through tla-ts                            |
 | `render/`, `labels/`                         | Walks render trees, and reads button text to label handlers                    |
 | `values/`, `shared/`, `project/serialize.ts` | Symbolic values, printing, JSON output and small shared helpers                |
 | `types.ts`, `model/types.ts`                 | The data passed between stages                                                 |
@@ -67,7 +67,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - the project's own custom hooks, run inline as part of the component, across files, so their state is the component's state and the functions they return are known
    - zustand stores: every selector of one store reads a field of one value
    - other hooks, typed from their return type
-   - `.map` items, including a `.map` reached through an optional chain like `data?.rows.map(…)`, and the rows of `Array.from(arrayLike, callback)`. A binding that stays untyped is an `untyped-item`, `untyped-prop` or similar bailout only when the render, a handler or a claim reads it. The unused `_` of `[...Array(n)].map((_, index) => …)` is not
+   - `.map` items, including a `.map` reached through an optional chain like `data?.rows.map(…)`, and the rows of `Array.from(arrayLike, callback)`. A binding that stays untyped is an `untyped-item`, `untyped-prop` or similar bailout only when the render, a handler or an assertion reads it. The unused `_` of `[...Array(n)].map((_, index) => …)` is not
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
    - `useRef`: the first render reads the value passed to `useRef`, unless the render itself writes the ref. A handler's write to `ref.current` shows on the next render.
    - module variables the file writes, like `let clicks = 0` with `clicks++` in a handler: the first render reads the declared literal, and any render after a handler may see a new value, since other code can write them too.
@@ -106,80 +106,80 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 
 ## The model
 
-The interpreter's output is a render tree with every branch kept. The model turns it into a finite state machine.
+The interpreter's output is a render tree with every branch kept. The model turns it into a TLA+ specification: variables, an initial state, and actions that change the variables.
 
-### Lanes and cells
+### Variables and domains
 
-A lane is one place a branch or handler tests, like `status`, `user.name` or `items.length`. Each lane takes one of a few cells. The cells split the place's possible values at the literals the code compares it with.
+A variable is one place a branch or handler tests, like `status`, `user.name` or `items.length`. Its domain is a short list of abstract values, split at the literals the code compares the place with.
 
-| Place type      | Cells                                                                |
-| --------------- | -------------------------------------------------------------------- |
-| A union         | One cell per member, like `"idle"`, `"saving"`, or `User` and `null` |
-| `boolean`       | `false` and `true`                                                   |
-| `string`        | Each compared literal, plus `other string`                           |
-| `number`        | Ranges between the compared literals, like `<0`, `0` and `>0`        |
-| An object type  | One cell named after the type                                        |
-| An unknown type | Each compared literal plus `other`, or `truthy` and `falsy`          |
+| Place type      | Domain                                                                |
+| --------------- | --------------------------------------------------------------------- |
+| A union         | One value per member, like `"idle"`, `"saving"`, or `User` and `null` |
+| `boolean`       | `false` and `true`                                                    |
+| `string`        | Each compared literal, plus `other string`                            |
+| `number`        | Ranges between the compared literals, like `<0`, `0` and `>0`         |
+| An object type  | One value named after the type                                        |
+| An unknown type | Each compared literal plus `other`, or `truthy` and `falsy`           |
 
-A lane's source says where its value comes from:
+A variable's source says where its value comes from:
 
-| Source    | Value                                                                                    |
-| --------- | ---------------------------------------------------------------------------------------- |
-| `state`   | `useState` or `useReducer`. It starts at the initial value and only handlers change it.  |
-| `input`   | Props, hooks, context and stores. Any cell, and it may change at any time.               |
-| `derived` | A call or memo over other lanes. It takes any cell again when one of its inputs changes. |
-| `test`    | A test the model can't split into a lane, like `ref.current`. Either `true` or `false`.  |
-| `pending` | Whether an async handler is still running.                                               |
+| Source    | Value                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------- |
+| `state`   | `useState` or `useReducer`. It starts at the initial value, and only handlers change it.      |
+| `input`   | Props, hooks, context and stores. Any value in its domain, and it may change at any time.     |
+| `derived` | A call or memo over other variables. It takes any value again when one of its inputs changes. |
+| `opaque`  | A test the model can't split into a place, like `ref.current`. Either `true` or `false`.      |
+| `control` | Whether an async handler is still running.                                                    |
 
-A component with more than 64 lanes isn't explored.
+A component with more than 64 variables isn't explored.
 
-### Screens and arms
+### Views and branches
 
-A screen is one way the render can look: a choice of side at each branch, with the condition that selects it. Its label comes from the elements each side renders, like `form > button "Back"`. Combinations that contradict themselves, like `role = "admin"` with `role = "viewer"`, are dropped. A component has at most 64 screens.
+A view is one way the render can look: a choice of side at each branch, with the predicate that selects it. Its label comes from the elements each side renders, like `form > button "Back"`. Combinations that contradict themselves, like `role = "admin"` with `role = "viewer"`, are dropped. A component has at most 64 views.
 
-Every branch side is also kept as an arm, with the condition under which it renders. Arms include branches inside lists, which screens leave out.
+Each branch keeps two edges, its consequent and its alternate, each with the predicate under which it renders. Branches include the ones inside lists, which views leave out.
 
 ### Actions
 
-Each handler becomes an action: a guard over lanes and a write to each lane it sets. A write lists the cells the new value can take, and depends only on the lanes that change the outcome. So `dispatch({ type: "next" })` in the wizard writes `IF state_step = "details" THEN {"payment"} ELSE {"done"}`.
+Each handler becomes an action: a guard over the variables and a write to each variable it sets. A write lists the values the variable can take next, and depends only on the variables that change the outcome. So `dispatch({ type: "next" })` in the wizard writes `IF state_step = "details" THEN {"payment"} ELSE {"done"}`.
 
-An async handler gets a pending lane and three actions. It runs, then resolves or rejects, with the updates after `await` in the matching action. Each input and test lane with more than one cell also gets an action that changes it, since the parent or the outside world can.
+An async handler gets a `control` variable and three actions: the call, then `fulfilled` or `rejected`, with the updates after `await` in the matching action. Each `input` and `opaque` variable with more than one value also gets an action that changes it, since the parent or the outside world can.
 
-### Exploration and findings
+### State space and findings
 
-The explorer starts from every combination of initial cells and applies every enabled action, breadth first. It keeps the path to each state, so any reachable state comes with a trace. It stops at 20,000 states or 400,000 successors and marks the model truncated.
+The explorer starts from every combination of initial values and applies every enabled action, breadth first. It keeps the path to each state, so any reachable state comes with a trace. It stops at 20,000 states or 400,000 successors and marks the model truncated.
 
 A complete model reports three kinds of findings:
 
-| Finding           | When                                                                                     |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| `unreachable-arm` | No reachable state renders this branch side, like `state.hasError` when nothing sets it. |
-| `silent-action`   | A handler never changes anything on screen, or a failed request leaves the screen as is. |
-| `claim`           | An assertion in the code can fail in a reachable state.                                  |
+| Finding              | When                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `unreachable-branch` | No reachable state takes this branch edge, like `state.hasError` when nothing sets it. |
+| `stuttering-action`  | A handler never changes the render, or a failed request leaves the render as it was.   |
+| `violated-assertion` | An assertion in the code fails in a reachable state.                                   |
 
 A truncated model reports none, since a state past the limit might be the one that answers.
 
-### Claims
+### Assertions
 
-A claim is something the code asserts that TypeScript takes on faith: `x!`, `x as T` where `T` leaves out values `x` may hold, and `invariant(cond)` or `assert(cond)`. Each becomes a property: its guards imply its test.
+An assertion is something the code states that TypeScript takes on faith: `x!`, `x as T` where `T` leaves out values `x` may hold, and `invariant(cond)` or `assert(cond)`. Each becomes an invariant: its guards imply its test.
 
-A claim is checked only when it reads `useState` or `useReducer` values alone. A claim on a prop says the parent never passes that value, which the model can't know. So `user!` behind `status === "ready"` is reported when a handler can set `user` to `null` while `status` stays `"ready"`.
+An assertion is checked only when it reads `useState` or `useReducer` values alone. An assertion on a prop says the parent never passes that value, which the model can't know. So `user!` behind `status === "ready"` is reported when a handler can set `user` to `null` while `status` stays `"ready"`.
 
 ## TLA+ and invariants
 
 `--tla` prints each model as a TLA+ module:
 
-- one variable per lane, whose values are its cell labels
-- `screen`, the label of the screen the lanes select
-- `Init`, the initial cells
-- one operator per action, with `Next` as their disjunction
-- one `ClaimN` operator per claim
+- one variable per model variable, whose values are the labels in its domain
+- `view`, the label of the view the variables select
+- `Init`, the initial values
+- one operator per action, with `Next` as their disjunction, and `Spec`
+- one `AssertionN` operator per assertion
 
-`-i 'Name: expression'` checks an invariant on every reachable state with tla-ts, a TypeScript port of TLC. The expression can use lane names, `screen` and the claim operators. A violation prints the shortest trace:
+`-i 'Name: expression'` checks an invariant on every reachable state with tla-ts, a TypeScript port of TLC. The expression can use the variable names, `view` and the assertion operators. A violation prints the shortest trace:
 
 ```text
-$ pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard -i 'NeverThanks: screen /= "p \"Thanks!\""'
-Wizard NeverThanks: violated
+$ pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard -i 'NeverDone: state_step /= "done"'
+Wizard NeverDone: violated
   1. start: state_step=details, state_hasError=false → form > input
   2. "Next": state_step=payment, state_hasError=false → form > input > button "Back"
   3. "Next": state_step=done, state_hasError=false → p "Thanks!"
@@ -187,12 +187,12 @@ Wizard NeverThanks: violated
 
 ## Conformance
 
-The model claims every render the component can produce is one of its reachable states. Conformance checks that claim against real renders. The verifier mounts each exported component in a browser, explores it, and reports a counterexample when:
+The model over-approximates: every render the component can produce should be one of its reachable states. Conformance checks this against real renders. The verifier mounts each exported component in a browser, explores it, and reports a counterexample when:
 
-- a branch side the model calls unreachable runs
-- a render's branch sides and state values match no reachable state
+- a branch edge the model calls unreachable runs
+- a render's branch edges and state values match no reachable state
 - an action's handlers can't lead from the state before to the state after in the model
-- a state value falls outside every cell of its lane
+- a state value falls outside the domain of its variable
 
 See [tests/conformance/README.md](../tests/conformance/README.md).
 
@@ -243,7 +243,18 @@ The error alert can never show, because nothing dispatches `fail`. The TLA+ modu
 
 ```tla
 ---- MODULE Wizard ----
+\* state_step: state.step (state), 3 values
+\* state_hasError: state.hasError (state), 2 values
 VARIABLES state_step, state_hasError
+
+vars == <<state_step, state_hasError>>
+
+view == CASE state_step = "done" -> "p \"Thanks!\""
+          [] state_step = "details" /\ state_hasError = "true" -> "form > p \"Something went wrong\" > input"
+          [] state_step = "payment" /\ state_hasError = "true" -> "form > p \"Something went wrong\" > input > button \"Back\""
+          [] state_step = "details" /\ state_hasError = "false" -> "form > input"
+          [] state_step = "payment" /\ state_hasError = "false" -> "form > input > button \"Back\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\ state_step = "details"
@@ -262,14 +273,16 @@ t2 ==
   /\ state_hasError' = "false"
 
 Next == t1 \/ t2
+
+Spec == Init /\ [][Next]_vars
 ====
 ```
 
 ## Known gaps
 
-- **Cells only split at compared literals.** Two values the code never tells apart share a cell, so the model can't see a difference that only shows in what renders.
-- **Inputs change freely.** Props, hooks, context and stores take any cell at any time. A path through a value the parent never passes is still reachable.
-- **Derived values lose their link.** A call or memo takes any cell when an input changes, not only the one it computes.
+- **Domains only split at compared literals.** Two values the code never tells apart share an abstract value, so the model can't see a difference that only shows in what renders.
+- **Inputs change freely.** Props, hooks, context and stores take any value in their domain at any time. A path through a value the parent never passes is still reachable.
+- **Derived values lose their link.** A call or memo takes any value in its domain when an input changes, not only the one it computes.
 - **Library calls are opaque.** Their code isn't in the project, so a call's result is known only from its return type.
 - **Loops run once.** A value a loop carries can take any value its type allows after the loop.
 - **One model per component.** Parents and children aren't linked, so a child's props come from their types.

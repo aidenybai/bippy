@@ -18,7 +18,7 @@ Results go to `conformance/results/<run>/`, where `<run>` is the start time unle
 - `results.json`: every repo's summary, or the error if it failed.
 - `<repo>/error.txt`: why the repo failed, if it did.
 - `<repo>/analysis.json`: the analyzer output, the same as `analyze --json`.
-- `<repo>/verify.json`: the verdict for every component: covered screens, counterexamples, and why a component couldn't mount.
+- `<repo>/verify.json`: the verdict for every component: covered views, counterexamples, and why a component couldn't mount.
 - `<repo>/summary.json`: counts of components, model states, handlers, unreachable branches, untyped bindings and bailouts, plus the verification totals.
 
 Verification runs by default. Pass `--no-verify` to collect only the analyzer output. The command exits with 1 when a repo failed or any component has a counterexample.
@@ -69,7 +69,7 @@ test("pages through comments", async ({ mountComponent }) => {
 });
 ```
 
-`expectState` takes a screen's label as `analyze` prints it, like `form > button "Back"`, or its branch conditions joined with `∧`. It passes when some reachable state shows that screen and agrees with what the page rendered. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter realize conformance specs`, after a `conformance run` has set the repos up.
+`expectState` takes a view's label as `analyze` prints it, like `form > button "Back"`, or its branch conditions joined with `∧`. It passes when some reachable state shows that view and agrees with what the page rendered. When a test ends, everything it saw is checked like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter realize conformance specs`, after a `conformance run` has set the repos up.
 
 ## Vercel Sandbox
 
