@@ -1,51 +1,48 @@
-import type { ComponentAnalysis, Sample, StateReport } from "../../../src/core/types";
+import type { ComponentAnalysis, Sample } from "../../../src/core/types";
+import type { ComponentModel } from "../../../src/core/model/types";
 import type { Observation } from "./driver";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
 
-interface StateCounterexample {
+interface RenderCounterexample {
   props: Record<string, Sample>;
   path: string[];
-  rendered: string;
-  closestState: number;
-  reason: string;
+  edges: string[];
+  values: string[];
 }
 
-export interface TransitionCounterexample {
+interface TransitionCounterexample {
   path: string[];
   action: string;
-  fromStates: number[];
-  toStates: number[];
-  predictedStates: number[];
-  reason: "unpredicted-target" | "unmodeled-handler" | "unpredicted-effect";
+  handlers: string[];
 }
 
-interface ValueCounterexample {
+interface DomainCounterexample {
   path: string[];
-  place: string;
+  variable: string;
   value: string;
-  predicted: string[];
+  domain: string[];
 }
 
 type VerdictOutcome =
   | { status: "verified" | "not-exported"; error: null; mountFailure: null }
   | { status: "mount-failed"; error: string; mountFailure: MountFailure };
 
-interface VerdictCounts {
+interface VerdictFields {
   name: string;
   file: string;
+  isTruncated: boolean;
   observationCount: number;
   renderErrorCount: number;
-  predictedStateCount: number;
-  coveredStateIndices: number[];
-  stateCounterexamples: StateCounterexample[];
-  coveredTransitionCount: number;
+  viewCount: number;
+  coveredViews: string[];
+  checkedTransitionCount: number;
+  branchEdgeCount: number;
+  coveredBranchEdgeCount: number;
+  unreachableEdgesTaken: string[];
+  renderCounterexamples: RenderCounterexample[];
   transitionCounterexamples: TransitionCounterexample[];
-  branchSideCount: number;
-  coveredBranchSideCount: number;
-  unreachableClaimCount: number;
-  reachedUnreachableBranches: string[];
-  valueCounterexamples: ValueCounterexample[];
+  domainCounterexamples: DomainCounterexample[];
   warningCount: number;
   coveredWarningCount: number;
   refutedWarnings: string[];
@@ -53,9 +50,9 @@ interface VerdictCounts {
   durationMs: number;
 }
 
-export type ComponentVerdict = VerdictCounts & VerdictOutcome;
+export type ComponentVerdict = VerdictFields & VerdictOutcome;
 
-export type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
+type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
 
 export const isMountFailedVerdict = (verdict: ComponentVerdict): verdict is MountFailedVerdict =>
   verdict.status === "mount-failed";
@@ -65,10 +62,10 @@ export interface VerificationSummary {
   unmountableCount: number;
   notExportedCount: number;
   counterexampleCount: number;
-  predictedStateCount: number;
-  coveredStateCount: number;
-  branchSideCount: number;
-  coveredBranchSideCount: number;
+  viewCount: number;
+  coveredViewCount: number;
+  branchEdgeCount: number;
+  coveredBranchEdgeCount: number;
   warningCount: number;
   coveredWarningCount: number;
   unwarnedMutationCount: number;
@@ -78,25 +75,25 @@ export interface VerificationSummary {
 
 export const createEmptyVerdict = (
   analysis: ComponentAnalysis,
-  report: StateReport,
+  model: ComponentModel,
 ): ComponentVerdict => ({
   name: analysis.name,
   file: analysis.file,
   status: analysis.exportName ? "verified" : "not-exported",
   error: null,
   mountFailure: null,
+  isTruncated: model.stateSpace.isTruncated,
   observationCount: 0,
   renderErrorCount: 0,
-  predictedStateCount: report.states.length,
-  coveredStateIndices: [],
-  stateCounterexamples: [],
-  coveredTransitionCount: 0,
+  viewCount: model.stateSpace.reachableViews.length,
+  coveredViews: [],
+  checkedTransitionCount: 0,
+  branchEdgeCount: 0,
+  coveredBranchEdgeCount: 0,
+  unreachableEdgesTaken: [],
+  renderCounterexamples: [],
   transitionCounterexamples: [],
-  branchSideCount: 0,
-  coveredBranchSideCount: 0,
-  unreachableClaimCount: report.unreachableBranches.length,
-  reachedUnreachableBranches: [],
-  valueCounterexamples: [],
+  domainCounterexamples: [],
   warningCount: analysis.warnings.length,
   coveredWarningCount: 0,
   refutedWarnings: [],

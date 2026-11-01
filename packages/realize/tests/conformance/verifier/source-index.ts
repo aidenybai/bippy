@@ -64,15 +64,15 @@ export const getFileImports = async (
 ): Promise<FileImports> => {
   const packages: PackageImport[] = [];
   const files: string[] = [];
-  for (const { specifier, names } of imports) {
-    if (RELATIVE_IMPORT_PATTERN.test(specifier)) {
-      const resolved = resolveRelativeImport(file, specifier);
+  for (const packageImport of imports) {
+    if (RELATIVE_IMPORT_PATTERN.test(packageImport.specifier)) {
+      const resolved = resolveRelativeImport(file, packageImport.specifier);
       if (resolved) files.push(resolved);
       continue;
     }
-    const aliased = await resolveAlias(specifier, file);
+    const aliased = await resolveAlias(packageImport.specifier, file);
     if (aliased) files.push(aliased);
-    else packages.push({ specifier, names });
+    else packages.push({ specifier: packageImport.specifier, names: packageImport.names });
   }
   return { packages, files };
 };
@@ -82,8 +82,8 @@ export const addExports = (
   file: string,
   text: string,
 ): void => {
-  for (const { name, exportName } of parseExports(text))
-    appendToGroup(exports, name, { file, exportName });
+  for (const moduleExport of parseExports(text))
+    appendToGroup(exports, moduleExport.name, { file, exportName: moduleExport.exportName });
 };
 
 interface SearchFrame {

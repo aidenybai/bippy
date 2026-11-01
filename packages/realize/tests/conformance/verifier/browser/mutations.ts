@@ -1,11 +1,11 @@
 import type { Fiber } from "bippy";
 import { forEachPlainObject, isPlainData, snapshotValue } from "../snapshot";
-import { getStateOwner } from "../types";
+import { getStateOrigin } from "../types";
 import type { Capture, MutationHit } from "../types";
 import { isLibraryHookQueue } from "../write-origins";
 import { getQueuedHooks, getRenderCount } from "./fibers";
 import {
-  findPropOwner,
+  findPropOrigin,
   findTrackedTarget,
   getPropWrites,
   getWriteCount,
@@ -22,16 +22,16 @@ interface PendingMutationHit {
 }
 
 interface TrackedState {
-  owner: string;
+  origin: string;
   target: object;
   snapshot: string;
 }
 
 let pendingMutationHits: PendingMutationHit[] = [];
 let trackedStates: TrackedState[] = [];
-let stateOwners = new WeakMap<object, string>();
+let stateOrigins = new WeakMap<object, string>();
 
-export const recordMutationProbe = (id: string, value: unknown): unknown => {
+export const recordMutationHit = (id: string, value: unknown): unknown => {
   if (!isPlainData(value)) return value;
   const trackedTarget = findTrackedTarget(value);
   const target = trackedTarget ?? value;
@@ -45,14 +45,14 @@ export const recordMutationProbe = (id: string, value: unknown): unknown => {
   return trackedTarget ? value : trackWrites(target, false);
 };
 
-const getStateOwners = (states: unknown[]): Map<object, string> => {
-  const owners = new Map<object, string>();
+const getStateOrigins = (states: unknown[]): Map<object, string> => {
+  const origins = new Map<object, string>();
   states.forEach((state, hookIndex) =>
     forEachPlainObject(state, (object) => {
-      if (!owners.has(object)) owners.set(object, getStateOwner(hookIndex));
+      if (!origins.has(object)) origins.set(object, getStateOrigin(hookIndex));
     }),
   );
-  return owners;
+  return origins;
 };
 
 export const trackStates = (fiber: Fiber): Map<object, string> => {
@@ -62,34 +62,34 @@ export const trackStates = (fiber: Fiber): Map<object, string> => {
     if (!isPlainData(state) || isLibraryHookQueue(hook.queue)) return;
     if (trackedStates.some((tracked) => tracked.target === state)) return;
     trackedStates.push({
-      owner: getStateOwner(hookIndex),
+      origin: getStateOrigin(hookIndex),
       target: state,
       snapshot: snapshotValue(state),
     });
   });
-  const currentOwners = getStateOwners(hooks.map((hook) => hook.memoizedState));
-  for (const [object, owner] of currentOwners)
-    if (!stateOwners.has(object)) stateOwners.set(object, owner);
-  return currentOwners;
+  const currentOrigins = getStateOrigins(hooks.map((hook) => hook.memoizedState));
+  for (const [object, origin] of currentOrigins)
+    if (!stateOrigins.has(object)) stateOrigins.set(object, origin);
+  return currentOrigins;
 };
 
-export const takeMutations = (fiber: Fiber): Pick<Capture, "mutationHits" | "mutatedOwners"> => {
-  const currentOwners = trackStates(fiber);
-  const mutatedOwners = new Set(getPropWrites());
+export const takeMutations = (fiber: Fiber): Pick<Capture, "mutationHits" | "mutatedOrigins"> => {
+  const currentOrigins = trackStates(fiber);
+  const mutatedOrigins = new Set(getPropWrites());
   for (const tracked of trackedStates)
-    if (snapshotValue(tracked.target) !== tracked.snapshot) mutatedOwners.add(tracked.owner);
+    if (snapshotValue(tracked.target) !== tracked.snapshot) mutatedOrigins.add(tracked.origin);
   const mutationHits = new Map<string, MutationHit>();
   for (const hit of pendingMutationHits) {
-    const owner = stateOwners.get(hit.target) ?? findPropOwner(hit.target) ?? null;
+    const origin = stateOrigins.get(hit.target) ?? findPropOrigin(hit.target) ?? null;
     const isWritten =
       getWriteCount(hit.target) > hit.writeCount || snapshotValue(hit.target) !== hit.snapshot;
     const isLost =
-      isWritten && currentOwners.has(hit.target) && getRenderCount() === hit.renderCount;
-    const key = `${hit.id}:${owner}`;
+      isWritten && currentOrigins.has(hit.target) && getRenderCount() === hit.renderCount;
+    const key = `${hit.id}:${origin}`;
     const previous = mutationHits.get(key);
     mutationHits.set(key, {
       id: hit.id,
-      owner,
+      origin,
       isWritten: isWritten || (previous?.isWritten ?? false),
       isLost: isLost || (previous?.isLost ?? false),
     });
@@ -98,12 +98,12 @@ export const takeMutations = (fiber: Fiber): Pick<Capture, "mutationHits" | "mut
   resetPropWrites();
   trackedStates = [];
   trackStates(fiber);
-  return { mutationHits: [...mutationHits.values()], mutatedOwners: [...mutatedOwners] };
+  return { mutationHits: [...mutationHits.values()], mutatedOrigins: [...mutatedOrigins] };
 };
 
 export const resetMutationTracking = (): void => {
   pendingMutationHits = [];
   trackedStates = [];
-  stateOwners = new WeakMap();
+  stateOrigins = new WeakMap();
   resetPropWrites();
 };

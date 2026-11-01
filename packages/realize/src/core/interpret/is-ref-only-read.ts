@@ -7,12 +7,13 @@ export const isRefOnlyRead = (hirFunction: HIRFunction, refId: IdentifierId): bo
   const aliases = new Set([refId]);
   const currentReads = new Set<IdentifierId>();
   for (const block of hirFunction.body.blocks.values())
-    for (const { lvalue, value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       const isAliasLoad =
         (value.kind === "LoadLocal" || value.kind === "LoadContext") &&
         aliases.has(value.place.identifier.id);
       if (isAliasLoad) {
-        aliases.add(lvalue.identifier.id);
+        aliases.add(instruction.lvalue.identifier.id);
         continue;
       }
       const isCurrentRead =
@@ -20,7 +21,7 @@ export const isRefOnlyRead = (hirFunction: HIRFunction, refId: IdentifierId): bo
         value.property === "current" &&
         aliases.has(value.object.identifier.id);
       if (isCurrentRead) {
-        currentReads.add(lvalue.identifier.id);
+        currentReads.add(instruction.lvalue.identifier.id);
         continue;
       }
       if (value.kind === "MethodCall" && aliases.has(value.receiver.identifier.id)) {

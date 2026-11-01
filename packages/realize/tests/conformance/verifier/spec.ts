@@ -3,12 +3,12 @@ import playwrightTest, { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
-import type { AnalyzedComponent, ComponentAnalysis, Sample, State } from "../../../src/core/types";
+import type { AnalyzedComponent, ComponentAnalysis, Sample } from "../../../src/core/types";
+import type { View } from "../../../src/core/model/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
-import { matchesExpected, normalizeShapes, toExpected } from "./match";
-import { scoreComponent } from "./score";
+import { indexModel, canShowView, abstractCapture, checkComponent } from "./check";
 import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
@@ -52,14 +52,16 @@ interface VerifyWorkerFixtures {
 
 interface FixtureContext {
   page: Page;
-  project: VerifyProject;
   session: Session;
   props: Record<string, Sample>;
   initialCapture: Capture;
 }
 
-const getStateLabel = (state: State): string =>
-  state.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+const getBranchLabel = (view: View): string =>
+  view.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+
+const isLabelled = (view: View, label: string): boolean =>
+  view.label === label || getBranchLabel(view) === label;
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
@@ -96,36 +98,26 @@ const findClickAction = async (
   );
 };
 
-const expectShowingState = (
-  project: VerifyProject,
-  component: AnalyzedComponent,
-  capture: Capture,
-  label: string,
-): void => {
-  const { name: componentName } = component.analysis;
-  const { states } = component.report;
-  const labelledStates = states.filter((state) => getStateLabel(state) === label);
+const expectShowingView = (session: Session, capture: Capture, label: string): void => {
+  const analysis = session.component.analysis;
+  const model = session.component.model;
+  const labelledViews = model.views.filter((view) => isLabelled(view, label));
   expect(
-    labelledStates.length,
-    `${componentName} has no state labelled "${label}". Its states are:\n${states.map(getStateLabel).join("\n")}`,
+    labelledViews.length,
+    `${analysis.name} has no view labelled "${label}". Its views are:\n${model.views.map((view) => view.label).join("\n")}`,
   ).toBeGreaterThan(0);
-  const shapes = normalizeShapes(capture.shapes);
+  const modelIndex = indexModel(analysis, model, session.observations);
+  const observed = abstractCapture(modelIndex, capture);
   expect(
-    labelledStates.some((state) =>
-      matchesExpected(toExpected(state.render, project.knownComponents), shapes),
-    ),
-    `${componentName} isn't showing "${label}"`,
+    labelledViews.some((view) => canShowView(modelIndex, observed, view)),
+    `${analysis.name} isn't showing "${label}"`,
   ).toBe(true);
 };
 
-const createComponentFixture = ({
-  page,
-  project,
-  session,
-  props,
-  initialCapture,
-}: FixtureContext): ComponentFixture => {
-  let current = initialCapture;
+const createComponentFixture = (fixtureContext: FixtureContext): ComponentFixture => {
+  const page = fixtureContext.page;
+  const session = fixtureContext.session;
+  let current = fixtureContext.initialCapture;
   let path: string[] = [];
   return {
     page,
@@ -134,14 +126,26 @@ const createComponentFixture = ({
       const after = await performInPage(page, action.key);
       if (!after) throw new Error(`Clicking "${label}" failed`);
       path = [...path, action.key];
-      session.observations.push({ props, path, action, before: current, after });
+      session.observations.push({
+        props: fixtureContext.props,
+        path,
+        action,
+        before: current,
+        after,
+      });
       current = after;
     },
     observe: async () => {
       current = await page.evaluate(() => window.__verify.observe());
-      session.observations.push({ props, path, action: null, before: null, after: current });
+      session.observations.push({
+        props: fixtureContext.props,
+        path,
+        action: null,
+        before: null,
+        after: current,
+      });
     },
-    expectState: (label) => expectShowingState(project, session.component, current, label),
+    expectState: (label) => expectShowingView(session, current, label),
   };
 };
 
@@ -150,8 +154,8 @@ const findExportedComponent = (
   componentName: string,
 ): ExportedComponent => {
   for (const component of project.components) {
-    const { exportName } = component.analysis;
-    if (component.analysis.name === componentName && exportName) return { component, exportName };
+    if (component.analysis.name === componentName && component.analysis.exportName)
+      return { component, exportName: component.analysis.exportName };
   }
   throw new Error(`No exported component named ${componentName}`);
 };
@@ -173,16 +177,20 @@ const startSession = async (
   options: MountOptions,
 ): Promise<FixtureContext> => {
   const { component, exportName } = findExportedComponent(project, componentName);
-  const { analysis } = component;
-  const props = getMountProps(analysis, options);
+  const props = getMountProps(component.analysis, options);
   const baseRequest: MountRequest = {
-    module: project.getComponentModule(analysis.file),
+    module: project.getComponentModule(component.analysis.file),
     exportName,
     props,
     scenario: null,
     wrappers: [],
   };
-  const { wrappers } = await resolveWrappers(page, baseRequest, analysis, project.projectIndex);
+  const { wrappers } = await resolveWrappers(
+    page,
+    baseRequest,
+    component.analysis,
+    project.projectIndex,
+  );
   const initialCapture = await mountInPage(page, {
     ...baseRequest,
     scenario: options.scenario ?? null,
@@ -193,15 +201,14 @@ const startSession = async (
     component,
     observations: [{ props, path: [], action: null, before: null, after: initialCapture }],
   };
-  return { page, project, session, props, initialCapture };
+  return { page, session, props, initialCapture };
 };
 
-const expectNoCounterexamples = (project: VerifyProject, session: Session): void => {
-  const verdict = scoreComponent(
+const expectNoCounterexamples = (session: Session): void => {
+  const verdict = checkComponent(
     session.component.analysis,
-    session.component.report,
+    session.component.model,
     session.observations,
-    project.knownComponents,
   );
   expect(formatCounterexamples(verdict), `${verdict.name} has counterexamples`).toEqual([]);
 };
@@ -234,7 +241,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
       return createComponentFixture(fixtureContext);
     });
     await page.close();
-    for (const session of sessions) expectNoCounterexamples(project, session);
+    for (const session of sessions) expectNoCounterexamples(session);
   },
 });
 

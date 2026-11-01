@@ -1,4 +1,4 @@
-import { GeneratedSource, makeInstructionId } from "../../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { HIRFunction, IdentifierId, SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { Interpreter } from "../interpret/interpret";
 import type { CollectedEffects } from "../interpret/effect-collector";
@@ -14,7 +14,7 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "../types";
-import { forEachJsxElement } from "../states/for-each-jsx-element";
+import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";
@@ -63,7 +63,6 @@ import {
 } from "./dom-events";
 import type { ControlEvent } from "./dom-events";
 import { EVENT_ARGUMENT } from "./handler-predicates";
-import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "../interpret/build-jsx";
 
 const getIndependentCallbacks = (value: SymbolicValue): SymbolicValue =>
   value.kind === "ArrayExpression" && value.spreads.length === 0
@@ -123,9 +122,8 @@ const getSpreadHandlers = (
 
 const getDefinitePropKeys = (prop: JsxProp | JsxSpreadProp): string[] => {
   if (prop.kind === "JsxAttribute") return [prop.name];
-  const { value } = prop;
-  return value.kind === "ObjectExpression" && value.spreads.length === 0
-    ? value.properties.map((property) => property.key)
+  return prop.value.kind === "ObjectExpression" && prop.value.spreads.length === 0
+    ? prop.value.properties.map((property) => property.key)
     : [];
 };
 
@@ -146,24 +144,15 @@ interface GuardedConditional {
   alternate: SymbolicValue;
   loc: SourceLocation;
   file: string;
-  caseIndex: number;
 }
 
-const createGuardedConditional = ({
-  test,
-  consequent,
-  alternate,
-  loc,
-  file,
-  caseIndex,
-}: GuardedConditional): SymbolicValue => ({
+const createGuardedConditional = (conditional: GuardedConditional): SymbolicValue => ({
   kind: "Conditional",
-  test,
+  test: conditional.test,
   testKind: "truthy",
-  consequent,
-  alternate,
-  branch: { terminalId: makeInstructionId(0), probe: "none", loc, file, caseIndex },
-  guardKeys: [],
+  consequent: conditional.consequent,
+  alternate: conditional.alternate,
+  branch: { loc: conditional.loc, file: conditional.file, testKind: null },
 });
 
 const chooseSpreadHandler = (
@@ -174,7 +163,7 @@ const chooseSpreadHandler = (
   const [last, ...earlier] = [...handlers.properties].reverse();
   if (!last) return UNDEFINED_VALUE;
   return earlier.reduce<SymbolicValue>(
-    (alternate, property, caseIndex) =>
+    (alternate, property) =>
       createGuardedConditional({
         test: createUnknown(`spread-event ${property.key}`, loc, {
           kind: "Name",
@@ -184,7 +173,6 @@ const chooseSpreadHandler = (
         alternate,
         loc,
         file,
-        caseIndex,
       }),
     last.value,
   );
@@ -195,14 +183,13 @@ const guardCallbacks = (
   reason: string,
   prop: JsxProp,
 ): SymbolicValue[] =>
-  callbacks.map((callback, caseIndex) =>
+  callbacks.map((callback) =>
     createGuardedConditional({
       test: createUnknown(reason, prop.loc),
       consequent: callback,
       alternate: UNDEFINED_VALUE,
       loc: prop.loc,
       file: prop.file,
-      caseIndex,
     }),
   );
 
@@ -217,7 +204,6 @@ const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): Sym
         alternate,
         loc: prop.loc,
         file: prop.file,
-        caseIndex,
       }),
     UNDEFINED_VALUE,
   );
@@ -229,14 +215,13 @@ const getRenderedBranch = (
   prop: JsxProp,
 ): SymbolicValue =>
   guards.reduceRight<SymbolicValue>(
-    (inner, test, caseIndex) =>
+    (inner, test) =>
       createGuardedConditional({
         test,
         consequent: inner,
         alternate,
         loc: prop.loc,
         file: prop.file,
-        caseIndex,
       }),
     consequent,
   );
@@ -316,14 +301,14 @@ const getHandlerContentKey = (handler: Handler): string =>
       getValueKeys(update.guards),
       update.isAsync,
     ]),
-    handler.claims.map((claim) => [
-      claim.kind,
-      getValueKey(claim.subject),
-      claim.check.kind === "Membership" ? claim.check.cases : null,
-      claim.check.kind === "Condition" ? getValueKey(claim.check.test) : null,
-      getValueKeys(claim.guards),
-      claim.description,
-      getLocationKey(claim.loc),
+    handler.assertions.map((assertion) => [
+      assertion.kind,
+      getValueKey(assertion.subject),
+      assertion.check.kind === "Membership" ? assertion.check.cases : null,
+      assertion.check.kind === "Condition" ? getValueKey(assertion.check.test) : null,
+      getValueKeys(assertion.guards),
+      assertion.description,
+      getLocationKey(assertion.loc),
     ]),
   ]);
 
@@ -405,28 +390,28 @@ class HandlerCollector {
       callbackGuards,
       runsCleanup,
     );
-    const isLocalRender =
-      trigger.kind === "Event" &&
-      trigger.tag === DYNAMIC_TAG_NAME &&
-      trigger.event === LOCAL_RENDER_PROP;
-    if (isLocalRender) this.#interpreter.localRenders.push(...(effects.returned ?? []));
     return this.addCollectedHandler(trigger, effects, loc, guards);
   }
 
   addCollectedHandler(
     trigger: HandlerTrigger,
-    { updates, delegates, pendingMutations, claims }: CollectedEffects,
+    effects: CollectedEffects,
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
   ): string | null {
-    for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
-    if (updates.length === 0 && delegates.length === 0 && claims.length === 0) return null;
+    for (const binding of effects.pendingMutations) this.pendingMutations.set(binding.id, binding);
+    if (
+      effects.updates.length === 0 &&
+      effects.delegates.length === 0 &&
+      effects.assertions.length === 0
+    )
+      return null;
     const handler: Handler = {
       id: `t${this.handlers.length + 1}`,
       trigger,
-      updates,
-      delegates,
-      claims,
+      updates: effects.updates,
+      delegates: effects.delegates,
+      assertions: effects.assertions,
       guards,
       loc,
     };
@@ -559,7 +544,6 @@ class HandlerCollector {
         kind: "Effect",
         hookKind: "useLayoutEffect",
         dependencies: null,
-        dependencyPlaces: null,
       },
       callback: prop.value,
       callbackArguments: [EVENT_ARGUMENT],
@@ -1148,7 +1132,8 @@ class HandlerCollector {
     if (hirFunction === null || !loadsProperty(hirFunction, property)) return null;
     const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
     const isAlways = entry?.instructions.some(
-      ({ value }) => value.kind === "PropertyLoad" && value.property === property,
+      (instruction) =>
+        instruction.value.kind === "PropertyLoad" && instruction.value.property === property,
     );
     return isAlways ? "always" : "maybe";
   }
@@ -1201,10 +1186,11 @@ const loadsInHandlers = (
 ): boolean => {
   const functions = new Map<IdentifierId, HIRFunction>();
   for (const block of hirFunction.body.blocks.values())
-    for (const { lvalue, value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       if (value.kind === "FunctionExpression" || value.kind === "ObjectMethod") {
         if (loadsInHandlers(value.loweredFunc.func, names, property)) return true;
-        functions.set(lvalue.identifier.id, value.loweredFunc.func);
+        functions.set(instruction.lvalue.identifier.id, value.loweredFunc.func);
       }
       if (value.kind === "StoreLocal") {
         const stored = functions.get(value.value.identifier.id);
@@ -1221,7 +1207,7 @@ const loadsInHandlers = (
             : undefined;
       const sourceFunction =
         source?.kind === "Identifier" ? functions.get(source.identifier.id) : undefined;
-      if (sourceFunction) functions.set(lvalue.identifier.id, sourceFunction);
+      if (sourceFunction) functions.set(instruction.lvalue.identifier.id, sourceFunction);
       if (value.kind !== "JsxExpression") continue;
       const isLoaded = value.props.some((prop) => {
         if (prop.kind !== "JsxAttribute" || !names.has(prop.name)) return false;
@@ -1235,7 +1221,8 @@ const loadsInHandlers = (
 
 const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
   for (const block of hirFunction.body.blocks.values())
-    for (const { value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       if (value.kind === "PropertyLoad" && value.property === property) return true;
       const isClosure = value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
       if (isClosure && loadsProperty(value.loweredFunc.func, property)) return true;
@@ -1445,7 +1432,6 @@ const collectHandlersOnce = (
         kind: "Effect",
         hookKind: effectCall.hookKind,
         dependencies: effectCall.dependencies,
-        dependencyPlaces: effectCall.dependencyPlaces,
       },
       effectCall.callback,
       effectCall.callbackArguments,
@@ -1453,7 +1439,7 @@ const collectHandlersOnce = (
     );
   for (const commitCallback of collector.commitCallbacks.values())
     collector.addHandler(
-      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
+      { kind: "Effect", hookKind: "Custom", dependencies: null },
       commitCallback.callback,
       [createUnknown("callback-argument", commitCallback.loc)],
       commitCallback.loc,
@@ -1465,15 +1451,15 @@ const collectHandlersOnce = (
   );
   if (suspenseUpdates.length > 0)
     collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
-      { updates: suspenseUpdates, delegates: [], pendingMutations: [], claims: [] },
+      { kind: "Effect", hookKind: "Custom", dependencies: null },
+      { updates: suspenseUpdates, delegates: [], pendingMutations: [], assertions: [] },
       GeneratedSource,
     );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "useEffect", dependencies: null, dependencyPlaces: null },
-      { updates: commitUpdates, delegates: [], pendingMutations: [], claims: [] },
+      { kind: "Effect", hookKind: "useEffect", dependencies: null },
+      { updates: commitUpdates, delegates: [], pendingMutations: [], assertions: [] },
       GeneratedSource,
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
@@ -1484,15 +1470,18 @@ const collectHandlersOnce = (
   );
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
-  const { bindings } = interpreter.bindingTable;
-  forgetPendingReads(collector.handlers, [...collector.pendingMutations.values()], bindings);
+  forgetPendingReads(
+    collector.handlers,
+    [...collector.pendingMutations.values()],
+    interpreter.bindingTable.bindings,
+  );
   revealPendingMutations(
     collector.handlers,
     [
       ...collector.pendingMutations.values(),
-      ...bindings.filter((binding) => binding.kind === "module"),
+      ...interpreter.bindingTable.bindings.filter((binding) => binding.kind === "module"),
     ].filter(isRendered),
-    bindings.filter((binding) => binding.kind === "hook"),
+    interpreter.bindingTable.bindings.filter((binding) => binding.kind === "hook"),
   );
   for (const handler of collector.handlers)
     handler.updates = handler.updates.filter((update) => isRendered(update.binding));

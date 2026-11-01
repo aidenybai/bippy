@@ -14,13 +14,11 @@ import {
   hasTooManyFibers,
 } from "./fibers";
 import { takeMutations } from "./mutations";
-import { takeHandlerHits, takeProbeHits } from "./probes";
+import { takeHandlerCalls, takeBranchHits } from "./coverage";
 
 const ANONYMOUS_NAME = "Anonymous";
 const MAX_PLAIN_DEPTH = 4;
 const MAX_PLAIN_NODES = 2000;
-
-let firstCommitShapes: Shape[] | null = null;
 
 const toShapes = (fiber: Fiber): Shape[] => {
   const workTags = getReactWorkTagsForFiber(fiber);
@@ -42,17 +40,6 @@ const toShapes = (fiber: Fiber): Shape[] => {
   if (isCompositeFiber(fiber))
     return [{ kind: "component", name: getDisplayName(fiber.type) ?? ANONYMOUS_NAME }];
   return getChildren(fiber).flatMap(toShapes);
-};
-
-export const recordFirstCommitShapes = (fiber: Fiber): void => {
-  if (firstCommitShapes === null && !hasTooManyFibers(fiber))
-    firstCommitShapes = getChildren(fiber).flatMap(toShapes);
-};
-
-export const getFirstCommitShapes = (): Shape[] | null => firstCommitShapes;
-
-export const resetFirstCommitShapes = (): void => {
-  firstCommitShapes = null;
 };
 
 const toPlainData = (value: unknown): unknown => {
@@ -86,12 +73,11 @@ export const createEmptyCapture = (
   failure: MountFailure | null = null,
 ): Capture => ({
   shapes: [],
-  hookStates: [],
-  probes: takeProbeHits(),
-  handlerHits: takeHandlerHits(),
+  stateValues: [],
+  branchHits: takeBranchHits(),
+  handlerCalls: takeHandlerCalls(),
   mutationHits: [],
-  mutatedOwners: [],
-  firstCommitShapes: null,
+  mutatedOrigins: [],
   error,
   errorDepth,
   failure,
@@ -114,11 +100,10 @@ export const captureMountedComponent = (): Capture => {
   const renderError = getRenderError();
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
-    hookStates: getQueuedHooks(fiber).map((hook) => toPlainData(hook.memoizedState)),
-    probes: takeProbeHits(),
-    handlerHits: takeHandlerHits(),
+    stateValues: getQueuedHooks(fiber).map((hook) => toPlainData(hook.memoizedState)),
+    branchHits: takeBranchHits(),
+    handlerCalls: takeHandlerCalls(),
     ...takeMutations(fiber),
-    firstCommitShapes: null,
     error: renderError?.message ?? null,
     errorDepth: renderError?.depth ?? null,
     failure: null,

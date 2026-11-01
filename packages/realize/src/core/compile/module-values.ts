@@ -10,7 +10,7 @@ export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
 }
 
-export interface ModuleVariable {
+interface ModuleVariable {
   initial: SymbolicValue | null;
   loc: SourceLocation;
 }
@@ -34,7 +34,7 @@ export interface ImportUseLoader {
   (localName: string): ImportUse;
 }
 
-export interface ImportedName {
+interface ImportedName {
   localName: string;
   loc: SourceLocation;
 }
@@ -177,12 +177,11 @@ const getMemberValues = (
 const isPrimitive = (value: SymbolicValue): boolean => value.kind === "Primitive";
 
 const isWriteTarget = (path: NodePath): boolean => {
-  const { parentPath } = path;
-  if (!parentPath) return false;
+  if (!path.parentPath) return false;
   return (
-    parentPath.isAssignmentExpression({ left: path.node }) ||
-    parentPath.isUpdateExpression() ||
-    parentPath.isUnaryExpression({ operator: "delete" })
+    path.parentPath.isAssignmentExpression({ left: path.node }) ||
+    path.parentPath.isUpdateExpression() ||
+    path.parentPath.isUnaryExpression({ operator: "delete" })
   );
 };
 
@@ -238,12 +237,11 @@ const isListRead = (path: NodePath, values: SymbolicValue[]): boolean => {
 const isObjectRead = (path: NodePath, values: SymbolicValue[]): boolean => {
   const call = path.parentPath?.node;
   if (!types.isCallExpression(call) || call.arguments[0] !== path.node) return false;
-  const { callee } = call;
   return (
-    types.isMemberExpression(callee) &&
-    types.isIdentifier(callee.object, { name: "Object" }) &&
-    types.isIdentifier(callee.property) &&
-    OBJECT_READS.has(callee.property.name) &&
+    types.isMemberExpression(call.callee) &&
+    types.isIdentifier(call.callee.object, { name: "Object" }) &&
+    types.isIdentifier(call.callee.property) &&
+    OBJECT_READS.has(call.callee.property.name) &&
     values.every((value) => isLiteralList(value) || isLiteralTable(value))
   );
 };
@@ -253,20 +251,19 @@ const isReadOfPrimitive = (
   values: SymbolicValue[],
   receiverValues: SymbolicValue[],
 ): boolean => {
-  const { parentPath } = path;
   if (isListRead(path, values) || isObjectRead(path, values)) return true;
-  const member = parentPath?.node;
+  const member = path.parentPath?.node;
   const isMemberObject =
     (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
     member.object === path.node;
-  if (parentPath && isMemberObject)
+  if (path.parentPath && isMemberObject)
     return isReadOfPrimitive(
-      parentPath,
+      path.parentPath,
       values.flatMap((value) => getMemberValues(value, member)),
       values,
     );
   if (!values.every(isPrimitive) || isWriteTarget(path)) return false;
-  const isCallee = parentPath?.isCallExpression({ callee: path.node }) ?? false;
+  const isCallee = path.parentPath?.isCallExpression({ callee: path.node }) ?? false;
   return !isCallee || receiverValues.every(isPrimitive);
 };
 
@@ -287,28 +284,29 @@ const MUTATING_METHODS = new Set([
 ]);
 
 const isMutatingMethodCallee = (path: NodePath): boolean => {
-  const { node, parentPath } = path;
+  const node = path.node;
   const isMember = types.isMemberExpression(node) || types.isOptionalMemberExpression(node);
   return (
     isMember &&
     !node.computed &&
     types.isIdentifier(node.property) &&
     MUTATING_METHODS.has(node.property.name) &&
-    (parentPath?.isCallExpression({ callee: node }) === true ||
-      parentPath?.isOptionalCallExpression({ callee: node }) === true)
+    (path.parentPath?.isCallExpression({ callee: node }) === true ||
+      path.parentPath?.isOptionalCallExpression({ callee: node }) === true)
   );
 };
 
 const isMemberWrite = (path: NodePath): boolean => {
-  const { parentPath } = path;
-  const member = parentPath?.node;
+  const member = path.parentPath?.node;
   const isMemberObject =
     (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
     member.object === path.node;
   return (
-    parentPath !== null &&
+    path.parentPath !== null &&
     isMemberObject &&
-    (isWriteTarget(parentPath) || isMutatingMethodCallee(parentPath) || isMemberWrite(parentPath))
+    (isWriteTarget(path.parentPath) ||
+      isMutatingMethodCallee(path.parentPath) ||
+      isMemberWrite(path.parentPath))
   );
 };
 
@@ -379,18 +377,18 @@ const isHookInitialArgument = (path: NodePath): boolean => {
 const isUnmutatedStateSetterArgument = (path: NodePath): boolean => {
   const call = path.parentPath;
   if (!call?.isCallExpression() || call.node.arguments[0] !== path.node) return false;
-  const { callee } = call.node;
-  if (!types.isIdentifier(callee)) return false;
-  const declarator = call.scope.getBinding(callee.name)?.path;
+  if (!types.isIdentifier(call.node.callee)) return false;
+  const declarator = call.scope.getBinding(call.node.callee.name)?.path;
   if (!declarator?.isVariableDeclarator() || !types.isArrayPattern(declarator.node.id))
     return false;
-  const { init } = declarator.node;
-  const hookCallee = types.isCallExpression(init) ? init.callee : null;
+  const hookCallee = types.isCallExpression(declarator.node.init)
+    ? declarator.node.init.callee
+    : null;
   const hook = types.isMemberExpression(hookCallee) ? hookCallee.property : hookCallee;
   const [stateElement, setterElement] = declarator.node.id.elements;
   if (
     !types.isIdentifier(hook, { name: "useState" }) ||
-    !types.isIdentifier(setterElement, { name: callee.name }) ||
+    !types.isIdentifier(setterElement, { name: call.node.callee.name }) ||
     !types.isIdentifier(stateElement)
   )
     return false;
@@ -399,12 +397,11 @@ const isUnmutatedStateSetterArgument = (path: NodePath): boolean => {
 };
 
 const isStateValueReference = (path: NodePath): boolean => {
-  const { parentPath } = path;
-  if (!parentPath) return false;
-  if (parentPath.isSpreadElement() || parentPath.isReturnStatement()) return true;
-  if (parentPath.isArrowFunctionExpression()) return parentPath.node.body === path.node;
-  if (parentPath.isConditionalExpression())
-    return parentPath.node.test !== path.node && isStateValueReference(parentPath);
+  if (!path.parentPath) return false;
+  if (path.parentPath.isSpreadElement() || path.parentPath.isReturnStatement()) return true;
+  if (path.parentPath.isArrowFunctionExpression()) return path.parentPath.node.body === path.node;
+  if (path.parentPath.isConditionalExpression())
+    return path.parentPath.node.test !== path.node && isStateValueReference(path.parentPath);
   return isHookInitialArgument(path) || isUnmutatedStateSetterArgument(path);
 };
 
@@ -434,16 +431,15 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
   traverse(ast, {
     VariableDeclarator(path) {
       const declaration = path.parentPath;
-      const { id, init } = path.node;
       if (
         !declaration.isVariableDeclaration() ||
         !isModuleLevel(declaration.parentPath) ||
-        !types.isIdentifier(id) ||
-        !id.loc
+        !types.isIdentifier(path.node.id) ||
+        !path.node.id.loc
       )
         return;
-      const binding = path.scope.getBinding(id.name);
-      const value = init ? toSymbolicValue(init) : null;
+      const binding = path.scope.getBinding(path.node.id.name);
+      const value = path.node.init ? toSymbolicValue(path.node.init) : null;
       const isWritten =
         binding !== undefined &&
         (binding.constantViolations.length > 0 ||
@@ -461,9 +457,9 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
           binding.referencePaths.filter((reference) => !reference.isExportNamedDeclaration()),
           value,
         );
-      declarations.set(id.name, {
-        initial: init ? value : { kind: "Primitive", value: undefined },
-        loc: id.loc,
+      declarations.set(path.node.id.name, {
+        initial: path.node.init ? value : { kind: "Primitive", value: undefined },
+        loc: path.node.id.loc,
         isWritten,
         isReadOnly,
       });
@@ -503,11 +499,10 @@ export const collectImportedNames = (ast: types.File): ImportedNames => {
   traverse(ast, {
     ImportDeclaration(path) {
       for (const specifier of path.node.specifiers) {
-        const { loc } = specifier.local;
         if (types.isImportNamespaceSpecifier(specifier) && path.node.source.loc)
           namespaceSources.push(path.node.source.loc);
-        if (types.isImportNamespaceSpecifier(specifier) || !loc) continue;
-        specifiers.push({ localName: specifier.local.name, loc });
+        if (types.isImportNamespaceSpecifier(specifier) || !specifier.local.loc) continue;
+        specifiers.push({ localName: specifier.local.name, loc: specifier.local.loc });
         referencesByName.set(
           specifier.local.name,
           path.scope.getBinding(specifier.local.name)?.referencePaths ?? [],
@@ -566,23 +561,26 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
       if (isUnchanged) constants.set(path.node.id.name, value);
     },
     TSEnumDeclaration(path) {
-      const { name } = path.node.id;
       const value = isModuleLevel(path.parentPath) ? getEnumObject(path.node) : null;
-      if (value && !enums.has(name)) enums.set(name, value);
-      if (!value || enums.get(name) !== value) unsafeEnums.add(name);
+      if (value && !enums.has(path.node.id.name)) enums.set(path.node.id.name, value);
+      if (!value || enums.get(path.node.id.name) !== value) unsafeEnums.add(path.node.id.name);
     },
   });
   traverse(ast, {
     Identifier(path) {
-      const { name } = path.node;
-      const value = enums.get(name);
+      const value = enums.get(path.node.name);
       const isTypePosition =
         path.parentPath.isTSTypeReference() ||
         path.parentPath.isTSQualifiedName() ||
         path.parentPath.isTSEnumDeclaration({ id: path.node });
-      if (!value || isTypePosition || !path.isReferencedIdentifier() || path.scope.hasBinding(name))
+      if (
+        !value ||
+        isTypePosition ||
+        !path.isReferencedIdentifier() ||
+        path.scope.hasBinding(path.node.name)
+      )
         return;
-      if (!isReadOfPrimitive(path, [value], [])) unsafeEnums.add(name);
+      if (!isReadOfPrimitive(path, [value], [])) unsafeEnums.add(path.node.name);
     },
   });
   for (const [name, value] of enums) if (!unsafeEnums.has(name)) constants.set(name, value);

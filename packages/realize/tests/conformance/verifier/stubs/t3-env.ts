@@ -3,7 +3,7 @@ interface EnvOptions {
   experimental__runtimeEnv?: Record<string, unknown>;
 }
 
-export const createEnv = ({ runtimeEnv, experimental__runtimeEnv }: EnvOptions) => ({
-  ...experimental__runtimeEnv,
-  ...runtimeEnv,
+export const createEnv = (options: EnvOptions) => ({
+  ...options.experimental__runtimeEnv,
+  ...options.runtimeEnv,
 });

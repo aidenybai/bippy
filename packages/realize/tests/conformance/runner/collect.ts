@@ -19,17 +19,25 @@ const summarize = (
   verification: VerificationSummary | null,
 ): CollectSummary => {
   const bailoutCountsByReason: Partial<Record<BailoutReason, number>> = {};
-  for (const { analysis } of components)
-    for (const { reason } of analysis.bailouts)
-      bailoutCountsByReason[reason] = (bailoutCountsByReason[reason] ?? 0) + 1;
-  const bindings = components.flatMap(({ analysis }) => analysis.bindings);
+  for (const component of components)
+    for (const bailout of component.analysis.bailouts)
+      bailoutCountsByReason[bailout.reason] = (bailoutCountsByReason[bailout.reason] ?? 0) + 1;
+  const bindings = components.flatMap((component) => component.analysis.bindings);
   return {
     fileCount,
     componentCount: components.length,
-    stateCount: sum(components, ({ report }) => report.states.length),
-    handlerCount: sum(components, ({ analysis }) => analysis.handlers.length),
-    unreachableBranchCount: sum(components, ({ report }) => report.unreachableBranches.length),
-    truncatedComponentCount: components.filter(({ report }) => report.isTruncated).length,
+    stateCount: sum(components, (component) => component.model.stateSpace.stateCount),
+    handlerCount: sum(components, (component) => component.analysis.handlers.length),
+    unreachableBranchCount: sum(
+      components,
+      (component) =>
+        component.model.branches
+          .flatMap((branch) => [branch.consequent, branch.alternate])
+          .filter((edge) => edge.isReachable === false).length,
+    ),
+    truncatedComponentCount: components.filter(
+      (component) => component.model.stateSpace.isTruncated,
+    ).length,
     bindingCount: bindings.length,
     untypedBindingCount: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
     unresolvedTypeBindingCount: bindings.filter(
@@ -52,14 +60,13 @@ export const collect = async (
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
   const projectAnalysis = analyzeProject(configPath);
-  const { components, fileCount } = projectAnalysis;
   const analysisDuration = Math.round(performance.now() - startTime);
   mkdirSync(outputDirectory, { recursive: true });
   writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
   let verification: VerificationSummary | null = null;
   if (shouldVerify) {
     const report = await verifyProject(configPath, {
-      analyzed: components,
+      analyzed: projectAnalysis.components,
       componentBudgetMs,
       setupDirectory,
       onStart: (componentName) =>
@@ -72,7 +79,12 @@ export const collect = async (
     writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
     verification = summarizeVerdicts(report.verdicts, report.durationMs);
   }
-  const summary = summarize(components, fileCount, analysisDuration, verification);
+  const summary = summarize(
+    projectAnalysis.components,
+    projectAnalysis.fileCount,
+    analysisDuration,
+    verification,
+  );
   writeFileSync(join(outputDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
   return summary;
 };

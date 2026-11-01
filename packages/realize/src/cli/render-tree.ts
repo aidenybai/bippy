@@ -7,21 +7,38 @@ import type {
   JsxExpressionValue,
   StateUpdate,
   SymbolicValue,
+  Binding,
+  BindingPlace,
 } from "../core/types";
 import { formatPlace, formatSymbolicValue } from "../core/values/format";
 import { getTestExpression } from "../core/values/get-test-expression";
-import { isRenderingNothing } from "../core/states/is-rendering-nothing";
-import { isRenderingNothingWhenFalse } from "../core/states/is-rendering-nothing-when-false";
-import { isUnchangedField } from "../core/values/is-unchanged-field";
+import { isRenderingNothing } from "../core/render/is-rendering-nothing";
 import { isEffectHandler } from "../core/handlers/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
-import { createSourceReader } from "./source-text";
-import { getEffectTriggerLabel } from "./trigger-labels";
-import { truncate, unescapeQuotedLiterals } from "./text";
+import { createSourceReader } from "../core/labels/source-text";
+import { getTriggerLabel } from "../core/labels/trigger-labels";
+import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
+import { getBindingPlace } from "../core/values/get-binding-place";
+import { getValuePlace } from "../core/values/get-value-place";
+import { getValueKey } from "../core/values/get-value-key";
+
+const isLogicalAnd = (conditional: ConditionalValue): boolean =>
+  getValueKey(conditional.alternate) === getValueKey(conditional.test);
+
+const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
+  isRenderingNothing(conditional.alternate) || isLogicalAnd(conditional);
+
+const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
+  left.bindingId === right.bindingId &&
+  left.path.length === right.path.length &&
+  left.path.every((segment, index) => right.path[index] === segment);
+
+const isUnchangedField = (value: SymbolicValue, binding: Binding, path: string[]): boolean =>
+  value.kind === "Binding" && isSamePlace(getValuePlace(value), getBindingPlace(binding, path));
 
 export const DEFAULT_RENDER_DEPTH = 12;
 
-export interface RenderTreeOptions {
+interface RenderTreeOptions {
   rootDirectory: string;
   maxDepth: number;
 }
@@ -74,16 +91,15 @@ const addEventNode = (chart: Flowchart, from: string, label: string): void => {
 };
 
 const formatUpdate = (update: StateUpdate): string => {
-  const { binding, value } = update;
   const assignments =
-    value.kind === "ObjectExpression"
-      ? value.properties
-          .filter((property) => !isUnchangedField(property.value, binding, [property.key]))
+    update.value.kind === "ObjectExpression"
+      ? update.value.properties
+          .filter((property) => !isUnchangedField(property.value, update.binding, [property.key]))
           .map(
             (property) =>
-              `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
+              `${formatPlace(update.binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
           )
-      : [`${binding.name} = ${formatSymbolicValue(value)}`];
+      : [`${update.binding.name} = ${formatSymbolicValue(update.value)}`];
   const guardPrefix =
     update.guards.length > 0 ? `if ${update.guards.map(formatSymbolicValue).join(" && ")}: ` : "";
   return `${guardPrefix}${assignments.join(", ")}${update.isAsync ? " (async)" : ""}`;
@@ -94,7 +110,7 @@ const formatHandlerEffects = (handler: Handler): string =>
     [
       ...handler.updates.map(formatUpdate),
       ...handler.delegates.map((delegate) => `calls ${delegate}`),
-      ...handler.claims.map((claim) => `checks ${claim.description}`),
+      ...handler.assertions.map((assertion) => `checks ${assertion.description}`),
     ].join(EFFECT_SEPARATOR) || "nothing",
     MAX_EFFECT_WIDTH,
   );
@@ -193,16 +209,12 @@ export const formatRenderTree = (
   component: AnalyzedComponent,
   options: RenderTreeOptions,
 ): string => {
-  const { analysis } = component;
+  const analysis = component.analysis;
   const chart = createFlowchart(component, options);
   const rootId = addNode(chart, analysis.name, "element");
   buildNode(analysis.render, chart, rootId, 0);
   for (const handler of analysis.handlers.filter(isEffectHandler))
-    addEventNode(
-      chart,
-      rootId,
-      `${getEffectTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`,
-    );
+    addEventNode(chart, rootId, `${getTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`);
   const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   const location = `${relative(options.rootDirectory, analysis.file)}${lineSuffix}`;
   return [

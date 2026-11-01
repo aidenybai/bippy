@@ -8,13 +8,13 @@ export const collectContextSetterFields = (analyses: ComponentAnalysis[]): Conte
   const setterFieldsByContext: ContextSetterFields = new Map();
   const conflictingContextKeys = new Set<string>();
   const providedContexts = analyses.flatMap((analysis) => analysis.providedContexts);
-  for (const { contextKey, value } of providedContexts) {
-    if (value.kind !== "ObjectExpression") continue;
+  for (const providedContext of providedContexts) {
+    if (providedContext.value.kind !== "ObjectExpression") continue;
     const setterFields = new Map<string, string>();
-    for (const property of value.properties) {
+    for (const property of providedContext.value.properties) {
       if (property.value.kind !== "Setter") continue;
-      const { binding } = property.value;
-      const stateProperty = value.properties.find(
+      const binding = property.value.binding;
+      const stateProperty = providedContext.value.properties.find(
         (candidate) =>
           candidate.value.kind === "Binding" &&
           candidate.value.binding === binding &&
@@ -22,12 +22,12 @@ export const collectContextSetterFields = (analyses: ComponentAnalysis[]): Conte
       );
       if (stateProperty) setterFields.set(property.key, stateProperty.key);
     }
-    const existingSetterFields = setterFieldsByContext.get(contextKey);
+    const existingSetterFields = setterFieldsByContext.get(providedContext.contextKey);
     if (existingSetterFields && !isSameSetterFields(existingSetterFields, setterFields)) {
-      conflictingContextKeys.add(contextKey);
+      conflictingContextKeys.add(providedContext.contextKey);
       continue;
     }
-    setterFieldsByContext.set(contextKey, setterFields);
+    setterFieldsByContext.set(providedContext.contextKey, setterFields);
   }
   for (const [contextKey, setterFields] of setterFieldsByContext)
     if (conflictingContextKeys.has(contextKey) || setterFields.size === 0)

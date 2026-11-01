@@ -40,9 +40,8 @@ const getValueNames = (statement: types.Statement): string[] => {
 
 const getTypeExportNames = (statement: types.Statement): string[] => {
   if (statement.type !== "ExportNamedDeclaration") return [];
-  const { declaration } = statement;
-  if (declaration && isTypeDeclaration(declaration)) {
-    const name = getDeclaredName(declaration);
+  if (statement.declaration && isTypeDeclaration(statement.declaration)) {
+    const name = getDeclaredName(statement.declaration);
     return name ? [name] : [];
   }
   if (statement.exportKind !== "type") return [];

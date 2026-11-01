@@ -74,7 +74,8 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
     loadedDeclarations.set(target.identifier.declarationId, getSource(source));
   };
   for (const block of hirFunction.body.blocks.values())
-    for (const { lvalue, value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       for (const dependencies of memoDependencies.values())
         hold(
           value.kind === "LoadLocal"
@@ -96,14 +97,14 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
           ),
         );
       if (value.kind === "FinishMemoize") memoDependencies.delete(value.manualMemoId);
-      if (value.kind === "LoadLocal") derive(lvalue, value.place);
+      if (value.kind === "LoadLocal") derive(instruction.lvalue, value.place);
       if (value.kind === "StoreLocal") {
         derive(value.lvalue.place, value.value);
-        derive(lvalue, value.value);
+        derive(instruction.lvalue, value.value);
       }
       if (value.kind === "PropertyLoad")
         setName(
-          lvalue,
+          instruction.lvalue,
           getName(value.object) === ALL_PROPS ? String(value.property) : getName(value.object),
         );
       if (value.kind === "Destructure" && getName(value.value) !== undefined) {
@@ -125,10 +126,13 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
         for (const [place, partName] of parts) setName(place, partName);
       }
       if (value.kind === "FunctionExpression")
-        functionsByDeclaration.set(lvalue.identifier.declarationId, value.loweredFunc.func);
+        functionsByDeclaration.set(
+          instruction.lvalue.identifier.declarationId,
+          value.loweredFunc.func,
+        );
       if (value.kind === "ArrayExpression")
         elementsByDeclaration.set(
-          lvalue.identifier.declarationId,
+          instruction.lvalue.identifier.declarationId,
           new Set(
             value.elements.flatMap((element) =>
               element.kind === "Identifier" ? [getSource(element)] : [],
@@ -155,7 +159,7 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
       if (hookKind === "useContext" && places[0]) {
         const contextName = `${CONTEXT_PREFIX}${contextLocs.size}`;
         contextLocs.set(contextName, places[0].loc);
-        setName(lvalue, contextName);
+        setName(instruction.lvalue, contextName);
       }
       const handleDependencies = hookKind === "useImperativeHandle" ? places[2] : undefined;
       if (handleDependencies)

@@ -1,6 +1,6 @@
 import { isAbsolute, relative } from "node:path";
 
-export interface TraceEvent {
+interface TraceEvent {
   name: string;
   cat: string;
   ph: "X" | "C";

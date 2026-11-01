@@ -11,17 +11,13 @@ import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HI
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
 import { isFunctionCreation } from "../../src/core/interpret/is-function-creation";
 import type {
-  AbstractValue,
   AnalyzedComponent,
   Binding,
-  BindingPlace,
   ComponentAnalysis,
   ProjectAnalysis,
-  StateReport,
 } from "../../src/core/types";
 import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
-import { PlaceMap } from "../../src/core/values/place-map";
-import { collectHandlerProbes } from "../conformance/verifier/handler-probes";
+import { collectHandlerCounters } from "../conformance/verifier/handler-counters";
 import type { Capture } from "../conformance/verifier/types";
 
 export const getFixtureConfig = (fixture: string): string =>
@@ -50,21 +46,17 @@ export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
   samples: [],
   initial: null,
   inputPlaces: [],
-  lengthLimit: null,
-  derived: null,
-  range: null,
-  alias: null,
+  isDerived: false,
   ...overrides,
 });
 
 export const createCapture = (overrides: Partial<Capture>): Capture => ({
   shapes: [],
-  hookStates: [],
-  probes: [],
-  handlerHits: [],
+  stateValues: [],
+  branchHits: [],
+  handlerCalls: [],
   mutationHits: [],
-  mutatedOwners: [],
-  firstCommitShapes: null,
+  mutatedOrigins: [],
   error: null,
   errorDepth: null,
   failure: null,
@@ -76,7 +68,6 @@ export const createTestAnalysis = (name: string, bindings: Binding[]): Component
     {
       name,
       exportName: name,
-      runtimeName: name,
       file: `/${name}.tsx`,
       declaration: `/${name}.tsx#${name}`,
     },
@@ -86,32 +77,25 @@ export const createTestAnalysis = (name: string, bindings: Binding[]): Component
   bindings,
 });
 
-export const createTestReport = (places: Array<[BindingPlace, AbstractValue[]]>): StateReport => ({
-  places: new PlaceMap(places),
-  states: [],
-  regions: [],
-  propWitnesses: [],
-  unreachableBranches: [],
-  claimOutcomes: [],
-  isTruncated: false,
-});
-
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {
   const component = project.components.find((candidate) => candidate.analysis.name === name);
   if (!component) throw new Error(`No component named ${name}`);
   return component;
 };
 
-export const getHandlerProbeId = (component: AnalyzedComponent, handlerSource: string): string => {
-  const matching = collectHandlerProbes(component.analysis).filter(({ probe }) =>
-    readFileSync(probe.file, "utf8").slice(probe.start, probe.end).startsWith(handlerSource),
+export const getHandlerCounterId = (
+  component: AnalyzedComponent,
+  handlerSource: string,
+): string => {
+  const matching = collectHandlerCounters(component.analysis).filter(({ counter }) =>
+    readFileSync(counter.file, "utf8").slice(counter.start, counter.end).startsWith(handlerSource),
   );
-  const [handlerProbe] = matching;
-  if (!handlerProbe || matching.length > 1)
+  const [handlerCounter] = matching;
+  if (!handlerCounter || matching.length > 1)
     throw new Error(
       `${matching.length} handlers start with ${handlerSource} in ${component.analysis.name}`,
     );
-  return handlerProbe.probe.id;
+  return handlerCounter.counter.id;
 };
 
 export const getBinding = (component: AnalyzedComponent, name: string): Binding => {

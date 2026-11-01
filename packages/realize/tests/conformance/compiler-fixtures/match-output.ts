@@ -1,6 +1,6 @@
 import type { SymbolicValue } from "../../../src/core/types";
-import { toExpected } from "../verifier/match";
-import type { ExpectedShape } from "../verifier/match";
+import { toExpected } from "./expected";
+import type { ExpectedShape } from "./expected";
 
 type OutputShape =
   | { kind: "element"; tag: string; children: OutputShape[] }
@@ -51,7 +51,7 @@ const MAX_MATCH_STEPS = 500_000;
 const decode = (text: string): string =>
   text.replace(/&(?:amp|lt|gt|quot|nbsp|#x27|#39);/g, (entity) => ENTITIES.get(entity) ?? entity);
 
-export const parseHtml = (html: string): OutputShape[] => {
+const parseHtml = (html: string): OutputShape[] => {
   const root: OutputShape[] = [];
   const stack: OutputShape[][] = [root];
   for (const [token, closing, tag, , selfClosing] of html.matchAll(TAG_PATTERN)) {
@@ -209,7 +209,7 @@ const toRenderTokens = (value: SymbolicValue): ExpectedToken[] => {
   switch (value.kind) {
     case "JsxExpression":
     case "JsxFragment":
-      return toExpectedTokens(toExpected(value, new Map()));
+      return toExpectedTokens(toExpected(value));
     case "Conditional":
       return [
         {

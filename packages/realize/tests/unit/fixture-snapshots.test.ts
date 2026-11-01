@@ -1,6 +1,7 @@
 import { dirname } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { DEFAULT_MAX_STATES, formatMermaid } from "../../src/cli/mermaid";
+import { formatMermaid } from "../../src/cli/mermaid";
+import { formatTla } from "../../src/core/model/tla";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tree";
 import { analyzeProject } from "../../src/core/project/analyze-project";
 import { getFixtureConfig } from "./helpers";
@@ -18,12 +19,11 @@ describe("fixture analysis", () => {
     ).toMatchSnapshot();
   });
 
-  it.each(cases)(
-    "%s keeps its states, transitions and unreachable branches",
-    (_name, component) => {
-      expect(
-        formatMermaid(component, { rootDirectory, maxStates: DEFAULT_MAX_STATES }),
-      ).toMatchSnapshot();
-    },
-  );
+  it.each(cases)("%s keeps its state chart and findings", (_name, component) => {
+    expect(formatMermaid(component, { rootDirectory })).toMatchSnapshot();
+  });
+
+  it.each(cases)("%s keeps its TLA+ module", (_name, component) => {
+    expect(formatTla(component.analysis.name, component.model)).toMatchSnapshot();
+  });
 });

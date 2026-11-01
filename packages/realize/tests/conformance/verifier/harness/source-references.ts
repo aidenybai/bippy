@@ -71,11 +71,11 @@ export const collectSourceReferences = (appDirectory: string): SourceReferences 
     addExports(references.exports, file, text);
     const imports = parseImports(text);
     references.fileImports.set(file, imports);
-    for (const { specifier, names } of imports) {
-      if (!PACKAGE_SPECIFIER_PATTERN.test(specifier)) continue;
-      const packageNames = references.packageImports.get(specifier) ?? new Set();
-      for (const name of names) packageNames.add(name);
-      references.packageImports.set(specifier, packageNames);
+    for (const packageImport of imports) {
+      if (!PACKAGE_SPECIFIER_PATTERN.test(packageImport.specifier)) continue;
+      const packageNames = references.packageImports.get(packageImport.specifier) ?? new Set();
+      for (const name of packageImport.names) packageNames.add(name);
+      references.packageImports.set(packageImport.specifier, packageNames);
     }
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);

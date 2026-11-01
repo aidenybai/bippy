@@ -1,20 +1,25 @@
 import { dedupeAbstractValues } from "../values/abstract-values";
-import type { DerivedCall, Domain, PrimitiveValue, SymbolicValue } from "../types";
-import { applyPureFunctionToCases, isPureFunction } from "../solver/pure-functions";
+import type { Domain, PrimitiveValue, SymbolicValue } from "../types";
+import { applyPureFunctionToCases, isPureFunction } from "../interpret/pure-functions";
+
+export interface PureCall {
+  callee: string;
+  operands: SymbolicValue[];
+}
 
 export const getMathCall = (
   methodName: string,
   argumentValues: SymbolicValue[],
-): DerivedCall | null =>
+): PureCall | null =>
   isPureFunction(`Math.${methodName}`)
-    ? { kind: "Call", callee: `Math.${methodName}`, operands: argumentValues }
+    ? { callee: `Math.${methodName}`, operands: argumentValues }
     : null;
 
 export const getLiteralArrayCall = (
   receiver: SymbolicValue,
   methodName: string,
   argumentValues: SymbolicValue[],
-): DerivedCall | null => {
+): PureCall | null => {
   const [searched] = argumentValues;
   const isLiteralArray =
     receiver.kind === "ArrayExpression" &&
@@ -24,24 +29,23 @@ export const getLiteralArrayCall = (
     searched &&
     argumentValues.length === 1 &&
     isPureFunction(`Array.${methodName}`)
-    ? { kind: "Call", callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
+    ? { callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
     : null;
 };
 
 const getDomainLiterals = (value: SymbolicValue): PrimitiveValue[] | null => {
   if (value.kind === "Primitive") return [value.value];
   if (value.kind !== "Binding" || value.path.length > 0) return null;
-  const { domain } = value.binding;
-  if (domain.kind !== "Cases") return null;
-  return domain.cases.every((candidate) => candidate.kind === "Literal")
-    ? domain.cases.map((candidate) => candidate.value)
+  if (value.binding.domain.kind !== "Cases") return null;
+  return value.binding.domain.cases.every((candidate) => candidate.kind === "Literal")
+    ? value.binding.domain.cases.map((candidate) => candidate.value)
     : null;
 };
 
-export const getDerivedDomain = (derived: DerivedCall): Domain | null => {
-  const operandCases = derived.operands.map(getDomainLiterals);
+export const getPureCallDomain = (call: PureCall): Domain | null => {
+  const operandCases = call.operands.map(getDomainLiterals);
   if (!operandCases.every((cases): cases is PrimitiveValue[] => cases !== null)) return null;
-  const results = applyPureFunctionToCases(derived.callee, operandCases);
+  const results = applyPureFunctionToCases(call.callee, operandCases);
   return results
     ? {
         kind: "Cases",

@@ -8,7 +8,7 @@ const isNumberCase = (candidate: { kind: string; value?: unknown; primitive?: st
 
 const isNumber = (value: SymbolicValue): boolean => {
   if (value.kind !== "Binding" || value.path.length > 0) return false;
-  const { domain } = value.binding;
+  const domain = value.binding.domain;
   if (domain.kind === "Opaque") return domain.typeText === "number";
   return domain.kind === "Cases" && domain.cases.every(isNumberCase);
 };

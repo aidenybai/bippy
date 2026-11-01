@@ -5,10 +5,8 @@ interface DocumentChildrenProps {
   children?: ReactNode;
 }
 
-export const Html = ({ children }: DocumentChildrenProps) =>
-  createElement(Fragment, null, children);
-export const Head = ({ children }: DocumentChildrenProps) =>
-  createElement(Fragment, null, children);
+export const Html = (props: DocumentChildrenProps) => createElement(Fragment, null, props.children);
+export const Head = (props: DocumentChildrenProps) => createElement(Fragment, null, props.children);
 export const Main = () => null;
 export const NextScript = () => null;
 

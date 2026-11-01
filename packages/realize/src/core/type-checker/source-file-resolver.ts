@@ -3,9 +3,7 @@ import { findNodeAtLocation } from "./find-node-at-location";
 import { getUnionMembers } from "./get-union-members";
 import { getCollectionName, getInterfaceMemberNames } from "./lib-collections";
 import { isPrimitiveType } from "./is-primitive-type";
-import { getContextKey } from "./get-context-key";
 import { getDeclarationKey, getReactExportName, isReactType } from "./typescript";
-import { isReactElementType } from "./is-react-element-type";
 import {
   isBindingElement,
   isCallExpression,
@@ -39,6 +37,16 @@ import {
   getTypeOfSymbol,
   isTupleType,
 } from "./checker-queries";
+
+const getContextKey = (checker: Checker, node: Node): string | null =>
+  isPropertyAccessExpression(node) && node.name.text === "Provider"
+    ? getDeclarationKey(checker, node.expression)
+    : getDeclarationKey(checker, node);
+
+const REACT_ELEMENT_TYPE_PATTERN = /^(?:ReactElement|ReactPortal|ReactNode|Element)$/;
+
+const isReactElementType = (type: Type): boolean =>
+  (getUnionMembers(type) ?? []).some((member) => isReactType(member, REACT_ELEMENT_TYPE_PATTERN));
 
 const CONTEXT_TYPE_PATTERN = /^(Context|Provider|ProviderExoticComponent)$/;
 

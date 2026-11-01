@@ -22,27 +22,6 @@ const SKIPPED: SkippedFixture[] = JSON.parse(
 
 const RESULTS_FILE = join(import.meta.dirname, "../results/compiler-fixtures.json");
 
-const getRegionRenders = (component: AnalyzedComponent, isFirstRender: boolean) => {
-  const { analysis, report } = component;
-  if (report.regions.length === 0) return [[analysis.render]];
-  const effectHandlerIds = new Set(
-    analysis.handlers
-      .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) => handler.id),
-  );
-  return report.regions.map((region) => {
-    const firstRenderState = isFirstRender ? region.firstRenderState : null;
-    if (firstRenderState === null)
-      return region.states.flatMap((index) => report.states[index]?.render ?? []);
-    const reached = new Set([firstRenderState]);
-    for (const index of reached)
-      for (const transition of report.states[index]?.transitions ?? [])
-        if (effectHandlerIds.has(transition.handlerId))
-          for (const target of transition.targets) reached.add(target);
-    return [...reached].flatMap((index) => report.states[index]?.render ?? []);
-  });
-};
-
 const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): Outcome => {
   if (fixture.error) return { kind: "skipped", reason: `doesn't parse: ${fixture.error}` };
   if (fixture.output === null) return { kind: "skipped", reason: "has no successful eval output" };
@@ -57,9 +36,10 @@ const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): Outcom
   if (fixture.output.includes("(exception in render)"))
     return { kind: "skipped", reason: "throws in one of its renders" };
   const { output } = fixture;
-  const isAdmitted = getRegionRenders(component, !fixture.isSequential).every((renders) =>
-    fixture.isSequential ? admitsSequentialOutput(renders, output) : admitsOutput(renders, output),
-  );
+  const renders = [component.analysis.render];
+  const isAdmitted = fixture.isSequential
+    ? admitsSequentialOutput(renders, output)
+    : admitsOutput(renders, output);
   return isAdmitted ? { kind: "admitted" } : { kind: "mismatch", output };
 };
 

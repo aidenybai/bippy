@@ -15,19 +15,23 @@ interface ParameterPart {
 }
 
 const getDerivation = (instruction: Instruction): Derivation | null => {
-  const { value, lvalue } = instruction;
+  const value = instruction.value;
   switch (value.kind) {
     case "LoadLocal":
-      return { source: value.place, derived: [lvalue], isPart: false };
+      return { source: value.place, derived: [instruction.lvalue], isPart: false };
     case "StoreLocal":
-      return { source: value.value, derived: [value.lvalue.place, lvalue], isPart: false };
+      return {
+        source: value.value,
+        derived: [value.lvalue.place, instruction.lvalue],
+        isPart: false,
+      };
     case "PropertyLoad":
     case "ComputedLoad":
-      return { source: value.object, derived: [lvalue], isPart: true };
+      return { source: value.object, derived: [instruction.lvalue], isPart: true };
     case "GetIterator":
-      return { source: value.collection, derived: [lvalue], isPart: false };
+      return { source: value.collection, derived: [instruction.lvalue], isPart: false };
     case "IteratorNext":
-      return { source: value.iterator, derived: [lvalue], isPart: true };
+      return { source: value.iterator, derived: [instruction.lvalue], isPart: true };
     case "Destructure":
       return {
         source: value.value,

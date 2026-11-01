@@ -26,18 +26,17 @@ export const getStoreFieldValue = (
   actionArguments: SymbolicValue[],
   readField: (field: string) => SymbolicValue,
 ): SymbolicValue => {
-  const { field, value } = assignment;
-  switch (value.kind) {
+  switch (assignment.value.kind) {
     case "Argument":
-      return actionArguments[value.index] ?? UNDEFINED_VALUE;
+      return actionArguments[assignment.value.index] ?? UNDEFINED_VALUE;
     case "Literal":
-      return { kind: "Primitive", value: value.value };
+      return { kind: "Primitive", value: assignment.value.value };
     case "Toggle":
-      return { kind: "UnaryExpression", operator: "!", value: readField(field) };
+      return { kind: "UnaryExpression", operator: "!", value: readField(assignment.field) };
     case "Unknown":
       return createUnknown("store", storeBinding.loc);
     default:
-      return assertExhaustive(value, "Unhandled store field value");
+      return assertExhaustive(assignment.value, "Unhandled store field value");
   }
 };
 

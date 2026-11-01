@@ -10,7 +10,7 @@ import type {
   SymbolicValue,
   UnknownOrigin,
 } from "../types";
-import { getNegatedOperator } from "../solver/get-negated-operator";
+import { getNegatedOperator } from "../values/get-negated-operator";
 import { getValueKey } from "./get-value-key";
 import { isTreeLargerThan } from "./is-tree-larger-than";
 
@@ -43,8 +43,6 @@ const ELIDED_TEXT = "…";
 export const CONDITION_SEPARATOR = " ∧ ";
 export const UNCONDITIONAL_LABEL = "always";
 
-export const formatStateLabel = (stateIndex: number): string => `S${stateIndex + 1}`;
-
 export const formatLine = (loc: SourceLocation): string =>
   loc === GeneratedSource ? "" : `L${loc.start.line}`;
 
@@ -56,19 +54,8 @@ const formatPrimitive = (value: PrimitiveValue): string => {
   return Object.is(value, -0) ? "-0" : String(value);
 };
 
-const formatEntry = (
-  [key, entryValue]: [PrimitiveValue, PrimitiveValue],
-  isMap: boolean,
-): string =>
-  isMap ? `${formatPrimitive(key)} => ${formatPrimitive(entryValue)}` : formatPrimitive(key);
-
-export const formatAbstractValue = (value: AbstractValue): string => {
-  if (value.kind === "Literal") return formatPrimitive(value.value);
-  if (value.kind === "Type") return value.text;
-  const isMap = value.collection === "Map";
-  const entries = value.entries.map((entry) => formatEntry(entry, isMap));
-  return `${value.collection} {${entries.join(", ")}}`;
-};
+export const formatAbstractValue = (value: AbstractValue): string =>
+  value.kind === "Literal" ? formatPrimitive(value.value) : value.text;
 
 const getLogicalOperator = (value: ConditionalValue): "||" | "&&" | "??" | null => {
   const testKey = getValueKey(value.test);
@@ -222,7 +209,7 @@ const formatOrigin = (origin: UnknownOrigin): string => {
     case "Call":
       return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatSymbolicValue).join(", ")})`;
     case "Settled":
-      return origin.outcome === "resolved"
+      return origin.outcome === "fulfilled"
         ? `await ${formatWithPrecedence(origin.promise, ATOMIC_PRECEDENCE)}`
         : `${formatSymbolicValue(origin.promise)} rejects`;
     case "Value":

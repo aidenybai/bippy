@@ -6,12 +6,7 @@ import type { Root } from "react-dom/client";
 import { PROVIDERS_PATH } from "../types";
 import type { Capture, MountRequest } from "../types";
 import { markDispatchersIdle, watchHookCallers } from "../write-origins";
-import {
-  captureMountedComponent,
-  createEmptyCapture,
-  getFirstCommitShapes,
-  resetFirstCommitShapes,
-} from "./capture";
+import { captureMountedComponent, createEmptyCapture } from "./capture";
 import {
   Boundary,
   getDepthMarker,
@@ -25,7 +20,7 @@ import { hydrateProp } from "./hydrate";
 import { importComponentModule, loadWrapper, runScenario } from "./load";
 import type { LoadedWrapper } from "./load";
 import { resetMutationTracking } from "./mutations";
-import { resetProbeHits } from "./probes";
+import { resetCoverage } from "./coverage";
 import {
   callServerComponent,
   isAsyncFunction,
@@ -65,12 +60,11 @@ let mountedRoot: Root | null = null;
 const resetRenderState = (): void => {
   resetErrors();
   resetCommitTracking();
-  resetFirstCommitShapes();
 };
 
 const resetMountState = (): void => {
   resetRenderState();
-  resetProbeHits();
+  resetCoverage();
   resetMutationTracking();
 };
 
@@ -162,5 +156,5 @@ export const mount = async (request: MountRequest): Promise<Capture> => {
   } catch (error) {
     return createEmptyCapture(recordError(error).message);
   }
-  return { ...captureMountedComponent(), firstCommitShapes: getFirstCommitShapes() };
+  return captureMountedComponent();
 };

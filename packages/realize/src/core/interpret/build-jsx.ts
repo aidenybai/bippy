@@ -1,9 +1,9 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { FunctionValue, JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types";
 
-export const DYNAMIC_TAG_NAME = "Dynamic";
+const DYNAMIC_TAG_NAME = "Dynamic";
 
-export const LOCAL_RENDER_PROP = "render";
+const LOCAL_RENDER_PROP = "render";
 
 interface JsxElementParts {
   declaration: string | null;

@@ -8,58 +8,57 @@ export const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
 export const TRUNCATED_VALUE = "[truncated]";
 export const MAX_ACTION_LABEL_LENGTH = 40;
 
-const PROP_OWNER_PREFIX = "prop:";
-const STATE_OWNER_PREFIX = "state:";
+const PROP_ORIGIN_PREFIX = "prop:";
+const STATE_ORIGIN_PREFIX = "state:";
 
-export interface MutationOwner {
+interface MutationOrigin {
   kind: "prop" | "state";
   name: string;
 }
 
-export const getPropOwner = (propName: string): string => `${PROP_OWNER_PREFIX}${propName}`;
+export const getPropOrigin = (propName: string): string => `${PROP_ORIGIN_PREFIX}${propName}`;
 
-export const getStateOwner = (hookIndex: number): string => `${STATE_OWNER_PREFIX}${hookIndex}`;
+export const getStateOrigin = (hookIndex: number): string => `${STATE_ORIGIN_PREFIX}${hookIndex}`;
 
-export const parseOwner = (owner: string): MutationOwner =>
-  owner.startsWith(PROP_OWNER_PREFIX)
-    ? { kind: "prop", name: owner.slice(PROP_OWNER_PREFIX.length) }
-    : { kind: "state", name: owner.slice(STATE_OWNER_PREFIX.length) };
+export const parseOrigin = (origin: string): MutationOrigin =>
+  origin.startsWith(PROP_ORIGIN_PREFIX)
+    ? { kind: "prop", name: origin.slice(PROP_ORIGIN_PREFIX.length) }
+    : { kind: "state", name: origin.slice(STATE_ORIGIN_PREFIX.length) };
 
 export type Shape =
   | { kind: "element"; tag: string; children: Shape[] }
   | { kind: "component"; name: string }
   | { kind: "text"; text: string };
 
-export type ProbeMode = "truthy" | "nullish" | "mutation" | "handler" | "callbacks";
+type CounterKind = "truthy" | "nullish" | "mutation" | "host-handler" | "component-callbacks";
 
-export interface Probe {
+export interface Counter {
   id: string;
   file: string;
   start: number;
   end: number;
-  mode: ProbeMode;
+  kind: CounterKind;
 }
 
-export interface ProbeHit {
+export interface BranchHit {
   id: string;
-  isTrueSide: boolean;
+  isConsequent: boolean;
 }
 
 export interface MutationHit {
   id: string;
-  owner: string | null;
+  origin: string | null;
   isWritten: boolean;
   isLost: boolean;
 }
 
 export interface Capture {
   shapes: Shape[];
-  hookStates: unknown[];
-  probes: ProbeHit[];
-  handlerHits: string[];
+  stateValues: unknown[];
+  branchHits: BranchHit[];
+  handlerCalls: string[];
   mutationHits: MutationHit[];
-  mutatedOwners: string[];
-  firstCommitShapes: Shape[] | null;
+  mutatedOrigins: string[];
   error: string | null;
   errorDepth: number | null;
   failure: MountFailure | null;
@@ -70,7 +69,6 @@ export interface Action {
   kind: "click" | "change" | "submit" | "keydown" | "focus" | "blur" | "hover" | "unhover";
   tag: string;
   label: string;
-  isInChild: boolean;
 }
 
 export interface Scenario {
@@ -78,14 +76,14 @@ export interface Scenario {
   args: unknown[];
 }
 
-export interface ProjectCandidate {
+interface ProjectCandidate {
   kind: "project";
   file: string;
   exportName: string;
   props: Record<string, Sample>;
 }
 
-export interface PackageCandidate {
+interface PackageCandidate {
   kind: "package";
   specifier: string;
   namespace: string | null;
@@ -94,7 +92,7 @@ export interface PackageCandidate {
   props: Record<string, Sample>;
 }
 
-export type WrapperCandidate = ProjectCandidate | PackageCandidate;
+type WrapperCandidate = ProjectCandidate | PackageCandidate;
 
 export type WrapperSource = "named" | "root" | "part" | "context";
 
@@ -164,5 +162,5 @@ declare global {
   interface Window {
     __verify: VerifyApi;
   }
-  var __bippyProbe: (id: string, mode: ProbeMode, value: unknown) => unknown;
+  var __bippyCoverage: (id: string, kind: CounterKind, value: unknown) => unknown;
 }

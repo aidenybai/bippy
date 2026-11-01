@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import type { SymbolicValue } from "../../src/core/types";
 
@@ -12,13 +12,7 @@ const createSharedChoice = (depth: number): SymbolicValue => {
       testKind: "truthy",
       consequent: value,
       alternate: value,
-      branch: {
-        terminalId: makeInstructionId(level),
-        probe: "none",
-        loc: GeneratedSource,
-        file: "shared.tsx",
-      },
-      guardKeys: [],
+      branch: { loc: GeneratedSource, file: "shared.tsx", testKind: null },
     };
   return value;
 };

@@ -1,6 +1,6 @@
 import type { AbstractValue, BinaryOperator, PrimitiveValue } from "../types";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
-import { LOOSE_EQUALITY_OPERATORS } from "../solver/is-equal-to-literal";
+import { LOOSE_EQUALITY_OPERATORS } from "./comparison-operators";
 import { isNullish } from "../values/is-nullish";
 
 export const canTypeEqualLiteral = (
@@ -9,8 +9,6 @@ export const canTypeEqualLiteral = (
   operator: BinaryOperator,
 ): boolean => {
   if (value.kind === "Literal") return false;
-  if (value.kind === "Collection")
-    return LOOSE_EQUALITY_OPERATORS.has(operator) && !isNullish(literal);
   if (value.text === "any" || value.text === "unknown" || value.text === "{}") return true;
   if (LOOSE_EQUALITY_OPERATORS.has(operator)) return !isNullish(literal);
   switch (value.primitive) {

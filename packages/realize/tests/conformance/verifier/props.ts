@@ -1,4 +1,4 @@
-import type { ComponentAnalysis, PropWitness, Sample, StateReport } from "../../../src/core/types";
+import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 
 const MAX_PROP_COMBINATIONS = 12;
 
@@ -20,9 +20,9 @@ const getWholeProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
 export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> => ({
   ...getWholeProps(analysis),
   ...Object.fromEntries(
-    getPropSamples(analysis).map(({ name, samples }) => [
-      name,
-      samples[0] ?? { kind: "Undefined" },
+    getPropSamples(analysis).map((propSample) => [
+      propSample.name,
+      propSample.samples[0] ?? { kind: "Undefined" },
     ]),
   ),
 });
@@ -30,35 +30,21 @@ export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sam
 export const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
   const propSamples = getPropSamples(analysis);
   const defaultProps = getDefaultProps(analysis);
-  const combinationCount = propSamples.reduce((total, { samples }) => total * samples.length, 1);
+  const combinationCount = propSamples.reduce(
+    (total, propSample) => total * propSample.samples.length,
+    1,
+  );
   if (combinationCount <= MAX_PROP_COMBINATIONS) {
     return propSamples.reduce<Record<string, Sample>[]>(
-      (combinations, { name, samples }) =>
+      (combinations, propSample) =>
         combinations.flatMap((combination) =>
-          samples.map((sample) => ({ ...combination, [name]: sample })),
+          propSample.samples.map((sample) => ({ ...combination, [propSample.name]: sample })),
         ),
       [getWholeProps(analysis)],
     );
   }
-  const variations = propSamples.flatMap(({ name, samples }) =>
-    samples.slice(1).map((sample) => ({ ...defaultProps, [name]: sample })),
+  const variations = propSamples.flatMap((propSample) =>
+    propSample.samples.slice(1).map((sample) => ({ ...defaultProps, [propSample.name]: sample })),
   );
   return [defaultProps, ...variations].slice(0, MAX_PROP_COMBINATIONS);
-};
-
-export const getWitnessProps = (
-  analysis: ComponentAnalysis,
-  report: StateReport,
-  combinations: Record<string, Sample>[],
-): PropWitness[] => {
-  const defaultProps = getDefaultProps(analysis);
-  const seenKeys = new Set(combinations.map((props) => JSON.stringify(props)));
-  return report.propWitnesses
-    .map((witness) => ({ ...witness, props: { ...defaultProps, ...witness.props } }))
-    .filter((witness) => {
-      const key = JSON.stringify(witness.props);
-      if (seenKeys.has(key)) return false;
-      seenKeys.add(key);
-      return true;
-    });
 };

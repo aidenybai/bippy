@@ -4,7 +4,7 @@ import { MAX_ACTION_LABEL_LENGTH } from "../types";
 import type { Action, Capture } from "../types";
 import { markDispatchersIdle } from "../write-origins";
 import { captureMountedComponent } from "./capture";
-import { findMountedFiber, getChildren, isRenderedByChild } from "./fibers";
+import { findMountedFiber, getChildren } from "./fibers";
 import { trackActionTimers } from "./pending-callbacks";
 import { settle } from "./settle";
 
@@ -181,7 +181,6 @@ export const collectActions = (): MountedAction[] => {
           key: duplicateCount === 0 ? baseKey : `${baseKey}#${duplicateCount}`,
           tag,
           label,
-          isInChild: isRenderedByChild(fiber),
           element: fiber.stateNode,
         });
       }

@@ -1,7 +1,5 @@
 import type { Page } from "playwright";
-import type { ComponentAnalysis, PropWitness, Sample, StateReport } from "../../../src/core/types";
-import { matchesExpected, normalizeShapes, toExpected } from "./match";
-import type { ExpectedShape } from "./match";
+import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 import { HarnessError, getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
 import type {
@@ -10,10 +8,9 @@ import type {
   ComponentModule,
   MountRequest,
   ProjectIndex,
-  Shape,
   Wrapper,
 } from "./types";
-import { getPropCombinations, getWitnessProps } from "./props";
+import { getPropCombinations } from "./props";
 import { findRootParts, getErrorSubject, resolveNamedParent, proposeParents } from "./wrappers";
 import type { ParentQuery } from "./wrappers";
 
@@ -29,7 +26,6 @@ const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 8;
 const MAX_MOUNT_ATTEMPTS = 24;
-const MAX_WITNESS_MOUNTS = 48;
 const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 const REDUNDANT_PARENT_FAILURES = new Set<MountFailure>(["missing-data", "other"]);
@@ -153,9 +149,14 @@ class WrapperSearch {
       newestWrapper.name !== resolveNamedParent(failedMount.error, this.#project)
     )
       return false;
-    const { exportName, file } = newestWrapper.candidate;
     return this.#tryAddLayer(
-      proposeParents(this.#getQuery(exportName, file, failedMount)),
+      proposeParents(
+        this.#getQuery(
+          newestWrapper.candidate.exportName,
+          newestWrapper.candidate.file,
+          failedMount,
+        ),
+      ),
       failedMount.error,
       this.#layers.indexOf(newestLayer),
     );
@@ -262,15 +263,15 @@ export const resolveWrappers = async (
 };
 
 const getCaptureKey = (capture: Capture): string =>
-  JSON.stringify([normalizeShapes(capture.shapes), capture.hookStates]);
+  JSON.stringify([capture.shapes, capture.stateValues]);
 
 const isUnchangedBy = (action: Action, before: Capture, after: Capture): boolean =>
   action.kind !== "change" &&
   !after.error &&
-  after.handlerHits.length === 0 &&
-  after.probes.length === 0 &&
+  after.handlerCalls.length === 0 &&
+  after.branchHits.length === 0 &&
   after.mutationHits.length === 0 &&
-  after.mutatedOwners.length === 0 &&
+  after.mutatedOrigins.length === 0 &&
   getCaptureKey(after) === getCaptureKey(before);
 
 const replayPath = async (
@@ -292,9 +293,8 @@ const explorePropCombination = async (
   initialCapture: Capture,
   deadline: number,
 ): Promise<Observation[]> => {
-  const { props } = request;
   const observations: Observation[] = [
-    { props, path: [], action: null, before: null, after: initialCapture },
+    { props: request.props, path: [], action: null, before: null, after: initialCapture },
   ];
   if (initialCapture.error && initialCapture.shapes.length === 0) return observations;
   const seenCaptureKeys = new Set([getCaptureKey(initialCapture)]);
@@ -319,7 +319,7 @@ const explorePropCombination = async (
       replayed =
         isUnchangedBy(action, before, after) && !(await hasActionTimersInPage(page)) ? after : null;
       const path = [...currentPath, action.key];
-      observations.push({ props, path, action, before, after });
+      observations.push({ props: request.props, path, action, before, after });
       const captureKey = getCaptureKey(after);
       if (!seenCaptureKeys.has(captureKey)) {
         seenCaptureKeys.add(captureKey);
@@ -330,73 +330,20 @@ const explorePropCombination = async (
   return observations;
 };
 
-interface CoverageTracker {
-  add: (capture: Capture) => void;
-  covers: (stateIndices: number[]) => boolean;
-}
-
-const createCoverageTracker = (expectedStates: ExpectedShape[][]): CoverageTracker => {
-  const coveredStates = new Set<number>();
-  const seenShapeKeys = new Set<string>();
-  const addShapes = (shapes: Shape[]): void => {
-    const normalized = normalizeShapes(shapes);
-    const shapesKey = JSON.stringify(normalized);
-    if (seenShapeKeys.has(shapesKey)) return;
-    seenShapeKeys.add(shapesKey);
-    expectedStates.forEach((expected, stateIndex) => {
-      if (!coveredStates.has(stateIndex) && matchesExpected(expected, normalized))
-        coveredStates.add(stateIndex);
-    });
-  };
-  return {
-    add: (capture: Capture): void => {
-      if (capture.error) return;
-      addShapes(capture.shapes);
-      if (capture.firstCommitShapes) addShapes(capture.firstCommitShapes);
-    },
-    covers: (stateIndices: number[]): boolean =>
-      stateIndices.every((stateIndex) => coveredStates.has(stateIndex)),
-  };
-};
-
-const mountWitnesses = async (
-  page: Page,
-  request: MountRequest,
-  witnesses: PropWitness[],
-  expectedStates: ExpectedShape[][],
-  observations: Observation[],
-  deadline: number,
-): Promise<Observation[]> => {
-  const coverage = createCoverageTracker(expectedStates);
-  for (const observation of observations) coverage.add(observation.after);
-  const witnessObservations: Observation[] = [];
-  for (const { props, states } of witnesses) {
-    if (performance.now() >= deadline || witnessObservations.length >= MAX_WITNESS_MOUNTS) break;
-    if (coverage.covers(states)) continue;
-    const after = await mountInPage(page, { ...request, props });
-    coverage.add(after);
-    witnessObservations.push({ props, path: [], action: null, before: null, after });
-  }
-  return witnessObservations;
-};
-
 export const exploreComponent = async (
   page: Page,
   analysis: ComponentAnalysis,
-  report: StateReport,
   module: ComponentModule,
   project: ProjectIndex,
-  knownComponents: Map<string, string>,
   budgetMs: number,
 ): Promise<Observation[]> => {
   const deadline = performance.now() + budgetMs;
-  const { exportName } = analysis;
-  if (!exportName) return [];
+  if (!analysis.exportName) return [];
   const propCombinations = getPropCombinations(analysis);
   const [firstProps = {}] = propCombinations;
   const resolved = await resolveWrappers(
     page,
-    { module, exportName, props: firstProps, scenario: null, wrappers: [] },
+    { module, exportName: analysis.exportName, props: firstProps, scenario: null, wrappers: [] },
     analysis,
     project,
   );
@@ -405,7 +352,7 @@ export const exploreComponent = async (
     if (observations.length > 0 && performance.now() >= deadline) break;
     const request: MountRequest = {
       module,
-      exportName,
+      exportName: analysis.exportName,
       props,
       scenario: null,
       wrappers: resolved.wrappers,
@@ -416,22 +363,5 @@ export const exploreComponent = async (
         : await mountInPage(page, request);
     observations.push(...(await explorePropCombination(page, request, initialCapture, deadline)));
   }
-  const witnessRequest: MountRequest = {
-    module,
-    exportName,
-    props: firstProps,
-    scenario: null,
-    wrappers: resolved.wrappers,
-  };
-  observations.push(
-    ...(await mountWitnesses(
-      page,
-      witnessRequest,
-      getWitnessProps(analysis, report, propCombinations),
-      report.states.map((state) => toExpected(state.render, knownComponents)),
-      observations,
-      deadline,
-    )),
-  );
   return observations;
 };

@@ -2,9 +2,8 @@ import type { InstructionId, SourceLocation } from "../../react-compiler/HIR/HIR
 import type { Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createUnknown, foldBinary } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
-import { getValueKey } from "../values/get-value-key";
 import { negate } from "../values/negate";
-import type { WalkState } from "./walk-state";
+import type { PathState } from "./path-state";
 
 const MATCH_MODULE = "ts-pattern";
 const PASSTHROUGH_METHODS = new Set(["returnType", "narrow"]);
@@ -23,7 +22,7 @@ interface MatchChain {
 interface MatchSite {
   loc: SourceLocation;
   instructionId: InstructionId;
-  walkState: WalkState;
+  pathState: PathState;
 }
 
 const isMatchCallee = (callee: SymbolicValue): boolean =>
@@ -31,7 +30,7 @@ const isMatchCallee = (callee: SymbolicValue): boolean =>
 
 const withGuards = (site: MatchSite, guards: SymbolicValue[]): MatchSite => ({
   ...site,
-  walkState: { ...site.walkState, guards: [...site.walkState.guards, ...guards] },
+  pathState: { ...site.pathState, guards: [...site.pathState.guards, ...guards] },
 });
 
 export class PatternMatcher {
@@ -150,14 +149,13 @@ export class PatternMatcher {
       testKind: "truthy",
       consequent: this.#nest(arm, testIndex + 1, rest, subject, withGuards(site, [test])),
       alternate: rest,
-      branch: this.#interpreter.createBranch(site.instructionId, site.loc, "none"),
-      guardKeys: site.walkState.guards.map(getValueKey),
+      branch: this.#interpreter.createBranchSite(site.loc),
     };
   }
 
   #callHandler(handler: SymbolicValue, subject: SymbolicValue, site: MatchSite): SymbolicValue {
     return handler.kind === "Function"
-      ? this.#interpreter.callFunction(handler, [subject], site.loc, site.walkState)
+      ? this.#interpreter.callFunction(handler, [subject], site.loc, site.pathState)
       : createUnknown("match", site.loc);
   }
 }

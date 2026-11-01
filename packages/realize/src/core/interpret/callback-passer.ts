@@ -3,12 +3,11 @@ import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks, isMemoCache } from "../values/symbolic-values";
-import { PlaceMap } from "../values/place-map";
 import type { FunctionValue, SymbolicValue, UnknownOrigin } from "../types";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
-import { getAsyncWalkState } from "./walk-state";
-import type { WalkState } from "./walk-state";
+import { getAsyncPathState } from "./path-state";
+import type { PathState } from "./path-state";
 
 export class CallbackPasser {
   readonly #interpreter: Interpreter;
@@ -23,9 +22,9 @@ export class CallbackPasser {
     promise: SymbolicValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
-    const asyncWalkState = getAsyncWalkState(walkState);
+    const asyncPathState = getAsyncPathState(pathState);
     const isRejected = createUnknown("rejected", loc, {
       kind: "Settled",
       promise,
@@ -37,14 +36,18 @@ export class CallbackPasser {
         : methodName === "catch"
           ? [isRejected]
           : [];
-    const outcomesByArgument: Array<"resolved" | "rejected"> =
-      methodName === "then" ? ["resolved", "rejected"] : methodName === "catch" ? ["rejected"] : [];
+    const outcomesByArgument: Array<"fulfilled" | "rejected"> =
+      methodName === "then"
+        ? ["fulfilled", "rejected"]
+        : methodName === "catch"
+          ? ["rejected"]
+          : [];
     argumentValues.forEach((argument, argumentIndex) => {
       const guard = guardsByArgument[argumentIndex];
       const outcome = outcomesByArgument[argumentIndex];
       this.#visitArgument(
         argument,
-        guard ? { ...asyncWalkState, guards: [...asyncWalkState.guards, guard] } : asyncWalkState,
+        guard ? { ...asyncPathState, guards: [...asyncPathState.guards, guard] } : asyncPathState,
         outcome && { kind: "Settled", promise, outcome },
       );
     });
@@ -52,48 +55,48 @@ export class CallbackPasser {
 
   #visitArgument(
     argument: SymbolicValue,
-    walkState: WalkState,
+    pathState: PathState,
     argumentOrigin?: UnknownOrigin,
   ): void {
     if (!this.#interpreter.handlerEffects) return;
     if (argument.kind === "Conditional") {
       const test = getTestExpression(argument);
       this.#visitArgument(argument.consequent, {
-        ...walkState,
-        guards: [...walkState.guards, test],
+        ...pathState,
+        guards: [...pathState.guards, test],
       });
       this.#visitArgument(argument.alternate, {
-        ...walkState,
-        guards: [...walkState.guards, negate(test)],
+        ...pathState,
+        guards: [...pathState.guards, negate(test)],
       });
       return;
     }
     if (argument.kind === "ObjectExpression")
-      for (const property of argument.properties) this.#visitArgument(property.value, walkState);
+      for (const property of argument.properties) this.#visitArgument(property.value, pathState);
     if (argument.kind === "ArrayExpression")
-      for (const element of argument.elements) this.#visitArgument(element, walkState);
-    const asyncWalkState = getAsyncWalkState(walkState);
-    if (argument.kind === "Bound") this.#visitArgument(argument.callee, walkState);
+      for (const element of argument.elements) this.#visitArgument(element, pathState);
+    const asyncPathState = getAsyncPathState(pathState);
+    if (argument.kind === "Bound") this.#visitArgument(argument.callee, pathState);
     if (argument.kind === "Dispatch")
       this.#interpreter.callStoredValue(
         argument,
         [createUnknown("callback-argument", GeneratedSource, argumentOrigin)],
         argument.binding.loc,
-        asyncWalkState,
+        asyncPathState,
       );
     if (argument.kind === "Setter")
       this.#interpreter.handlerEffects.recordSetterCall(
         argument.binding,
         createUnknown("callback-argument", GeneratedSource, argumentOrigin),
-        asyncWalkState,
+        asyncPathState,
       );
     for (const wrapped of this.#interpreter.getMemberCallbacks(argument) ?? [])
-      this.#visitArgument(wrapped, walkState, argumentOrigin);
+      this.#visitArgument(wrapped, pathState, argumentOrigin);
     if (argument.kind === "Binding" && argument.path.length > 0)
       this.#interpreter.callStoredFunctions(
         argument,
         [createUnknown("callback-argument", GeneratedSource, argumentOrigin)],
-        { ...asyncWalkState, frame: this.#nextFrame++ },
+        { ...asyncPathState, frame: this.#nextFrame++ },
       );
     if (argument.kind === "Function")
       this.#interpreter.walker.runRepeated(() =>
@@ -101,7 +104,7 @@ export class CallbackPasser {
           argument,
           this.getUnknownArguments(argument, argumentOrigin),
           argument.loc,
-          { ...asyncWalkState, frame: this.#nextFrame++ },
+          { ...asyncPathState, frame: this.#nextFrame++ },
         ),
       );
   }
@@ -115,20 +118,20 @@ export class CallbackPasser {
 
   passStoredCallback(
     store: InstructionValueOfKind<"PropertyStore" | "ComputedStore">,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     const storedValue = this.#interpreter.read(store.value);
     const isCached = isMemoCache(this.#interpreter.read(store.object));
     if (storedValue.kind === "Function" && !isCached)
-      this.passCallbacks([storedValue], store.loc, walkState);
+      this.passCallbacks([storedValue], store.loc, pathState);
   }
 
-  passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, walkState: WalkState): void {
+  passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, pathState: PathState): void {
     if (!this.#interpreter.handlerEffects) {
       this.addDeferredCallbacks(argumentValues, loc);
       return;
     }
-    for (const argument of argumentValues) this.#visitArgument(argument, walkState);
+    for (const argument of argumentValues) this.#visitArgument(argument, pathState);
   }
 
   addEffectCall(
@@ -137,9 +140,7 @@ export class CallbackPasser {
     dependenciesPlace: Place | undefined,
     loc: SourceLocation,
   ): void {
-    const dependencyPlaces = new PlaceMap<true>();
     const dependencies = dependenciesPlace ? this.#interpreter.read(dependenciesPlace) : null;
-    if (dependencies) this.#interpreter.collectInputPlaces(dependencies, dependencyPlaces);
     const isEmptyList =
       dependencies?.kind === "ArrayExpression" &&
       dependencies.elements.length === 0 &&
@@ -153,7 +154,6 @@ export class CallbackPasser {
         : dependenciesPlace
           ? this.#interpreter.resolver.getSourceText(dependenciesPlace.loc)
           : null,
-      dependencyPlaces: dependenciesPlace ? dependencyPlaces.places() : null,
       loc,
     });
   }
@@ -175,7 +175,6 @@ export class CallbackPasser {
         callback,
         callbackArguments: parameters.map(() => createUnknown("callback-argument", loc)),
         dependencies: null,
-        dependencyPlaces: null,
         loc,
       });
     }

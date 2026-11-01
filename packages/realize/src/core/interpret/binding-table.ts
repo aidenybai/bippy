@@ -1,33 +1,14 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
-import type {
-  AbstractValue,
-  Binding,
-  BindingKind,
-  BindingValue,
-  Domain,
-  BindingPlace,
-} from "../types";
+import type { Binding, BindingKind, BindingValue, Domain, BindingPlace } from "../types";
 import { dedupeAbstractValues } from "../values/abstract-values";
 import { PlaceMap } from "../values/place-map";
 import { getBindingPlace } from "../values/get-binding-place";
 import { createBindingValue } from "../values/symbolic-values";
 
 export interface BindingOptions extends Partial<
-  Pick<
-    Binding,
-    | "hookKind"
-    | "propName"
-    | "initial"
-    | "inputPlaces"
-    | "lengthLimit"
-    | "derived"
-    | "range"
-    | "domain"
-    | "alias"
-    | "firstRender"
-  >
+  Pick<Binding, "hookKind" | "propName" | "initial" | "inputPlaces" | "isDerived" | "domain">
 > {
   identityKey?: string;
   scope?: string;
@@ -38,7 +19,6 @@ export class BindingTable {
   readonly #bindingsByProp = new Map<string, Binding>();
   readonly #resolversByBinding = new Map<number, SourceFileResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
-  readonly unionMemberValues = new PlaceMap<AbstractValue[][]>();
 
   get bindings(): Binding[] {
     return [...this.#bindingsByKey.values()];
@@ -72,11 +52,7 @@ export class BindingTable {
       samples: kind === "prop" ? resolver.getSamples(loc, options.propName ?? name) : [],
       initial: options.initial ?? null,
       inputPlaces: options.inputPlaces ?? [],
-      lengthLimit: options.lengthLimit ?? null,
-      derived: options.derived ?? null,
-      range: options.range ?? null,
-      alias: options.alias ?? null,
-      ...(options.firstRender && { firstRender: options.firstRender }),
+      isDerived: options.isDerived ?? false,
     };
     this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);
@@ -133,7 +109,6 @@ export class BindingTable {
       this.placeDomains.set(place, readDomain);
       return;
     }
-    this.unionMemberValues.set(place, unionMemberValues);
     this.placeDomains.set(place, {
       ...readDomain,
       cases: dedupeAbstractValues([...readDomain.cases, ...unionMemberValues.flat()]),

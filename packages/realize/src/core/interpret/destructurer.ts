@@ -1,4 +1,3 @@
-import { makeInstructionId } from "../../react-compiler/HIR/HIR";
 import type {
   ArrayPattern,
   ObjectPattern,
@@ -98,8 +97,7 @@ export class Destructurer {
             testKind: "truthy",
             consequent: createUnknown("optimistic", value.loc),
             alternate: passthrough,
-            branch: this.#interpreter.createBranch(makeInstructionId(0), value.loc, "none"),
-            guardKeys: [],
+            branch: this.#interpreter.createBranchSite(value.loc),
           }
         : passthrough;
       return itemPlaces.map((_place, index) =>
@@ -183,13 +181,12 @@ export class Destructurer {
   }
 
   destructure(instruction: InstructionValueOfKind<"Destructure">): void {
-    const { pattern } = instruction.lvalue;
     const value = this.#interpreter.read(instruction.value);
-    if (pattern.kind === "ObjectPattern") {
-      this.#destructureObject(pattern, value);
+    if (instruction.lvalue.pattern.kind === "ObjectPattern") {
+      this.#destructureObject(instruction.lvalue.pattern, value);
       return;
     }
-    this.#destructureArray(pattern, value, instruction.loc);
+    this.#destructureArray(instruction.lvalue.pattern, value, instruction.loc);
   }
 
   #destructureArray(pattern: ArrayPattern, value: SymbolicValue, loc: SourceLocation): void {

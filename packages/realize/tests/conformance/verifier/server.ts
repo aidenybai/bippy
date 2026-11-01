@@ -29,13 +29,13 @@ import { createStubPlugin } from "./harness/stubs";
 import {
   createCommonJsPlugin,
   createImportMetaUrlFilterPlugin,
-  createProbePlugin,
+  createCoveragePlugin,
   createRequirePlugin,
   createJsxInScriptPlugin,
   createServerActionPlugin,
 } from "./harness/transforms";
 import { ENTRY_PATH, PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
-import type { Probe, SourceIndex } from "./types";
+import type { Counter, SourceIndex } from "./types";
 
 export interface Harness {
   url: string;
@@ -159,7 +159,7 @@ interface HarnessContext {
   nextDirectory: string | null;
   appImporter: string;
   componentFiles: string[];
-  probes: Probe[];
+  counters: Counter[];
   references: SourceReferences;
   providers: ProviderSpec[];
   setup: HarnessSetup;
@@ -199,16 +199,22 @@ const createHarnessPlugins = (
   context: HarnessContext,
   polyfilledModules: Set<string>,
 ): Plugin[] => {
-  const { appDirectory, nextDirectory, references } = context;
   return [
-    createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
-    createStandInPlugin(polyfilledModules, references.packageImports),
-    createAssetPlugin(isDependencyDeclared(appDirectory, "@svgr/webpack")),
-    ...(isDependencyDeclared(appDirectory, "worker-loader") ? [createWorkerImportPlugin()] : []),
-    createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
+    createStubPlugin(context.nextDirectory, context.appImporter, context.references.nextFonts),
+    createStandInPlugin(polyfilledModules, context.references.packageImports),
+    createAssetPlugin(isDependencyDeclared(context.appDirectory, "@svgr/webpack")),
+    ...(isDependencyDeclared(context.appDirectory, "worker-loader")
+      ? [createWorkerImportPlugin()]
+      : []),
+    createHarnessPlugin(
+      context.appDirectory,
+      context.providers,
+      context.setup,
+      context.appImporter,
+    ),
     createMissingModulePlugin(),
-    createProbePlugin(context.probes),
-    ...(nextDirectory ? [createNextImagePlugin()] : []),
+    createCoveragePlugin(context.counters),
+    ...(context.nextDirectory ? [createNextImagePlugin()] : []),
     createJsxInScriptPlugin(),
     createServerActionPlugin(),
     createTypeReexportPlugin(),
@@ -216,7 +222,7 @@ const createHarnessPlugins = (
     createCommonJsPlugin(),
     createRequirePlugin(),
     createImportMetaUrlFilterPlugin(),
-    tsconfigPaths({ root: appDirectory }),
+    tsconfigPaths({ root: context.appDirectory }),
   ];
 };
 
@@ -283,7 +289,7 @@ const getServerPort = (server: ViteDevServer): number => {
 
 export const startHarness = async (
   appDirectory: string,
-  probes: Probe[],
+  counters: Counter[],
   componentFiles: string[],
   setup: HarnessSetup,
   localNamesByFile: Map<string, string[]>,
@@ -295,7 +301,7 @@ export const startHarness = async (
     nextDirectory,
     appImporter: componentFiles[0] ?? join(appDirectory, "index.ts"),
     componentFiles,
-    probes,
+    counters,
     references,
     providers: getInstalledProviders(appDirectory, nextDirectory, references.reduxStore),
     setup,

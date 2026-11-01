@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
-import { createMutationProbe } from "../conformance/verifier/mutation";
+import { createMutationCounter } from "../conformance/verifier/mutation";
 
 const FILE = "/app/list.tsx";
 
@@ -14,29 +14,31 @@ const getLocation = (sourceText: string, place: string) => {
   };
 };
 
-describe("createMutationProbe", () => {
-  it("probes a reference read for a member access", () => {
+describe("createMutationCounter", () => {
+  it("instruments a reference read for a member access", () => {
     const sourceText = "tags.push('a'); stats.clicks += 1; items?.sort(); list![0] = 1;";
     for (const place of ["tags", "stats", "items", "list"])
-      expect(createMutationProbe(FILE, sourceText, getLocation(sourceText, place))).toMatchObject({
-        mode: "mutation",
-        start: sourceText.indexOf(place),
-        end: sourceText.indexOf(place) + place.length,
-      });
+      expect(createMutationCounter(FILE, sourceText, getLocation(sourceText, place))).toMatchObject(
+        {
+          kind: "mutation",
+          start: sourceText.indexOf(place),
+          end: sourceText.indexOf(place) + place.length,
+        },
+      );
   });
 
-  it("probes a nested place", () => {
+  it("instruments a nested place", () => {
     const sourceText = "state.items.push(1);";
     expect(
-      createMutationProbe(FILE, sourceText, getLocation(sourceText, "state.items")),
+      createMutationCounter(FILE, sourceText, getLocation(sourceText, "state.items")),
     ).not.toBeNull();
   });
 
   it("skips places it can't wrap without changing the code", () => {
     const sourceText = "mutate(tags); tags = []; foo(bar).baz.push(1);";
-    expect(createMutationProbe(FILE, sourceText, getLocation(sourceText, "tags"))).toBeNull();
-    expect(createMutationProbe(FILE, sourceText, getLocation(sourceText, "tags ="))).toBeNull();
-    expect(createMutationProbe(FILE, sourceText, getLocation(sourceText, "foo(bar)"))).toBeNull();
-    expect(createMutationProbe(FILE, sourceText, GeneratedSource)).toBeNull();
+    expect(createMutationCounter(FILE, sourceText, getLocation(sourceText, "tags"))).toBeNull();
+    expect(createMutationCounter(FILE, sourceText, getLocation(sourceText, "tags ="))).toBeNull();
+    expect(createMutationCounter(FILE, sourceText, getLocation(sourceText, "foo(bar)"))).toBeNull();
+    expect(createMutationCounter(FILE, sourceText, GeneratedSource)).toBeNull();
   });
 });

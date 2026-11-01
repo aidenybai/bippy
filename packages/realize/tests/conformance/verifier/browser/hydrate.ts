@@ -2,8 +2,8 @@ import { createElement } from "react";
 import type { Sample } from "../../../../src/core/types";
 import { forEachPlainObject, isPlainData, isRefObject } from "../snapshot";
 import { STAND_IN } from "../stubs/stand-in";
-import { getPropOwner } from "../types";
-import { setPropOwner, trackWrites } from "./write-tracking";
+import { getPropOrigin } from "../types";
+import { setPropOrigin, trackWrites } from "./write-tracking";
 
 export const createOpenObject = (fields: Record<string, unknown>): Record<string, unknown> =>
   new Proxy(fields, {
@@ -47,6 +47,6 @@ export const hydrate = (sample: Sample): unknown => {
 export const hydrateProp = (name: string, sample: Sample): unknown => {
   const value = hydrate(sample);
   if (!isPlainData(value) || isRefObject(value)) return value;
-  forEachPlainObject(value, (object) => setPropOwner(object, getPropOwner(name)));
+  forEachPlainObject(value, (object) => setPropOrigin(object, getPropOrigin(name)));
   return trackWrites(value, true);
 };

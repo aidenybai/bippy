@@ -4,7 +4,7 @@ import "./stubs/tauri-globals";
 import "./stubs/react-shims";
 import { instrument } from "bippy";
 import { collectActions, performAction } from "./browser/actions";
-import { captureMountedComponent, recordFirstCommitShapes } from "./browser/capture";
+import { captureMountedComponent } from "./browser/capture";
 import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
@@ -21,7 +21,6 @@ instrument({
     recordCommitFlags(root.current.flags | root.current.subtreeFlags);
     const fiber = recordCommit(root);
     if (!fiber) return;
-    recordFirstCommitShapes(fiber);
     trackStates(fiber);
   },
   onPostCommitFiberRoot: recordPassiveFlush,

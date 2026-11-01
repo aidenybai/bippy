@@ -17,7 +17,7 @@ const CONTEXT_FILE = "/app/context/ui-app-state.ts";
 
 const createAnalysis = (name: string, file: string): ComponentAnalysis =>
   createEmptyAnalysis(
-    { name, exportName: name, runtimeName: name, file, declaration: `${file}#${name}` },
+    { name, exportName: name, file, declaration: `${file}#${name}` },
     GeneratedSource,
     { kind: "Primitive", value: null },
   );

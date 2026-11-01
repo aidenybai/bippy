@@ -1,33 +1,33 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { createUnknown } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
-import type { WalkState } from "./walk-state";
+import type { PathState } from "./path-state";
 
 interface CellStore {
   key: string;
-  walkState: WalkState;
+  pathState: PathState;
   generation: number;
   value: SymbolicValue;
 }
 
-const isDominatedBy = (walkState: WalkState, store: CellStore): boolean =>
-  store.walkState.isAsync === walkState.isAsync &&
-  store.walkState.frame === walkState.frame &&
-  store.walkState.guards.every((guard, index) => walkState.guards[index] === guard);
+const isDominatedBy = (pathState: PathState, store: CellStore): boolean =>
+  store.pathState.isAsync === pathState.isAsync &&
+  store.pathState.frame === pathState.frame &&
+  store.pathState.guards.every((guard, index) => pathState.guards[index] === guard);
 
-const isNestedIn = (store: CellStore, walkState: WalkState): boolean =>
-  store.walkState.guards.length > walkState.guards.length &&
-  walkState.guards.every((guard, index) => store.walkState.guards[index] === guard);
+const isNestedIn = (store: CellStore, pathState: PathState): boolean =>
+  store.pathState.guards.length > pathState.guards.length &&
+  pathState.guards.every((guard, index) => store.pathState.guards[index] === guard);
 
 const isNegationOf = (guard: SymbolicValue, other: SymbolicValue): boolean =>
   guard.kind === "UnaryExpression" && guard.operator === "!" && guard.value === other;
 
-const isOnOtherSide = (store: CellStore, walkState: WalkState): boolean => {
-  const index = store.walkState.guards.findIndex(
-    (guard, position) => walkState.guards[position] !== guard,
+const isOnOtherSide = (store: CellStore, pathState: PathState): boolean => {
+  const index = store.pathState.guards.findIndex(
+    (guard, position) => pathState.guards[position] !== guard,
   );
-  const storeGuard = store.walkState.guards[index];
-  const readGuard = walkState.guards[index];
+  const storeGuard = store.pathState.guards[index];
+  const readGuard = pathState.guards[index];
   return (
     storeGuard !== undefined &&
     readGuard !== undefined &&
@@ -35,12 +35,12 @@ const isOnOtherSide = (store: CellStore, walkState: WalkState): boolean => {
   );
 };
 
-const isMaybeOverwrittenBy = (store: CellStore, walkState: WalkState): boolean =>
-  isNestedIn(store, walkState) ||
-  (store.walkState.isAsync === walkState.isAsync &&
-    store.walkState.frame === walkState.frame &&
-    !isDominatedBy(walkState, store) &&
-    !isOnOtherSide(store, walkState));
+const isMaybeOverwrittenBy = (store: CellStore, pathState: PathState): boolean =>
+  isNestedIn(store, pathState) ||
+  (store.pathState.isAsync === pathState.isAsync &&
+    store.pathState.frame === pathState.frame &&
+    !isDominatedBy(pathState, store) &&
+    !isOnOtherSide(store, pathState));
 
 export class Cells {
   #stores: CellStore[] = [];
@@ -50,28 +50,28 @@ export class Cells {
     this.#generation++;
   }
 
-  store(key: string, value: SymbolicValue, walkState: WalkState): void {
-    this.#stores.push({ key, walkState, generation: this.#generation, value });
+  store(key: string, value: SymbolicValue, pathState: PathState): void {
+    this.#stores.push({ key, pathState, generation: this.#generation, value });
   }
 
   read(
     key: string,
     liveValue: SymbolicValue,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const storeIndex = this.#stores.findLastIndex(
       (candidate) =>
         candidate.key === key &&
-        isDominatedBy(walkState, candidate) &&
-        (!walkState.isAsync || candidate.generation === this.#generation),
+        isDominatedBy(pathState, candidate) &&
+        (!pathState.isAsync || candidate.generation === this.#generation),
     );
     const isMaybeOverwritten = this.#stores
       .slice(storeIndex + 1)
-      .some((candidate) => candidate.key === key && isMaybeOverwrittenBy(candidate, walkState));
+      .some((candidate) => candidate.key === key && isMaybeOverwrittenBy(candidate, pathState));
     if (isMaybeOverwritten) return createUnknown("cell", loc);
     const store = this.#stores[storeIndex];
     if (store) return store.value;
-    return walkState.isAsync ? createUnknown("async", loc) : liveValue;
+    return pathState.isAsync ? createUnknown("async", loc) : liveValue;
   }
 }

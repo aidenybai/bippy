@@ -84,4 +84,5 @@ export const getCaptureFailure = (capture: Capture): MountFailure =>
   capture.failure ?? classifyMountError(capture.error ?? "");
 
 export const classifyMountError = (message: string): MountFailure =>
-  MOUNT_FAILURE_PATTERNS.find(({ pattern }) => pattern.test(message))?.failure ?? "other";
+  MOUNT_FAILURE_PATTERNS.find((failurePattern) => failurePattern.pattern.test(message))?.failure ??
+  "other";

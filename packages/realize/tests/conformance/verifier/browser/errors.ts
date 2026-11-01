@@ -14,7 +14,7 @@ interface ChildrenProps {
   children?: ReactNode;
 }
 
-export interface RecordedError {
+interface RecordedError {
   message: string;
   depth: number | null;
 }

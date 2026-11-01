@@ -13,9 +13,10 @@ import type { ModuleFunctionLoader } from "../compile/function-registry";
 import type { HIRFunction } from "../../react-compiler/HIR/HIR";
 import { getMutatedParameters } from "./get-mutated-parameters";
 import { collectStoreModels } from "../interpret/store-actions";
-import { enumerateStates } from "../states/enumerate-states";
-import { linkComponents, type ReportLoader } from "../linking/link-components";
-import { addSamplesFromReadPaths, inferPropsFromCallSites } from "../linking/infer-props";
+import { buildComponentModel } from "../model/build-model";
+import { addSamplesFromReadPaths, inferPropsFromCallSites } from "./infer-props";
+import { collectTriggerLabels } from "../labels/trigger-labels";
+import { createSourceReader } from "../labels/source-text";
 import { collectContextSetterFields } from "../interpret/context-setter-fields";
 import type {
   ComponentAnalysis,
@@ -26,7 +27,6 @@ import type {
 } from "../types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
-import { collectDisplayNames } from "./collect-display-names";
 import { collectExportNames } from "./collect-export-names";
 import { isProjectSourceFile } from "./is-project-source-file";
 import { withProject } from "./with-project";
@@ -45,7 +45,6 @@ import {
   isSpreadHeld,
 } from "../interpret/get-prop-holds";
 import type { HeldProps } from "../interpret/get-prop-holds";
-import { memoizeByIdentity } from "../shared/memoize-by-identity";
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
@@ -70,8 +69,8 @@ const compileProjectFiles = (
   fileNames: string[],
   tracer: Tracer,
 ): FileContext[] => {
-  const { strict, strictNullChecks } = project.compilerOptions;
-  const isStrictNullChecks = strictNullChecks ?? strict ?? false;
+  const isStrictNullChecks =
+    project.compilerOptions.strictNullChecks ?? project.compilerOptions.strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const componentsByDeclaration = new Map<string, HIRFunction>();
@@ -183,7 +182,8 @@ const compileProjectFiles = (
   };
   const isImportedReadOnly = (declarationKey: string, value: SymbolicValue): boolean =>
     (getImportIndex().importers.get(declarationKey) ?? []).every(
-      ({ path, localName }) => importedNamesByPath.get(path)?.isReadOnly(localName, value) ?? false,
+      (importer) =>
+        importedNamesByPath.get(importer.path)?.isReadOnly(importer.localName, value) ?? false,
     );
   const isReadOnlyDeclaration = (declarationKey: string): boolean => {
     const cached = readOnlyByDeclaration.get(declarationKey);
@@ -231,18 +231,27 @@ const compileProjectFiles = (
     for (const name of compiled.comparedComponents)
       for (const key of new Set([name, exportNames.get(name) ?? name]))
         comparedDeclarations.add(createDeclarationKey(sourceFile.path, key));
-    for (const { functionType, hir, name } of compiled.functions)
-      if (functionType === "Component" && hir)
-        for (const key of new Set([name, exportNames.get(name) ?? name]))
-          componentsByDeclaration.set(createDeclarationKey(sourceFile.path, key), hir);
+    for (const compiledFunction of compiled.functions)
+      if (compiledFunction.functionType === "Component" && compiledFunction.hir)
+        for (const key of new Set([
+          compiledFunction.name,
+          exportNames.get(compiledFunction.name) ?? compiledFunction.name,
+        ]))
+          componentsByDeclaration.set(
+            createDeclarationKey(sourceFile.path, key),
+            compiledFunction.hir,
+          );
     importedNamesByPath.set(sourceFile.path, compiled.importedNames);
-    for (const { functionType, hir, name } of compiled.functions)
-      if (functionType === "Hook" && hir)
-        projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
-          hirFunction: hir,
-          resolver,
-          loadModuleFunction: compiled.loadModuleFunction,
-        });
+    for (const compiledFunction of compiled.functions)
+      if (compiledFunction.functionType === "Hook" && compiledFunction.hir)
+        projectHooksByDeclaration.set(
+          createDeclarationKey(sourceFile.path, compiledFunction.name),
+          {
+            hirFunction: compiledFunction.hir,
+            resolver,
+            loadModuleFunction: compiled.loadModuleFunction,
+          },
+        );
     return [
       {
         sourceFile,
@@ -251,7 +260,6 @@ const compileProjectFiles = (
         projectLoaders,
         modelsByStore,
         exportNames,
-        displayNames: collectDisplayNames(sourceFile),
       },
     ];
   });
@@ -294,13 +302,6 @@ const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): Compone
   return analyses;
 };
 
-const createReportLoader = (tracer: Tracer): ReportLoader =>
-  memoizeByIdentity((analysis: ComponentAnalysis) =>
-    tracer.span("enumerate", analysis.name, () => enumerateStates(analysis), {
-      file: analysis.file,
-    }),
-  );
-
 export interface InterpretedProject {
   analyses: ComponentAnalysis[];
   fileCount: number;
@@ -325,8 +326,8 @@ export const interpretProject = (
       const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
         withContextFileNames(analysis, fileNamesByPath),
       );
-      const unparsedFiles = fileContexts.flatMap(({ compiled, sourceFile }) =>
-        compiled.parseError === null ? [] : [sourceFile.fileName],
+      const unparsedFiles = fileContexts.flatMap((fileContext) =>
+        fileContext.compiled.parseError === null ? [] : [fileContext.sourceFile.fileName],
       );
       return { analyses, fileCount: fileNames.length, unparsedFiles };
     },
@@ -334,22 +335,27 @@ export const interpretProject = (
   );
 
 export const reportProject = (
-  { analyses, fileCount, unparsedFiles }: InterpretedProject,
+  interpretedProject: InterpretedProject,
   fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
 ): ProjectAnalysis => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
-  const loadReport = createReportLoader(tracer);
-  const linked = tracer.span("link", "link components", () =>
-    linkComponents(analyses, loadReport, isSelected),
-  );
-  const components = analyses.filter(isSelected).map((analysis) => ({
+  const sourceReader = createSourceReader();
+  const components = interpretedProject.analyses.filter(isSelected).map((analysis) => ({
     analysis,
-    report: loadReport(analysis),
-    ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+    model: tracer.span(
+      "model",
+      analysis.name,
+      () => buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
+      { file: analysis.file },
+    ),
   }));
-  return { components, fileCount, unparsedFiles };
+  return {
+    components,
+    fileCount: interpretedProject.fileCount,
+    unparsedFiles: interpretedProject.unparsedFiles,
+  };
 };
 
 export const analyzeProject = (

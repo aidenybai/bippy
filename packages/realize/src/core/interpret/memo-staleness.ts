@@ -53,7 +53,6 @@ export class MemoStaleness {
   readonly #memoDependencies = new Map<number, Array<ManualMemoDependency> | null>();
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #storedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
-  isInMemo = false;
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;

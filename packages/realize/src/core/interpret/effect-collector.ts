@@ -1,25 +1,25 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
-import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "../types";
+import type { Binding, Assertion, StateUpdate, SymbolicValue, WarningKind } from "../types";
 import { isStateBinding } from "../values/is-state-binding";
-import { isWholeBinding } from "../solver/is-whole-binding";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { createBindingValue, createUnknown } from "../values/symbolic-values";
+
+const isWholeBinding = (value: SymbolicValue, binding: Binding): boolean =>
+  value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
 
 export interface CollectedEffects {
   returned?: SymbolicValue[];
   updates: StateUpdate[];
   delegates: string[];
   pendingMutations: Binding[];
-  claims: Claim[];
+  assertions: Assertion[];
 }
 
-export interface UpdateCondition {
+interface UpdateCondition {
   guards: SymbolicValue[];
   isAsync: boolean;
-  isRepeated?: boolean;
-  isMemoized?: boolean;
 }
 
 const UNCONDITIONAL_UPDATE: UpdateCondition = { guards: [], isAsync: false };
@@ -42,12 +42,11 @@ const isSurelyChanged = (value: SymbolicValue, binding: Binding): boolean => {
     return value.operator === "!" && isWholeBinding(value.value, binding);
   if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
     return false;
-  const { left, right } = value;
   return (
-    isWholeBinding(left, binding) &&
-    right.kind === "Primitive" &&
-    typeof right.value === "number" &&
-    right.value !== 0
+    isWholeBinding(value.left, binding) &&
+    value.right.kind === "Primitive" &&
+    typeof value.right.value === "number" &&
+    value.right.value !== 0
   );
 };
 
@@ -68,7 +67,7 @@ interface WarnCallback {
 export class EffectCollector {
   readonly #updates: StateUpdate[] = [];
   readonly #delegates: string[] = [];
-  readonly #claims: Claim[] = [];
+  readonly #assertions: Assertion[] = [];
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #sameReferenceSets = new Set<number>();
@@ -134,8 +133,8 @@ export class EffectCollector {
     this.#delegates.push(delegateName);
   }
 
-  addClaim(claim: Claim): void {
-    this.#claims.push(claim);
+  addAssertion(assertion: Assertion): void {
+    this.#assertions.push(assertion);
   }
 
   forgetMutatedBindings(value: SymbolicValue): SymbolicValue {
@@ -163,8 +162,6 @@ export class EffectCollector {
       value,
       guards,
       isAsync: condition.isAsync,
-      ...(condition.isRepeated && { isRepeated: true }),
-      ...(condition.isMemoized && { isMemoized: true }),
     });
   }
 
@@ -223,17 +220,21 @@ export class EffectCollector {
         ];
     const mayRender =
       this.#updates.length > 0 || this.#delegates.length > 0 || this.#callsImportedCode;
-    for (const { binding, sites } of this.#mutationsByBinding.values()) {
-      if (this.hasUpdate(binding)) continue;
-      if (!this.#sameReferenceSets.has(binding.id))
-        for (const site of sites)
+    for (const mutation of this.#mutationsByBinding.values()) {
+      if (this.hasUpdate(mutation.binding)) continue;
+      if (!this.#sameReferenceSets.has(mutation.binding.id))
+        for (const site of mutation.sites)
           this.#warn(
             "state-mutation",
-            `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+            `mutates ${mutation.binding.name} without setting it, so the change shows only on the next render`,
             site.loc,
           );
       if (mayRender)
-        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
+        this.addUpdate(
+          mutation.binding,
+          createUnknown("mutated", GeneratedSource),
+          UNCONDITIONAL_UPDATE,
+        );
     }
     for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding) && (mayRender || binding.kind === "module"))
@@ -242,7 +243,7 @@ export class EffectCollector {
       updates: this.#updates,
       delegates: this.#delegates,
       pendingMutations,
-      claims: this.#claims,
+      assertions: this.#assertions,
     };
   }
 

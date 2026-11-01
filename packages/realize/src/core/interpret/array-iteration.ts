@@ -1,9 +1,4 @@
-import type {
-  InstructionId,
-  Place,
-  SourceLocation,
-  SpreadPattern,
-} from "../../react-compiler/HIR/HIR";
+import type { Place, SourceLocation, SpreadPattern } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "../values/symbolic-values";
@@ -12,9 +7,8 @@ import { getIdentifierName } from "./get-identifier-name";
 import { getKnownTruthiness } from "../values/get-known-truthiness";
 import { negate } from "../values/negate";
 import { PlaceMap } from "../values/place-map";
-import { getValueKey } from "../values/get-value-key";
 import { getPlaceOrSpread } from "./get-place-or-spread";
-import type { WalkState } from "./walk-state";
+import type { PathState } from "./path-state";
 
 export const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
 
@@ -92,7 +86,7 @@ export class ArrayIteration {
     methodName: string,
     callback: SymbolicValue | undefined,
     methodCall: InstructionValueOfKind<"MethodCall">,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     if (callback?.kind !== "Function") return;
     const [itemParameter] = this.#interpreter.functions.get(callback.functionId)?.params ?? [];
@@ -105,7 +99,7 @@ export class ArrayIteration {
         callback,
         this.#interpreter.callbacks.getUnknownArguments(callback),
         methodCall.loc,
-        walkState,
+        pathState,
       );
   }
 
@@ -114,7 +108,7 @@ export class ArrayIteration {
     callback: FunctionValue,
     array: ArrayExpressionValue,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue[] {
     const spreadItems = array.spreads.map((spread) =>
       spread.kind === "ArrayMap" && !spread.isFlat ? spread.item : createUnknown("item", loc),
@@ -122,13 +116,13 @@ export class ArrayIteration {
     const items = [...array.elements, ...spreadItems];
     const stopsOn = SHORT_CIRCUIT_OUTCOMES.get(methodName);
     const results: SymbolicValue[] = [];
-    let guards = walkState.guards;
+    let guards = pathState.guards;
     for (const [itemIndex, item] of items.entries()) {
       const result = this.#interpreter.callFunction(
         callback,
         [item, { kind: "Primitive", value: itemIndex }, array],
         loc,
-        { ...walkState, guards },
+        { ...pathState, guards },
       );
       results.push(result);
       if (stopsOn === undefined) continue;
@@ -164,8 +158,7 @@ export class ArrayIteration {
     receiver: SymbolicValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     const [callback, accumulator] = argumentValues;
     const initial =
@@ -173,18 +166,17 @@ export class ArrayIteration {
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
     if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
       return null;
-    const { elements } = initial;
     if (methodName === "reduce")
-      return this.#reduceFirstValue(elements, callback, accumulator, loc, walkState);
-    const outcomes = elements.map((element, index) =>
+      return this.#reduceFirstValue(initial.elements, callback, accumulator, loc, pathState);
+    const outcomes = initial.elements.map((element, index) =>
       this.#interpreter.callFunction(
         callback,
         [element, { kind: "Primitive", value: index }],
         loc,
-        walkState,
+        pathState,
       ),
     );
-    return this.getOpenResult(methodName, initial, outcomes, loc, instructionId);
+    return this.getOpenResult(methodName, initial, outcomes, loc);
   }
 
   getOpenResult(
@@ -192,15 +184,12 @@ export class ArrayIteration {
     array: ArrayExpressionValue,
     outcomes: SymbolicValue[],
     loc: SourceLocation,
-    instructionId: InstructionId,
   ): SymbolicValue | null {
     if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
-    const { elements } = array;
     const select = (
       outcome: SymbolicValue,
       consequent: SymbolicValue,
       alternate: SymbolicValue,
-      caseIndex: number,
     ): SymbolicValue => {
       const truthiness = getKnownTruthiness(outcome);
       if (truthiness !== null) return truthiness ? consequent : alternate;
@@ -210,8 +199,7 @@ export class ArrayIteration {
         testKind: "truthy",
         consequent,
         alternate,
-        branch: this.#interpreter.createBranch(instructionId, loc, "none", caseIndex),
-        guardKeys: [],
+        branch: this.#interpreter.createBranchSite(loc),
       };
     };
     const chain = (
@@ -222,8 +210,8 @@ export class ArrayIteration {
       outcomes.reduceRight<SymbolicValue>(
         (rest, outcome, index) =>
           isFirstMatch
-            ? select(outcome, consequentAt(index), rest, index)
-            : select(outcome, rest, consequentAt(index), index),
+            ? select(outcome, consequentAt(index), rest)
+            : select(outcome, rest, consequentAt(index)),
         fallback,
       );
     switch (methodName) {
@@ -237,16 +225,16 @@ export class ArrayIteration {
           value: -1,
         });
       case "find":
-        return chain((index) => elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
+        return chain((index) => array.elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
       case "filter": {
         const openCount = outcomes.filter((outcome) => getKnownTruthiness(outcome) === null).length;
         if (openCount > MAX_OPEN_FILTER_OUTCOMES) return null;
         const keep = (index: number, kept: SymbolicValue[]): SymbolicValue => {
           const outcome = outcomes[index];
-          const element = elements[index];
+          const element = array.elements[index];
           if (outcome === undefined || element === undefined)
             return { kind: "ArrayExpression", elements: kept, spreads: [] };
-          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept), index);
+          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept));
         };
         return keep(0, []);
       }
@@ -260,7 +248,7 @@ export class ArrayIteration {
     callback: FunctionValue,
     accumulator: SymbolicValue | undefined,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     const [first, ...rest] = elements;
     const start = accumulator ?? first;
@@ -273,7 +261,7 @@ export class ArrayIteration {
           callback,
           [total, element, { kind: "Primitive", value: index + offset }],
           loc,
-          walkState,
+          pathState,
         ),
       start,
     );
@@ -283,9 +271,8 @@ export class ArrayIteration {
     methodName: string,
     array: SymbolicValue,
     callback: SymbolicValue | undefined,
-    instructionId: InstructionId,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     const isLiteralFind =
       methodName === "find" &&
@@ -296,14 +283,13 @@ export class ArrayIteration {
     const openMatches: Array<[SymbolicValue, SymbolicValue]> = [];
     const chooseFirstMatch = (fallback: SymbolicValue): SymbolicValue =>
       openMatches.reduceRight<SymbolicValue>(
-        (rest, [test, element], index) => ({
+        (rest, [test, element]) => ({
           kind: "Conditional",
           test,
           testKind: "truthy",
           consequent: element,
           alternate: rest,
-          branch: this.#interpreter.createBranch(instructionId, loc, "none", index),
-          guardKeys: walkState.guards.map(getValueKey),
+          branch: this.#interpreter.createBranchSite(loc),
         }),
         fallback,
       );
@@ -312,7 +298,7 @@ export class ArrayIteration {
         callback,
         [element, { kind: "Primitive", value: index }, array],
         loc,
-        walkState,
+        pathState,
       );
       if (matched.kind !== "Primitive") openMatches.push([matched, element]);
       if (matched.kind === "Primitive" && matched.value) return chooseFirstMatch(element);
@@ -325,7 +311,7 @@ export class ArrayIteration {
     receiver: SymbolicValue,
     [callback, ...initial]: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     if (
       this.#interpreter.handlerEffects !== null ||
@@ -346,7 +332,7 @@ export class ArrayIteration {
           callback,
           [accumulator, item, { kind: "Primitive", value: index + offset }, receiver],
           loc,
-          walkState,
+          pathState,
         ),
       start,
     );
@@ -356,7 +342,7 @@ export class ArrayIteration {
     callee: SymbolicValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     const [arrayLike, callback] = argumentValues;
     const isRenderedArrayFrom =
@@ -365,14 +351,14 @@ export class ArrayIteration {
       callee.name === "Array.from" &&
       callee.module === null;
     if (!isRenderedArrayFrom || !arrayLike || callback?.kind !== "Function") return null;
-    return this.evaluateArrayMap(arrayLike, callback, loc, walkState);
+    return this.evaluateArrayMap(arrayLike, callback, loc, pathState);
   }
 
   evaluateArrayMap(
     array: SymbolicValue,
     callback: FunctionValue,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
     isFlat = false,
   ): SymbolicValue {
     const isLiteralRows =
@@ -390,7 +376,7 @@ export class ArrayIteration {
               callback,
               [element, { kind: "Primitive", value: index }, array],
               loc,
-              walkState,
+              pathState,
             ),
           ),
         ),
@@ -403,7 +389,7 @@ export class ArrayIteration {
     return {
       kind: "ArrayMap",
       array,
-      item: this.#interpreter.callFunction(callback, [item, index, array], loc, walkState),
+      item: this.#interpreter.callFunction(callback, [item, index, array], loc, pathState),
       loc,
       isFlat,
     };
@@ -451,7 +437,7 @@ export class ArrayIteration {
   evaluateLoadedArrayMap(
     call: InstructionValueOfKind<"CallExpression">,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     const methodName = this.#interpreter.getPropertyName(call.callee);
     const receiverPlace = this.#interpreter.getPropertyObject(call.callee);
@@ -467,7 +453,7 @@ export class ArrayIteration {
           this.#interpreter.read(receiverPlace),
           callback,
           call.loc,
-          walkState,
+          pathState,
           methodName === "flatMap",
         )
       : null;

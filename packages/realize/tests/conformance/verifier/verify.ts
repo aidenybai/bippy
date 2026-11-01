@@ -10,11 +10,10 @@ import {
 } from "../../../src/core/project/declaration-key";
 import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
-import { collectHandlerProbes } from "./handler-probes";
-import { collectMutationProbes } from "./mutation";
-import { collectProbes } from "./branch-probes";
-import { getRegionData } from "./region-matching";
-import { scoreComponent } from "./score";
+import { collectHandlerCounters } from "./handler-counters";
+import { collectMutationCounters } from "./mutation";
+import { collectBranchCounters } from "./branch-counters";
+import { checkComponent } from "./check";
 import { createEmptyVerdict } from "./verdicts";
 import type { ComponentVerdict } from "./verdicts";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
@@ -26,7 +25,6 @@ import type { Harness } from "./server";
 
 export interface ProjectHarness extends Harness {
   getComponentModule: (file: string) => ComponentModule;
-  knownComponents: Map<string, string>;
   projectIndex: ProjectIndex;
 }
 
@@ -36,21 +34,19 @@ const createProjectIndex = (
 ): ProjectIndex => ({
   ...sourceIndex,
   components: new Map(
-    analyzed.flatMap(({ analysis }) =>
-      analysis.exportName
-        ? [[createDeclarationKey(analysis.file, analysis.exportName), analysis]]
+    analyzed.flatMap((component) =>
+      component.analysis.exportName
+        ? [
+            [
+              createDeclarationKey(component.analysis.file, component.analysis.exportName),
+              component.analysis,
+            ],
+          ]
         : [],
     ),
   ),
-  contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),
+  contextSamples: new Map(analyzed.flatMap((component) => [...component.analysis.contextSamples])),
 });
-
-const getKnownComponents = (analyzed: AnalyzedComponent[]): Map<string, string> =>
-  new Map(
-    analyzed.flatMap(({ analysis }) =>
-      analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
-    ),
-  );
 
 interface MountableComponents {
   components: AnalyzedComponent[];
@@ -61,7 +57,7 @@ const exposeLocalComponents = (components: AnalyzedComponent[]): MountableCompon
   const topLevelNamesByFile = new Map<string, Set<string>>();
   const localNamesByFile = new Map<string, string[]>();
   const mountable = components.map((component) => {
-    const { analysis } = component;
+    const analysis = component.analysis;
     if (analysis.exportName) return component;
     const { name } = parseDeclarationKey(analysis.declaration);
     const topLevelNames = topLevelNamesByFile.get(analysis.file) ?? getTopLevelNames(analysis.file);
@@ -80,15 +76,15 @@ export const startProjectHarness = async (
   setupDirectory: string | null,
   localNamesByFile: Map<string, string[]> = new Map(),
 ): Promise<ProjectHarness> => {
-  const exported = verifiedComponents.filter(({ analysis }) => analysis.exportName);
+  const exported = verifiedComponents.filter((component) => component.analysis.exportName);
   const harness = await startHarness(
     appDirectory,
-    exported.flatMap(({ analysis }) => [
-      ...collectProbes(analysis),
-      ...collectMutationProbes(analysis),
-      ...collectHandlerProbes(analysis).map(({ probe }) => probe),
+    exported.flatMap((component) => [
+      ...collectBranchCounters(component.analysis),
+      ...collectMutationCounters(component.analysis),
+      ...collectHandlerCounters(component.analysis).map((handlerCounter) => handlerCounter.counter),
     ]),
-    [...new Set(exported.map(({ analysis }) => analysis.file))],
+    [...new Set(exported.map((component) => component.analysis.file))],
     readHarnessSetup(setupDirectory),
     localNamesByFile,
   );
@@ -100,7 +96,6 @@ export const startProjectHarness = async (
       importerUrls: (cycleImporters.get(file) ?? []).map(harness.getModuleUrl),
     }),
     projectIndex: createProjectIndex(harness.sourceIndex, analyzed),
-    knownComponents: getKnownComponents(analyzed),
   };
 };
 
@@ -159,7 +154,7 @@ interface ComponentVerification {
 const createFailedVerdict = (component: AnalyzedComponent, error: unknown): ComponentVerdict => {
   const message = getErrorMessage(error).split("\n")[0] ?? "";
   return {
-    ...createEmptyVerdict(component.analysis, component.report),
+    ...createEmptyVerdict(component.analysis, component.model),
     status: "mount-failed",
     error: message,
     mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
@@ -171,28 +166,19 @@ const verifyComponent = async (
   component: AnalyzedComponent,
   harness: ProjectHarness,
   budgetMs: number,
-  isOnFreshPage: boolean,
 ): Promise<ComponentVerification> => {
   try {
     const observations = component.analysis.exportName
       ? await exploreComponent(
           page,
           component.analysis,
-          component.report,
           harness.getComponentModule(component.analysis.file),
           harness.projectIndex,
-          harness.knownComponents,
           budgetMs,
         )
       : [];
     return {
-      verdict: scoreComponent(
-        component.analysis,
-        component.report,
-        observations,
-        harness.knownComponents,
-        isOnFreshPage,
-      ),
+      verdict: checkComponent(component.analysis, component.model, observations),
       isPageBroken: false,
     };
   } catch (error) {
@@ -252,9 +238,8 @@ class HarnessPage {
   }
 
   async verify(component: AnalyzedComponent, budgetMs: number): Promise<ComponentVerification> {
-    const isOnFreshPage = this.#isFresh;
     this.#isFresh = false;
-    return verifyComponent(this.#page, component, this.#harness, budgetMs, isOnFreshPage);
+    return verifyComponent(this.#page, component, this.#harness, budgetMs);
   }
 
   async close(): Promise<void> {
@@ -262,17 +247,13 @@ class HarnessPage {
   }
 }
 
-const readsStoreData = ({ analysis, report }: AnalyzedComponent): boolean =>
-  report.regions.some((region) => getRegionData(analysis, region) === "store");
-
 const verifyOnFreshPage = async (
   harnessPage: HarnessPage,
   component: AnalyzedComponent,
   budgetMs: number,
 ): Promise<ComponentVerdict> => {
   const startTime = performance.now();
-  if (harnessPage.isStale || (!harnessPage.isFresh && readsStoreData(component)))
-    await harnessPage.reopen();
+  if (harnessPage.isStale) await harnessPage.reopen();
   const isOnFreshPage = harnessPage.isFresh;
   let verification = await harnessPage.verify(component, budgetMs);
   if (harnessPage.isStale || (!isOnFreshPage && verification.verdict.status === "mount-failed")) {
@@ -334,16 +315,15 @@ export const verifyProject = async (
       ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
       : analyzed,
   );
-  const { components } = mountable;
   const harness = await startProjectHarness(
     dirname(configPath),
     analyzed,
-    components,
+    mountable.components,
     options.setupDirectory ?? null,
     mountable.localNamesByFile,
   );
   try {
-    const verdicts = await verifyOnPages(harness, components, options);
+    const verdicts = await verifyOnPages(harness, mountable.components, options);
     return { verdicts, durationMs: Math.round(performance.now() - startTime) };
   } finally {
     await harness.close();
