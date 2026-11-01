@@ -54,19 +54,8 @@ const formatPrimitive = (value: PrimitiveValue): string => {
   return Object.is(value, -0) ? "-0" : String(value);
 };
 
-const formatEntry = (
-  [key, entryValue]: [PrimitiveValue, PrimitiveValue],
-  isMap: boolean,
-): string =>
-  isMap ? `${formatPrimitive(key)} => ${formatPrimitive(entryValue)}` : formatPrimitive(key);
-
-export const formatAbstractValue = (value: AbstractValue): string => {
-  if (value.kind === "Literal") return formatPrimitive(value.value);
-  if (value.kind === "Type") return value.text;
-  const isMap = value.collection === "Map";
-  const entries = value.entries.map((entry) => formatEntry(entry, isMap));
-  return `${value.collection} {${entries.join(", ")}}`;
-};
+export const formatAbstractValue = (value: AbstractValue): string =>
+  value.kind === "Literal" ? formatPrimitive(value.value) : value.text;
 
 const getLogicalOperator = (value: ConditionalValue): "||" | "&&" | "??" | null => {
   const testKey = getValueKey(value.test);

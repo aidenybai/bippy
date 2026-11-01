@@ -7,8 +7,6 @@ import { collectHandlerProbes } from "./handler-probes";
 import type { Probe } from "./types";
 import type { types } from "@babel/core";
 
-export const getPathKey = (path: string[]): string => JSON.stringify(path);
-
 export const getProbeId = (file: string, loc: types.SourceLocation): string =>
   `${file}:${getLocationKey(loc)}`;
 
@@ -20,14 +18,14 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   forEachRenderNode(analysis.render, (value) => {
     if (value.kind !== "Conditional") return;
     const { branch } = value;
-    if (branch.probe === "none" || branch.loc === GeneratedSource) return;
+    if (branch.testKind === null || branch.loc === GeneratedSource) return;
     const id = getProbeId(branch.file, branch.loc);
     probes.set(id, {
       id,
       file: branch.file,
       start: branch.loc.start.index,
       end: branch.loc.end.index,
-      mode: branch.probe,
+      mode: branch.testKind,
     });
   });
   return [...probes.values()];

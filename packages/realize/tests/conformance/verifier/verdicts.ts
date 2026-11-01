@@ -52,7 +52,7 @@ interface VerdictCounts {
 
 export type ComponentVerdict = VerdictCounts & VerdictOutcome;
 
-export type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
+type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
 
 export const isMountFailedVerdict = (verdict: ComponentVerdict): verdict is MountFailedVerdict =>
   verdict.status === "mount-failed";

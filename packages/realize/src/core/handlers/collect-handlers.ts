@@ -1,4 +1,4 @@
-import { GeneratedSource, makeInstructionId } from "../../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { HIRFunction, IdentifierId, SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { Interpreter } from "../interpret/interpret";
 import type { CollectedEffects } from "../interpret/effect-collector";
@@ -63,7 +63,6 @@ import {
 } from "./dom-events";
 import type { ControlEvent } from "./dom-events";
 import { EVENT_ARGUMENT } from "./handler-predicates";
-import { DYNAMIC_TAG_NAME, LOCAL_RENDER_PROP } from "../interpret/build-jsx";
 
 const getIndependentCallbacks = (value: SymbolicValue): SymbolicValue =>
   value.kind === "ArrayExpression" && value.spreads.length === 0
@@ -146,24 +145,15 @@ interface GuardedConditional {
   alternate: SymbolicValue;
   loc: SourceLocation;
   file: string;
-  caseIndex: number;
 }
 
-const createGuardedConditional = ({
-  test,
-  consequent,
-  alternate,
-  loc,
-  file,
-  caseIndex,
-}: GuardedConditional): SymbolicValue => ({
+const createGuardedConditional = (conditional: GuardedConditional): SymbolicValue => ({
   kind: "Conditional",
-  test,
+  test: conditional.test,
   testKind: "truthy",
-  consequent,
-  alternate,
-  branch: { terminalId: makeInstructionId(0), probe: "none", loc, file, caseIndex },
-  guardKeys: [],
+  consequent: conditional.consequent,
+  alternate: conditional.alternate,
+  branch: { loc: conditional.loc, file: conditional.file, testKind: null },
 });
 
 const chooseSpreadHandler = (
@@ -174,7 +164,7 @@ const chooseSpreadHandler = (
   const [last, ...earlier] = [...handlers.properties].reverse();
   if (!last) return UNDEFINED_VALUE;
   return earlier.reduce<SymbolicValue>(
-    (alternate, property, caseIndex) =>
+    (alternate, property) =>
       createGuardedConditional({
         test: createUnknown(`spread-event ${property.key}`, loc, {
           kind: "Name",
@@ -184,7 +174,6 @@ const chooseSpreadHandler = (
         alternate,
         loc,
         file,
-        caseIndex,
       }),
     last.value,
   );
@@ -195,14 +184,13 @@ const guardCallbacks = (
   reason: string,
   prop: JsxProp,
 ): SymbolicValue[] =>
-  callbacks.map((callback, caseIndex) =>
+  callbacks.map((callback) =>
     createGuardedConditional({
       test: createUnknown(reason, prop.loc),
       consequent: callback,
       alternate: UNDEFINED_VALUE,
       loc: prop.loc,
       file: prop.file,
-      caseIndex,
     }),
   );
 
@@ -217,7 +205,6 @@ const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): Sym
         alternate,
         loc: prop.loc,
         file: prop.file,
-        caseIndex,
       }),
     UNDEFINED_VALUE,
   );
@@ -229,14 +216,13 @@ const getRenderedBranch = (
   prop: JsxProp,
 ): SymbolicValue =>
   guards.reduceRight<SymbolicValue>(
-    (inner, test, caseIndex) =>
+    (inner, test) =>
       createGuardedConditional({
         test,
         consequent: inner,
         alternate,
         loc: prop.loc,
         file: prop.file,
-        caseIndex,
       }),
     consequent,
   );
@@ -405,11 +391,6 @@ class HandlerCollector {
       callbackGuards,
       runsCleanup,
     );
-    const isLocalRender =
-      trigger.kind === "Event" &&
-      trigger.tag === DYNAMIC_TAG_NAME &&
-      trigger.event === LOCAL_RENDER_PROP;
-    if (isLocalRender) this.#interpreter.localRenders.push(...(effects.returned ?? []));
     return this.addCollectedHandler(trigger, effects, loc, guards);
   }
 
@@ -559,7 +540,6 @@ class HandlerCollector {
         kind: "Effect",
         hookKind: "useLayoutEffect",
         dependencies: null,
-        dependencyPlaces: null,
       },
       callback: prop.value,
       callbackArguments: [EVENT_ARGUMENT],
@@ -1445,7 +1425,6 @@ const collectHandlersOnce = (
         kind: "Effect",
         hookKind: effectCall.hookKind,
         dependencies: effectCall.dependencies,
-        dependencyPlaces: effectCall.dependencyPlaces,
       },
       effectCall.callback,
       effectCall.callbackArguments,
@@ -1453,7 +1432,7 @@ const collectHandlersOnce = (
     );
   for (const commitCallback of collector.commitCallbacks.values())
     collector.addHandler(
-      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
+      { kind: "Effect", hookKind: "Custom", dependencies: null },
       commitCallback.callback,
       [createUnknown("callback-argument", commitCallback.loc)],
       commitCallback.loc,
@@ -1465,14 +1444,14 @@ const collectHandlersOnce = (
   );
   if (suspenseUpdates.length > 0)
     collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "Custom", dependencies: null, dependencyPlaces: null },
+      { kind: "Effect", hookKind: "Custom", dependencies: null },
       { updates: suspenseUpdates, delegates: [], pendingMutations: [], claims: [] },
       GeneratedSource,
     );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "useEffect", dependencies: null, dependencyPlaces: null },
+      { kind: "Effect", hookKind: "useEffect", dependencies: null },
       { updates: commitUpdates, delegates: [], pendingMutations: [], claims: [] },
       GeneratedSource,
     );

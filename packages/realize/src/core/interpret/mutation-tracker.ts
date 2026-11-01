@@ -467,7 +467,7 @@ export class MutationTracker {
     const hasSetter =
       isStoreIntoLiteral &&
       literal.properties.some(({ key }) => key === `${SETTER_KEY_PREFIX}${String(value.property)}`);
-    if (hasSetter) return this.#storeThroughSetter(literal, instruction, value, loc);
+    if (hasSetter) return this.#storeThroughSetter(literal, value, loc);
     if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
     if (value.kind !== "MethodCall") return createUnknown("mutation", loc);
     const mutated = this.#interpreter.createDerivedValue([literal], "mutation", loc);
@@ -478,8 +478,7 @@ export class MutationTracker {
           testKind: "truthy",
           consequent: mutated,
           alternate: literal,
-          branch: this.#interpreter.createBranch(instruction.id, loc, "none"),
-          guardKeys: [],
+          branch: this.#interpreter.createBranchSite(loc),
         }
       : mutated;
   }
@@ -530,13 +529,12 @@ export class MutationTracker {
 
   #storeThroughSetter(
     object: ObjectExpressionValue,
-    instruction: Instruction,
     store: InstructionValueOfKind<"PropertyStore">,
     loc: SourceLocation,
   ): ObjectExpressionValue {
     const storedValue = this.#interpreter.read(store.value);
     const test = createUnknown("mutation", loc);
-    const branch = this.#interpreter.createBranch(instruction.id, loc, "none");
+    const branch = this.#interpreter.createBranchSite(loc);
     return {
       ...object,
       properties: object.properties.map((property) =>
@@ -555,7 +553,6 @@ export class MutationTracker {
                 ),
                 alternate: property.value,
                 branch,
-                guardKeys: [],
               },
             },
       ),

@@ -3,7 +3,7 @@ import type { ImportedNames } from "../compile/module-values";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import { parseDeclarationKey } from "./declaration-key";
 
-export interface Importer {
+interface Importer {
   path: string;
   localName: string;
 }

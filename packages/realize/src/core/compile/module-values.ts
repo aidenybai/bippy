@@ -10,7 +10,7 @@ export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
 }
 
-export interface ModuleVariable {
+interface ModuleVariable {
   initial: SymbolicValue | null;
   loc: SourceLocation;
 }
@@ -34,7 +34,7 @@ export interface ImportUseLoader {
   (localName: string): ImportUse;
 }
 
-export interface ImportedName {
+interface ImportedName {
   localName: string;
   loc: SourceLocation;
 }

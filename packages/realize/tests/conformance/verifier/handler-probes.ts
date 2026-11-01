@@ -3,7 +3,7 @@ import { forEachJsxElement } from "../../../src/core/render/for-each-jsx-element
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Probe } from "./types";
 
-export interface HandlerProbe {
+interface HandlerProbe {
   probe: Probe;
   handlerId: string;
 }

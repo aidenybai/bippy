@@ -215,7 +215,7 @@ export const mayOverlap = (other: Abstract, value: Abstract): boolean => {
   }
 };
 
-export const shiftAbstract = (value: Abstract, amount: number): Abstract => {
+const shiftAbstract = (value: Abstract, amount: number): Abstract => {
   if (value.kind === "Exact" && typeof value.value === "number")
     return { kind: "Exact", value: value.value + amount };
   if (value.kind === "Range") return { ...value, min: value.min + amount, max: value.max + amount };

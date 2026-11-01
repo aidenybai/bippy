@@ -284,10 +284,10 @@ export class ControlFlowWalker {
     const armStops = new Set([...stops, fallthrough]);
     const isSwapped = operator === "&&";
     const consequentGuard = isSwapped ? negate(testGuard) : testGuard;
-    const probe = this.#interpreter.resolver.isExpression(terminal.test.loc)
-      ? branchTest.testKind
-      : "none";
-    const branch = this.#interpreter.createBranch(terminal.id, terminal.test.loc, probe);
+    const branch = this.#interpreter.createBranchSite(
+      terminal.test.loc,
+      this.#interpreter.resolver.isExpression(terminal.test.loc) ? branchTest.testKind : null,
+    );
     const walkConsequent = () =>
       this.#walkArm(consequent, from, armStops, walkState, consequentGuard);
     const walkAlternate = () =>
@@ -394,7 +394,7 @@ export class ControlFlowWalker {
       kind: "Split",
       test: caseTest,
       testKind: "truthy",
-      branch: this.#interpreter.createBranch(terminal.id, switchCase.test.loc, "none"),
+      branch: this.#interpreter.createBranchSite(switchCase.test.loc),
       consequent: matched,
       alternate: this.#dispatchSwitchCase(switchWalk, caseIndex + 1),
     };
@@ -480,22 +480,8 @@ export class ControlFlowWalker {
       loopBindings,
       terminal.loc,
     );
-    const exitValueOutcome = collapseLoopSplits(
-      mapFallthroughs(bodyOutcome, (fallthrough) =>
-        loopHeaders.includes(fallthrough.to) ? loopExit : fallthrough,
-      ),
-      loopBindings,
-      terminal.loc,
-    );
     for (const phi of this.#getBlock(terminal.fallthrough).phis)
-      this.#interpreter.write(
-        phi.place,
-        this.#createLoopValue(
-          phi,
-          loopBindings,
-          this.#resolvePhi(phi, exitValueOutcome, walkState.guards),
-        ),
-      );
+      this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     this.#addLoopInputPlaces(
       loopBindings.slice(headerBindingCount),
       loopEntry,
@@ -684,11 +670,7 @@ export class ControlFlowWalker {
     return places;
   }
 
-  #createLoopValue(
-    phi: Phi,
-    loopBindings: Binding[],
-    alias: SymbolicValue | null = null,
-  ): SymbolicValue {
+  #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
     const variableName = getIdentifierName(phi.place);
     const declarationLoc = [phi.place, ...phi.operands.values()]
       .map(getDeclarationLocation)
@@ -699,7 +681,6 @@ export class ControlFlowWalker {
       return createUnknown("loop", phi.place.loc);
     const binding = this.#interpreter.createBinding(variableName, "loop", declarationLoc, {
       domain: declaredDomain,
-      alias,
     });
     if (!loopBindings.includes(binding)) loopBindings.push(binding);
     return createBindingValue(binding);
@@ -895,7 +876,7 @@ export class ControlFlowWalker {
       kind: "Split",
       test: throwTest,
       testKind: "truthy",
-      branch: this.#interpreter.createBranch(terminal.id, terminal.loc, "none"),
+      branch: this.#interpreter.createBranchSite(terminal.loc),
       consequent,
       alternate: this.#walkArm(continuation, blockId, stops, walkState, negate(throwTest)),
     };
@@ -944,7 +925,7 @@ export class ControlFlowWalker {
       return this.#continueAfter(bodyOutcome, fallthrough, stops, afterWalkState);
     if (throwPoints.length === 0)
       throwPoints.push({ walkState: afterWalkState, test: createUnknown("throws", terminal.loc) });
-    const branch = this.#interpreter.createBranch(terminal.id, terminal.loc, "none");
+    const branch = this.#interpreter.createBranchSite(terminal.loc);
     const catchArms = throwPoints.map(({ walkState: throwWalkState, test }) => ({
       test,
       outcome: this.#walkArm(handler, blockId, bodyStops, throwWalkState, test),

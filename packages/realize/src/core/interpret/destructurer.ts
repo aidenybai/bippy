@@ -1,4 +1,3 @@
-import { makeInstructionId } from "../../react-compiler/HIR/HIR";
 import type {
   ArrayPattern,
   ObjectPattern,
@@ -98,8 +97,7 @@ export class Destructurer {
             testKind: "truthy",
             consequent: createUnknown("optimistic", value.loc),
             alternate: passthrough,
-            branch: this.#interpreter.createBranch(makeInstructionId(0), value.loc, "none"),
-            guardKeys: [],
+            branch: this.#interpreter.createBranchSite(value.loc),
           }
         : passthrough;
       return itemPlaces.map((_place, index) =>

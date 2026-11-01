@@ -75,7 +75,7 @@ interface Misfit {
   domain: string[];
 }
 
-export interface Coverage {
+interface Coverage {
   model: ComponentModel;
   explored: ExploredModel;
   sides: Map<string, Side>;
@@ -83,7 +83,7 @@ export interface Coverage {
   variablesByName: Map<string, Variable>;
 }
 
-export interface Observed {
+interface Observed {
   predicate: Predicate;
   sides: string[];
   values: string[];

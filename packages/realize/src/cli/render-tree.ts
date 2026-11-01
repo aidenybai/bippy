@@ -21,7 +21,7 @@ import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
 
 export const DEFAULT_RENDER_DEPTH = 12;
 
-export interface RenderTreeOptions {
+interface RenderTreeOptions {
   rootDirectory: string;
   maxDepth: number;
 }

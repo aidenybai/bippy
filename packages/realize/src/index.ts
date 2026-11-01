@@ -11,7 +11,7 @@ export type {
   Binding,
   Claim,
   ComponentAnalysis,
-  Branch,
+  BranchSite,
   Domain,
   ProjectAnalysis,
   StateUpdate,

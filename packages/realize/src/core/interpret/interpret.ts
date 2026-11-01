@@ -13,7 +13,6 @@ import { hasLoop } from "./has-loop";
 import { addsCallResult } from "./adds-call-result";
 import {
   GeneratedSource,
-  makeInstructionId,
   InstructionKind,
   SETTER_KEY_PREFIX,
   getHookKind,
@@ -40,7 +39,8 @@ import type {
   BindingPlace,
   BindingValue,
   CollectionValue,
-  Branch,
+  BranchSite,
+  TestKind,
   ContextSetterFields,
   DispatchValue,
   Domain,
@@ -71,7 +71,6 @@ import { getLiteralArrayCall, getMathCall, getPureCallDomain } from "./derived-c
 import type { PureCall } from "./derived-calls";
 import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
-import { getMemoRanges } from "./get-memo-ranges";
 import { getLocationKey } from "../shared/get-location-key";
 import { isSameValueZero } from "./is-same-value-zero";
 import { getPropertyKeyForms } from "./get-property-key-forms";
@@ -153,7 +152,6 @@ interface EffectCall {
   callback: SymbolicValue;
   callbackArguments: SymbolicValue[];
   dependencies: string | null;
-  dependencyPlaces: BindingPlace[] | null;
   loc: SourceLocation;
 }
 
@@ -193,7 +191,7 @@ export interface ProjectHook {
   loadModuleFunction: ModuleFunctionLoader;
 }
 
-export interface ProjectHookLoader {
+interface ProjectHookLoader {
   (declarationKey: string): ProjectHook | null;
 }
 
@@ -462,7 +460,6 @@ export class Interpreter {
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
   readonly #constantContextIds = new Set<IdentifierId>();
-  readonly localRenders: SymbolicValue[] = [];
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
   readonly #itemSources = new Map<number, PlaceMap<true>>();
@@ -475,7 +472,6 @@ export class Interpreter {
   readonly callbacks = new CallbackPasser(this);
   cells = new Cells();
   readonly memoStaleness = new MemoStaleness(this);
-  #componentFunction: HIRFunction | null = null;
   readonly iteration = new ArrayIteration(this);
   readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
@@ -540,7 +536,6 @@ export class Interpreter {
 
   evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
     this.walker.blockVisits = 0;
-    this.#componentFunction = hirFunction;
     return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
@@ -798,8 +793,7 @@ export class Interpreter {
               testKind: "truthy",
               consequent: element,
               alternate: opaque,
-              branch: this.createBranch(makeInstructionId(0), loc, "none"),
-              guardKeys: [],
+              branch: this.createBranchSite(loc),
             }
           : opaque;
       }
@@ -839,7 +833,7 @@ export class Interpreter {
     return this.read(tag);
   }
 
-  #buildSuspense(element: JsxExpressionValue, terminalId: InstructionId): SymbolicValue {
+  #buildSuspense(element: JsxExpressionValue): SymbolicValue {
     const fallback = element.props.find(
       (prop) => prop.kind === "JsxAttribute" && prop.name === "fallback",
     );
@@ -852,8 +846,7 @@ export class Interpreter {
       testKind: "truthy",
       consequent: { ...element, children: [fallback?.value ?? UNDEFINED_VALUE] },
       alternate: element,
-      branch: this.createBranch(terminalId, element.loc, "none"),
-      guardKeys: [],
+      branch: this.createBranchSite(element.loc),
     };
   }
 
@@ -1159,14 +1152,7 @@ export class Interpreter {
       setter.binding.loc,
       walkState,
     );
-    const isRepeated =
-      !this.#handlerEffects || (this.walker.loopDepth > 0 && setterArgument?.kind === "Function");
-    const isMemoized = !this.#handlerEffects && this.memoStaleness.isInMemo;
-    collector.recordSetterCall(setter.binding, nextValue, {
-      ...walkState,
-      ...(isRepeated && { isRepeated }),
-      ...(isMemoized && { isMemoized }),
-    });
+    collector.recordSetterCall(setter.binding, nextValue, walkState);
   }
 
   #applyDispatch(
@@ -1189,13 +1175,11 @@ export class Interpreter {
           )
         : createUnknown("dispatch", loc);
     const asyncWalkState = isAsyncAction ? getAsyncWalkState(walkState) : walkState;
-    const isRepeated = !this.#handlerEffects || this.walker.loopDepth > 0;
-    const settledWalkState = isRepeated ? { ...asyncWalkState, isRepeated } : asyncWalkState;
     if (pending && isAsyncAction)
       collector.recordSetterCall(pending, { kind: "Primitive", value: true }, walkState);
-    collector.recordSetterCall(dispatch.binding, nextValue, settledWalkState);
+    collector.recordSetterCall(dispatch.binding, nextValue, asyncWalkState);
     if (pending && isAsyncAction)
-      collector.recordSetterCall(pending, { kind: "Primitive", value: false }, settledWalkState);
+      collector.recordSetterCall(pending, { kind: "Primitive", value: false }, asyncWalkState);
   }
 
   #recordWholeProps(callSite: CallSite): void {
@@ -1944,8 +1928,6 @@ export class Interpreter {
     methodName: string,
     [key]: SymbolicValue[],
     loc: SourceLocation,
-    instructionId: InstructionId,
-    walkState: WalkState,
   ): SymbolicValue | null {
     const entries = key && key.kind !== "Primitive" ? getCollectionEntries(receiver) : null;
     if (!key || !entries || (methodName !== "get" && methodName !== "has")) return null;
@@ -1954,14 +1936,13 @@ export class Interpreter {
     const fallback: SymbolicValue =
       methodName === "has" ? { kind: "Primitive", value: false } : UNDEFINED_VALUE;
     return [...entries].reduceRight<SymbolicValue>(
-      (rest, [entryKey, entryValue], index) => ({
+      (rest, [entryKey, entryValue]) => ({
         kind: "Conditional",
         test: foldBinary("===", key, { kind: "Primitive", value: entryKey }),
         testKind: "truthy",
         consequent: methodName === "has" ? { kind: "Primitive", value: true } : entryValue,
         alternate: rest,
-        branch: this.createBranch(instructionId, loc, "none", index),
-        guardKeys: walkState.guards.map(getValueKey),
+        branch: this.createBranchSite(loc),
       }),
       fallback,
     );
@@ -1971,7 +1952,6 @@ export class Interpreter {
     receiver: SymbolicValue,
     [candidate]: SymbolicValue[],
     loc: SourceLocation,
-    instructionId: InstructionId,
   ): SymbolicValue | null {
     if (!candidate || receiver.kind !== "ArrayExpression" || receiver.spreads.length > 0)
       return null;
@@ -1980,7 +1960,7 @@ export class Interpreter {
     );
     if (!isLiteralList) return null;
     return receiver.elements.reduceRight<SymbolicValue>(
-      (rest, element, index) => {
+      (rest, element) => {
         const isElement = foldBinary("===", candidate, element);
         return rest.kind === "Primitive" && rest.value === false
           ? isElement
@@ -1990,8 +1970,7 @@ export class Interpreter {
               testKind: "truthy",
               consequent: isElement,
               alternate: rest,
-              branch: this.createBranch(instructionId, loc, "none", index),
-              guardKeys: [],
+              branch: this.createBranchSite(loc),
             };
       },
       { kind: "Primitive", value: false },
@@ -2111,14 +2090,7 @@ export class Interpreter {
         ? this.#readAt(receiver, atIndex, methodCall.loc, instructionId, walkState)
         : null;
     if (atValue) return atValue;
-    const lookup = this.#getCollectionLookup(
-      receiver,
-      methodName,
-      argumentValues,
-      methodCall.loc,
-      instructionId,
-      walkState,
-    );
+    const lookup = this.#getCollectionLookup(receiver, methodName, argumentValues, methodCall.loc);
     if (lookup) return lookup;
     const invokedArguments =
       INVOKABLE_KINDS.has(receiver.kind) || receiver.kind === "Binding"
@@ -2155,7 +2127,6 @@ export class Interpreter {
       methodName,
       receiver,
       callback,
-      instructionId,
       methodCall.loc,
       walkState,
     );
@@ -2230,7 +2201,7 @@ export class Interpreter {
     };
     const membership =
       methodName === "includes" && argumentValues.length === 1
-        ? this.#getMembershipTest(receiver, argumentValues, methodCall.loc, instructionId)
+        ? this.#getMembershipTest(receiver, argumentValues, methodCall.loc)
         : null;
     if (membership) return membership;
     const isMath = receiver.kind === "Global" && receiver.name === "Math";
@@ -2239,14 +2210,7 @@ export class Interpreter {
       : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (pureCall) return this.#createCallResult(callSite, { pureCall });
     const getFirstValue = () =>
-      this.iteration.getFirstValue(
-        methodName,
-        receiver,
-        argumentValues,
-        methodCall.loc,
-        instructionId,
-        walkState,
-      );
+      this.iteration.getFirstValue(methodName, receiver, argumentValues, methodCall.loc, walkState);
     const firstValue = this.#handlerEffects
       ? this.#withoutEffects(callback, getFirstValue)
       : getFirstValue();
@@ -2319,14 +2283,13 @@ export class Interpreter {
           ];
     });
     return positions.reduceRight<SymbolicValue>(
-      (alternate, [position, element], index) => ({
+      (alternate, [position, element]) => ({
         kind: "Conditional",
         test: foldBinary("===", atIndex, { kind: "Primitive", value: position }),
         testKind: "truthy",
         consequent: element,
         alternate,
-        branch: this.createBranch(instructionId, loc, "none", index),
-        guardKeys: walkState.guards.map(getValueKey),
+        branch: this.createBranchSite(loc),
       }),
       this.createDerivedValue([receiver, atIndex], "computed-member", loc),
     );
@@ -2354,7 +2317,7 @@ export class Interpreter {
       );
       return (
         this.iteration.getLiteralResult(methodName, receiver, results) ??
-        this.iteration.getOpenResult(methodName, receiver, results, loc, instructionId) ??
+        this.iteration.getOpenResult(methodName, receiver, results, loc) ??
         createUnknown("call", loc, {
           kind: "Call",
           callee: createUnknown("member", loc, {
@@ -2454,11 +2417,6 @@ export class Interpreter {
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
     const { value } = instruction;
-    const componentFunction = this.#componentFunction;
-    if (componentFunction && this.#currentFunction === componentFunction)
-      this.memoStaleness.isInMemo = getMemoRanges(componentFunction).some(
-        (range) => instruction.id > range.start && instruction.id < range.finish,
-      );
     this.#recordLoadedProperty(instruction);
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, walkState);
@@ -2516,7 +2474,7 @@ export class Interpreter {
         return global;
       }
       case "PropertyLoad":
-        return this.#evaluatePropertyLoad(value, instruction.id, walkState);
+        return this.#evaluatePropertyLoad(value, walkState);
       case "ComputedLoad":
         return this.#evaluateComputedLoad(value, instruction.id, walkState);
       case "BinaryExpression":
@@ -2545,7 +2503,7 @@ export class Interpreter {
       case "MethodCall":
         return this.#evaluateMethodCall(value, instruction.id, walkState);
       case "JsxExpression":
-        return this.#evaluateJsxElement(value, instruction.id);
+        return this.#evaluateJsxElement(value);
       case "JsxFragment":
         return {
           kind: "JsxFragment",
@@ -2641,7 +2599,6 @@ export class Interpreter {
 
   #evaluatePropertyLoad(
     load: InstructionValueOfKind<"PropertyLoad">,
-    instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue {
     const object = this.read(load.object);
@@ -2674,8 +2631,7 @@ export class Interpreter {
           testKind: "truthy",
           consequent: cellValue,
           alternate: loaded,
-          branch: this.createBranch(instructionId, load.loc, "none"),
-          guardKeys: [],
+          branch: this.createBranchSite(load.loc),
         }
       : cellValue;
   }
@@ -2859,14 +2815,13 @@ export class Interpreter {
         ]),
       );
       return keyedEntries.reduceRight<SymbolicValue>(
-        (alternate, [keyForm, entry], index) => ({
+        (alternate, [keyForm, entry]) => ({
           kind: "Conditional",
           test: foldBinary("===", propertyKey, { kind: "Primitive", value: keyForm }),
           testKind: "truthy",
           consequent: entry,
           alternate,
-          branch: this.createBranch(instructionId, computedLoad.loc, "none", index),
-          guardKeys: walkState.guards.map(getValueKey),
+          branch: this.createBranchSite(computedLoad.loc),
         }),
         bindingEntries
           ? this.createDerivedValue([object, propertyKey], "computed-member", computedLoad.loc)
@@ -3039,10 +2994,7 @@ export class Interpreter {
     this.providedContexts.push({ contextKey, value: providedValue.value });
   }
 
-  #evaluateJsxElement(
-    element: InstructionValueOfKind<"JsxExpression">,
-    instructionId: InstructionId,
-  ): SymbolicValue {
+  #evaluateJsxElement(element: InstructionValueOfKind<"JsxExpression">): SymbolicValue {
     const props = this.#readJsxProps(element);
     this.#recordProvidedContext(element, props);
     const isBuiltinTag = element.tag.kind === "BuiltinTag";
@@ -3064,7 +3016,7 @@ export class Interpreter {
       this.renderedComponents,
     );
     return reactExport === "Suspense" && jsxValue.kind === "JsxExpression"
-      ? this.#buildSuspense(jsxValue, instructionId)
+      ? this.#buildSuspense(jsxValue)
       : jsxValue;
   }
 
@@ -3129,21 +3081,8 @@ export class Interpreter {
     );
   }
 
-  createBranch(
-    terminalId: InstructionId,
-    loc: SourceLocation,
-    probe: Branch["probe"],
-    caseIndex?: number,
-  ): Branch {
-    const rowScope = this.#bindingScopes.filter((scope) => scope.startsWith("row:")).join("/");
-    const branch: Branch = {
-      terminalId,
-      probe,
-      loc,
-      file: this.#resolver.fileName,
-      ...(rowScope !== "" && { rowScope }),
-    };
-    return caseIndex === undefined ? branch : { ...branch, caseIndex };
+  createBranchSite(loc: SourceLocation, testKind: TestKind | null = null): BranchSite {
+    return { loc, file: this.#resolver.fileName, testKind };
   }
 
   #evaluateFunction(

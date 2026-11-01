@@ -27,7 +27,6 @@ import type {
 } from "../types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
-import { collectDisplayNames } from "./collect-display-names";
 import { collectExportNames } from "./collect-export-names";
 import { isProjectSourceFile } from "./is-project-source-file";
 import { withProject } from "./with-project";
@@ -251,7 +250,6 @@ const compileProjectFiles = (
         projectLoaders,
         modelsByStore,
         exportNames,
-        displayNames: collectDisplayNames(sourceFile),
       },
     ];
   });

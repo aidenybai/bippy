@@ -9,7 +9,7 @@ const quote = (text: string): string => `"${text.replace(/\\/g, "\\\\").replace(
 
 const formatSet = (values: string[]): string => `{${values.map(quote).join(", ")}}`;
 
-export const formatPredicate = (predicate: Predicate): string => {
+const formatPredicate = (predicate: Predicate): string => {
   switch (predicate.kind) {
     case "True":
       return "TRUE";
@@ -86,7 +86,7 @@ const formatView = (model: ComponentModel): string[] => {
   ];
 };
 
-export const toModuleName = (name: string): string =>
+const toModuleName = (name: string): string =>
   name.replace(/[^A-Za-z0-9_]/g, "_").replace(/^([0-9])/, "M$1") || "Component";
 
 export const formatTla = (

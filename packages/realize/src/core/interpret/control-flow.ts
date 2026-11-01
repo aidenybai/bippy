@@ -6,12 +6,11 @@ import type {
   Terminal,
 } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
-import type { Binding, Branch, ConditionalValue, SymbolicValue, TestKind } from "../types";
+import type { Binding, BranchSite, ConditionalValue, SymbolicValue, TestKind } from "../types";
 import { createUnknown } from "../values/symbolic-values";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
-import { getValueKey } from "../values/get-value-key";
 
 interface ReturnOutcome {
   kind: "Return";
@@ -37,7 +36,7 @@ export interface SplitOutcome {
   kind: "Split";
   test: SymbolicValue;
   testKind: TestKind;
-  branch: Branch;
+  branch: BranchSite;
   consequent: Outcome;
   alternate: Outcome;
 }
@@ -143,7 +142,6 @@ export const createConditional = (
   consequent: getArmValue(split.consequent, [...guards, getGuard(split, true)]),
   alternate: getArmValue(split.alternate, [...guards, getGuard(split, false)]),
   branch: split.branch,
-  guardKeys: guards.map(getValueKey),
 });
 
 export const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>

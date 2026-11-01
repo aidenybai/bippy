@@ -13,7 +13,7 @@ interface NumberBounds {
 
 const formatBound = (value: number): string => String(value);
 
-export const formatAbstract = (value: Abstract): string => {
+const formatAbstract = (value: Abstract): string => {
   switch (value.kind) {
     case "Exact":
       if (value.value === "") return "empty";
@@ -116,8 +116,6 @@ const createCaseValues = (value: AbstractValue, tests: PlaceTests): Abstract[] =
       return value.primitive
         ? createPrimitiveValues(value.primitive, tests, false)
         : [{ kind: "Object", typeText: value.text }];
-    case "Collection":
-      return [{ kind: "Object", typeText: value.collection }];
   }
 };
 

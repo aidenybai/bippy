@@ -11,7 +11,7 @@ export const MAX_ACTION_LABEL_LENGTH = 40;
 const PROP_OWNER_PREFIX = "prop:";
 const STATE_OWNER_PREFIX = "state:";
 
-export interface MutationOwner {
+interface MutationOwner {
   kind: "prop" | "state";
   name: string;
 }
@@ -30,7 +30,7 @@ export type Shape =
   | { kind: "component"; name: string }
   | { kind: "text"; text: string };
 
-export type ProbeMode = "truthy" | "nullish" | "mutation" | "handler" | "callbacks";
+type ProbeMode = "truthy" | "nullish" | "mutation" | "handler" | "callbacks";
 
 export interface Probe {
   id: string;
@@ -78,14 +78,14 @@ export interface Scenario {
   args: unknown[];
 }
 
-export interface ProjectCandidate {
+interface ProjectCandidate {
   kind: "project";
   file: string;
   exportName: string;
   props: Record<string, Sample>;
 }
 
-export interface PackageCandidate {
+interface PackageCandidate {
   kind: "package";
   specifier: string;
   namespace: string | null;
@@ -94,7 +94,7 @@ export interface PackageCandidate {
   props: Record<string, Sample>;
 }
 
-export type WrapperCandidate = ProjectCandidate | PackageCandidate;
+type WrapperCandidate = ProjectCandidate | PackageCandidate;
 
 export type WrapperSource = "named" | "root" | "part" | "context";
 

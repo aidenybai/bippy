@@ -6,7 +6,7 @@ import { formatLine } from "../core/values/format";
 import type { ViewEdge } from "../core/model/types";
 import { unescapeQuotedLiterals } from "../core/labels/text";
 
-export interface MermaidOptions {
+interface MermaidOptions {
   rootDirectory: string;
 }
 

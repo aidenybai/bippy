@@ -47,7 +47,6 @@ export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
   initial: null,
   inputPlaces: [],
   isDerived: false,
-  alias: null,
   ...overrides,
 });
 
@@ -70,7 +69,6 @@ export const createTestAnalysis = (name: string, bindings: Binding[]): Component
     {
       name,
       exportName: name,
-      runtimeName: name,
       file: `/${name}.tsx`,
       declaration: `/${name}.tsx#${name}`,
     },

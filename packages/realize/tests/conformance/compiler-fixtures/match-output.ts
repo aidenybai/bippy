@@ -51,7 +51,7 @@ const MAX_MATCH_STEPS = 500_000;
 const decode = (text: string): string =>
   text.replace(/&(?:amp|lt|gt|quot|nbsp|#x27|#39);/g, (entity) => ENTITIES.get(entity) ?? entity);
 
-export const parseHtml = (html: string): OutputShape[] => {
+const parseHtml = (html: string): OutputShape[] => {
   const root: OutputShape[] = [];
   const stack: OutputShape[][] = [root];
   for (const [token, closing, tag, , selfClosing] of html.matchAll(TAG_PATTERN)) {

@@ -112,7 +112,7 @@ export interface Property {
   loc: SourceLocation;
 }
 
-export type FindingKind = "unreachable-branch" | "stuttering-action" | "violated-assertion";
+type FindingKind = "unreachable-branch" | "stuttering-action" | "violated-assertion";
 
 export interface Finding {
   kind: FindingKind;

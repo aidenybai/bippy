@@ -1,5 +1,5 @@
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
-import type { InstructionId, InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR";
+import type { InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR";
 
 export type { SourceLocation };
 import type { PlaceMap } from "./values/place-map";
@@ -11,14 +11,7 @@ export type PrimitiveTypeName = "string" | "number" | "bigint" | "boolean";
 
 export type AbstractValue =
   | { kind: "Literal"; value: PrimitiveValue }
-  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null }
-  | {
-      kind: "Collection";
-      collection: "Set" | "Map";
-      entries: Array<[PrimitiveValue, PrimitiveValue]>;
-    };
-
-export type CollectionContents = Extract<AbstractValue, { kind: "Collection" }>;
+  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null };
 
 export type TestKind = "truthy" | "nullish";
 
@@ -26,7 +19,7 @@ type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";
 
 export type Domain =
   | { kind: "Cases"; cases: AbstractValue[]; origin: "type" | "call-sites" }
-  | { kind: "Opaque"; typeText: string; hasOwnLength?: true }
+  | { kind: "Opaque"; typeText: string }
   | { kind: "Unknown"; reason: UnknownTypeReason };
 
 export type Sample =
@@ -72,16 +65,12 @@ export interface Binding {
   initial: SymbolicValue | null;
   inputPlaces: BindingPlace[];
   isDerived: boolean;
-  alias: SymbolicValue | null;
 }
 
-export interface Branch {
-  terminalId: InstructionId;
-  probe: TestKind | "none";
+export interface BranchSite {
   loc: SourceLocation;
   file: string;
-  caseIndex?: number;
-  rowScope?: string;
+  testKind: TestKind | null;
 }
 
 export interface JsxProp {
@@ -137,8 +126,7 @@ export type SymbolicValue =
       testKind: TestKind;
       consequent: SymbolicValue;
       alternate: SymbolicValue;
-      branch: Branch;
-      guardKeys: string[];
+      branch: BranchSite;
     }
   | { kind: "ObjectExpression"; properties: SymbolicObjectProperty[]; spreads: SymbolicValue[] }
   | { kind: "ArrayExpression"; elements: SymbolicValue[]; spreads: SymbolicValue[] }
@@ -244,8 +232,6 @@ export interface StateUpdate {
   value: SymbolicValue;
   guards: SymbolicValue[];
   isAsync: boolean;
-  isRepeated?: boolean;
-  isMemoized?: boolean;
 }
 
 export type HandlerTrigger =
@@ -254,7 +240,6 @@ export type HandlerTrigger =
       kind: "Effect";
       hookKind: HookKind;
       dependencies: string | null;
-      dependencyPlaces: BindingPlace[] | null;
     }
   | { kind: "Render" };
 
@@ -310,7 +295,6 @@ export interface ContextSetterFields extends Map<string, Map<string, string>> {}
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
-  runtimeName: string | null;
   file: string;
   declaration: string;
   loc: SourceLocation;
@@ -324,7 +308,6 @@ export interface ComponentAnalysis {
   readContextKeys: string[];
   placeDomains: PlaceMap<Domain>;
   render: SymbolicValue;
-  localRenders: SymbolicValue[];
   handlers: Handler[];
   renders: string[];
   claims: Claim[];
@@ -332,9 +315,9 @@ export interface ComponentAnalysis {
   warnings: Warning[];
 }
 
-export type ClaimKind = "cast" | "non-null" | "invariant" | "state";
+type ClaimKind = "cast" | "non-null" | "invariant";
 
-export type ClaimCheck =
+type ClaimCheck =
   | { kind: "Membership"; cases: AbstractValue[] }
   | { kind: "Condition"; test: SymbolicValue };
 

@@ -104,7 +104,7 @@ const toAtom = (value: SymbolicValue): Atom | null => {
   return null;
 };
 
-export const forEachAtom = (test: SymbolicValue, visit: (atom: Atom) => void): void => {
+const forEachAtom = (test: SymbolicValue, visit: (atom: Atom) => void): void => {
   switch (test.kind) {
     case "Primitive":
       return;

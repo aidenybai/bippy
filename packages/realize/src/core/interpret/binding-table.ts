@@ -8,10 +8,7 @@ import { getBindingPlace } from "../values/get-binding-place";
 import { createBindingValue } from "../values/symbolic-values";
 
 export interface BindingOptions extends Partial<
-  Pick<
-    Binding,
-    "hookKind" | "propName" | "initial" | "inputPlaces" | "isDerived" | "domain" | "alias"
-  >
+  Pick<Binding, "hookKind" | "propName" | "initial" | "inputPlaces" | "isDerived" | "domain">
 > {
   identityKey?: string;
   scope?: string;
@@ -56,7 +53,6 @@ export class BindingTable {
       initial: options.initial ?? null,
       inputPlaces: options.inputPlaces ?? [],
       isDerived: options.isDerived ?? false,
-      alias: options.alias ?? null,
     };
     this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);

@@ -1,25 +1,6 @@
-import type {
-  AbstractValue,
-  BindingValue,
-  CollectionContents,
-  CollectionValue,
-  PrimitiveValue,
-  SymbolicValue,
-} from "../types";
+import type { CollectionValue, PrimitiveValue, SymbolicValue } from "../types";
 
 type LiteralCollection = Set<PrimitiveValue> | Map<PrimitiveValue, PrimitiveValue>;
-
-export interface CollectionOwner {
-  source: BindingValue;
-  value: AbstractValue;
-}
-
-export interface CollectionReader {
-  read: (source: BindingValue) => AbstractValue[] | null | undefined;
-  decide: (guards: SymbolicValue[], owner: CollectionOwner | null) => boolean | null;
-}
-
-const LITERAL_READER: CollectionReader = { read: () => null, decide: () => null };
 
 const COLLECTION_READS = new Set(["has", "get"]);
 
@@ -56,18 +37,7 @@ const getLiteralElements = (source: SymbolicValue | null): SymbolicValue[] | nul
 
 export const isCollectionRead = (methodName: string): boolean => COLLECTION_READS.has(methodName);
 
-const copyCollection = (collection: LiteralCollection): LiteralCollection =>
-  collection instanceof Set ? new Set(collection) : new Map(collection);
-
-const fromContents = (contents: CollectionContents): LiteralCollection =>
-  contents.collection === "Set"
-    ? new Set(contents.entries.map(([key]) => key))
-    : new Map(contents.entries);
-
-const isContentsOf = (
-  value: AbstractValue,
-  kind: CollectionValue["collection"],
-): value is CollectionContents => value.kind === "Collection" && value.collection === kind;
+export const isCollectionWrite = (methodName: string): boolean => COLLECTION_WRITES.has(methodName);
 
 const getLiteralSource = (value: CollectionValue): LiteralCollection | null => {
   const elements = getLiteralElements(value.source);
@@ -79,70 +49,33 @@ const getLiteralSource = (value: CollectionValue): LiteralCollection | null => {
   const entries: Array<[PrimitiveValue, PrimitiveValue]> = [];
   for (const element of elements) {
     const pair = getPrimitives(getLiteralElements(element) ?? []);
-    const [key, entryValue] = pair ?? [];
     if (!pair || pair.length !== 2) return null;
-    entries.push([key, entryValue]);
+    entries.push([pair[0], pair[1]]);
   }
   return new Map(entries);
 };
 
-interface CollectionCase {
-  collection: LiteralCollection;
-  owner: CollectionOwner | null;
-}
-
-const getSourceCases = (
-  value: CollectionValue,
-  reader: CollectionReader,
-): CollectionCase[] | null => {
-  const { source } = value;
-  if (source?.kind === "Binding") {
-    const cases = reader.read(source);
-    if (!cases || cases.length === 0) return null;
-    const contents = cases.filter((candidate) => isContentsOf(candidate, value.collection));
-    return contents.length === cases.length
-      ? contents.map((ownerValue) => ({
-          collection: fromContents(ownerValue),
-          owner: { source, value: ownerValue },
-        }))
-      : null;
-  }
-  if (source?.kind === "Collection")
-    return source.collection === value.collection
-      ? (getCases(source, reader)?.map(({ collection, owner }) => ({
-          collection: copyCollection(collection),
-          owner,
-        })) ?? null)
-      : null;
-  const literal = getLiteralSource(value);
-  return literal && [{ collection: literal, owner: null }];
-};
-
 const applyWrite = (
-  { collection, owner }: CollectionCase,
+  collection: LiteralCollection,
   write: CollectionValue["writes"][number],
-  reader: CollectionReader,
 ): boolean => {
   const argumentValues = getPrimitives(write.argumentValues);
   const method: unknown = Reflect.get(collection, write.method);
-  const isApplied = write.guards.length === 0 ? true : reader.decide(write.guards, owner);
-  if (!argumentValues || typeof method !== "function" || isApplied === null) return false;
-  if (isApplied) Reflect.apply(method, collection, argumentValues);
+  if (write.guards.length > 0 || !argumentValues || typeof method !== "function") return false;
+  Reflect.apply(method, collection, argumentValues);
   return true;
 };
 
-const getCases = (value: CollectionValue, reader: CollectionReader): CollectionCase[] | null => {
-  const cases = getSourceCases(value, reader);
-  for (const write of value.writes)
-    if (!cases?.every((current) => applyWrite(current, write, reader))) return null;
-  return cases;
-};
-
-export const isCollectionWrite = (methodName: string): boolean => COLLECTION_WRITES.has(methodName);
-
-export const getLiteralCollection = (value: CollectionValue): LiteralCollection | null => {
-  const cases = getCases(value, LITERAL_READER);
-  return cases?.length === 1 ? cases[0].collection : null;
+const getLiteralCollection = (value: CollectionValue): LiteralCollection | null => {
+  const source = value.source;
+  const collection =
+    source?.kind === "Collection"
+      ? source.collection === value.collection
+        ? getLiteralCollection(source)
+        : null
+      : getLiteralSource(value);
+  if (!collection) return null;
+  return value.writes.every((write) => applyWrite(collection, write)) ? collection : null;
 };
 
 export const applyCollectionMethod = (

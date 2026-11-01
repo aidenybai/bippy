@@ -20,9 +20,9 @@ import type {
   SymbolicValue,
 } from "../types";
 
-export interface ComponentIdentity extends Pick<
+interface ComponentIdentity extends Pick<
   ComponentAnalysis,
-  "name" | "exportName" | "runtimeName" | "file" | "declaration"
+  "name" | "exportName" | "file" | "declaration"
 > {}
 
 export interface FileContext {
@@ -32,7 +32,6 @@ export interface FileContext {
   projectLoaders: ProjectLoaders;
   modelsByStore: Map<string, StoreModel>;
   exportNames: Map<string, string>;
-  displayNames: Map<string, string | null>;
 }
 
 const addComparedSamples = (render: SymbolicValue): void => {
@@ -57,7 +56,7 @@ const getComponentIdentity = (
   reactFunction: CompiledFunction,
   fileContext: FileContext,
 ): ComponentIdentity => {
-  const { sourceFile, exportNames, displayNames } = fileContext;
+  const { sourceFile, exportNames } = fileContext;
   const { bindingName } = reactFunction;
   const declarationName =
     IDENTIFIER_PATTERN.test(bindingName) && bindingName !== "default"
@@ -66,9 +65,6 @@ const getComponentIdentity = (
   return {
     name: reactFunction.name,
     exportName: exportNames.get(declarationName) ?? null,
-    runtimeName: displayNames.has(reactFunction.name)
-      ? (displayNames.get(reactFunction.name) ?? null)
-      : reactFunction.name,
     file: sourceFile.fileName,
     declaration: createDeclarationKey(sourceFile.path, declarationName),
   };
@@ -91,7 +87,6 @@ export const createEmptyAnalysis = (
   readContextKeys: [],
   placeDomains: new PlaceMap(),
   render,
-  localRenders: [],
   handlers: [],
   renders: [],
   claims: [],
@@ -185,7 +180,6 @@ export const analyzeComponent = (
     readContextKeys: [...interpreter.externalSources.readContextKeys],
     placeDomains,
     render,
-    localRenders: interpreter.localRenders,
     handlers,
     renders: [...interpreter.renderedComponents],
     claims: interpreter.claimRecorder.claims,

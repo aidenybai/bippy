@@ -133,7 +133,7 @@ const findPartsOf = (rootName: string, file: string, query: ParentQuery): Wrappe
     .flatMap((candidate) => findExportInFile(candidate, "part", file, query));
 };
 
-export const findSiblingParts = (query: ParentQuery): Wrapper[] =>
+const findSiblingParts = (query: ParentQuery): Wrapper[] =>
   findPartsOf(getCompoundRootNames(query)[0] ?? query.name, query.file, query);
 
 export const findRootParts = (root: Wrapper, query: ParentQuery): Wrapper[] =>

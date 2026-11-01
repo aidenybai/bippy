@@ -2,7 +2,6 @@ import type { InstructionId, SourceLocation } from "../../react-compiler/HIR/HIR
 import type { Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createUnknown, foldBinary } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
-import { getValueKey } from "../values/get-value-key";
 import { negate } from "../values/negate";
 import type { WalkState } from "./walk-state";
 
@@ -150,8 +149,7 @@ export class PatternMatcher {
       testKind: "truthy",
       consequent: this.#nest(arm, testIndex + 1, rest, subject, withGuards(site, [test])),
       alternate: rest,
-      branch: this.#interpreter.createBranch(site.instructionId, site.loc, "none"),
-      guardKeys: site.walkState.guards.map(getValueKey),
+      branch: this.#interpreter.createBranchSite(site.loc),
     };
   }
 

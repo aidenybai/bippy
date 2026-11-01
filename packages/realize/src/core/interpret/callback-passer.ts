@@ -3,7 +3,6 @@ import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks, isMemoCache } from "../values/symbolic-values";
-import { PlaceMap } from "../values/place-map";
 import type { FunctionValue, SymbolicValue, UnknownOrigin } from "../types";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
@@ -137,9 +136,7 @@ export class CallbackPasser {
     dependenciesPlace: Place | undefined,
     loc: SourceLocation,
   ): void {
-    const dependencyPlaces = new PlaceMap<true>();
     const dependencies = dependenciesPlace ? this.#interpreter.read(dependenciesPlace) : null;
-    if (dependencies) this.#interpreter.collectInputPlaces(dependencies, dependencyPlaces);
     const isEmptyList =
       dependencies?.kind === "ArrayExpression" &&
       dependencies.elements.length === 0 &&
@@ -153,7 +150,6 @@ export class CallbackPasser {
         : dependenciesPlace
           ? this.#interpreter.resolver.getSourceText(dependenciesPlace.loc)
           : null,
-      dependencyPlaces: dependenciesPlace ? dependencyPlaces.places() : null,
       loc,
     });
   }
@@ -175,7 +171,6 @@ export class CallbackPasser {
         callback,
         callbackArguments: parameters.map(() => createUnknown("callback-argument", loc)),
         dependencies: null,
-        dependencyPlaces: null,
         loc,
       });
     }

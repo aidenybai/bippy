@@ -23,7 +23,7 @@ const PURE_FUNCTIONS = new Map<string, PureFunction>([
 
 export const isPureFunction = (name: string): boolean => PURE_FUNCTIONS.has(name);
 
-export const applyPureFunction = (name: string, values: PrimitiveValue[]): PrimitiveValue | null =>
+const applyPureFunction = (name: string, values: PrimitiveValue[]): PrimitiveValue | null =>
   PURE_FUNCTIONS.get(name)?.(...values) ?? null;
 
 const MAX_PURE_CALLS = 32;

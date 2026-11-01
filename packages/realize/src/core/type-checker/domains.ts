@@ -4,7 +4,7 @@ import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue } from ".
 import { formatAbstractValue } from "../values/format";
 import { canTypeEqualLiteral } from "./can-type-equal-literal";
 import { getUnionMembers } from "./get-union-members";
-import { getPropertiesOfType, getTypeText, isArrayType, isTupleType } from "./checker-queries";
+import { getTypeText } from "./checker-queries";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 
@@ -26,12 +26,6 @@ export const getAbstractValue = (checker: Checker, type: Type): AbstractValue =>
   return { kind: "Type", text: getTypeText(checker, type), primitive: getPrimitiveTypeName(type) };
 };
 
-const hasOwnLength = (checker: Checker, type: Type): boolean =>
-  Boolean(type.flags & TypeFlags.Object) &&
-  !isArrayType(checker, type) &&
-  !isTupleType(checker, type) &&
-  getPropertiesOfType(checker, type).some((property) => property.name === "length");
-
 export const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
   if (!type || type.isErrorType()) return { kind: "Unknown", reason: "unresolved" };
   if (type.flags & TypeFlags.Any) return { kind: "Unknown", reason: "any" };
@@ -50,9 +44,7 @@ export const getDomainOfType = (checker: Checker, type: Type | undefined): Domai
     return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
   }
   const typeText = getTypeText(checker, type);
-  return hasOwnLength(checker, type)
-    ? { kind: "Opaque", typeText, hasOwnLength: true }
-    : { kind: "Opaque", typeText };
+  return { kind: "Opaque", typeText };
 };
 
 export const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
@@ -70,8 +62,6 @@ export const getDomainWithUndefined = (checker: Checker, type: Type | undefined)
   return domain;
 };
 
-export type Membership = "in" | "out" | "maybe";
-
 export const describeCases = (cases: AbstractValue[]): string =>
   cases.map(formatAbstractValue).join(" | ");
 
@@ -82,32 +72,11 @@ const includesLiteral = (cases: AbstractValue[], value: PrimitiveValue): boolean
       : canTypeEqualLiteral(candidate, value, "==="),
   );
 
-export const classify = (value: AbstractValue, cases: AbstractValue[]): Membership => {
-  if (value.kind === "Literal") return includesLiteral(cases, value.value) ? "in" : "out";
-  if (value.kind === "Collection") {
-    const key = formatAbstractValue(value);
-    if (cases.some((candidate) => formatAbstractValue(candidate) === key)) return "in";
-    return cases.some((candidate) => candidate.kind === "Type" && candidate.primitive === null)
-      ? "maybe"
-      : "out";
-  }
-  if (cases.some((candidate) => candidate.kind === "Type" && candidate.text === value.text))
-    return "in";
-  const mayEqual = cases.some(
-    (candidate) =>
-      candidate.kind === "Literal" && canTypeEqualLiteral(value, candidate.value, "==="),
-  );
-  return mayEqual ? "maybe" : "out";
-};
-
-const NULLISH_CASES: AbstractValue[] = [
-  { kind: "Literal", value: null },
-  { kind: "Literal", value: undefined },
-];
-
 export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [
   ...cases,
-  ...NULLISH_CASES.filter((nullish) => classify(nullish, cases) !== "in"),
+  ...[null, undefined]
+    .filter((value) => !includesLiteral(cases, value))
+    .map((value): AbstractValue => ({ kind: "Literal", value })),
 ];
 
 const getCasePrimitive = (value: AbstractValue): PrimitiveTypeName | null => {

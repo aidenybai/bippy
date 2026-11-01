@@ -7,6 +7,8 @@ const MAX_VARIABLES = 64;
 
 const MAX_SUCCESSORS = 400_000;
 
+const MAX_WRITE_COMBINATIONS = 20_000;
+
 const MAX_TRANSITION_STEPS = 3;
 
 const MAX_TRANSITION_SUCCESSORS = 50_000;
@@ -93,7 +95,7 @@ export const exploreModel = (
     const options = action.writes.map(({ next }, writeIndex) =>
       evaluateNextValue(next, state[writeIndexes[writeIndex]], valueOf),
     );
-    forEachProduct(
+    const isExhaustive = forEachProduct(
       options,
       (written) => {
         const next = [...state];
@@ -102,8 +104,9 @@ export const exploreModel = (
         });
         visit(next);
       },
-      MAX_STATES,
+      MAX_WRITE_COMBINATIONS,
     );
+    if (!isExhaustive) isTruncated = true;
   };
 
   const enqueue = (state: string[], parent: string | null, action: string | null): string => {
