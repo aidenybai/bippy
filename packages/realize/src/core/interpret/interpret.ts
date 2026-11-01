@@ -487,7 +487,6 @@ export class Interpreter {
   readonly effectCalls: EffectCall[] = [];
   refEventDispatcher: ((refId: number, methodName: string) => SymbolicValue[]) | null = null;
   readonly #dispatchingRefEvents = new Set<string>();
-  readonly decidedBranchOutcomes = new Map<string, boolean[]>();
   readonly #renderPhaseEffects = new EffectCollector((kind, message, loc) =>
     this.warn(kind, message, loc),
   );

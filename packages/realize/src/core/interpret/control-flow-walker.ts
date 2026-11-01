@@ -17,10 +17,9 @@ import {
   eachTerminalSuccessor,
 } from "../../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
-import type { Binding, Branch, SymbolicValue, TestKind } from "../types";
+import type { Binding, SymbolicValue, TestKind } from "../types";
 import {
   createConditional,
-  getBranchKey,
   getGuard,
   getLoopExit,
   getLoopHeaders,
@@ -294,7 +293,6 @@ export class ControlFlowWalker {
     const walkAlternate = () =>
       this.#walkArm(alternate, from, armStops, walkState, negate(consequentGuard));
     if (branchTest.knownOutcome !== null) {
-      this.#recordDecidedBranch(branch, branchTest.knownOutcome);
       const takenArm = branchTest.knownOutcome !== isSwapped ? consequent : alternate;
       return this.#continueAfter(
         this.#walkArm(takenArm, from, armStops, walkState, null),
@@ -335,13 +333,6 @@ export class ControlFlowWalker {
       );
     });
     return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
-  }
-
-  #recordDecidedBranch(branch: Branch, outcome: boolean): void {
-    const branchKey = getBranchKey(branch);
-    const outcomes = this.#interpreter.decidedBranchOutcomes.get(branchKey) ?? [];
-    if (!outcomes.includes(outcome))
-      this.#interpreter.decidedBranchOutcomes.set(branchKey, [...outcomes, outcome]);
   }
 
   #walkArm(

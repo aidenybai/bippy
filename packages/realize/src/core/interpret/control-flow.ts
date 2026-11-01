@@ -12,8 +12,6 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
 import { getValueKey } from "../values/get-value-key";
-import { getLocationKey } from "../shared/get-location-key";
-import { memoizeByIdentity } from "../shared/memoize-by-identity";
 
 interface ReturnOutcome {
   kind: "Return";
@@ -159,11 +157,6 @@ export const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
     : outcome.kind === "Fallthrough" && outcome.to === join;
 
 export const NO_STOPS: ReadonlySet<BlockId> = new Set();
-
-export const getBranchKey = memoizeByIdentity(
-  (branch: Branch): string =>
-    `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}${branch.caseIndex === undefined ? "" : `#${branch.caseIndex}`}${branch.rowScope === undefined ? "" : `@${branch.rowScope}`}`,
-);
 
 export const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split);
