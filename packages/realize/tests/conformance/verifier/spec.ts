@@ -57,8 +57,11 @@ interface FixtureContext {
   initialCapture: Capture;
 }
 
-const getScreenLabel = (screen: Screen): string =>
+const getConditionLabel = (screen: Screen): string =>
   screen.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+
+const isLabelled = (screen: Screen, label: string): boolean =>
+  screen.label === label || getConditionLabel(screen) === label;
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
@@ -97,10 +100,10 @@ const findClickAction = async (
 
 const expectShowingScreen = (session: Session, capture: Capture, label: string): void => {
   const { analysis, model } = session.component;
-  const labelledScreens = model.screens.filter((screen) => getScreenLabel(screen) === label);
+  const labelledScreens = model.screens.filter((screen) => isLabelled(screen, label));
   expect(
     labelledScreens.length,
-    `${analysis.name} has no screen labelled "${label}". Its screens are:\n${model.screens.map(getScreenLabel).join("\n")}`,
+    `${analysis.name} has no screen labelled "${label}". Its screens are:\n${model.screens.map((screen) => screen.label).join("\n")}`,
   ).toBeGreaterThan(0);
   const coverage = createCoverage(analysis, model, session.observations);
   const observed = observe(coverage, capture);
