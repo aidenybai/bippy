@@ -443,22 +443,40 @@ const replayBranches = (
   if (value.kind !== "Conditional") return paths;
   const branchKey = getBranchKey(value.branch);
   if (!context.regionBranches.branchKeys.has(branchKey)) return paths;
-  const outcomeBranches = getOutcomeBranches(branchKey);
-  return [true, false].flatMap((outcome) => {
-    const branch = outcome ? outcomeBranches[0] : outcomeBranches[1];
-    if (!branches.has(branch)) return [];
-    const assumed = paths.flatMap(({ constraints, visited }): ReplayedPath[] => {
-      const next = assumeReplayedOutcome(value, outcome, constraints, context);
-      if (!next) return [];
-      return [
-        {
-          constraints: next,
-          visited: visited.has(branch) ? visited : new Set(visited).add(branch),
-        },
-      ];
-    });
-    return replayBranches(outcome ? value.consequent : value.alternate, branches, assumed, context);
-  });
+  const [trueBranch, falseBranch] = getOutcomeBranches(branchKey);
+  const trueReplayed = branches.has(trueBranch)
+    ? replayOutcome(value, true, trueBranch, branches, paths, context)
+    : [];
+  const falseReplayed = branches.has(falseBranch)
+    ? replayOutcome(value, false, falseBranch, branches, paths, context)
+    : [];
+  if (falseReplayed.length === 0) return trueReplayed;
+  return trueReplayed.length === 0 ? falseReplayed : [...trueReplayed, ...falseReplayed];
+};
+
+const replayOutcome = (
+  conditional: ConditionalValue,
+  outcome: boolean,
+  branch: string,
+  branches: ReadonlySet<string>,
+  paths: ReplayedPath[],
+  context: TransitionContext,
+): ReplayedPath[] => {
+  const assumed: ReplayedPath[] = [];
+  for (const { constraints, visited } of paths) {
+    const next = assumeReplayedOutcome(conditional, outcome, constraints, context);
+    if (next)
+      assumed.push({
+        constraints: next,
+        visited: visited.has(branch) ? visited : new Set(visited).add(branch),
+      });
+  }
+  return replayBranches(
+    outcome ? conditional.consequent : conditional.alternate,
+    branches,
+    assumed,
+    context,
+  );
 };
 
 const getCandidateIndices = (afterHandler: Constraints, context: TransitionContext): number[] => {
@@ -467,14 +485,22 @@ const getCandidateIndices = (afterHandler: Constraints, context: TransitionConte
     const outcome = test && evaluateCondition(test, afterHandler);
     if (outcome !== null) decidedOutcomes.set(branchKey, outcome);
   }
-  return context.stateBranches.flatMap((target, index) =>
-    [...target.outcomes].some(([branchKey, outcome]) => {
-      const decidedOutcome = decidedOutcomes.get(branchKey);
-      return outcome !== null && decidedOutcome !== undefined && decidedOutcome !== outcome;
-    })
-      ? []
-      : [index],
-  );
+  const candidates: number[] = [];
+  context.stateBranches.forEach((target, index) => {
+    if (!contradictsDecidedOutcomes(target, decidedOutcomes)) candidates.push(index);
+  });
+  return candidates;
+};
+
+const contradictsDecidedOutcomes = (
+  target: StateBranches,
+  decidedOutcomes: Map<string, boolean>,
+): boolean => {
+  for (const [branchKey, outcome] of target.outcomes) {
+    const decidedOutcome = decidedOutcomes.get(branchKey);
+    if (outcome !== null && decidedOutcome !== undefined && decidedOutcome !== outcome) return true;
+  }
+  return false;
 };
 
 const isReplayedTarget = (
