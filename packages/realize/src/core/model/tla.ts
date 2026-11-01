@@ -1,3 +1,4 @@
+import { NO_VIEW } from "./views";
 import type { Action, NextValue, ComponentModel, Predicate, Variable } from "./types";
 
 export interface InvariantDefinition {
@@ -75,14 +76,14 @@ const formatInitial = (variable: Variable): string =>
     : `${variable.name} \\in ${formatSet(variable.initial)}`;
 
 const formatView = (model: ComponentModel): string[] => {
-  if (model.views.length === 0) return ['view == "nothing"'];
+  if (model.views.length === 0) return [`view == ${quote(NO_VIEW)}`];
   const [first, ...rest] = model.views;
   return [
     `view == CASE ${formatPredicate(first.predicate)} -> ${quote(first.label)}`,
     ...rest.map(
       (view) => `          [] ${formatPredicate(view.predicate)} -> ${quote(view.label)}`,
     ),
-    `          [] OTHER -> "nothing"`,
+    `          [] OTHER -> ${quote(NO_VIEW)}`,
   ];
 };
 

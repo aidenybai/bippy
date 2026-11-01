@@ -1,4 +1,5 @@
 import { evaluateNextValue, evaluatePredicate } from "./predicates";
+import { NO_VIEW } from "./views";
 import type {
   Action,
   Predicate,
@@ -20,8 +21,6 @@ const MAX_WRITE_COMBINATIONS = 20_000;
 const MAX_TRANSITION_STEPS = 3;
 
 const MAX_TRANSITION_SUCCESSORS = 50_000;
-
-const NO_VIEW = "nothing";
 
 interface Visit {
   state: string[];
@@ -85,12 +84,7 @@ export const exploreModel = (
       return index === undefined ? undefined : state[index];
     };
 
-  const getView = (state: string[]): string => {
-    const valueOf = valueGetter(state);
-    return (
-      views.find((view) => evaluatePredicate(view.predicate, valueOf) === true)?.label ?? NO_VIEW
-    );
-  };
+  const getView = (state: string[]): string => getViewLabel(views, valueGetter(state));
 
   const forEachSuccessor = (
     state: string[],
@@ -255,6 +249,8 @@ export const exploreModel = (
   };
 };
 
-export const getViewLabel = (views: View[], state: Record<string, string>): string =>
-  views.find((view) => evaluatePredicate(view.predicate, (variable) => state[variable]) === true)
-    ?.label ?? NO_VIEW;
+export const getViewLabel = (
+  views: View[],
+  valueOf: (variable: string) => string | undefined,
+): string =>
+  views.find((view) => evaluatePredicate(view.predicate, valueOf) === true)?.label ?? NO_VIEW;

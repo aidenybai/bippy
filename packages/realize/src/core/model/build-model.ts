@@ -42,13 +42,13 @@ const getAssertionTests = (assertion: Assertion): SymbolicValue[] =>
           : [],
       );
 
-const readsOnlyState = ({ guards, tests }: ScopedAssertion): boolean => {
-  let isStateOnly = true;
-  for (const value of [...guards, ...tests])
+const readsOnlyState = (scoped: ScopedAssertion): boolean => {
+  const kinds = new Set<string>();
+  for (const value of [...scoped.guards, ...scoped.tests])
     forEachSymbolicValue(value, (node) => {
-      if (node.kind === "Binding" && !STATE_KINDS.has(node.binding.kind)) isStateOnly = false;
+      if (node.kind === "Binding") kinds.add(node.binding.kind);
     });
-  return isStateOnly;
+  return [...kinds].every((kind) => STATE_KINDS.has(kind));
 };
 
 const collectAssertions = (analysis: ComponentAnalysis): ScopedAssertion[] =>

@@ -6,7 +6,6 @@ import { ConfigError } from "../core/project/config-error";
 import { serializeProjectAnalysis } from "../core/project/serialize";
 import { createTracer, NO_TRACER } from "../core/project/tracer";
 import { checkInvariant, type InvariantResult } from "../core/model/check-invariant";
-import { getViewLabel } from "../core/model/explore";
 import { formatTla } from "../core/model/tla";
 import type { InvariantDefinition } from "../core/model/tla";
 import type { TraceStep } from "../core/model/types";
@@ -87,12 +86,7 @@ const checkInvariants = async (
   const lines: string[] = [];
   for (const component of components)
     for (const invariant of invariants) {
-      const result = await checkInvariant(
-        component.analysis.name,
-        component.model,
-        invariant,
-        (state) => getViewLabel(component.model.views, state),
-      );
+      const result = await checkInvariant(component.analysis.name, component.model, invariant);
       lines.push(formatInvariantResult(component, result));
     }
   return lines.join("\n");

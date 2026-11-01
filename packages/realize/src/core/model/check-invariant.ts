@@ -1,4 +1,5 @@
 import { check, formatValue, type TraceStep as TlaTraceStep } from "tla-ts";
+import { getViewLabel } from "./explore";
 import { formatTla, type InvariantDefinition } from "./tla";
 import type { ComponentModel, TraceStep } from "./types";
 
@@ -10,11 +11,7 @@ export type InvariantResult =
 const unquote = (text: string): string =>
   text.startsWith('"') && text.endsWith('"') ? text.slice(1, -1) : text;
 
-const toTraceStep = (
-  step: TlaTraceStep,
-  model: ComponentModel,
-  viewOf: (state: Record<string, string>) => string,
-): TraceStep => {
+const toTraceStep = (step: TlaTraceStep, model: ComponentModel): TraceStep => {
   const state = Object.fromEntries(
     model.variables.map((variable) => {
       const value = step.state[variable.name];
@@ -24,14 +21,13 @@ const toTraceStep = (
   const action = step.action
     ? (model.actions.find((candidate) => candidate.name === step.action)?.label ?? step.action)
     : null;
-  return { action, state, view: viewOf(state) };
+  return { action, state, view: getViewLabel(model.views, (variable) => state[variable]) };
 };
 
 export const checkInvariant = async (
   name: string,
   model: ComponentModel,
   invariant: InvariantDefinition,
-  viewOf: (state: Record<string, string>) => string,
 ): Promise<InvariantResult> => {
   const result = await check({
     source: formatTla(name, model, [invariant]),
@@ -42,7 +38,7 @@ export const checkInvariant = async (
     return {
       name: invariant.name,
       status: "violated",
-      trace: result.violation.trace.map((step) => toTraceStep(step, model, viewOf)),
+      trace: result.violation.trace.map((step) => toTraceStep(step, model)),
     };
   return {
     name: invariant.name,

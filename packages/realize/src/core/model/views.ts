@@ -9,6 +9,8 @@ import type { Branch, Predicate, View } from "./types";
 
 const MAX_VIEWS = 64;
 
+export const NO_VIEW = "nothing";
+
 interface RenderPath {
   predicate: Predicate;
   conditions: string[];
@@ -168,7 +170,7 @@ export const collectViews = (
       rootPart && render.kind !== "Conditional"
         ? [rootPart, ...renderPath.parts]
         : renderPath.parts;
-    const baseLabel = parts.join(" > ") || "nothing";
+    const baseLabel = parts.join(" > ") || NO_VIEW;
     let label = baseLabel;
     for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} (${suffix})`;
     usedLabels.add(label);
