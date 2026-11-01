@@ -9,7 +9,6 @@ import type {
   Place,
   SourceLocation,
 } from "../../react-compiler/HIR/HIR";
-import { hasLoop } from "./has-loop";
 import { addsCallResult } from "./adds-call-result";
 import {
   GeneratedSource,
@@ -58,7 +57,6 @@ import type {
   WarningKind,
 } from "../types";
 import { formatPlace, formatSymbolicValue } from "../values/format";
-import { flattenArrayChildren } from "./flatten-array-children";
 import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { EVENT_ARGUMENT } from "../handlers/handler-predicates";
@@ -72,7 +70,6 @@ import type { PureCall } from "./derived-calls";
 import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
 import { getLocationKey } from "../shared/get-location-key";
-import { isSameValueZero } from "./is-same-value-zero";
 import { getPropertyKeyForms } from "./get-property-key-forms";
 import { getDomainPrimitive } from "../type-checker/domains";
 import { isRefOnlyRead } from "./is-ref-only-read";
@@ -88,7 +85,6 @@ import { getLiteralRead } from "./literal-reads";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
 import { isNullish } from "../values/is-nullish";
-import { isNullishValue } from "./is-nullish-value";
 import { isPlacePrefix } from "../values/is-place-prefix";
 import { getTestExpression } from "../values/get-test-expression";
 import { coerceBooleanCall } from "./coerce-boolean-call";
@@ -137,6 +133,26 @@ import {
   getWrittenContextPlaces,
 } from "./get-written-context-places";
 import { getHookTraits } from "./hook-traits";
+import { memoizeByIdentity } from "../shared/memoize-by-identity";
+
+const LOOP_KINDS = new Set(["for", "for-of", "for-in", "while", "do-while"]);
+
+const hasLoop = memoizeByIdentity((hirFunction: HIRFunction): boolean =>
+  [...hirFunction.body.blocks.values()].some((block) => LOOP_KINDS.has(block.terminal.kind)),
+);
+
+const flattenArrayChildren = (children: SymbolicValue[]): SymbolicValue[] =>
+  children.flatMap((child) =>
+    child.kind === "ArrayExpression"
+      ? flattenArrayChildren([...child.elements, ...child.spreads])
+      : [child],
+  );
+
+const isNullishValue = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" && isNullish(value.value);
+
+const isSameValueZero = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
+  left === right || (Number.isNaN(left) && Number.isNaN(right));
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,

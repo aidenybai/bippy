@@ -7,17 +7,34 @@ import type {
   JsxExpressionValue,
   StateUpdate,
   SymbolicValue,
+  Binding,
+  BindingPlace,
 } from "../core/types";
 import { formatPlace, formatSymbolicValue } from "../core/values/format";
 import { getTestExpression } from "../core/values/get-test-expression";
 import { isRenderingNothing } from "../core/render/is-rendering-nothing";
-import { isRenderingNothingWhenFalse } from "../core/render/is-rendering-nothing-when-false";
-import { isUnchangedField } from "../core/values/is-unchanged-field";
 import { isEffectHandler } from "../core/handlers/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "../core/labels/source-text";
 import { getTriggerLabel } from "../core/labels/trigger-labels";
 import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
+import { getBindingPlace } from "../core/values/get-binding-place";
+import { getValuePlace } from "../core/values/get-value-place";
+import { getValueKey } from "../core/values/get-value-key";
+
+const isLogicalAnd = (conditional: ConditionalValue): boolean =>
+  getValueKey(conditional.alternate) === getValueKey(conditional.test);
+
+const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
+  isRenderingNothing(conditional.alternate) || isLogicalAnd(conditional);
+
+const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
+  left.bindingId === right.bindingId &&
+  left.path.length === right.path.length &&
+  left.path.every((segment, index) => right.path[index] === segment);
+
+const isUnchangedField = (value: SymbolicValue, binding: Binding, path: string[]): boolean =>
+  value.kind === "Binding" && isSamePlace(getValuePlace(value), getBindingPlace(binding, path));
 
 export const DEFAULT_RENDER_DEPTH = 12;
 

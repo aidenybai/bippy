@@ -10,7 +10,6 @@ import type {
   UnaryOperator,
   UnknownOrigin,
 } from "../types";
-import { isBooleanExpression } from "./is-boolean-expression";
 import { isNullish } from "./is-nullish";
 import { isObjectValue } from "./is-object-value";
 import { getKnownTruthiness } from "./get-known-truthiness";
@@ -18,6 +17,12 @@ import { negate } from "./negate";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import { forEachSymbolicValue } from "./for-each-symbolic-value";
 import { memoizeByIdentity } from "../shared/memoize-by-identity";
+
+const BOOLEAN_OPERATORS = new Set(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
+
+const isBooleanExpression = (value: SymbolicValue): boolean =>
+  (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
+  (value.kind === "UnaryExpression" && value.operator === "!");
 
 const MAX_OPTIONS_NESTING = 3;
 

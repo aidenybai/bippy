@@ -1,5 +1,11 @@
 import type { BindingPlace } from "../types";
-import { getPlaceKey } from "./get-place-key";
+
+const SEPARATOR = "\0";
+
+const getPlaceKey = (place: BindingPlace): string =>
+  place.path.length === 0
+    ? `${place.bindingId}`
+    : `${place.bindingId}${SEPARATOR}${place.path.join(SEPARATOR)}`;
 
 const formatPlaceKey = (place: BindingPlace): string => [place.bindingId, ...place.path].join(".");
 

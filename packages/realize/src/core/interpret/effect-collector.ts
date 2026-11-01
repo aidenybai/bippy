@@ -2,10 +2,12 @@ import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { Binding, Assertion, StateUpdate, SymbolicValue, WarningKind } from "../types";
 import { isStateBinding } from "../values/is-state-binding";
-import { isWholeBinding } from "../interpret/is-whole-binding";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { createBindingValue, createUnknown } from "../values/symbolic-values";
+
+const isWholeBinding = (value: SymbolicValue, binding: Binding): boolean =>
+  value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
 
 export interface CollectedEffects {
   returned?: SymbolicValue[];

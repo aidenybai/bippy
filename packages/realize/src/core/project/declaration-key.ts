@@ -1,4 +1,7 @@
-import type { DeclarationKeyParts } from "./declaration-key-parts";
+export interface DeclarationKeyParts {
+  path: string;
+  name: string;
+}
 
 const SEPARATOR = "#";
 
