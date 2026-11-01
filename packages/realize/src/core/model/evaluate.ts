@@ -29,8 +29,8 @@ interface Evaluator {
   valueOf: ValueOf;
 }
 
-const fromPredicate = ({ valueOf }: Evaluator, predicate: Predicate): Abstract[] => {
-  const result = evaluatePredicate(predicate, valueOf);
+const fromPredicate = (evaluator: Evaluator, predicate: Predicate): Abstract[] => {
+  const result = evaluatePredicate(predicate, evaluator.valueOf);
   return result === null ? BOOLEANS : [{ kind: "Exact", value: result }];
 };
 
@@ -258,18 +258,19 @@ interface Outcome {
 
 const isUnchangedBy = (variable: Variable, outcomes: Outcome[]): boolean =>
   outcomes.every(
-    ({ assignment, values }) => values.length === 1 && assignment.get(variable.name) === values[0],
+    (outcome) =>
+      outcome.values.length === 1 && outcome.assignment.get(variable.name) === outcome.values[0],
   );
 
 const getRelevantDependencies = (dependencies: Variable[], outcomes: Outcome[]): Variable[] =>
   dependencies.reduce<Variable[]>((relevant, dependency) => {
     const remaining = relevant.filter((variable) => variable !== dependency);
     const keysByRest = new Map<string, string>();
-    const isIrrelevant = outcomes.every(({ assignment, key }) => {
-      const restKey = remaining.map((variable) => assignment.get(variable.name)).join("\0");
+    const isIrrelevant = outcomes.every((outcome) => {
+      const restKey = remaining.map((variable) => outcome.assignment.get(variable.name)).join("\0");
       const existing = keysByRest.get(restKey);
-      keysByRest.set(restKey, key);
-      return existing === undefined || existing === key;
+      keysByRest.set(restKey, outcome.key);
+      return existing === undefined || existing === outcome.key;
     });
     return isIrrelevant ? remaining : relevant;
   }, dependencies);
@@ -297,13 +298,16 @@ export const compileNextValue = (
     string,
     { values: string[]; assignments: Map<string, Map<string, string>> }
   >();
-  for (const { assignment, values, key } of outcomes) {
+  for (const outcome of outcomes) {
     const projected = new Map(
-      relevant.map((dependency) => [dependency.name, assignment.get(dependency.name) ?? ""]),
+      relevant.map((dependency) => [
+        dependency.name,
+        outcome.assignment.get(dependency.name) ?? "",
+      ]),
     );
-    const group = groups.get(key) ?? { values, assignments: new Map() };
+    const group = groups.get(outcome.key) ?? { values: outcome.values, assignments: new Map() };
     group.assignments.set([...projected.values()].join("\0"), projected);
-    groups.set(key, group);
+    groups.set(outcome.key, group);
   }
   const ordered = [...groups.values()];
   const fallback = ordered.pop();

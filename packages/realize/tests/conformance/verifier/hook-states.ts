@@ -31,7 +31,9 @@ export const getStateBindings = (
     (binding) => isStateBinding(binding) && binding.kind !== "memo",
   );
   const isEveryQueueAState = observations.every(
-    ({ after }) => after.error !== null || after.stateValues.length === stateBindings.length,
+    (observation) =>
+      observation.after.error !== null ||
+      observation.after.stateValues.length === stateBindings.length,
   );
   return isEveryQueueAState ? stateBindings : null;
 };

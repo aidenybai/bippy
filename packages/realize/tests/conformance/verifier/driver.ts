@@ -149,9 +149,14 @@ class WrapperSearch {
       newestWrapper.name !== resolveNamedParent(failedMount.error, this.#project)
     )
       return false;
-    const { exportName, file } = newestWrapper.candidate;
     return this.#tryAddLayer(
-      proposeParents(this.#getQuery(exportName, file, failedMount)),
+      proposeParents(
+        this.#getQuery(
+          newestWrapper.candidate.exportName,
+          newestWrapper.candidate.file,
+          failedMount,
+        ),
+      ),
       failedMount.error,
       this.#layers.indexOf(newestLayer),
     );
@@ -288,9 +293,8 @@ const explorePropCombination = async (
   initialCapture: Capture,
   deadline: number,
 ): Promise<Observation[]> => {
-  const { props } = request;
   const observations: Observation[] = [
-    { props, path: [], action: null, before: null, after: initialCapture },
+    { props: request.props, path: [], action: null, before: null, after: initialCapture },
   ];
   if (initialCapture.error && initialCapture.shapes.length === 0) return observations;
   const seenCaptureKeys = new Set([getCaptureKey(initialCapture)]);
@@ -315,7 +319,7 @@ const explorePropCombination = async (
       replayed =
         isUnchangedBy(action, before, after) && !(await hasActionTimersInPage(page)) ? after : null;
       const path = [...currentPath, action.key];
-      observations.push({ props, path, action, before, after });
+      observations.push({ props: request.props, path, action, before, after });
       const captureKey = getCaptureKey(after);
       if (!seenCaptureKeys.has(captureKey)) {
         seenCaptureKeys.add(captureKey);
@@ -334,13 +338,12 @@ export const exploreComponent = async (
   budgetMs: number,
 ): Promise<Observation[]> => {
   const deadline = performance.now() + budgetMs;
-  const { exportName } = analysis;
-  if (!exportName) return [];
+  if (!analysis.exportName) return [];
   const propCombinations = getPropCombinations(analysis);
   const [firstProps = {}] = propCombinations;
   const resolved = await resolveWrappers(
     page,
-    { module, exportName, props: firstProps, scenario: null, wrappers: [] },
+    { module, exportName: analysis.exportName, props: firstProps, scenario: null, wrappers: [] },
     analysis,
     project,
   );
@@ -349,7 +352,7 @@ export const exploreComponent = async (
     if (observations.length > 0 && performance.now() >= deadline) break;
     const request: MountRequest = {
       module,
-      exportName,
+      exportName: analysis.exportName,
       props,
       scenario: null,
       wrappers: resolved.wrappers,

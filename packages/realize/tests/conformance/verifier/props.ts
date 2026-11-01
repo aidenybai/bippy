@@ -20,9 +20,9 @@ const getWholeProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
 export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> => ({
   ...getWholeProps(analysis),
   ...Object.fromEntries(
-    getPropSamples(analysis).map(({ name, samples }) => [
-      name,
-      samples[0] ?? { kind: "Undefined" },
+    getPropSamples(analysis).map((propSample) => [
+      propSample.name,
+      propSample.samples[0] ?? { kind: "Undefined" },
     ]),
   ),
 });
@@ -30,18 +30,21 @@ export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sam
 export const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
   const propSamples = getPropSamples(analysis);
   const defaultProps = getDefaultProps(analysis);
-  const combinationCount = propSamples.reduce((total, { samples }) => total * samples.length, 1);
+  const combinationCount = propSamples.reduce(
+    (total, propSample) => total * propSample.samples.length,
+    1,
+  );
   if (combinationCount <= MAX_PROP_COMBINATIONS) {
     return propSamples.reduce<Record<string, Sample>[]>(
-      (combinations, { name, samples }) =>
+      (combinations, propSample) =>
         combinations.flatMap((combination) =>
-          samples.map((sample) => ({ ...combination, [name]: sample })),
+          propSample.samples.map((sample) => ({ ...combination, [propSample.name]: sample })),
         ),
       [getWholeProps(analysis)],
     );
   }
-  const variations = propSamples.flatMap(({ name, samples }) =>
-    samples.slice(1).map((sample) => ({ ...defaultProps, [name]: sample })),
+  const variations = propSamples.flatMap((propSample) =>
+    propSample.samples.slice(1).map((sample) => ({ ...defaultProps, [propSample.name]: sample })),
   );
   return [defaultProps, ...variations].slice(0, MAX_PROP_COMBINATIONS);
 };

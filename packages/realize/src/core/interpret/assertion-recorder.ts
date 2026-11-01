@@ -97,15 +97,14 @@ export class AssertionRecorder {
     walkState: WalkState,
   ): SymbolicValue {
     const castValue = this.#interpreter.read(typeCast.value);
-    const { resolver } = this.#interpreter;
-    const sourceDomain = resolver.getDomain(typeCast.value.loc);
-    const declaredSourceDomain = resolver.getTypeDomain(typeCast.value.loc);
+    const sourceDomain = this.#interpreter.resolver.getDomain(typeCast.value.loc);
+    const declaredSourceDomain = this.#interpreter.resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
       if (hasNullishCase(declaredSourceDomain))
         this.record(createNonNullAssertion(castValue, typeCast.loc, getAssertionGuards(walkState)));
       return castValue;
     }
-    const targetDomain = resolver.getDomain(typeCast.loc);
+    const targetDomain = this.#interpreter.resolver.getDomain(typeCast.loc);
     const assertion = createCastAssertion(
       castValue,
       declaredSourceDomain,

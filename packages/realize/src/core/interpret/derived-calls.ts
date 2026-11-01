@@ -36,10 +36,9 @@ export const getLiteralArrayCall = (
 const getDomainLiterals = (value: SymbolicValue): PrimitiveValue[] | null => {
   if (value.kind === "Primitive") return [value.value];
   if (value.kind !== "Binding" || value.path.length > 0) return null;
-  const { domain } = value.binding;
-  if (domain.kind !== "Cases") return null;
-  return domain.cases.every((candidate) => candidate.kind === "Literal")
-    ? domain.cases.map((candidate) => candidate.value)
+  if (value.binding.domain.kind !== "Cases") return null;
+  return value.binding.domain.cases.every((candidate) => candidate.kind === "Literal")
+    ? value.binding.domain.cases.map((candidate) => candidate.value)
     : null;
 };
 

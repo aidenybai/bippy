@@ -28,12 +28,12 @@ export const createImportIndex = (
   for (const [path, imported] of importedNamesByPath) {
     const resolver = getResolver(path);
     if (!resolver) continue;
-    for (const { localName, loc } of imported.specifiers) {
-      const declarationKey = resolver.getDeclarationKey(loc);
+    for (const specifier of imported.specifiers) {
+      const declarationKey = resolver.getDeclarationKey(specifier.loc);
       if (declarationKey)
         importers.set(declarationKey, [
           ...(importers.get(declarationKey) ?? []),
-          { path, localName },
+          { path, localName: specifier.localName },
         ]);
     }
     for (const loc of imported.namespaceSources) {

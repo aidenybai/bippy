@@ -19,11 +19,12 @@ const formatAbstract = (value: Abstract): string => {
       if (value.value === "") return "empty";
       return String(value.value);
     case "Range": {
-      const { min, max, isMinIncluded, isMaxIncluded } = value;
-      if (min === -Infinity && max === Infinity) return "any number";
-      if (min === -Infinity) return `${isMaxIncluded ? "<=" : "<"}${formatBound(max)}`;
-      if (max === Infinity) return `${isMinIncluded ? ">=" : ">"}${formatBound(min)}`;
-      return `${isMinIncluded ? "[" : "("}${min}, ${max}${isMaxIncluded ? "]" : ")"}`;
+      if (value.min === -Infinity && value.max === Infinity) return "any number";
+      if (value.min === -Infinity)
+        return `${value.isMaxIncluded ? "<=" : "<"}${formatBound(value.max)}`;
+      if (value.max === Infinity)
+        return `${value.isMinIncluded ? ">=" : ">"}${formatBound(value.min)}`;
+      return `${value.isMinIncluded ? "[" : "("}${value.min}, ${value.max}${value.isMaxIncluded ? "]" : ")"}`;
     }
     case "Other":
       return value.type === "string" ? "other string" : "other";

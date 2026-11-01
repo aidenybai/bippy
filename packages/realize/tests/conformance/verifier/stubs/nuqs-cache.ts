@@ -10,13 +10,13 @@ interface CacheOptions {
 
 export const createSearchParamsCache = (
   parsers: Record<string, Parser>,
-  { urlKeys = {} }: CacheOptions = {},
+  options: CacheOptions = {},
 ) => {
   const load = (input: Record<string, SearchParamValue>): Record<string, unknown> =>
     Object.fromEntries(
       Object.entries(parsers).map(([key, parser]) => [
         key,
-        parser.parseServerSide(input[urlKeys[key] ?? key]),
+        parser.parseServerSide(input[options.urlKeys?.[key] ?? key]),
       ]),
     );
   let searchParams = load({});

@@ -36,10 +36,10 @@ const groupEdges = (
 };
 
 export const formatMermaid = (component: AnalyzedComponent, options: MermaidOptions): string => {
-  const { analysis, model } = component;
-  const { stateSpace } = model;
-  const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
-  const location = `${relative(options.rootDirectory, analysis.file)}${lineSuffix}`;
+  const stateSpace = component.model.stateSpace;
+  const lineSuffix =
+    component.analysis.loc === GeneratedSource ? "" : `:${component.analysis.loc.start.line}`;
+  const location = `${relative(options.rootDirectory, component.analysis.file)}${lineSuffix}`;
   const viewIds = new Map(
     stateSpace.reachableViews.map((label, index) => [label, `S${index + 1}`]),
   );
@@ -49,20 +49,21 @@ export const formatMermaid = (component: AnalyzedComponent, options: MermaidOpti
   );
   const initialLines = stateSpace.initialViews.map((label) => `[*] --> ${getId(label)}`);
   const edgeLines = [...groupEdges(stateSpace.edges).values()].map(
-    ({ from, to, labels }) => `${getId(from)} --> ${getId(to)}: ${escapeText(labels.join(", "))}`,
+    (group) =>
+      `${getId(group.from)} --> ${getId(group.to)}: ${escapeText(group.labels.join(", "))}`,
   );
-  const variableLines = model.variables.map(
+  const variableLines = component.model.variables.map(
     (variable) =>
       `%% ${variable.name} = ${variable.label} (${variable.source}): ${getValueLabels(variable.domain).join(" | ")}`,
   );
-  const findingLines = model.findings.map(
+  const findingLines = component.model.findings.map(
     (finding) =>
       `%% ⚠ ${finding.message}${finding.loc && finding.loc !== GeneratedSource ? ` (${formatLine(finding.loc)})` : ""}`,
   );
   const summary = `%% ${stateSpace.stateCount} states${stateSpace.isTruncated ? ", truncated" : ""}`;
   return [
     "---",
-    `title: ${analysis.name} ${location}`,
+    `title: ${component.analysis.name} ${location}`,
     "---",
     "stateDiagram-v2",
     indent("direction LR"),

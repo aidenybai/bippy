@@ -130,9 +130,8 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
   if (path.node.id) return path.node.id.name;
-  const { parent } = path;
-  return types.isVariableDeclarator(parent) && types.isIdentifier(parent.id)
-    ? parent.id.name
+  return types.isVariableDeclarator(path.parent) && types.isIdentifier(path.parent.id)
+    ? path.parent.id.name
     : null;
 };
 
@@ -141,13 +140,12 @@ const collectClassComponents = (ast: types.File): CompiledFunction[] => {
   traverse(ast, {
     Class(path) {
       const name = getClassName(path);
-      const { loc } = path.node;
-      if (!name || !loc || !isComponentBaseClass(path.node.superClass)) return;
+      if (!name || !path.node.loc || !isComponentBaseClass(path.node.superClass)) return;
       classComponents.push({
         name,
         bindingName: name,
         functionType: "Component",
-        loc,
+        loc: path.node.loc,
         hir: null,
         errors: [],
         isClass: true,
@@ -264,12 +262,18 @@ const createModuleFunctionLowerer =
     fileName: string,
     code: string,
     pluginOptions: ParsedPluginOptions,
-    { programPath, moduleFunctionPaths }: ProgramFunctions,
+    programFunctions: ProgramFunctions,
   ): ModuleFunctionLoader =>
   (functionName) => {
-    const functionPath = moduleFunctionPaths.get(functionName);
-    return functionPath && programPath
-      ? lowerModuleFunction(functionPath, programPath, pluginOptions, fileName, code)
+    const functionPath = programFunctions.moduleFunctionPaths.get(functionName);
+    return functionPath && programFunctions.programPath
+      ? lowerModuleFunction(
+          functionPath,
+          programFunctions.programPath,
+          pluginOptions,
+          fileName,
+          code,
+        )
       : null;
   };
 
@@ -297,11 +301,10 @@ class CompiledFunctionCollector {
   };
 
   readonly recordLowering: LoweringCapture = (hirFunction, hasErrors) => {
-    const { loc } = hirFunction;
-    if (typeof loc === "symbol") return false;
-    const compiled = this.#getCompiledFunction(loc);
+    if (typeof hirFunction.loc === "symbol") return false;
+    const compiled = this.#getCompiledFunction(hirFunction.loc);
     compiled.functionType = hirFunction.fnType;
-    this.#stoppedLocationKeys.add(getLocationKey(loc));
+    this.#stoppedLocationKeys.add(getLocationKey(hirFunction.loc));
     if (!hasErrors) {
       compiled.hir = hirFunction;
       return true;

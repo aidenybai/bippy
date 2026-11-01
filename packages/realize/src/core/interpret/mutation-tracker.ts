@@ -52,7 +52,7 @@ const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
   instruction.value.lvalue.place.identifier.id === place.identifier.id;
 
 const isDirectWrite = (instruction: Instruction, place: Place): boolean => {
-  const { value } = instruction;
+  const value = instruction.value;
   if (value.kind === "MethodCall") return value.receiver.identifier.id === place.identifier.id;
   return (
     (value.kind === "PropertyStore" || value.kind === "ComputedStore") &&
@@ -282,7 +282,7 @@ export class MutationTracker {
     storedProperty: string | null,
     guards: SymbolicValue[],
   ): void {
-    const { binding } = ownedValue;
+    const binding = ownedValue.binding;
     if (binding.kind === "context") {
       this.#interpreter.warn(
         "context-mutation",
@@ -326,7 +326,7 @@ export class MutationTracker {
       if (effect.kind === "ImmutableCapture")
         frozenSources.set(effect.into.identifier.id, effect.from);
     }
-    const { value } = instruction;
+    const value = instruction.value;
     if (value.kind === "ArrayExpression") {
       const [item] = value.elements;
       if (value.elements.length === 1 && item?.kind === "Spread")
@@ -387,22 +387,21 @@ export class MutationTracker {
     if (!handlerEffects) return;
     handlerEffects.addPossibleMutation(mutatedValue.binding);
     for (const binding of this.#interpreter.bindingTable.bindings) {
-      const { initial } = binding;
       const isInitializedFromMutated =
         isStateBinding(binding) &&
-        initial?.kind === "Binding" &&
-        initial.binding.id === mutatedValue.binding.id &&
-        initial.path.every((key, index) => mutatedValue.path[index] === key);
+        binding.initial?.kind === "Binding" &&
+        binding.initial.binding.id === mutatedValue.binding.id &&
+        binding.initial.path.every((key, index) => mutatedValue.path[index] === key);
       if (isInitializedFromMutated) handlerEffects.addMutation(binding, loc, guards);
     }
   }
 
   #isInitializedFrom(binding: Binding, mutatedGlobal: GlobalValue): boolean {
-    const { initial } = binding;
     return (
-      initial?.kind === "Global" &&
-      initial.module === mutatedGlobal.module &&
-      (mutatedGlobal.name === initial.name || mutatedGlobal.name.startsWith(`${initial.name}.`)) &&
+      binding.initial?.kind === "Global" &&
+      binding.initial.module === mutatedGlobal.module &&
+      (mutatedGlobal.name === binding.initial.name ||
+        mutatedGlobal.name.startsWith(`${binding.initial.name}.`)) &&
       this.#interpreter.bindingTable.isDeclaredIn(binding, this.#interpreter.resolver.fileName)
     );
   }
@@ -441,44 +440,44 @@ export class MutationTracker {
     instruction: Instruction,
     mutatedPlace: Place,
     literal: MutableLiteral,
-    {
-      isOnCreationPath,
-      writeGuards,
-    }: { isOnCreationPath: boolean; writeGuards: SymbolicValue[] | null },
+    options: { isOnCreationPath: boolean; writeGuards: SymbolicValue[] | null },
   ): SymbolicValue {
-    const { value, loc } = instruction;
+    const value = instruction.value;
     const methodName =
       value.kind === "MethodCall" && value.receiver.identifier.id === mutatedPlace.identifier.id
         ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
         : undefined;
     if (literal.kind === "Collection")
-      return writeGuards &&
+      return options.writeGuards &&
         value.kind === "MethodCall" &&
         methodName !== undefined &&
         isCollectionWrite(methodName)
-        ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
-        : createUnknown("mutation", loc);
+        ? this.#writeIntoCollection(literal, value, methodName, options.writeGuards)
+        : createUnknown("mutation", instruction.loc);
     if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")
-      return this.#pushIntoArray(literal, value, isOnCreationPath, loc);
+      return this.#pushIntoArray(literal, value, options.isOnCreationPath, instruction.loc);
     const isStoreIntoLiteral =
       literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
       value.object.identifier.id === mutatedPlace.identifier.id;
     const hasSetter =
       isStoreIntoLiteral &&
-      literal.properties.some(({ key }) => key === `${SETTER_KEY_PREFIX}${String(value.property)}`);
-    if (hasSetter) return this.#storeThroughSetter(literal, value, loc);
-    if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
-    if (value.kind !== "MethodCall") return createUnknown("mutation", loc);
-    const mutated = this.#interpreter.createDerivedValue([literal], "mutation", loc);
+      literal.properties.some(
+        (property) => property.key === `${SETTER_KEY_PREFIX}${String(value.property)}`,
+      );
+    if (hasSetter) return this.#storeThroughSetter(literal, value, instruction.loc);
+    if (isStoreIntoLiteral)
+      return this.#storeIntoObject(literal, value, options.isOnCreationPath, instruction.loc);
+    if (value.kind !== "MethodCall") return createUnknown("mutation", instruction.loc);
+    const mutated = this.#interpreter.createDerivedValue([literal], "mutation", instruction.loc);
     return literal.kind === "ObjectExpression" || literal.kind === "ArrayExpression"
       ? {
           kind: "Conditional",
-          test: createUnknown("mutation", loc),
+          test: createUnknown("mutation", instruction.loc),
           testKind: "truthy",
           consequent: mutated,
           alternate: literal,
-          branch: this.#interpreter.createBranchSite(loc),
+          branch: this.#interpreter.createBranchSite(instruction.loc),
         }
       : mutated;
   }

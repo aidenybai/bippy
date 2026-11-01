@@ -95,8 +95,11 @@ export const watchHookCallers = (dispatcherRefs: object[]): void => {
 };
 
 export const markDispatchersIdle = (): void => {
-  for (const { ref, key } of watchedDispatcherRefs) idleDispatchers.add(Reflect.get(ref, key));
+  for (const watched of watchedDispatcherRefs)
+    idleDispatchers.add(Reflect.get(watched.ref, watched.key));
 };
 
 export const isRendering = (): boolean =>
-  watchedDispatcherRefs.some(({ ref, key }) => !idleDispatchers.has(Reflect.get(ref, key)));
+  watchedDispatcherRefs.some(
+    (watched) => !idleDispatchers.has(Reflect.get(watched.ref, watched.key)),
+  );

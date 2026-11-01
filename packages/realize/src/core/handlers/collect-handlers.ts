@@ -122,9 +122,8 @@ const getSpreadHandlers = (
 
 const getDefinitePropKeys = (prop: JsxProp | JsxSpreadProp): string[] => {
   if (prop.kind === "JsxAttribute") return [prop.name];
-  const { value } = prop;
-  return value.kind === "ObjectExpression" && value.spreads.length === 0
-    ? value.properties.map((property) => property.key)
+  return prop.value.kind === "ObjectExpression" && prop.value.spreads.length === 0
+    ? prop.value.properties.map((property) => property.key)
     : [];
 };
 
@@ -396,18 +395,23 @@ class HandlerCollector {
 
   addCollectedHandler(
     trigger: HandlerTrigger,
-    { updates, delegates, pendingMutations, assertions }: CollectedEffects,
+    effects: CollectedEffects,
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
   ): string | null {
-    for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
-    if (updates.length === 0 && delegates.length === 0 && assertions.length === 0) return null;
+    for (const binding of effects.pendingMutations) this.pendingMutations.set(binding.id, binding);
+    if (
+      effects.updates.length === 0 &&
+      effects.delegates.length === 0 &&
+      effects.assertions.length === 0
+    )
+      return null;
     const handler: Handler = {
       id: `t${this.handlers.length + 1}`,
       trigger,
-      updates,
-      delegates,
-      assertions,
+      updates: effects.updates,
+      delegates: effects.delegates,
+      assertions: effects.assertions,
       guards,
       loc,
     };
@@ -1128,7 +1132,8 @@ class HandlerCollector {
     if (hirFunction === null || !loadsProperty(hirFunction, property)) return null;
     const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
     const isAlways = entry?.instructions.some(
-      ({ value }) => value.kind === "PropertyLoad" && value.property === property,
+      (instruction) =>
+        instruction.value.kind === "PropertyLoad" && instruction.value.property === property,
     );
     return isAlways ? "always" : "maybe";
   }
@@ -1181,10 +1186,11 @@ const loadsInHandlers = (
 ): boolean => {
   const functions = new Map<IdentifierId, HIRFunction>();
   for (const block of hirFunction.body.blocks.values())
-    for (const { lvalue, value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       if (value.kind === "FunctionExpression" || value.kind === "ObjectMethod") {
         if (loadsInHandlers(value.loweredFunc.func, names, property)) return true;
-        functions.set(lvalue.identifier.id, value.loweredFunc.func);
+        functions.set(instruction.lvalue.identifier.id, value.loweredFunc.func);
       }
       if (value.kind === "StoreLocal") {
         const stored = functions.get(value.value.identifier.id);
@@ -1201,7 +1207,7 @@ const loadsInHandlers = (
             : undefined;
       const sourceFunction =
         source?.kind === "Identifier" ? functions.get(source.identifier.id) : undefined;
-      if (sourceFunction) functions.set(lvalue.identifier.id, sourceFunction);
+      if (sourceFunction) functions.set(instruction.lvalue.identifier.id, sourceFunction);
       if (value.kind !== "JsxExpression") continue;
       const isLoaded = value.props.some((prop) => {
         if (prop.kind !== "JsxAttribute" || !names.has(prop.name)) return false;
@@ -1215,7 +1221,8 @@ const loadsInHandlers = (
 
 const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
   for (const block of hirFunction.body.blocks.values())
-    for (const { value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       if (value.kind === "PropertyLoad" && value.property === property) return true;
       const isClosure = value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
       if (isClosure && loadsProperty(value.loweredFunc.func, property)) return true;
@@ -1463,15 +1470,18 @@ const collectHandlersOnce = (
   );
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
-  const { bindings } = interpreter.bindingTable;
-  forgetPendingReads(collector.handlers, [...collector.pendingMutations.values()], bindings);
+  forgetPendingReads(
+    collector.handlers,
+    [...collector.pendingMutations.values()],
+    interpreter.bindingTable.bindings,
+  );
   revealPendingMutations(
     collector.handlers,
     [
       ...collector.pendingMutations.values(),
-      ...bindings.filter((binding) => binding.kind === "module"),
+      ...interpreter.bindingTable.bindings.filter((binding) => binding.kind === "module"),
     ].filter(isRendered),
-    bindings.filter((binding) => binding.kind === "hook"),
+    interpreter.bindingTable.bindings.filter((binding) => binding.kind === "hook"),
   );
   for (const handler of collector.handlers)
     handler.updates = handler.updates.filter((update) => isRendered(update.binding));

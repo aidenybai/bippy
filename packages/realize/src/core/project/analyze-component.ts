@@ -40,7 +40,7 @@ const addComparedSamples = (render: SymbolicValue): void => {
     const [comparedValue, literal] =
       value.left.kind === "Binding" ? [value.left, value.right] : [value.right, value.left];
     if (comparedValue.kind !== "Binding" || literal.kind !== "Primitive") return;
-    const { binding } = comparedValue;
+    const binding = comparedValue.binding;
     if (binding.kind !== "prop" || comparedValue.path.length > 0) return;
     if (typeof literal.value !== "string" && typeof literal.value !== "number") return;
     const hasSample = binding.samples.some(
@@ -56,17 +56,15 @@ const getComponentIdentity = (
   reactFunction: CompiledFunction,
   fileContext: FileContext,
 ): ComponentIdentity => {
-  const { sourceFile, exportNames } = fileContext;
-  const { bindingName } = reactFunction;
   const declarationName =
-    IDENTIFIER_PATTERN.test(bindingName) && bindingName !== "default"
-      ? bindingName
+    IDENTIFIER_PATTERN.test(reactFunction.bindingName) && reactFunction.bindingName !== "default"
+      ? reactFunction.bindingName
       : reactFunction.name;
   return {
     name: reactFunction.name,
-    exportName: exportNames.get(declarationName) ?? null,
-    file: sourceFile.fileName,
-    declaration: createDeclarationKey(sourceFile.path, declarationName),
+    exportName: fileContext.exportNames.get(declarationName) ?? null,
+    file: fileContext.sourceFile.fileName,
+    declaration: createDeclarationKey(fileContext.sourceFile.path, declarationName),
   };
 };
 
@@ -97,24 +95,28 @@ export const createEmptyAnalysis = (
 const createCompilerErrorAnalysis = (
   identity: ComponentIdentity,
   reactFunction: CompiledFunction,
-): ComponentAnalysis => {
-  const { loc } = reactFunction;
-  return {
-    ...createEmptyAnalysis(identity, loc, { kind: "Unknown", reason: "compiler-error", loc }),
-    bailouts: [{ reason: "compiler-error", message: reactFunction.errors.join("; "), loc }],
-  };
-};
+): ComponentAnalysis => ({
+  ...createEmptyAnalysis(identity, reactFunction.loc, {
+    kind: "Unknown",
+    reason: "compiler-error",
+    loc: reactFunction.loc,
+  }),
+  bailouts: [
+    { reason: "compiler-error", message: reactFunction.errors.join("; "), loc: reactFunction.loc },
+  ],
+});
 
 const createClassAnalysis = (
   identity: ComponentIdentity,
   reactFunction: CompiledFunction,
-): ComponentAnalysis => {
-  const { loc } = reactFunction;
-  return {
-    ...createEmptyAnalysis(identity, loc, { kind: "Unknown", reason: "class-component", loc }),
-    bailouts: [{ reason: "class-component", message: reactFunction.name, loc }],
-  };
-};
+): ComponentAnalysis => ({
+  ...createEmptyAnalysis(identity, reactFunction.loc, {
+    kind: "Unknown",
+    reason: "class-component",
+    loc: reactFunction.loc,
+  }),
+  bailouts: [{ reason: "class-component", message: reactFunction.name, loc: reactFunction.loc }],
+});
 
 const getReadBindingIds = (
   render: SymbolicValue,
@@ -150,9 +152,8 @@ export const analyzeComponent = (
   contextSetterFields: ContextSetterFields,
 ): ComponentAnalysis => {
   const identity = getComponentIdentity(reactFunction, fileContext);
-  const { hir } = reactFunction;
   if (reactFunction.isClass) return createClassAnalysis(identity, reactFunction);
-  if (hir === null) return createCompilerErrorAnalysis(identity, reactFunction);
+  if (reactFunction.hir === null) return createCompilerErrorAnalysis(identity, reactFunction);
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
@@ -162,33 +163,35 @@ export const analyzeComponent = (
     contextSetterFields,
     fileContext.modelsByStore,
   );
-  const render = interpreter.evaluateComponent(hir);
+  const render = interpreter.evaluateComponent(reactFunction.hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
-  const { bindings, placeDomains } = interpreter.bindingTable;
   const readIds = getReadBindingIds(
     render,
     handlers,
     interpreter.assertionRecorder.assertions,
-    bindings,
+    interpreter.bindingTable.bindings,
   );
   return {
     ...identity,
-    loc: hir.loc,
-    isAsync: hir.async,
+    loc: reactFunction.hir.loc,
+    isAsync: reactFunction.hir.async,
     isStrictNullChecks: fileContext.resolver.isStrictNullChecks,
-    bindings,
+    bindings: interpreter.bindingTable.bindings,
     wholePropsSample: interpreter.wholePropsSample,
     providedContexts: interpreter.providedContexts,
     contextSamples: interpreter.externalSources.contextSamples,
     untypedContextBindingIds: interpreter.externalSources.untypedContextBindingIds,
     readContextKeys: [...interpreter.externalSources.readContextKeys],
-    placeDomains,
+    placeDomains: interpreter.bindingTable.placeDomains,
     render,
     handlers,
     renders: [...interpreter.renderedComponents],
     assertions: interpreter.assertionRecorder.assertions,
-    bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings, readIds)],
+    bailouts: [
+      ...interpreter.diagnostics.bailouts,
+      ...getUntypedBailouts(interpreter.bindingTable.bindings, readIds),
+    ],
     warnings: interpreter.diagnostics.warnings,
   };
 };

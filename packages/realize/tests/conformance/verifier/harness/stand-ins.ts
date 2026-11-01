@@ -143,8 +143,8 @@ export const createMissingModulePlugin = (): Plugin => ({
 export const createPrebundledStubPlugin = (): OptimizerPlugin => ({
   name: "bippy-verify-prebundled-stubs",
   setup: (build) => {
-    build.onResolve({ filter: /^(?:server-only|next\/font\/local)$/ }, ({ path }) => {
-      const stubPath = PREBUNDLED_STUBS.get(path);
+    build.onResolve({ filter: /^(?:server-only|next\/font\/local)$/ }, (args) => {
+      const stubPath = PREBUNDLED_STUBS.get(args.path);
       return stubPath ? { path: stubPath } : undefined;
     });
   },
@@ -153,16 +153,16 @@ export const createPrebundledStubPlugin = (): OptimizerPlugin => ({
 export const createMissingDependencyPlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
   setup: (build) => {
-    build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
-      LAZY_IMPORT_KINDS.has(kind) &&
-      importer &&
-      !PATH_SPECIFIER_PATTERN.test(path) &&
-      !isRequirable(path, importer)
-        ? { path, namespace: MISSING_MODULE_NAMESPACE }
+    build.onResolve({ filter: /.*/ }, (args) =>
+      LAZY_IMPORT_KINDS.has(args.kind) &&
+      args.importer &&
+      !PATH_SPECIFIER_PATTERN.test(args.path) &&
+      !isRequirable(args.path, args.importer)
+        ? { path: args.path, namespace: MISSING_MODULE_NAMESPACE }
         : undefined,
     );
-    build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, ({ path }) => ({
-      contents: `throw new Error(${JSON.stringify(`Cannot find module '${path}'`)});`,
+    build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, (args) => ({
+      contents: `throw new Error(${JSON.stringify(`Cannot find module '${args.path}'`)});`,
       loader: "js",
     }));
   },
@@ -171,9 +171,9 @@ export const createMissingDependencyPlugin = (): OptimizerPlugin => ({
 export const createNodeBuiltinPlugin = (polyfilledModules: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
-    build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
-      isStandInPackage(path) || isNodeOnlyModule(path, importer, polyfilledModules)
-        ? { path, namespace: NODE_BUILTIN_NAMESPACE }
+    build.onResolve({ filter: /.*/ }, (args) =>
+      isStandInPackage(args.path) || isNodeOnlyModule(args.path, args.importer, polyfilledModules)
+        ? { path: args.path, namespace: NODE_BUILTIN_NAMESPACE }
         : undefined,
     );
     build.onLoad({ filter: /.*/, namespace: NODE_BUILTIN_NAMESPACE }, () => ({

@@ -69,8 +69,8 @@ const compileProjectFiles = (
   fileNames: string[],
   tracer: Tracer,
 ): FileContext[] => {
-  const { strict, strictNullChecks } = project.compilerOptions;
-  const isStrictNullChecks = strictNullChecks ?? strict ?? false;
+  const isStrictNullChecks =
+    project.compilerOptions.strictNullChecks ?? project.compilerOptions.strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const componentsByDeclaration = new Map<string, HIRFunction>();
@@ -182,7 +182,8 @@ const compileProjectFiles = (
   };
   const isImportedReadOnly = (declarationKey: string, value: SymbolicValue): boolean =>
     (getImportIndex().importers.get(declarationKey) ?? []).every(
-      ({ path, localName }) => importedNamesByPath.get(path)?.isReadOnly(localName, value) ?? false,
+      (importer) =>
+        importedNamesByPath.get(importer.path)?.isReadOnly(importer.localName, value) ?? false,
     );
   const isReadOnlyDeclaration = (declarationKey: string): boolean => {
     const cached = readOnlyByDeclaration.get(declarationKey);
@@ -230,18 +231,27 @@ const compileProjectFiles = (
     for (const name of compiled.comparedComponents)
       for (const key of new Set([name, exportNames.get(name) ?? name]))
         comparedDeclarations.add(createDeclarationKey(sourceFile.path, key));
-    for (const { functionType, hir, name } of compiled.functions)
-      if (functionType === "Component" && hir)
-        for (const key of new Set([name, exportNames.get(name) ?? name]))
-          componentsByDeclaration.set(createDeclarationKey(sourceFile.path, key), hir);
+    for (const compiledFunction of compiled.functions)
+      if (compiledFunction.functionType === "Component" && compiledFunction.hir)
+        for (const key of new Set([
+          compiledFunction.name,
+          exportNames.get(compiledFunction.name) ?? compiledFunction.name,
+        ]))
+          componentsByDeclaration.set(
+            createDeclarationKey(sourceFile.path, key),
+            compiledFunction.hir,
+          );
     importedNamesByPath.set(sourceFile.path, compiled.importedNames);
-    for (const { functionType, hir, name } of compiled.functions)
-      if (functionType === "Hook" && hir)
-        projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
-          hirFunction: hir,
-          resolver,
-          loadModuleFunction: compiled.loadModuleFunction,
-        });
+    for (const compiledFunction of compiled.functions)
+      if (compiledFunction.functionType === "Hook" && compiledFunction.hir)
+        projectHooksByDeclaration.set(
+          createDeclarationKey(sourceFile.path, compiledFunction.name),
+          {
+            hirFunction: compiledFunction.hir,
+            resolver,
+            loadModuleFunction: compiled.loadModuleFunction,
+          },
+        );
     return [
       {
         sourceFile,
@@ -316,8 +326,8 @@ export const interpretProject = (
       const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
         withContextFileNames(analysis, fileNamesByPath),
       );
-      const unparsedFiles = fileContexts.flatMap(({ compiled, sourceFile }) =>
-        compiled.parseError === null ? [] : [sourceFile.fileName],
+      const unparsedFiles = fileContexts.flatMap((fileContext) =>
+        fileContext.compiled.parseError === null ? [] : [fileContext.sourceFile.fileName],
       );
       return { analyses, fileCount: fileNames.length, unparsedFiles };
     },
@@ -325,14 +335,14 @@ export const interpretProject = (
   );
 
 export const reportProject = (
-  { analyses, fileCount, unparsedFiles }: InterpretedProject,
+  interpretedProject: InterpretedProject,
   fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
 ): ProjectAnalysis => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
   const sourceReader = createSourceReader();
-  const components = analyses.filter(isSelected).map((analysis) => ({
+  const components = interpretedProject.analyses.filter(isSelected).map((analysis) => ({
     analysis,
     model: tracer.span(
       "model",
@@ -341,7 +351,11 @@ export const reportProject = (
       { file: analysis.file },
     ),
   }));
-  return { components, fileCount, unparsedFiles };
+  return {
+    components,
+    fileCount: interpretedProject.fileCount,
+    unparsedFiles: interpretedProject.unparsedFiles,
+  };
 };
 
 export const analyzeProject = (

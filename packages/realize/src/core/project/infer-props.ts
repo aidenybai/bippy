@@ -108,8 +108,8 @@ const inferUntypedPropSample = (
 
 export const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
   const readPathsByBinding = new Map<number, string[][]>();
-  for (const { bindingId, path } of analysis.placeDomains.places()) {
-    if (path.length > 0) appendToGroup(readPathsByBinding, bindingId, path);
+  for (const place of analysis.placeDomains.places()) {
+    if (place.path.length > 0) appendToGroup(readPathsByBinding, place.bindingId, place.path);
   }
   const hostStyleBindingIds = getHostStyleBindingIds(analysis.render);
   for (const binding of analysis.bindings) {

@@ -34,13 +34,18 @@ const createProjectIndex = (
 ): ProjectIndex => ({
   ...sourceIndex,
   components: new Map(
-    analyzed.flatMap(({ analysis }) =>
-      analysis.exportName
-        ? [[createDeclarationKey(analysis.file, analysis.exportName), analysis]]
+    analyzed.flatMap((component) =>
+      component.analysis.exportName
+        ? [
+            [
+              createDeclarationKey(component.analysis.file, component.analysis.exportName),
+              component.analysis,
+            ],
+          ]
         : [],
     ),
   ),
-  contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),
+  contextSamples: new Map(analyzed.flatMap((component) => [...component.analysis.contextSamples])),
 });
 
 interface MountableComponents {
@@ -52,7 +57,7 @@ const exposeLocalComponents = (components: AnalyzedComponent[]): MountableCompon
   const topLevelNamesByFile = new Map<string, Set<string>>();
   const localNamesByFile = new Map<string, string[]>();
   const mountable = components.map((component) => {
-    const { analysis } = component;
+    const analysis = component.analysis;
     if (analysis.exportName) return component;
     const { name } = parseDeclarationKey(analysis.declaration);
     const topLevelNames = topLevelNamesByFile.get(analysis.file) ?? getTopLevelNames(analysis.file);
@@ -71,15 +76,15 @@ export const startProjectHarness = async (
   setupDirectory: string | null,
   localNamesByFile: Map<string, string[]> = new Map(),
 ): Promise<ProjectHarness> => {
-  const exported = verifiedComponents.filter(({ analysis }) => analysis.exportName);
+  const exported = verifiedComponents.filter((component) => component.analysis.exportName);
   const harness = await startHarness(
     appDirectory,
-    exported.flatMap(({ analysis }) => [
-      ...collectBranchCounters(analysis),
-      ...collectMutationCounters(analysis),
-      ...collectHandlerCounters(analysis).map(({ counter }) => counter),
+    exported.flatMap((component) => [
+      ...collectBranchCounters(component.analysis),
+      ...collectMutationCounters(component.analysis),
+      ...collectHandlerCounters(component.analysis).map((handlerCounter) => handlerCounter.counter),
     ]),
-    [...new Set(exported.map(({ analysis }) => analysis.file))],
+    [...new Set(exported.map((component) => component.analysis.file))],
     readHarnessSetup(setupDirectory),
     localNamesByFile,
   );
@@ -310,16 +315,15 @@ export const verifyProject = async (
       ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
       : analyzed,
   );
-  const { components } = mountable;
   const harness = await startProjectHarness(
     dirname(configPath),
     analyzed,
-    components,
+    mountable.components,
     options.setupDirectory ?? null,
     mountable.localNamesByFile,
   );
   try {
-    const verdicts = await verifyOnPages(harness, components, options);
+    const verdicts = await verifyOnPages(harness, mountable.components, options);
     return { verdicts, durationMs: Math.round(performance.now() - startTime) };
   } finally {
     await harness.close();

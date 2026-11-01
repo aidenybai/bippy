@@ -87,10 +87,13 @@ const CHECKOUT_SCRIPT = [
 const getCredentials = (): Credentials => {
   const envFile = join(PACKAGE_DIRECTORY, ".env.local");
   if (existsSync(envFile)) process.loadEnvFile(envFile);
-  const { VERCEL_TOKEN, VERCEL_TEAM_ID, VERCEL_PROJECT_ID, VERCEL_OIDC_TOKEN } = process.env;
-  if (VERCEL_TOKEN && VERCEL_TEAM_ID && VERCEL_PROJECT_ID)
-    return { token: VERCEL_TOKEN, teamId: VERCEL_TEAM_ID, projectId: VERCEL_PROJECT_ID };
-  if (VERCEL_OIDC_TOKEN) return {};
+  if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID)
+    return {
+      token: process.env.VERCEL_TOKEN,
+      teamId: process.env.VERCEL_TEAM_ID,
+      projectId: process.env.VERCEL_PROJECT_ID,
+    };
+  if (process.env.VERCEL_OIDC_TOKEN) return {};
   throw new Error(
     "Run `vercel link` and `vercel env pull .env.local` in packages/realize, or set VERCEL_TOKEN, VERCEL_TEAM_ID and VERCEL_PROJECT_ID",
   );

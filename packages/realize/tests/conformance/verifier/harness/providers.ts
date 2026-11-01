@@ -95,11 +95,11 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   },
 ];
 
-const createReduxSpec = ({ file, exportName }: ExportedName): ProviderSpec => ({
+const createReduxSpec = (store: ExportedName): ProviderSpec => ({
   packageName: "react-redux",
   imports: [
     'import { Provider as ReduxProvider } from "react-redux";',
-    `import { ${exportName} as reduxStore } from ${JSON.stringify(file)};`,
+    `import { ${store.exportName} as reduxStore } from ${JSON.stringify(store.file)};`,
   ].join("\n"),
   wrap: (children) => `createElement(ReduxProvider, { store: reduxStore }, ${children})`,
 });

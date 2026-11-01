@@ -93,9 +93,9 @@ export const exploreModel = (
   ): void => {
     const valueOf = valueGetter(state);
     if (evaluatePredicate(action.guard, valueOf) !== true) return;
-    const writeIndexes = action.writes.map(({ variable }) => variableIndexes.get(variable) ?? -1);
-    const options = action.writes.map(({ next }, writeIndex) =>
-      evaluateNextValue(next, state[writeIndexes[writeIndex]], valueOf),
+    const writeIndexes = action.writes.map((write) => variableIndexes.get(write.variable) ?? -1);
+    const options = action.writes.map((write, writeIndex) =>
+      evaluateNextValue(write.next, state[writeIndexes[writeIndex]], valueOf),
     );
     const isExhaustive = forEachProduct(
       options,
@@ -214,14 +214,17 @@ export const exploreModel = (
       for (let step = 0; step < MAX_TRANSITION_STEPS && frontier.length > 0; step++) {
         const nextFrontier: typeof frontier = [];
         let isFound = false;
-        for (const { state, taken } of frontier)
+        for (const node of frontier)
           for (const action of actions) {
-            if (!canTake(action, taken)) continue;
-            forEachSuccessor(state, action, (next) => {
+            if (!canTake(action, node.taken)) continue;
+            forEachSuccessor(node.state, action, (next) => {
               budget--;
               if (evaluatePredicate(to, valueGetter(next)) === true) isFound = true;
-              const nextTaken = [...taken, action];
-              const key = [next.join("\0"), ...nextTaken.map(({ name }) => name).sort()].join("\n");
+              const nextTaken = [...node.taken, action];
+              const key = [
+                next.join("\0"),
+                ...nextTaken.map((takenAction) => takenAction.name).sort(),
+              ].join("\n");
               if (seen.has(key)) return;
               seen.add(key);
               nextFrontier.push({ state: next, taken: nextTaken });

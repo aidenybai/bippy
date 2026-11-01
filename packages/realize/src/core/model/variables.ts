@@ -178,21 +178,21 @@ export const createVariableTable = (
 
   for (const test of tests) forEachAtom(test, record);
 
-  for (const [key, { binding, path, tests: placeTests }] of entries) {
+  for (const [key, entry] of entries) {
     const typeDomain =
-      path.length === 0
-        ? binding.domain
-        : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
-    const values = createDomain(typeDomain, placeTests, path.at(-1) === "length");
-    const label = formatPlace(binding, path);
+      entry.path.length === 0
+        ? entry.binding.domain
+        : (analysis.placeDomains.get({ bindingId: entry.binding.id, path: entry.path }) ?? null);
+    const values = createDomain(typeDomain, entry.tests, entry.path.at(-1) === "length");
+    const label = formatPlace(entry.binding, entry.path);
     const variable: Variable = {
       name: createName(label),
       label,
-      source: getVariableSource(binding),
-      bindingKind: binding.kind,
-      bindingId: binding.id,
-      inputBindingIds: [...new Set(binding.inputPlaces.map((place) => place.bindingId))],
-      path,
+      source: getVariableSource(entry.binding),
+      bindingKind: entry.binding.kind,
+      bindingId: entry.binding.id,
+      inputBindingIds: [...new Set(entry.binding.inputPlaces.map((place) => place.bindingId))],
+      path: entry.path,
       domain: values,
       initial: getValueLabels(values),
     };

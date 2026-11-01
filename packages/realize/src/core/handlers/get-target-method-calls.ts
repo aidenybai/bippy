@@ -13,17 +13,18 @@ export const getTargetMethodCalls = (hirFunction: HIRFunction): TargetMethodCall
   const methodNames = new Map<IdentifierId, string>();
   const calls: TargetMethodCall[] = [];
   for (const block of hirFunction.body.blocks.values())
-    for (const { lvalue, value } of block.instructions) {
+    for (const instruction of block.instructions) {
+      const value = instruction.value;
       if (value.kind === "PropertyLoad" && TARGET_PROPERTIES.has(String(value.property)))
-        targetIds.add(lvalue.identifier.id);
+        targetIds.add(instruction.lvalue.identifier.id);
       if (
         value.kind === "PropertyLoad" &&
         value.property === "form" &&
         targetIds.has(value.object.identifier.id)
       )
-        formIds.add(lvalue.identifier.id);
+        formIds.add(instruction.lvalue.identifier.id);
       if (value.kind === "PropertyLoad")
-        methodNames.set(lvalue.identifier.id, String(value.property));
+        methodNames.set(instruction.lvalue.identifier.id, String(value.property));
       if (value.kind !== "MethodCall") continue;
       const methodName = methodNames.get(value.property.identifier.id);
       const receiverId = value.receiver.identifier.id;

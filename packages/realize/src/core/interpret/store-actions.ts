@@ -157,12 +157,11 @@ const getAssignments = (
   for (const property of assignedObject.properties) {
     if (isSpreadAssignment(property)) continue;
     if (!isShorthandPropertyAssignment(property) && !isPropertyAssignment(property)) return null;
-    const { name } = property;
-    if (!isIdentifier(name) && !isStringLiteral(name)) return null;
-    const valueNode = isPropertyAssignment(property) ? property.initializer : name;
+    if (!isIdentifier(property.name) && !isStringLiteral(property.name)) return null;
+    const valueNode = isPropertyAssignment(property) ? property.initializer : property.name;
     assignments.push({
-      field: name.text,
-      value: getFieldValue(valueNode, name.text, actionParameters, stateParameter),
+      field: property.name.text,
+      value: getFieldValue(valueNode, property.name.text, actionParameters, stateParameter),
     });
   }
   return assignments;
@@ -200,7 +199,7 @@ const getActionAssignments = (action: Node, setName: string): StoreAssignment[] 
   const assignments = assignmentsPerCall.flat().filter((assignment) => assignment !== null);
   return isOnlySetCall
     ? assignments
-    : assignments.map(({ field }) => ({ field, value: { kind: "Unknown" } }));
+    : assignments.map((assignment) => ({ field: assignment.field, value: { kind: "Unknown" } }));
 };
 
 export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreModel> => {

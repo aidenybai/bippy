@@ -74,16 +74,15 @@ const addEventNode = (chart: Flowchart, from: string, label: string): void => {
 };
 
 const formatUpdate = (update: StateUpdate): string => {
-  const { binding, value } = update;
   const assignments =
-    value.kind === "ObjectExpression"
-      ? value.properties
-          .filter((property) => !isUnchangedField(property.value, binding, [property.key]))
+    update.value.kind === "ObjectExpression"
+      ? update.value.properties
+          .filter((property) => !isUnchangedField(property.value, update.binding, [property.key]))
           .map(
             (property) =>
-              `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
+              `${formatPlace(update.binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
           )
-      : [`${binding.name} = ${formatSymbolicValue(value)}`];
+      : [`${update.binding.name} = ${formatSymbolicValue(update.value)}`];
   const guardPrefix =
     update.guards.length > 0 ? `if ${update.guards.map(formatSymbolicValue).join(" && ")}: ` : "";
   return `${guardPrefix}${assignments.join(", ")}${update.isAsync ? " (async)" : ""}`;
@@ -193,7 +192,7 @@ export const formatRenderTree = (
   component: AnalyzedComponent,
   options: RenderTreeOptions,
 ): string => {
-  const { analysis } = component;
+  const analysis = component.analysis;
   const chart = createFlowchart(component, options);
   const rootId = addNode(chart, analysis.name, "element");
   buildNode(analysis.render, chart, rootId, 0);

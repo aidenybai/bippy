@@ -58,10 +58,10 @@ const SPONTANEOUS_EVENTS = new Set([
   "onTransitionEnd",
 ]);
 
-const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
-  trigger.kind === "Event"
-    ? SPONTANEOUS_EVENTS.has(trigger.event)
-    : trigger.kind === "Effect" && trigger.hookKind === "Custom";
+const isSpontaneousHandler = (handler: Handler): boolean =>
+  handler.trigger.kind === "Event"
+    ? SPONTANEOUS_EVENTS.has(handler.trigger.event)
+    : handler.trigger.kind === "Effect" && handler.trigger.hookKind === "Custom";
 
 interface Edge {
   predicate: Predicate;
@@ -127,7 +127,9 @@ const collectStateVariables = (
   observations: Observation[],
 ): StateVariable[] => {
   const stateBindings = getStateBindings(analysis, observations) ?? [];
-  const mutatedOrigins = new Set(observations.flatMap(({ after }) => after.mutatedOrigins));
+  const mutatedOrigins = new Set(
+    observations.flatMap((observation) => observation.after.mutatedOrigins),
+  );
   return model.variables.flatMap((variable) => {
     if (variable.source !== "state") return [];
     const hookIndex = stateBindings.findIndex((binding) => binding.id === variable.bindingId);
@@ -168,8 +170,9 @@ export const abstractCapture = (modelIndex: ModelIndex, capture: Capture): Abstr
   const values: string[] = [];
   const domainViolations: DomainViolation[] = [];
   const valuePredicates: Predicate[] = [];
-  for (const { variable, hookIndex } of modelIndex.stateVariables) {
-    const value = readPath(capture.stateValues[hookIndex], variable.path);
+  for (const stateVariable of modelIndex.stateVariables) {
+    const variable = stateVariable.variable;
+    const value = readPath(capture.stateValues[stateVariable.hookIndex], variable.path);
     if (OPAQUE_VALUES.has(value)) continue;
     const domain = getValueLabels(variable.domain);
     const containingValues = getValueLabels(
@@ -196,7 +199,7 @@ export const canShowView = (modelIndex: ModelIndex, observed: AbstractState, vie
 
 const isPropInput = (modelIndex: ModelIndex, action: Action): boolean =>
   action.writes.some(
-    ({ variable }) => modelIndex.variablesByName.get(variable)?.bindingKind === "prop",
+    (write) => modelIndex.variablesByName.get(write.variable)?.bindingKind === "prop",
   );
 
 const createActionFilter =
@@ -243,10 +246,9 @@ class ComponentCheck {
       if (this.#isFirstSeen(JSON.stringify(["value", violation])))
         this.#verdict.domainCounterexamples.push({ path: observation.path, ...violation });
     if (observed.domainViolations.length > 0) return;
-    const { model, explored } = this.#modelIndex;
-    const trace = explored.findTrace(observed.predicate);
+    const trace = this.#modelIndex.explored.findTrace(observed.predicate);
     if (trace) {
-      for (const view of model.views)
+      for (const view of this.#modelIndex.model.views)
         if (!this.#coveredViews.has(view.label) && canShowView(this.#modelIndex, observed, view))
           this.#coveredViews.add(view.label);
       return;
@@ -261,15 +263,14 @@ class ComponentCheck {
   }
 
   checkTransition(observation: Observation, after: AbstractState): void {
-    const { action, before } = observation;
-    if (!action || !before || before.error) return;
+    if (!observation.action || !observation.before || observation.before.error) return;
     const handlerIds = new Set(
       observation.after.handlerCalls.flatMap(
         (counterId) => this.#handlerIdsByCounterId.get(counterId) ?? [],
       ),
     );
     if (handlerIds.size === 0) return;
-    const beforeObserved = abstractCapture(this.#modelIndex, before);
+    const beforeObserved = abstractCapture(this.#modelIndex, observation.before);
     if (beforeObserved.domainViolations.length > 0 || after.domainViolations.length > 0) return;
     this.#verdict.checkedTransitionCount++;
     const isCovered = this.#modelIndex.explored.findTransition(
@@ -281,12 +282,18 @@ class ComponentCheck {
     const handlers = [...handlerIds].sort();
     if (
       this.#isFirstSeen(
-        JSON.stringify(["transition", action.label, handlers, beforeObserved.edges, after.edges]),
+        JSON.stringify([
+          "transition",
+          observation.action.label,
+          handlers,
+          beforeObserved.edges,
+          after.edges,
+        ]),
       )
     )
       this.#verdict.transitionCounterexamples.push({
         path: observation.path,
-        action: action.label,
+        action: observation.action.label,
         handlers,
       });
   }

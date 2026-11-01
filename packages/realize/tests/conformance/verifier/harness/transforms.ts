@@ -17,7 +17,7 @@ const getExportNames = (program: Rollup.ProgramNode): string[] =>
   program.body.flatMap((statement) => {
     if (statement.type === "ExportDefaultDeclaration") return ["default"];
     if (statement.type !== "ExportNamedDeclaration") return [];
-    const { declaration, specifiers } = statement;
+    const declaration = statement.declaration;
     const declared =
       declaration?.type === "VariableDeclaration"
         ? declaration.declarations.flatMap((declarator) =>
@@ -28,7 +28,7 @@ const getExportNames = (program: Rollup.ProgramNode): string[] =>
           : [];
     return [
       ...declared,
-      ...specifiers.map((specifier) =>
+      ...statement.specifiers.map((specifier) =>
         specifier.exported.type === "Identifier"
           ? specifier.exported.name
           : String(specifier.exported.value),
@@ -117,12 +117,12 @@ export const createJsxInScriptPlugin = (): Plugin => ({
 
 const getAssignedExportNames = (statement: Rollup.ProgramNode["body"][number]): string[] => {
   if (statement.type !== "ExpressionStatement") return [];
-  const { expression } = statement;
+  const expression = statement.expression;
   if (expression.type !== "AssignmentExpression") return [];
-  const { left } = expression;
+  const left = expression.left;
   if (left.type !== "MemberExpression" || left.computed || left.property.type !== "Identifier")
     return [];
-  const { object } = left;
+  const object = left.object;
   const isExportsObject =
     (object.type === "Identifier" && object.name === "exports") ||
     (object.type === "MemberExpression" &&

@@ -37,11 +37,13 @@ const getSharedSegmentCount = (left: string, right: string): number => {
 const createProjectWrapper = (
   name: string,
   source: WrapperSource,
-  { file, exportName }: ExportedName,
+  exported: ExportedName,
   query: ParentQuery,
 ): Wrapper => {
-  const contextKey = createDeclarationKey(file, name);
-  const parentAnalysis = query.project.components.get(createDeclarationKey(file, exportName));
+  const contextKey = createDeclarationKey(exported.file, name);
+  const parentAnalysis = query.project.components.get(
+    createDeclarationKey(exported.file, exported.exportName),
+  );
   const contextSample =
     query.analysis.contextSamples.get(contextKey) ?? query.project.contextSamples.get(contextKey);
   const props = parentAnalysis
@@ -49,7 +51,11 @@ const createProjectWrapper = (
     : contextSample
       ? { value: contextSample }
       : {};
-  return { name, source, candidate: { kind: "project", file, exportName, props } };
+  return {
+    name,
+    source,
+    candidate: { kind: "project", file: exported.file, exportName: exported.exportName, props },
+  };
 };
 
 export const resolveNamedParent = (error: string, project: ProjectIndex): string | null => {
@@ -74,21 +80,22 @@ const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
     .map((exported) => createProjectWrapper(name, "named", exported, query));
   const packageWrappers = getReachableFiles(query)
     .flatMap((file) => query.project.imports.get(file)?.packages ?? [])
-    .flatMap(({ specifier, names }) =>
-      [null, ...names.filter((importedName) => NAMESPACE_NAME_PATTERN.test(importedName))].map(
-        (namespace): Wrapper => ({
-          name,
-          source: "named",
-          candidate: {
-            kind: "package",
-            specifier,
-            namespace,
-            exportName: name,
-            importer: query.file,
-            props: {},
-          },
-        }),
-      ),
+    .flatMap((packageImport) =>
+      [
+        null,
+        ...packageImport.names.filter((importedName) => NAMESPACE_NAME_PATTERN.test(importedName)),
+      ].map((namespace): Wrapper => ({
+        name,
+        source: "named",
+        candidate: {
+          kind: "package",
+          specifier: packageImport.specifier,
+          namespace,
+          exportName: name,
+          importer: query.file,
+          props: {},
+        },
+      })),
     );
   return [...projectWrappers, ...packageWrappers];
 };
@@ -99,7 +106,7 @@ const getCompoundRootNames = (query: ParentQuery): string[] =>
       ([candidate, exported]) =>
         candidate !== query.name &&
         query.name.startsWith(candidate) &&
-        exported.some(({ file }) => file === query.file),
+        exported.some((exportedName) => exportedName.file === query.file),
     )
     .map(([candidate]) => candidate)
     .sort((left, right) => right.length - left.length);
@@ -169,12 +176,12 @@ const findRenderedRoots = (query: ParentQuery): Wrapper[] => {
   for (const renderedName of query.analysis.renders) {
     const renderedFiles = new Set(
       (query.project.exports.get(renderedName) ?? [])
-        .map(({ file }) => file)
+        .map((exported) => exported.file)
         .filter((file) => reachableFiles.has(file)),
     );
     for (const [candidate, exported] of query.project.exports) {
       if (candidate === renderedName || !renderedName.startsWith(candidate)) continue;
-      const ownExport = exported.find(({ file }) => renderedFiles.has(file));
+      const ownExport = exported.find((exportedName) => renderedFiles.has(exportedName.file));
       if (ownExport && !roots.has(candidate))
         roots.set(candidate, createProjectWrapper(candidate, "root", ownExport, query));
     }
@@ -194,7 +201,7 @@ export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParents = namedParent ? findNamedParents(namedParent, query) : [];
   const reachableFiles = new Set(getReachableFiles(query));
   const isNamedReachable = namedParents.some(
-    ({ candidate }) => candidate.kind === "project" && reachableFiles.has(candidate.file),
+    (wrapper) => wrapper.candidate.kind === "project" && reachableFiles.has(wrapper.candidate.file),
   );
   const ordered =
     namedParents.length > 0 && !isNamedReachable

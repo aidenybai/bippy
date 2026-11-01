@@ -104,7 +104,7 @@ const collectDisplayedBindingIds = (analysis: ComponentAnalysis): Set<number> =>
 
 const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action => {
   const written = new Set(action.writtenBindingIds);
-  const writtenVariables = new Set(action.writes.map(({ variable }) => variable));
+  const writtenVariables = new Set(action.writes.map((write) => write.variable));
   const added: Variable[] = [];
   for (let isGrowing = true; isGrowing;) {
     isGrowing = false;
@@ -133,13 +133,13 @@ const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action
 
 const compileInvariant = (
   table: VariableTable,
-  { assertion, guards, tests }: ScopedAssertion,
+  scoped: ScopedAssertion,
   index: number,
 ): Invariant => ({
   name: `Assertion${index + 1}`,
-  label: assertion.description,
-  predicate: or([not(and(guards.map(table.compile))), or(tests.map(table.compile))]),
-  loc: assertion.loc,
+  label: scoped.assertion.description,
+  predicate: or([not(and(scoped.guards.map(table.compile))), or(scoped.tests.map(table.compile))]),
+  loc: scoped.assertion.loc,
 });
 
 const isStateOnly = (invariant: Invariant, variables: Variable[]): boolean => {

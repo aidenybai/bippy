@@ -6,16 +6,16 @@ import { isFunctionCreation } from "./is-function-creation";
 
 const collectMutatedIds = (hirFunction: HIRFunction, mutatedIds: Set<IdentifierId>): void => {
   for (const block of hirFunction.body.blocks.values())
-    for (const { value, effects } of block.instructions) {
-      if (!isFunctionCreation(value)) continue;
+    for (const instruction of block.instructions) {
+      if (!isFunctionCreation(instruction.value)) continue;
       for (const effect of [
-        ...(effects ?? []),
-        ...(value.loweredFunc.func.aliasingEffects ?? []),
+        ...(instruction.effects ?? []),
+        ...(instruction.value.loweredFunc.func.aliasingEffects ?? []),
       ]) {
         const mutatedPlace = getMutatedPlace(effect) ?? getConditionallyMutatedPlace(effect);
         if (mutatedPlace) mutatedIds.add(mutatedPlace.identifier.id);
       }
-      collectMutatedIds(value.loweredFunc.func, mutatedIds);
+      collectMutatedIds(instruction.value.loweredFunc.func, mutatedIds);
     }
 };
 

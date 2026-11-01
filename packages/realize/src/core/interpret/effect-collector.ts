@@ -40,12 +40,11 @@ const isSurelyChanged = (value: SymbolicValue, binding: Binding): boolean => {
     return value.operator === "!" && isWholeBinding(value.value, binding);
   if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
     return false;
-  const { left, right } = value;
   return (
-    isWholeBinding(left, binding) &&
-    right.kind === "Primitive" &&
-    typeof right.value === "number" &&
-    right.value !== 0
+    isWholeBinding(value.left, binding) &&
+    value.right.kind === "Primitive" &&
+    typeof value.right.value === "number" &&
+    value.right.value !== 0
   );
 };
 
@@ -219,17 +218,21 @@ export class EffectCollector {
         ];
     const mayRender =
       this.#updates.length > 0 || this.#delegates.length > 0 || this.#callsImportedCode;
-    for (const { binding, sites } of this.#mutationsByBinding.values()) {
-      if (this.hasUpdate(binding)) continue;
-      if (!this.#sameReferenceSets.has(binding.id))
-        for (const site of sites)
+    for (const mutation of this.#mutationsByBinding.values()) {
+      if (this.hasUpdate(mutation.binding)) continue;
+      if (!this.#sameReferenceSets.has(mutation.binding.id))
+        for (const site of mutation.sites)
           this.#warn(
             "state-mutation",
-            `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+            `mutates ${mutation.binding.name} without setting it, so the change shows only on the next render`,
             site.loc,
           );
       if (mayRender)
-        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
+        this.addUpdate(
+          mutation.binding,
+          createUnknown("mutated", GeneratedSource),
+          UNCONDITIONAL_UPDATE,
+        );
     }
     for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding) && (mayRender || binding.kind === "module"))

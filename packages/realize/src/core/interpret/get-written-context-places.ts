@@ -7,19 +7,23 @@ import { getMutatedPlace } from "./get-mutated-place";
 const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
   [...hirFunction.body.blocks.values()].flatMap((block) =>
     block.instructions.flatMap((instruction) => {
-      const { value } = instruction;
-      if (value.kind === "StoreContext") return [value.lvalue.place];
-      return isFunctionCreation(value) ? collectStoredPlaces(value.loweredFunc.func) : [];
+      if (instruction.value.kind === "StoreContext") return [instruction.value.lvalue.place];
+      return isFunctionCreation(instruction.value)
+        ? collectStoredPlaces(instruction.value.loweredFunc.func)
+        : [];
     }),
   );
 
 const collectReassignedPlaces = (hirFunction: HIRFunction): Place[] =>
   [...hirFunction.body.blocks.values()].flatMap((block) =>
     block.instructions.flatMap((instruction) => {
-      const { value } = instruction;
-      if (value.kind === "StoreContext")
-        return value.lvalue.kind === InstructionKind.Reassign ? [value.lvalue.place] : [];
-      return isFunctionCreation(value) ? collectReassignedPlaces(value.loweredFunc.func) : [];
+      if (instruction.value.kind === "StoreContext")
+        return instruction.value.lvalue.kind === InstructionKind.Reassign
+          ? [instruction.value.lvalue.place]
+          : [];
+      return isFunctionCreation(instruction.value)
+        ? collectReassignedPlaces(instruction.value.loweredFunc.func)
+        : [];
     }),
   );
 

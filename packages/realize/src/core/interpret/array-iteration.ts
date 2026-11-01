@@ -166,10 +166,9 @@ export class ArrayIteration {
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
     if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
       return null;
-    const { elements } = initial;
     if (methodName === "reduce")
-      return this.#reduceFirstValue(elements, callback, accumulator, loc, walkState);
-    const outcomes = elements.map((element, index) =>
+      return this.#reduceFirstValue(initial.elements, callback, accumulator, loc, walkState);
+    const outcomes = initial.elements.map((element, index) =>
       this.#interpreter.callFunction(
         callback,
         [element, { kind: "Primitive", value: index }],
@@ -187,7 +186,6 @@ export class ArrayIteration {
     loc: SourceLocation,
   ): SymbolicValue | null {
     if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
-    const { elements } = array;
     const select = (
       outcome: SymbolicValue,
       consequent: SymbolicValue,
@@ -227,13 +225,13 @@ export class ArrayIteration {
           value: -1,
         });
       case "find":
-        return chain((index) => elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
+        return chain((index) => array.elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
       case "filter": {
         const openCount = outcomes.filter((outcome) => getKnownTruthiness(outcome) === null).length;
         if (openCount > MAX_OPEN_FILTER_OUTCOMES) return null;
         const keep = (index: number, kept: SymbolicValue[]): SymbolicValue => {
           const outcome = outcomes[index];
-          const element = elements[index];
+          const element = array.elements[index];
           if (outcome === undefined || element === undefined)
             return { kind: "ArrayExpression", elements: kept, spreads: [] };
           return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept));

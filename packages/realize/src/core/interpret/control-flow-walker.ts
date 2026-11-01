@@ -133,12 +133,11 @@ const getReachTest = (
   const conditional = createConditional(outcome, guards, (arm, armGuards) =>
     getReachTest(arm, block, armGuards),
   );
-  const { consequent, alternate } = conditional;
   const isUndecided =
-    consequent.kind !== "Primitive" ||
-    alternate.kind !== "Primitive" ||
-    consequent.value !== alternate.value;
-  return isUndecided ? conditional : consequent;
+    conditional.consequent.kind !== "Primitive" ||
+    conditional.alternate.kind !== "Primitive" ||
+    conditional.consequent.value !== conditional.alternate.value;
+  return isUndecided ? conditional : conditional.consequent;
 };
 
 const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
@@ -276,12 +275,12 @@ export class ControlFlowWalker {
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
   ): Outcome {
-    const { consequent, alternate, fallthrough } = terminal;
     const operator =
-      this.#interpreter.getCompilationTables().branchOperators.get(fallthrough) ?? "ternary";
+      this.#interpreter.getCompilationTables().branchOperators.get(terminal.fallthrough) ??
+      "ternary";
     const branchTest = getBranchTest(operator, this.#interpreter.read(terminal.test));
     const testGuard = getTestExpression(branchTest);
-    const armStops = new Set([...stops, fallthrough]);
+    const armStops = new Set([...stops, terminal.fallthrough]);
     const isSwapped = operator === "&&";
     const consequentGuard = isSwapped ? negate(testGuard) : testGuard;
     const branch = this.#interpreter.createBranchSite(
@@ -289,19 +288,23 @@ export class ControlFlowWalker {
       this.#interpreter.resolver.isExpression(terminal.test.loc) ? branchTest.testKind : null,
     );
     const walkConsequent = () =>
-      this.#walkArm(consequent, from, armStops, walkState, consequentGuard);
+      this.#walkArm(terminal.consequent, from, armStops, walkState, consequentGuard);
     const walkAlternate = () =>
-      this.#walkArm(alternate, from, armStops, walkState, negate(consequentGuard));
+      this.#walkArm(terminal.alternate, from, armStops, walkState, negate(consequentGuard));
     if (branchTest.knownOutcome !== null) {
-      const takenArm = branchTest.knownOutcome !== isSwapped ? consequent : alternate;
+      const takenArm =
+        branchTest.knownOutcome !== isSwapped ? terminal.consequent : terminal.alternate;
       return this.#continueAfter(
         this.#walkArm(takenArm, from, armStops, walkState, null),
-        fallthrough,
+        terminal.fallthrough,
         stops,
         walkState,
       );
     }
-    const storedPlaces = this.#getArmStoredContextPlaces([consequent, alternate], fallthrough);
+    const storedPlaces = this.#getArmStoredContextPlaces(
+      [terminal.consequent, terminal.alternate],
+      terminal.fallthrough,
+    );
     const valuesBefore = storedPlaces.map((place) => this.#interpreter.read(place));
     const consequentOutcome = walkConsequent();
     const consequentValues = storedPlaces.map((place) => this.#interpreter.read(place));
@@ -332,7 +335,7 @@ export class ControlFlowWalker {
         ),
       );
     });
-    return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
+    return this.#continueAfter(splitOutcome, terminal.fallthrough, stops, walkState);
   }
 
   #walkArm(
@@ -379,15 +382,21 @@ export class ControlFlowWalker {
   }
 
   #dispatchSwitchCase(switchWalk: SwitchWalk, caseIndex: number): Outcome {
-    const { terminal, from, discriminant } = switchWalk;
-    const switchCase = terminal.cases[caseIndex];
+    const switchCase = switchWalk.terminal.cases[caseIndex];
     if (!switchCase) {
-      const defaultCase = terminal.cases.find((candidate) => candidate.test === null);
-      return this.#fallthrough(from, defaultCase?.block ?? terminal.fallthrough);
+      const defaultCase = switchWalk.terminal.cases.find((candidate) => candidate.test === null);
+      return this.#fallthrough(
+        switchWalk.from,
+        defaultCase?.block ?? switchWalk.terminal.fallthrough,
+      );
     }
     if (switchCase.test === null) return this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
-    const caseTest = foldBinary("===", discriminant, this.#interpreter.read(switchCase.test));
-    const matched: Outcome = this.#fallthrough(from, switchCase.block);
+    const caseTest = foldBinary(
+      "===",
+      switchWalk.discriminant,
+      this.#interpreter.read(switchCase.test),
+    );
+    const matched: Outcome = this.#fallthrough(switchWalk.from, switchCase.block);
     if (caseTest.kind === "Primitive")
       return caseTest.value ? matched : this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
     return {
@@ -560,11 +569,17 @@ export class ControlFlowWalker {
     if (cached) return cached;
     const placesById = new Map<IdentifierId, Place>();
     for (const block of hirFunction.body.blocks.values())
-      for (const { value } of block.instructions) {
-        if (value.kind === "StoreContext")
-          placesById.set(value.lvalue.place.identifier.id, value.lvalue.place);
-        if (value.kind === "PostfixUpdateContext" || value.kind === "PrefixUpdateContext")
-          placesById.set(value.lvalue.identifier.id, value.lvalue);
+      for (const instruction of block.instructions) {
+        if (instruction.value.kind === "StoreContext")
+          placesById.set(
+            instruction.value.lvalue.place.identifier.id,
+            instruction.value.lvalue.place,
+          );
+        if (
+          instruction.value.kind === "PostfixUpdateContext" ||
+          instruction.value.kind === "PrefixUpdateContext"
+        )
+          placesById.set(instruction.value.lvalue.identifier.id, instruction.value.lvalue);
       }
     const places = [...placesById.values()];
     this.#trackedContextPlaces.set(hirFunction, places);
@@ -616,8 +631,8 @@ export class ControlFlowWalker {
   }
 
   #restoreContextValues(fallthrough: FallthroughOutcome): void {
-    for (const { place, value } of fallthrough.contextValues?.values() ?? [])
-      this.#interpreter.write(place, value);
+    for (const contextValue of fallthrough.contextValues?.values() ?? [])
+      this.#interpreter.write(contextValue.place, contextValue.value);
   }
 
   #mergeContextValues(outcome: Outcome, join: BlockId, guards: SymbolicValue[]): void {
@@ -660,10 +675,13 @@ export class ControlFlowWalker {
       if (blockId === exit || visited.has(blockId)) continue;
       visited.add(blockId);
       const block = this.#getBlock(blockId);
-      for (const { value } of block.instructions) {
-        if (value.kind === "StoreContext") places.push(value.lvalue.place);
-        if (value.kind === "PostfixUpdateContext" || value.kind === "PrefixUpdateContext")
-          places.push(value.lvalue);
+      for (const instruction of block.instructions) {
+        if (instruction.value.kind === "StoreContext") places.push(instruction.value.lvalue.place);
+        if (
+          instruction.value.kind === "PostfixUpdateContext" ||
+          instruction.value.kind === "PrefixUpdateContext"
+        )
+          places.push(instruction.value.lvalue);
       }
       pending.push(...eachTerminalSuccessor(block.terminal));
     }
@@ -859,18 +877,21 @@ export class ControlFlowWalker {
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
   ): TerminalStep {
-    const { handler, continuation } = terminal;
-    if (terminal.value !== null && handler !== null)
-      return this.#walkCaughtThrow(terminal.value, handler, blockId, stops);
-    if (this.#interpreter.handlerEffects && handler !== null) this.#throwingCatches.add(handler);
-    const { walkedCatches } = this.#functionScope;
-    if (this.#interpreter.handlerEffects || handler === null || walkedCatches.has(handler))
-      return { kind: "Next", block: continuation };
-    walkedCatches.add(handler);
+    if (terminal.value !== null && terminal.handler !== null)
+      return this.#walkCaughtThrow(terminal.value, terminal.handler, blockId, stops);
+    if (this.#interpreter.handlerEffects && terminal.handler !== null)
+      this.#throwingCatches.add(terminal.handler);
+    if (
+      this.#interpreter.handlerEffects ||
+      terminal.handler === null ||
+      this.#functionScope.walkedCatches.has(terminal.handler)
+    )
+      return { kind: "Next", block: terminal.continuation };
+    this.#functionScope.walkedCatches.add(terminal.handler);
     const throwTest = createUnknown("throws", terminal.loc);
     const places = this.#getTrackedContextPlaces();
     const valuesBefore = places.map((place) => this.#interpreter.read(place));
-    const consequent = this.#walkArm(handler, blockId, stops, walkState, throwTest);
+    const consequent = this.#walkArm(terminal.handler, blockId, stops, walkState, throwTest);
     places.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
     return {
       kind: "Split",
@@ -878,7 +899,7 @@ export class ControlFlowWalker {
       testKind: "truthy",
       branch: this.#interpreter.createBranchSite(terminal.loc),
       consequent,
-      alternate: this.#walkArm(continuation, blockId, stops, walkState, negate(throwTest)),
+      alternate: this.#walkArm(terminal.continuation, blockId, stops, walkState, negate(throwTest)),
     };
   }
 
@@ -912,36 +933,41 @@ export class ControlFlowWalker {
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
   ): Outcome {
-    const { block, handler, fallthrough } = terminal;
-    const bodyStops = new Set([...stops, fallthrough]);
+    const bodyStops = new Set([...stops, terminal.fallthrough]);
     const awaitCountBefore = this.#awaitCount;
     const throwPoints: ThrowPoint[] = [];
     this.#functionScope.throwPointsByTry.push(throwPoints);
-    const bodyOutcome = this.walk(block, bodyStops, blockId, walkState, "unresolved");
+    const bodyOutcome = this.walk(terminal.block, bodyStops, blockId, walkState, "unresolved");
     this.#functionScope.throwPointsByTry.pop();
     const afterWalkState =
       this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
-    if (!this.#throwingCatches.delete(handler))
-      return this.#continueAfter(bodyOutcome, fallthrough, stops, afterWalkState);
+    if (!this.#throwingCatches.delete(terminal.handler))
+      return this.#continueAfter(bodyOutcome, terminal.fallthrough, stops, afterWalkState);
     if (throwPoints.length === 0)
       throwPoints.push({ walkState: afterWalkState, test: createUnknown("throws", terminal.loc) });
     const branch = this.#interpreter.createBranchSite(terminal.loc);
-    const catchArms = throwPoints.map(({ walkState: throwWalkState, test }) => ({
-      test,
-      outcome: this.#walkArm(handler, blockId, bodyStops, throwWalkState, test),
+    const catchArms = throwPoints.map((throwPoint) => ({
+      test: throwPoint.test,
+      outcome: this.#walkArm(
+        terminal.handler,
+        blockId,
+        bodyStops,
+        throwPoint.walkState,
+        throwPoint.test,
+      ),
     }));
     const outcome = catchArms.reduceRight<Outcome>(
-      (alternate, { test, outcome: consequent }) => ({
+      (alternate, catchArm) => ({
         kind: "Split",
-        test,
+        test: catchArm.test,
         testKind: "truthy",
         branch,
-        consequent,
+        consequent: catchArm.outcome,
         alternate,
       }),
       bodyOutcome,
     );
-    return this.#continueAfter(outcome, fallthrough, stops, afterWalkState);
+    return this.#continueAfter(outcome, terminal.fallthrough, stops, afterWalkState);
   }
 
   getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {

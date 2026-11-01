@@ -92,7 +92,7 @@ const readConstructor = (method: types.ClassMethod, parts: ClassParts): boolean 
   method.params.every((param) => types.isIdentifier(param, { name: PROPS_NAME })) &&
   method.body.body.every((statement) => {
     if (!types.isExpressionStatement(statement)) return false;
-    const { expression } = statement;
+    const expression = statement.expression;
     if (types.isCallExpression(expression) && types.isSuper(expression.callee)) return true;
     if (!types.isAssignmentExpression(expression, { operator: "=" })) return false;
     if (isThisMember(expression.left, STATE_NAME)) {
@@ -171,11 +171,10 @@ const isDeferredFunction = (path: NodePath<types.Function>): boolean => {
   if (path.node.async || path.node.generator) return true;
   const call = path.parentPath;
   if (!call.isCallExpression() || call.node.callee === path.node) return false;
-  const { callee } = call.node;
   return !(
-    types.isMemberExpression(callee) &&
-    types.isIdentifier(callee.property) &&
-    SYNCHRONOUS_CALLBACK_METHODS.has(callee.property.name)
+    types.isMemberExpression(call.node.callee) &&
+    types.isIdentifier(call.node.callee.property) &&
+    SYNCHRONOUS_CALLBACK_METHODS.has(call.node.callee.property.name)
   );
 };
 
@@ -207,13 +206,12 @@ const isUnboundMethodValue = (
   const value = name === null ? undefined : parts.methods.get(name);
   if (!name || !value || types.isArrowFunctionExpression(value) || parts.boundNames.has(name))
     return false;
-  const { parent } = member;
-  const isCalled = types.isCallExpression(parent) && parent.callee === member.node;
+  const isCalled = types.isCallExpression(member.parent) && member.parent.callee === member.node;
   const isBound =
-    types.isMemberExpression(parent) &&
-    parent.object === member.node &&
-    types.isIdentifier(parent.property) &&
-    BINDING_METHODS.has(parent.property.name);
+    types.isMemberExpression(member.parent) &&
+    member.parent.object === member.node &&
+    types.isIdentifier(member.parent.property) &&
+    BINDING_METHODS.has(member.parent.property.name);
   return !isCalled && !isBound && usesThis(value);
 };
 
@@ -297,11 +295,10 @@ const rewriteThis = (
       path.skip();
     },
     ExpressionStatement(path) {
-      const { expression } = path.node;
       const isConstructorStatement =
         path.parentPath.parentPath?.isClassMethod({ kind: "constructor" }) === true;
-      if (!isConstructorStatement || !types.isAssignmentExpression(expression)) return;
-      if (isBindCall(expression.right)) {
+      if (!isConstructorStatement || !types.isAssignmentExpression(path.node.expression)) return;
+      if (isBindCall(path.node.expression.right)) {
         path.skip();
         return;
       }
@@ -313,9 +310,10 @@ const rewriteThis = (
       if (!isShadowed(path, path.node.name)) isLowerable = false;
     },
     ThisExpression(path) {
-      const { parent } = path;
       const isThisObject =
-        types.isMemberExpression(parent) && parent.object === path.node && !parent.computed;
+        types.isMemberExpression(path.parent) &&
+        path.parent.object === path.node &&
+        !path.parent.computed;
       if (!isThisObject || isApplied) isLowerable = false;
     },
     MemberExpression(member) {
@@ -478,7 +476,6 @@ const createComponentBody = (
 const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
   const parts = readClassParts(path.node);
   if (!parts?.render) return false;
-  const { render } = parts;
   const introducedNames = new Set([
     STATE_NAME,
     SET_STATE_NAME,
@@ -486,9 +483,9 @@ const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
     ...parts.methods.keys(),
   ]);
   const checked = rewriteThis(path, parts, introducedNames, false);
-  if (!checked || !createComponentBody(parts, render, checked.usesState)) return false;
+  if (!checked || !createComponentBody(parts, parts.render, checked.usesState)) return false;
   if (!rewriteThis(path, parts, introducedNames, true)) return false;
-  const body = createComponentBody(parts, render, checked.usesState) ?? [];
+  const body = createComponentBody(parts, parts.render, checked.usesState) ?? [];
   const params = [types.identifier(PROPS_NAME)];
   const block = types.blockStatement(body);
   const id = withLoc(types.identifier(name), path.node.id?.loc ?? path.node.loc);
@@ -502,9 +499,8 @@ const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
 
 const getClassName = (path: NodePath<types.Class>): string | null => {
   if (path.node.id) return path.node.id.name;
-  const { parent } = path;
-  return types.isVariableDeclarator(parent) && types.isIdentifier(parent.id)
-    ? parent.id.name
+  return types.isVariableDeclarator(path.parent) && types.isIdentifier(path.parent.id)
+    ? path.parent.id.name
     : null;
 };
 

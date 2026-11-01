@@ -40,22 +40,26 @@ const formatBailoutCounts = (reasons: string[]): string[] => {
     .map(([reason, count]) => `${reason} ${count}`);
 };
 
-const formatTotals = (
-  { components, fileCount, unparsedFiles }: ProjectAnalysis,
-  elapsedMs: number,
-): string[] => {
-  const stateCount = components.reduce(
-    (total, { model }) => total + model.stateSpace.stateCount,
+const formatTotals = (project: ProjectAnalysis, elapsedMs: number): string[] => {
+  const stateCount = project.components.reduce(
+    (total, component) => total + component.model.stateSpace.stateCount,
     0,
   );
-  const findingCount = components.reduce((total, { model }) => total + model.findings.length, 0);
+  const findingCount = project.components.reduce(
+    (total, component) => total + component.model.findings.length,
+    0,
+  );
   const bailoutCounts = formatBailoutCounts(
-    components.flatMap(({ analysis }) => analysis.bailouts.map((bailout) => bailout.reason)),
+    project.components.flatMap((component) =>
+      component.analysis.bailouts.map((bailout) => bailout.reason),
+    ),
   );
   return [
-    `${components.length} components · ${stateCount} states · ${findingCount} findings · ${fileCount} files · ${elapsedMs} ms`,
+    `${project.components.length} components · ${stateCount} states · ${findingCount} findings · ${project.fileCount} files · ${elapsedMs} ms`,
     ...(bailoutCounts.length > 0 ? [`bailouts: ${bailoutCounts.join(", ")}`] : []),
-    ...(unparsedFiles.length > 0 ? [`could not parse: ${unparsedFiles.join(", ")}`] : []),
+    ...(project.unparsedFiles.length > 0
+      ? [`could not parse: ${project.unparsedFiles.join(", ")}`]
+      : []),
   ];
 };
 

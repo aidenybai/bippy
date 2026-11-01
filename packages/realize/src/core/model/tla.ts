@@ -54,13 +54,13 @@ const formatWrite = (variable: string, next: NextValue): string =>
     : `${variable}' \\in ${formatNextValue(next, variable)}`;
 
 const formatAction = (action: Action, variables: Variable[]): string[] => {
-  const written = new Set(action.writes.map(({ variable }) => variable));
+  const written = new Set(action.writes.map((write) => write.variable));
   const unchanged = variables
     .filter((variable) => !written.has(variable.name))
     .map((variable) => variable.name);
   const conjuncts = [
     formatPredicate(action.guard),
-    ...action.writes.map(({ variable, next }) => formatWrite(variable, next)),
+    ...action.writes.map((write) => formatWrite(write.variable, write.next)),
     ...(unchanged.length > 0 ? [`UNCHANGED <<${unchanged.join(", ")}>>`] : []),
   ].filter((conjunct) => conjunct !== "TRUE");
   return [
@@ -95,9 +95,8 @@ export const formatTla = (
   model: ComponentModel,
   definitions: InvariantDefinition[] = [],
 ): string => {
-  const { variables, actions } = model;
-  const names = variables.map((variable) => variable.name);
-  const variableComments = variables.map(
+  const names = model.variables.map((variable) => variable.name);
+  const variableComments = model.variables.map(
     (variable) =>
       `\\* ${variable.name}: ${variable.label} (${variable.source}), ${variable.domain.length} values`,
   );
@@ -110,12 +109,12 @@ export const formatTla = (
     ...formatView(model),
     "",
     "Init ==",
-    ...(variables.length > 0
-      ? variables.map((variable) => `  /\\ ${formatInitial(variable)}`)
+    ...(model.variables.length > 0
+      ? model.variables.map((variable) => `  /\\ ${formatInitial(variable)}`)
       : ["  TRUE"]),
     "",
-    ...actions.flatMap((action) => [...formatAction(action, variables), ""]),
-    `Next == ${actions.length > 0 ? actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
+    ...model.actions.flatMap((action) => [...formatAction(action, model.variables), ""]),
+    `Next == ${model.actions.length > 0 ? model.actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",
     ...model.invariants.flatMap((invariant) => [

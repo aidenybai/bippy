@@ -199,16 +199,22 @@ const createHarnessPlugins = (
   context: HarnessContext,
   polyfilledModules: Set<string>,
 ): Plugin[] => {
-  const { appDirectory, nextDirectory, references } = context;
   return [
-    createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
-    createStandInPlugin(polyfilledModules, references.packageImports),
-    createAssetPlugin(isDependencyDeclared(appDirectory, "@svgr/webpack")),
-    ...(isDependencyDeclared(appDirectory, "worker-loader") ? [createWorkerImportPlugin()] : []),
-    createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
+    createStubPlugin(context.nextDirectory, context.appImporter, context.references.nextFonts),
+    createStandInPlugin(polyfilledModules, context.references.packageImports),
+    createAssetPlugin(isDependencyDeclared(context.appDirectory, "@svgr/webpack")),
+    ...(isDependencyDeclared(context.appDirectory, "worker-loader")
+      ? [createWorkerImportPlugin()]
+      : []),
+    createHarnessPlugin(
+      context.appDirectory,
+      context.providers,
+      context.setup,
+      context.appImporter,
+    ),
     createMissingModulePlugin(),
     createCoveragePlugin(context.counters),
-    ...(nextDirectory ? [createNextImagePlugin()] : []),
+    ...(context.nextDirectory ? [createNextImagePlugin()] : []),
     createJsxInScriptPlugin(),
     createServerActionPlugin(),
     createTypeReexportPlugin(),
@@ -216,7 +222,7 @@ const createHarnessPlugins = (
     createCommonJsPlugin(),
     createRequirePlugin(),
     createImportMetaUrlFilterPlugin(),
-    tsconfigPaths({ root: appDirectory }),
+    tsconfigPaths({ root: context.appDirectory }),
   ];
 };
 

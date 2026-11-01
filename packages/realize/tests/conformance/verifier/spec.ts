@@ -99,7 +99,8 @@ const findClickAction = async (
 };
 
 const expectShowingView = (session: Session, capture: Capture, label: string): void => {
-  const { analysis, model } = session.component;
+  const analysis = session.component.analysis;
+  const model = session.component.model;
   const labelledViews = model.views.filter((view) => isLabelled(view, label));
   expect(
     labelledViews.length,
@@ -113,13 +114,10 @@ const expectShowingView = (session: Session, capture: Capture, label: string): v
   ).toBe(true);
 };
 
-const createComponentFixture = ({
-  page,
-  session,
-  props,
-  initialCapture,
-}: FixtureContext): ComponentFixture => {
-  let current = initialCapture;
+const createComponentFixture = (fixtureContext: FixtureContext): ComponentFixture => {
+  const page = fixtureContext.page;
+  const session = fixtureContext.session;
+  let current = fixtureContext.initialCapture;
   let path: string[] = [];
   return {
     page,
@@ -128,12 +126,24 @@ const createComponentFixture = ({
       const after = await performInPage(page, action.key);
       if (!after) throw new Error(`Clicking "${label}" failed`);
       path = [...path, action.key];
-      session.observations.push({ props, path, action, before: current, after });
+      session.observations.push({
+        props: fixtureContext.props,
+        path,
+        action,
+        before: current,
+        after,
+      });
       current = after;
     },
     observe: async () => {
       current = await page.evaluate(() => window.__verify.observe());
-      session.observations.push({ props, path, action: null, before: null, after: current });
+      session.observations.push({
+        props: fixtureContext.props,
+        path,
+        action: null,
+        before: null,
+        after: current,
+      });
     },
     expectState: (label) => expectShowingView(session, current, label),
   };
@@ -144,8 +154,8 @@ const findExportedComponent = (
   componentName: string,
 ): ExportedComponent => {
   for (const component of project.components) {
-    const { exportName } = component.analysis;
-    if (component.analysis.name === componentName && exportName) return { component, exportName };
+    if (component.analysis.name === componentName && component.analysis.exportName)
+      return { component, exportName: component.analysis.exportName };
   }
   throw new Error(`No exported component named ${componentName}`);
 };
@@ -167,16 +177,20 @@ const startSession = async (
   options: MountOptions,
 ): Promise<FixtureContext> => {
   const { component, exportName } = findExportedComponent(project, componentName);
-  const { analysis } = component;
-  const props = getMountProps(analysis, options);
+  const props = getMountProps(component.analysis, options);
   const baseRequest: MountRequest = {
-    module: project.getComponentModule(analysis.file),
+    module: project.getComponentModule(component.analysis.file),
     exportName,
     props,
     scenario: null,
     wrappers: [],
   };
-  const { wrappers } = await resolveWrappers(page, baseRequest, analysis, project.projectIndex);
+  const { wrappers } = await resolveWrappers(
+    page,
+    baseRequest,
+    component.analysis,
+    project.projectIndex,
+  );
   const initialCapture = await mountInPage(page, {
     ...baseRequest,
     scenario: options.scenario ?? null,
