@@ -28,8 +28,8 @@ import { MemoStaleness } from "./memo-staleness";
 import { MutationTracker } from "./mutation-tracker";
 import { PatternMatcher } from "./pattern-matcher";
 import type { BranchOperator } from "./control-flow-walker";
-import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
-import type { WalkState } from "./walk-state";
+import { ROOT_PATH_STATE, getAsyncPathState } from "./path-state";
+import type { PathState } from "./path-state";
 import type {
   ArrayExpressionValue,
   Binding,
@@ -553,7 +553,7 @@ export class Interpreter {
 
   evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
     this.walker.blockVisits = 0;
-    return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
+    return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_PATH_STATE);
   }
 
   markRenderMutation(binding: Binding): void {
@@ -581,32 +581,32 @@ export class Interpreter {
     this.walker.blockVisits = 0;
     try {
       const callbacks = getContainedValues(callback);
-      const rootWalkState = { ...ROOT_WALK_STATE, renderGuards, guards };
+      const rootPathState = { ...ROOT_PATH_STATE, renderGuards, guards };
       const results: SymbolicValue[] = [];
       for (const [index, handlerCallback] of callbacks.entries()) {
-        const walkState =
+        const pathState =
           callback.kind === "ObjectExpression" && callbacks.length > 1
             ? {
-                ...rootWalkState,
+                ...rootPathState,
                 guards: [...guards, createUnknown(`called:${index}`, GeneratedSource)],
               }
-            : rootWalkState;
+            : rootPathState;
         const returned = runsCleanup
-          ? this.#getReturnedValue(handlerCallback, argumentValues, walkState)
+          ? this.#getReturnedValue(handlerCallback, argumentValues, pathState)
           : null;
         const cleanups = returned ? getReturnedFunctions(returned) : [];
         const updateCountBeforeCleanup = handlerEffects.updateCount;
-        const cleanupWalkState =
+        const cleanupPathState =
           returned?.kind === "Function"
-            ? walkState
+            ? pathState
             : {
-                ...walkState,
-                guards: [...walkState.guards, createUnknown("previous-render", GeneratedSource)],
+                ...pathState,
+                guards: [...pathState.guards, createUnknown("previous-render", GeneratedSource)],
               };
-        for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupWalkState);
+        for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupPathState);
         handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
         if (cleanups.length > 0) this.cells = new Cells();
-        const result = this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
+        const result = this.#runCallback(handlerCallback, argumentValues, new Set(), pathState);
         if (result) results.push(result);
       }
       this.forgetHandlerWrites(callback);
@@ -618,7 +618,7 @@ export class Interpreter {
             this.storeReads.recordExternalUpdate(
               handlerEffects,
               createBindingValue(binding),
-              ROOT_WALK_STATE,
+              ROOT_PATH_STATE,
             );
       return { ...handlerEffects.finish(), returned: results };
     } finally {
@@ -630,10 +630,10 @@ export class Interpreter {
   #getReturnedValue(
     callback: SymbolicValue,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     return this.#withoutEffects(callback, () =>
-      this.#runCallback(callback, argumentValues, new Set(), walkState),
+      this.#runCallback(callback, argumentValues, new Set(), pathState),
     );
   }
 
@@ -870,7 +870,7 @@ export class Interpreter {
     callee: FunctionValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
     thisValue?: SymbolicValue,
   ): SymbolicValue {
     const hirFunction = this.functions.get(callee.functionId);
@@ -879,7 +879,7 @@ export class Interpreter {
       this.#inlinedFunctions.size >= MAX_INLINE_DEPTH ||
       this.#inlinedFunctions.has(hirFunction)
     ) {
-      this.#recordReachableSetters(callee, loc, walkState, new Set());
+      this.#recordReachableSetters(callee, loc, pathState, new Set());
       return createUnknown("call", loc);
     }
     this.#inlinedFunctions.add(hirFunction);
@@ -889,7 +889,7 @@ export class Interpreter {
       return this.#evaluateCallee(
         hirFunction,
         argumentValues,
-        walkState,
+        pathState,
         callee.functionId,
         thisValue,
       );
@@ -902,7 +902,7 @@ export class Interpreter {
   #recordReachableSetters(
     callee: FunctionValue,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
     visited: Set<number>,
   ): void {
     const collector = this.#handlerEffects;
@@ -911,8 +911,8 @@ export class Interpreter {
     for (const place of this.functions.get(callee.functionId)?.context ?? []) {
       const value = this.read(place);
       if (value.kind === "Setter" || value.kind === "Dispatch")
-        collector.recordSetterCall(value.binding, createUnknown("call", loc), walkState);
-      if (value.kind === "Function") this.#recordReachableSetters(value, loc, walkState, visited);
+        collector.recordSetterCall(value.binding, createUnknown("call", loc), pathState);
+      if (value.kind === "Function") this.#recordReachableSetters(value, loc, pathState, visited);
     }
   }
 
@@ -988,14 +988,14 @@ export class Interpreter {
   callStoredFunctions(
     place: BindingValue,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     this.#callChosen(
       this.#getCalledFunctions(place),
       getStoredLabel(place),
       argumentValues,
       place.binding.loc,
-      walkState,
+      pathState,
     );
   }
 
@@ -1004,13 +1004,13 @@ export class Interpreter {
     label: string,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     let skipped: SymbolicValue[] = [];
     for (const [index, stored] of functions.entries()) {
       const isChosen = createUnknown(`stored-call:${label}:${index}`, loc);
-      const guards = [...walkState.guards, ...skipped, isChosen];
-      this.callStoredValue(stored, argumentValues, loc, { ...walkState, guards });
+      const guards = [...pathState.guards, ...skipped, isChosen];
+      this.callStoredValue(stored, argumentValues, loc, { ...pathState, guards });
       skipped = [...skipped, negate(isChosen)];
     }
   }
@@ -1019,20 +1019,20 @@ export class Interpreter {
     stored: SymbolicValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
     thisValue?: SymbolicValue,
   ): void {
     const [firstArgument] = argumentValues;
     if (stored.kind === "Function")
-      this.callFunction(stored, argumentValues, loc, walkState, thisValue);
-    if (stored.kind === "Setter") this.#applySetter(stored, firstArgument, walkState);
-    if (stored.kind === "Dispatch") this.#applyDispatch(stored, firstArgument, loc, walkState);
+      this.callFunction(stored, argumentValues, loc, pathState, thisValue);
+    if (stored.kind === "Setter") this.#applySetter(stored, firstArgument, pathState);
+    if (stored.kind === "Dispatch") this.#applyDispatch(stored, firstArgument, loc, pathState);
     if (stored.kind === "Bound")
       this.callStoredValue(
         stored.callee,
         [...stored.argumentValues, ...argumentValues],
         loc,
-        walkState,
+        pathState,
         stored.receiver,
       );
   }
@@ -1096,7 +1096,7 @@ export class Interpreter {
   #evaluateCallee(
     hirFunction: HIRFunction,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
     functionId: number,
     thisValue?: SymbolicValue,
   ): SymbolicValue {
@@ -1104,7 +1104,7 @@ export class Interpreter {
     const result = this.#evaluateFunction(
       hirFunction,
       argumentValues,
-      walkState,
+      pathState,
       functionId,
       thisValue,
     );
@@ -1138,7 +1138,7 @@ export class Interpreter {
     setterArgument: SymbolicValue | undefined,
     previousValue: SymbolicValue,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const updaterValue = setterArgument && this.resolveModuleFunction(setterArgument);
     if (updaterValue?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
@@ -1146,16 +1146,16 @@ export class Interpreter {
     const updater = this.functions.get(updaterValue.functionId);
     return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
       ? createUnknown("deferred-updater", loc)
-      : this.callFunction(updaterValue, [previousValue], loc, walkState);
+      : this.callFunction(updaterValue, [previousValue], loc, pathState);
   }
 
   #applySetter(
     setter: SetterValue,
     setterArgument: SymbolicValue | undefined,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     const collector = this.#getUpdateCollector();
-    const queuedValue = collector.getQueuedValue(setter.binding, walkState);
+    const queuedValue = collector.getQueuedValue(setter.binding, pathState);
     const isPendingValue =
       queuedValue.kind !== "Binding" || queuedValue.binding.id !== setter.binding.id;
     const previousValue =
@@ -1166,16 +1166,16 @@ export class Interpreter {
       setterArgument,
       previousValue,
       setter.binding.loc,
-      walkState,
+      pathState,
     );
-    collector.recordSetterCall(setter.binding, nextValue, walkState);
+    collector.recordSetterCall(setter.binding, nextValue, pathState);
   }
 
   #applyDispatch(
     dispatch: DispatchValue,
     action: SymbolicValue | undefined,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     const isAsyncAction =
       dispatch.reducer.kind === "Function" &&
@@ -1185,20 +1185,20 @@ export class Interpreter {
       dispatch.reducer.kind === "Function"
         ? this.callFunction(
             dispatch.reducer,
-            [collector.getQueuedValue(dispatch.binding, walkState), action ?? UNDEFINED_VALUE],
+            [collector.getQueuedValue(dispatch.binding, pathState), action ?? UNDEFINED_VALUE],
             loc,
-            walkState,
+            pathState,
           )
         : createUnknown("dispatch", loc);
-    const asyncWalkState = isAsyncAction ? getAsyncWalkState(walkState) : walkState;
+    const asyncPathState = isAsyncAction ? getAsyncPathState(pathState) : pathState;
     if (dispatch.pending && isAsyncAction)
-      collector.recordSetterCall(dispatch.pending, { kind: "Primitive", value: true }, walkState);
-    collector.recordSetterCall(dispatch.binding, nextValue, asyncWalkState);
+      collector.recordSetterCall(dispatch.pending, { kind: "Primitive", value: true }, pathState);
+    collector.recordSetterCall(dispatch.binding, nextValue, asyncPathState);
     if (dispatch.pending && isAsyncAction)
       collector.recordSetterCall(
         dispatch.pending,
         { kind: "Primitive", value: false },
-        asyncWalkState,
+        asyncPathState,
       );
   }
 
@@ -1279,10 +1279,10 @@ export class Interpreter {
   #getPureHelperResult(
     helper: ProjectHook | null,
     callSite: CallSite,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     if (!helper) return null;
-    const returned = this.#inlineFunction(helper.hirFunction, callSite, walkState);
+    const returned = this.#inlineFunction(helper.hirFunction, callSite, pathState);
     return hasUnknownPart(returned) ? null : returned;
   }
 
@@ -1291,7 +1291,7 @@ export class Interpreter {
     return declarationKey ? load(declarationKey) : null;
   }
 
-  #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
+  #evaluateCall(callSite: CallSite, pathState: PathState): SymbolicValue {
     if (isMemoCacheCall(callSite.callee, callSite.argumentValues)) return MEMO_CACHE_VALUE;
     const element = this.#evaluateElementCall(callSite);
     if (element) return element;
@@ -1302,7 +1302,7 @@ export class Interpreter {
         callSite.callee,
         callSite.argumentValues,
         callSite.loc,
-        walkState,
+        pathState,
       );
     if (modeled) return modeled;
     this.#recordWholeProps(callSite);
@@ -1311,7 +1311,7 @@ export class Interpreter {
       getCalleeName(callSite, target),
       callSite.argumentValues,
       callSite.loc,
-      walkState,
+      pathState,
     );
     switch (target.kind) {
       case "Portal":
@@ -1324,19 +1324,19 @@ export class Interpreter {
         );
         const position = callSite.loc === GeneratedSource ? "generated" : callSite.loc.start.index;
         return this.withBindingScope(`${this.#resolver.fileName}:${position}`, () =>
-          this.#inlineFunction(target.projectHook.hirFunction, callSite, walkState),
+          this.#inlineFunction(target.projectHook.hirFunction, callSite, pathState),
         );
       }
       case "Store":
-        return this.storeReads.readStore(target.storeKey, target.storeModel, callSite, walkState);
+        return this.storeReads.readStore(target.storeKey, target.storeModel, callSite, pathState);
       case "Hook":
-        return this.#evaluateHookCall(target.hookKind, callSite, walkState);
+        return this.#evaluateHookCall(target.hookKind, callSite, pathState);
       case "ModuleFunction":
-        return this.#inlineFunction(target.hirFunction, callSite, walkState);
+        return this.#inlineFunction(target.hirFunction, callSite, pathState);
       case "Transition":
-        return this.#startTransition(callSite, walkState);
+        return this.#startTransition(callSite, pathState);
       case "Value":
-        return this.#callValue(callSite, walkState);
+        return this.#callValue(callSite, pathState);
       default:
         return assertExhaustive(target, "Unhandled call target");
     }
@@ -1345,23 +1345,23 @@ export class Interpreter {
   #inlineFunction(
     hirFunction: HIRFunction,
     callSite: CallSite,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     return this.callFunction(
       this.#registerFunction(hirFunction),
       callSite.argumentValues,
       callSite.loc,
-      walkState,
+      pathState,
     );
   }
 
-  #startTransition(callSite: CallSite, walkState: WalkState): SymbolicValue {
+  #startTransition(callSite: CallSite, pathState: PathState): SymbolicValue {
     const [scope] = callSite.argumentValues;
-    if (scope) this.#callValue({ ...callSite, callee: scope, argumentValues: [] }, walkState);
+    if (scope) this.#callValue({ ...callSite, callee: scope, argumentValues: [] }, pathState);
     return UNDEFINED_VALUE;
   }
 
-  #callValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
+  #callValue(callSite: CallSite, pathState: PathState): SymbolicValue {
     const callee = callSite.callee;
     const [firstArgument] = callSite.argumentValues;
     if (callee.kind === "Global" && callee.module === null && isPureFunction(callee.name))
@@ -1374,7 +1374,7 @@ export class Interpreter {
           callee,
           callSite.argumentValues,
           callSite.loc,
-          walkState,
+          pathState,
           callSite.thisValue ?? callSite.receiver,
         );
       case "Conditional": {
@@ -1383,19 +1383,19 @@ export class Interpreter {
           ...callee,
           consequent: this.#evaluateCall(
             { ...callSite, callee: callee.consequent },
-            { ...walkState, guards: [...walkState.guards, test] },
+            { ...pathState, guards: [...pathState.guards, test] },
           ),
           alternate: this.#evaluateCall(
             { ...callSite, callee: callee.alternate },
-            { ...walkState, guards: [...walkState.guards, negate(test)] },
+            { ...pathState, guards: [...pathState.guards, negate(test)] },
           ),
         };
       }
       case "Setter":
-        this.#applySetter(callee, firstArgument, walkState);
+        this.#applySetter(callee, firstArgument, pathState);
         return UNDEFINED_VALUE;
       case "Dispatch":
-        this.#applyDispatch(callee, firstArgument, callSite.loc, walkState);
+        this.#applyDispatch(callee, firstArgument, callSite.loc, pathState);
         return UNDEFINED_VALUE;
       case "Bound":
         return this.#evaluateCall(
@@ -1405,22 +1405,22 @@ export class Interpreter {
             thisValue: callee.receiver,
             argumentValues: [...callee.argumentValues, ...callSite.argumentValues],
           },
-          walkState,
+          pathState,
         );
       default:
-        return this.#callOpaqueValue(callSite, walkState);
+        return this.#callOpaqueValue(callSite, pathState);
     }
   }
 
-  #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
+  #callOpaqueValue(callSite: CallSite, pathState: PathState): SymbolicValue {
     const callee = callSite.callee;
     if (callee.kind === "Global" && callee.module !== null) this.#handlerEffects?.addImportedCall();
-    this.#trackProjectCallMutations(callSite, walkState.guards);
-    this.#trackBuiltinMutation(callSite, walkState.guards);
+    this.#trackProjectCallMutations(callSite, pathState.guards);
+    this.#trackBuiltinMutation(callSite, pathState.guards);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
     if (isMutatingCall) this.#handlerEffects?.addOpaqueCall();
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
-      this.#callBinding(callee, callSite.argumentValues, walkState);
+      this.#callBinding(callee, callSite.argumentValues, pathState);
     if (
       isMutatingCall &&
       callee.kind === "Binding" &&
@@ -1429,21 +1429,21 @@ export class Interpreter {
     )
       this.#handlerEffects?.addPossibleMutation(callee.binding);
     if (this.#handlerEffects || isMutatingCall)
-      this.callbacks.passCallbacks(callSite.argumentValues, callSite.loc, walkState);
+      this.callbacks.passCallbacks(callSite.argumentValues, callSite.loc, pathState);
     const isMemberCallee = callee.kind === "Binding" && callee.path.length > 0;
     const getCalleeCallbacks = () =>
       callSite.receiver === undefined
         ? this.getMemberCallbacks(callee)
         : this.getWrappedCallbacks(callee);
     const calleeCallbacks = this.#handlerEffects && !isMemberCallee ? getCalleeCallbacks() : null;
-    if (calleeCallbacks) this.callbacks.passCallbacks(calleeCallbacks, callSite.loc, walkState);
+    if (calleeCallbacks) this.callbacks.passCallbacks(calleeCallbacks, callSite.loc, pathState);
     if (this.#handlerEffects && !calleeCallbacks)
       this.#callChosen(
         this.#getCalledSourceFunctions(callee),
         formatSymbolicValue(callee),
         callSite.argumentValues,
         callSite.loc,
-        walkState,
+        pathState,
       );
     const iterated =
       this.#handlerEffects &&
@@ -1460,7 +1460,7 @@ export class Interpreter {
         iterated,
         formatSymbolicValue(iterated),
         callSite.loc,
-        walkState,
+        pathState,
       );
     if (this.#handlerEffects)
       return createUnknown("call", callSite.loc, {
@@ -1476,7 +1476,7 @@ export class Interpreter {
       );
       if (helper && this.#inlinedFunctions.size < MAX_INLINE_DEPTH) {
         this.functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
-        return this.#inlineFunction(helper.hirFunction, callSite, walkState);
+        return this.#inlineFunction(helper.hirFunction, callSite, pathState);
       }
       this.diagnostics.bailOut(
         "unknown-call",
@@ -1488,7 +1488,7 @@ export class Interpreter {
       return createUnknown("call", callSite.loc);
     }
     const helper = this.#loadPureHelper(callSite);
-    const initial = this.#getPureHelperResult(helper, callSite, walkState);
+    const initial = this.#getPureHelperResult(helper, callSite, pathState);
     if (
       initial &&
       helper &&
@@ -1663,21 +1663,21 @@ export class Interpreter {
     }
   }
 
-  #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
-    this.callStoredFunctions(callee, argumentValues, walkState);
+  #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], pathState: PathState): void {
+    this.callStoredFunctions(callee, argumentValues, pathState);
     if (callee.binding.kind === "prop")
       this.#handlerEffects?.addDelegate(formatPlace(callee.binding, callee.path));
     const memberName = callee.path.length === 1 ? callee.path[0] : undefined;
     const setterField =
       memberName && this.externalSources.getSetterField(callee.binding, memberName);
     if (setterField) {
-      this.#setContextField(callee.binding, setterField, argumentValues[0], walkState);
+      this.#setContextField(callee.binding, setterField, argumentValues[0], pathState);
       return;
     }
     const assignments =
       memberName && this.externalSources.getActionAssignments(callee.binding, memberName);
     if (assignments) {
-      const base = this.getQueuedState(callee.binding, walkState);
+      const base = this.getQueuedState(callee.binding, pathState);
       const readField = (field: string) =>
         this.evaluatePropertyLoad(base, field, callee.binding.loc);
       this.#handlerEffects?.recordSetterCall(
@@ -1689,7 +1689,7 @@ export class Interpreter {
             value: getStoreFieldValue(callee.binding, assignment, argumentValues, readField),
           })),
         ),
-        walkState,
+        pathState,
       );
       return;
     }
@@ -1697,35 +1697,35 @@ export class Interpreter {
       this.#handlerEffects?.recordSetterCall(
         callee.binding,
         createUnknown("store", callee.binding.loc),
-        walkState,
+        pathState,
       );
       return;
     }
     if (isExternalSource(callee.binding) && this.#handlerEffects)
-      this.storeReads.recordExternalUpdate(this.#handlerEffects, callee, walkState);
+      this.storeReads.recordExternalUpdate(this.#handlerEffects, callee, pathState);
   }
 
   #setContextField(
     binding: Binding,
     field: string,
     setterArgument: SymbolicValue | undefined,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     if (!this.#handlerEffects) return;
-    const base = this.getQueuedState(binding, walkState);
+    const base = this.getQueuedState(binding, pathState);
     const previousValue = this.evaluatePropertyLoad(base, field, binding.loc);
     const nextValue = this.#getSetterNextValue(
       setterArgument,
       previousValue,
       binding.loc,
-      walkState,
+      pathState,
     );
     this.#handlerEffects.addUpdate(
       binding,
       createFieldUpdate(base, [
         { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
       ]),
-      getAsyncWalkState(walkState),
+      getAsyncPathState(pathState),
     );
   }
 
@@ -1736,8 +1736,8 @@ export class Interpreter {
     return spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE;
   }
 
-  getQueuedState(binding: Binding, walkState: WalkState): SymbolicValue {
-    return this.#handlerEffects?.getQueuedValue(binding, walkState) ?? createBindingValue(binding);
+  getQueuedState(binding: Binding, pathState: PathState): SymbolicValue {
+    return this.#handlerEffects?.getQueuedValue(binding, pathState) ?? createBindingValue(binding);
   }
 
   collectInputPlaces(
@@ -1895,7 +1895,7 @@ export class Interpreter {
     return createBindingValue(binding);
   }
 
-  #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
+  #evaluateHookCall(hookKind: HookKind, callSite: CallSite, pathState: PathState): SymbolicValue {
     const [firstArgument, secondArgument] = callSite.argumentValues;
     if (getHookTraits(hookKind).isEffect) {
       if (firstArgument)
@@ -1913,11 +1913,11 @@ export class Interpreter {
       this.callbacks.addDeferredCallbacks(callSite.argumentValues, callSite.loc, true);
     if (hookKind === "useImperativeHandle" && secondArgument?.kind === "Function")
       this.callbacks.addDeferredCallbacks(
-        [this.callFunction(secondArgument, [], callSite.loc, walkState)],
+        [this.callFunction(secondArgument, [], callSite.loc, pathState)],
         callSite.loc,
       );
     if (hookKind === "useMemo" && firstArgument?.kind === "Function")
-      return this.callFunction(firstArgument, [], callSite.loc, walkState);
+      return this.callFunction(firstArgument, [], callSite.loc, pathState);
     if ((hookKind === "useCallback" || hookKind === "useEffectEvent") && firstArgument)
       return firstArgument;
     const hookName = callSite.callee.kind === "Global" ? callSite.callee.name : hookKind;
@@ -1927,7 +1927,7 @@ export class Interpreter {
       hookKind,
       name: hookName,
       module: hookModule,
-      argumentValues: this.#evaluateInitializers(hookKind, callSite, walkState),
+      argumentValues: this.#evaluateInitializers(hookKind, callSite, pathState),
       loc: callSite.loc,
     };
     const [contextPlace] = callSite.argumentPlaces;
@@ -1942,21 +1942,21 @@ export class Interpreter {
   #evaluateInitializers(
     hookKind: HookKind,
     callSite: CallSite,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue[] {
     const [initializer, initialArgument, init] = callSite.argumentValues.map((argument) =>
       this.resolveModuleFunction(argument),
     );
     if (hookKind === "useState" && initializer?.kind === "Function")
       return [
-        this.callFunction(initializer, [], callSite.loc, walkState),
+        this.callFunction(initializer, [], callSite.loc, pathState),
         ...callSite.argumentValues.slice(1),
       ];
     if (hookKind !== "useReducer" || !init || !initializer || !initialArgument)
       return callSite.argumentValues;
     const initialState =
       init.kind === "Function"
-        ? this.callFunction(init, [initialArgument], callSite.loc, walkState)
+        ? this.callFunction(init, [initialArgument], callSite.loc, pathState)
         : createUnknown("call", callSite.loc);
     return [initializer, initialState, ...callSite.argumentValues.slice(3)];
   }
@@ -2018,19 +2018,19 @@ export class Interpreter {
   #evaluateMethodCall(
     methodCall: InstructionValueOfKind<"MethodCall">,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const container = this.#getStoredContainer(methodCall, receiver);
     if (container) return container;
     if (!this.#handlerEffects || receiver.kind !== "Binding")
-      return this.#evaluateMethodResult(methodCall, instructionId, walkState);
+      return this.#evaluateMethodResult(methodCall, instructionId, pathState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
     if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
       for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
     if (isRefContents(receiver) && receiver.path.length === 1)
-      this.#dispatchRefEvent(receiver.binding, methodName, walkState);
+      this.#dispatchRefEvent(receiver.binding, methodName, pathState);
     const storedFunctions = this.getStoredFunctions(receiver);
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
@@ -2040,22 +2040,22 @@ export class Interpreter {
         receiver,
         getStoredLabel(receiver),
         methodCall.loc,
-        walkState,
+        pathState,
       );
-    const result = this.#evaluateMethodResult(methodCall, instructionId, walkState);
+    const result = this.#evaluateMethodResult(methodCall, instructionId, pathState);
     if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
   }
 
-  #dispatchRefEvent(binding: Binding, methodName: string, walkState: WalkState): void {
+  #dispatchRefEvent(binding: Binding, methodName: string, pathState: PathState): void {
     const key = `${binding.id}:${methodName}`;
     if (this.#dispatchingRefEvents.has(key)) return;
     const callbacks = this.refEventDispatcher?.(binding.id, methodName) ?? [];
     this.#dispatchingRefEvents.add(key);
     try {
       for (const callback of callbacks)
-        this.#runCallback(callback, [EVENT_ARGUMENT], new Set(), walkState);
+        this.#runCallback(callback, [EVENT_ARGUMENT], new Set(), pathState);
     } finally {
       this.#dispatchingRefEvents.delete(key);
     }
@@ -2082,13 +2082,13 @@ export class Interpreter {
     receiver: SymbolicValue,
     label: string,
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     for (const [index, stored] of storedFunctions.entries()) {
       const isHeld = createUnknown(`stored-item:${label}:${index}`, loc);
       this.callFunction(callback, [stored, createUnknown("item-index", loc), receiver], loc, {
-        ...walkState,
-        guards: [...walkState.guards, isHeld],
+        ...pathState,
+        guards: [...pathState.guards, isHeld],
       });
     }
   }
@@ -2096,7 +2096,7 @@ export class Interpreter {
   #evaluateMethodResult(
     methodCall: InstructionValueOfKind<"MethodCall">,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
@@ -2105,7 +2105,7 @@ export class Interpreter {
     const matched = this.patterns.continue(receiver, methodName, argumentValues, {
       loc: methodCall.loc,
       instructionId,
-      walkState,
+      pathState,
     });
     if (matched) return matched;
     const storeResult = this.storeReads.evaluateStoreMethod(
@@ -2113,7 +2113,7 @@ export class Interpreter {
       receiver,
       methodName,
       argumentValues,
-      walkState,
+      pathState,
     );
     if (storeResult) return storeResult;
     if (receiver.kind === "Collection" && CHAINED_COLLECTION_WRITES.has(methodName))
@@ -2125,7 +2125,7 @@ export class Interpreter {
     const [atIndex] = argumentValues;
     const atValue =
       methodName === "at" && atIndex !== undefined
-        ? this.#readAt(receiver, atIndex, methodCall.loc, instructionId, walkState)
+        ? this.#readAt(receiver, atIndex, methodCall.loc, instructionId, pathState)
         : null;
     if (atValue) return atValue;
     const lookup = this.#getCollectionLookup(receiver, methodName, argumentValues, methodCall.loc);
@@ -2144,7 +2144,7 @@ export class Interpreter {
           argumentPlaces: methodName === "call" ? argumentPlaces.slice(1) : [],
           loc: methodCall.loc,
         },
-        walkState,
+        pathState,
       );
     const instance =
       receiver.kind === "Binding" && receiver.path.length === 0 && receiver.binding.initial
@@ -2152,10 +2152,10 @@ export class Interpreter {
         : receiver;
     const instanceCallbacks = this.#handlerEffects ? this.getMemberCallbacks(instance) : null;
     if (instanceCallbacks)
-      this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, walkState);
+      this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, pathState);
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))
-      this.iteration.visitItemCallback(methodName, callback, methodCall, walkState);
+      this.iteration.visitItemCallback(methodName, callback, methodCall, pathState);
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
       ITERATION_METHODS.has(methodName) &&
@@ -2166,7 +2166,7 @@ export class Interpreter {
       receiver,
       callback,
       methodCall.loc,
-      walkState,
+      pathState,
     );
     if (found) return found;
     const reduced = this.iteration.evaluateLiteralReduce(
@@ -2174,7 +2174,7 @@ export class Interpreter {
       receiver,
       argumentValues,
       methodCall.loc,
-      walkState,
+      pathState,
     );
     if (reduced) return reduced;
     const setItems =
@@ -2183,7 +2183,7 @@ export class Interpreter {
         : null;
     if (setItems && callback?.kind === "Function") {
       for (const item of setItems)
-        this.callFunction(callback, [item, item, receiver], methodCall.loc, walkState);
+        this.callFunction(callback, [item, item, receiver], methodCall.loc, pathState);
       return UNDEFINED_VALUE;
     }
     if (isIteratingLiteral)
@@ -2193,14 +2193,14 @@ export class Interpreter {
         callback,
         methodCall.loc,
         instructionId,
-        walkState,
+        pathState,
       );
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
       return this.iteration.evaluateArrayMap(
         receiver,
         callback,
         methodCall.loc,
-        walkState,
+        pathState,
         methodName === "flatMap",
       );
     if (PROMISE_METHODS.has(methodName)) {
@@ -2209,7 +2209,7 @@ export class Interpreter {
         receiver,
         argumentValues,
         methodCall.loc,
-        walkState,
+        pathState,
       );
       return createUnknown("async", methodCall.loc, {
         kind: "Call",
@@ -2248,15 +2248,15 @@ export class Interpreter {
       : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (pureCall) return this.#createCallResult(callSite, { pureCall });
     const getFirstValue = () =>
-      this.iteration.getFirstValue(methodName, receiver, argumentValues, methodCall.loc, walkState);
+      this.iteration.getFirstValue(methodName, receiver, argumentValues, methodCall.loc, pathState);
     const firstValue = this.#handlerEffects
       ? this.#withoutEffects(callback, getFirstValue)
       : getFirstValue();
-    if (firstValue && this.#handlerEffects) this.#evaluateCall(callSite, walkState);
+    if (firstValue && this.#handlerEffects) this.#evaluateCall(callSite, pathState);
     if (firstValue) return this.#createCallResult(callSite, { initial: firstValue });
     return (
       this.#evaluateDerivedMethod(receiver, methodName, callSite) ??
-      this.#evaluateCall(callSite, walkState)
+      this.#evaluateCall(callSite, pathState)
     );
   }
 
@@ -2291,11 +2291,11 @@ export class Interpreter {
     atIndex: SymbolicValue,
     loc: SourceLocation,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     if (receiver.kind === "Conditional") {
       const readArm = (arm: SymbolicValue) =>
-        this.#readAt(arm, atIndex, loc, instructionId, walkState) ??
+        this.#readAt(arm, atIndex, loc, instructionId, pathState) ??
         this.createDerivedValue([arm, atIndex], "computed-member", loc);
       return {
         ...receiver,
@@ -2339,11 +2339,11 @@ export class Interpreter {
     callback: FunctionValue,
     loc: SourceLocation,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     if (receiver.kind !== "Conditional") {
       if (receiver.kind !== "ArrayExpression") {
-        this.callbacks.passCallbacks([callback], loc, walkState);
+        this.callbacks.passCallbacks([callback], loc, pathState);
         return createUnknown("call", loc);
       }
       const results = this.iteration.callForEachItem(
@@ -2351,7 +2351,7 @@ export class Interpreter {
         callback,
         receiver,
         loc,
-        walkState,
+        pathState,
       );
       return (
         this.iteration.getLiteralResult(methodName, receiver, results) ??
@@ -2376,7 +2376,7 @@ export class Interpreter {
         callback,
         loc,
         instructionId,
-        { ...walkState, guards: [...walkState.guards, test] },
+        { ...pathState, guards: [...pathState.guards, test] },
       ),
       alternate: this.#iterateLiteralArms(
         methodName,
@@ -2384,7 +2384,7 @@ export class Interpreter {
         callback,
         loc,
         instructionId,
-        { ...walkState, guards: [...walkState.guards, negate(test)] },
+        { ...pathState, guards: [...pathState.guards, negate(test)] },
       ),
     };
   }
@@ -2452,22 +2452,22 @@ export class Interpreter {
     });
   }
 
-  evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
+  evaluateInstruction(instruction: Instruction, pathState: PathState): void {
     this.#recordLoadedProperty(instruction);
     this.mutations.recordAliasSources(instruction);
-    this.mutations.track(instruction, walkState);
-    const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
+    this.mutations.track(instruction, pathState);
+    const instructionResult = this.#evaluateInstructionValue(instruction, pathState);
     if (
       instruction.value.kind === "ArrayExpression" ||
       instruction.value.kind === "ObjectExpression" ||
       instruction.value.kind === "NewExpression"
     )
-      this.mutations.recordCreation(instructionResult, walkState);
+      this.mutations.recordCreation(instructionResult, pathState);
     this.write(instruction.lvalue, instructionResult);
-    this.mutations.trackPossibleMutations(instruction, walkState);
+    this.mutations.trackPossibleMutations(instruction, pathState);
   }
 
-  #evaluateInstructionValue(instruction: Instruction, walkState: WalkState): SymbolicValue {
+  #evaluateInstructionValue(instruction: Instruction, pathState: PathState): SymbolicValue {
     const value = instruction.value;
     switch (value.kind) {
       case "Primitive":
@@ -2477,10 +2477,10 @@ export class Interpreter {
       case "LoadLocal":
         return this.read(value.place);
       case "LoadContext":
-        return this.#evaluateLoadContext(value, walkState);
+        return this.#evaluateLoadContext(value, pathState);
       case "StoreLocal":
       case "StoreContext":
-        return this.#evaluateStoreLocal(value, walkState);
+        return this.#evaluateStoreLocal(value, pathState);
       case "DeclareLocal":
       case "DeclareContext":
         this.write(value.lvalue.place, UNDEFINED_VALUE);
@@ -2510,15 +2510,15 @@ export class Interpreter {
         return global;
       }
       case "PropertyLoad":
-        return this.#evaluatePropertyLoad(value, walkState);
+        return this.#evaluatePropertyLoad(value, pathState);
       case "ComputedLoad":
-        return this.#evaluateComputedLoad(value, instruction.id, walkState);
+        return this.#evaluateComputedLoad(value, instruction.id, pathState);
       case "BinaryExpression":
         return foldBinary(value.operator, this.read(value.left), this.read(value.right));
       case "UnaryExpression":
         return foldUnary(value.operator, this.read(value.value));
       case "TypeCastExpression":
-        return this.assertionRecorder.evaluateTypeCast(value, walkState);
+        return this.assertionRecorder.evaluateTypeCast(value, pathState);
       case "ObjectExpression":
         return this.#evaluateObjectLiteral(value);
       case "ArrayExpression":
@@ -2535,9 +2535,9 @@ export class Interpreter {
         return this.#createClosure(value.loweredFunc.func);
       }
       case "CallExpression":
-        return this.#evaluateCallExpression(value, walkState);
+        return this.#evaluateCallExpression(value, pathState);
       case "MethodCall":
-        return this.#evaluateMethodCall(value, instruction.id, walkState);
+        return this.#evaluateMethodCall(value, instruction.id, pathState);
       case "JsxExpression":
         return this.#evaluateJsxElement(value);
       case "JsxFragment":
@@ -2553,7 +2553,7 @@ export class Interpreter {
         });
       case "NewExpression": {
         const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
-        this.callbacks.passCallbacks(argumentValues, value.loc, walkState);
+        this.callbacks.passCallbacks(argumentValues, value.loc, pathState);
         const constructor = this.read(value.callee);
         const collection =
           constructor.kind === "Global" && constructor.module === null
@@ -2579,9 +2579,9 @@ export class Interpreter {
         return instance;
       }
       case "PropertyStore":
-        return this.#evaluatePropertyStore(value, walkState);
+        return this.#evaluatePropertyStore(value, pathState);
       case "ComputedStore": {
-        this.callbacks.passStoredCallback(value, walkState);
+        this.callbacks.passStoredCallback(value, pathState);
         const object = this.read(value.object);
         const storedValue = this.read(value.value);
         if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
@@ -2589,10 +2589,10 @@ export class Interpreter {
       }
       case "PrefixUpdateLocal":
       case "PrefixUpdateContext":
-        return this.#evaluateUpdateLocal(value, true, walkState);
+        return this.#evaluateUpdateLocal(value, true, pathState);
       case "PostfixUpdateLocal":
       case "PostfixUpdateContext":
-        return this.#evaluateUpdateLocal(value, false, walkState);
+        return this.#evaluateUpdateLocal(value, false, pathState);
       case "TemplateLiteral":
         return this.#evaluateTemplateLiteral(value);
       case "StoreGlobal": {
@@ -2635,7 +2635,7 @@ export class Interpreter {
 
   #evaluatePropertyLoad(
     load: InstructionValueOfKind<"PropertyLoad">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const object = this.read(load.object);
     const property = String(load.property);
@@ -2655,7 +2655,7 @@ export class Interpreter {
       load.loc,
     );
     if (!this.#handlerEffects || !isRefCell(object, property)) return loaded;
-    const cellValue = this.cells.read(getRefCellKey(object.binding), loaded, load.loc, walkState);
+    const cellValue = this.cells.read(getRefCellKey(object.binding), loaded, load.loc, pathState);
     const isUnstoredAsyncRead =
       cellValue.kind === "Unknown" &&
       cellValue.reason === "async" &&
@@ -2674,14 +2674,14 @@ export class Interpreter {
 
   #evaluatePropertyStore(
     store: InstructionValueOfKind<"PropertyStore">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
-    this.callbacks.passStoredCallback(store, walkState);
+    this.callbacks.passStoredCallback(store, pathState);
     const object = this.read(store.object);
     const storedValue = this.read(store.value);
     if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
     const setter = getSetterAccessor(object, String(store.property));
-    if (setter) this.callFunction(setter, [storedValue], store.loc, walkState, object);
+    if (setter) this.callFunction(setter, [storedValue], store.loc, pathState, object);
     if (isRefCell(object, String(store.property))) {
       this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
       this.carryWrappedCallbacks(object.binding, storedValue);
@@ -2692,7 +2692,7 @@ export class Interpreter {
         storedValue,
       );
     if (this.#handlerEffects && isRefCell(object, String(store.property))) {
-      this.cells.store(getRefCellKey(object.binding), storedValue, walkState);
+      this.cells.store(getRefCellKey(object.binding), storedValue, pathState);
       this.#handlerEffects.addPossibleMutation(object.binding);
     }
     if (!this.#handlerEffects && isRefCell(object, String(store.property)))
@@ -2702,12 +2702,12 @@ export class Interpreter {
 
   #evaluateLoadContext(
     load: InstructionValueOfKind<"LoadContext">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const loaded = this.read(load.place);
     const isConstant = this.#constantContextIds.has(load.place.identifier.id);
     return this.#handlerEffects && !isConstant
-      ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, walkState)
+      ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, pathState)
       : loaded;
   }
 
@@ -2716,7 +2716,7 @@ export class Interpreter {
       "PrefixUpdateLocal" | "PrefixUpdateContext" | "PostfixUpdateLocal" | "PostfixUpdateContext"
     >,
     isPrefix: boolean,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const isContextCell =
       this.#handlerEffects !== null &&
@@ -2724,11 +2724,11 @@ export class Interpreter {
     const cellKey = getContextCellKey(update.lvalue);
     const loaded = this.read(update.value);
     const previous = isContextCell
-      ? this.cells.read(cellKey, loaded, update.loc, walkState)
+      ? this.cells.read(cellKey, loaded, update.loc, pathState)
       : loaded;
     const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
     this.write(update.lvalue, next);
-    if (isContextCell) this.cells.store(cellKey, next, walkState);
+    if (isContextCell) this.cells.store(cellKey, next, pathState);
     return isPrefix ? next : previous;
   }
 
@@ -2751,7 +2751,7 @@ export class Interpreter {
 
   #evaluateStoreLocal(
     store: InstructionValueOfKind<"StoreLocal" | "StoreContext">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const storedValue = this.read(store.value);
     if (store.kind === "StoreContext" && CONSTANT_DECLARATION_KINDS.has(store.lvalue.kind))
@@ -2778,21 +2778,21 @@ export class Interpreter {
         : storedValue;
     this.write(store.lvalue.place, localValue);
     if (store.kind === "StoreContext" && this.#handlerEffects)
-      this.cells.store(getContextCellKey(store.lvalue.place), localValue, walkState);
+      this.cells.store(getContextCellKey(store.lvalue.place), localValue, pathState);
     return localValue;
   }
 
   #evaluateComputedLoad(
     computedLoad: InstructionValueOfKind<"ComputedLoad">,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     return this.#loadComputedMember(
       this.read(computedLoad.object),
       this.read(computedLoad.property),
       computedLoad,
       instructionId,
-      walkState,
+      pathState,
     );
   }
 
@@ -2801,7 +2801,7 @@ export class Interpreter {
     propertyKey: SymbolicValue,
     computedLoad: InstructionValueOfKind<"ComputedLoad">,
     instructionId: InstructionId,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     if (object.kind === "Conditional" && propertyKey.kind !== "Primitive")
       return {
@@ -2811,14 +2811,14 @@ export class Interpreter {
           propertyKey,
           computedLoad,
           instructionId,
-          walkState,
+          pathState,
         ),
         alternate: this.#loadComputedMember(
           object.alternate,
           propertyKey,
           computedLoad,
           instructionId,
-          walkState,
+          pathState,
         ),
       };
     const bindingLiteral =
@@ -2945,11 +2945,11 @@ export class Interpreter {
 
   #evaluateCallExpression(
     call: InstructionValueOfKind<"CallExpression">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const argumentPlaces = call.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
-    const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, walkState);
+    const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, pathState);
     if (mapped) return mapped;
     const receiverPlace = this.getPropertyObject(call.callee);
     return this.#evaluateCall(
@@ -2961,7 +2961,7 @@ export class Interpreter {
         argumentPlaces,
         loc: call.loc,
       },
-      walkState,
+      pathState,
     );
   }
 
@@ -3122,7 +3122,7 @@ export class Interpreter {
   #evaluateFunction(
     hirFunction: HIRFunction,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
     functionId: number | null = null,
     thisValue?: SymbolicValue,
   ): SymbolicValue {
@@ -3153,15 +3153,15 @@ export class Interpreter {
               ),
         );
       });
-      const outcome = this.walker.walk(
+      const completion = this.walker.walk(
         hirFunction.body.entry,
         NO_STOPS,
         null,
-        walkState,
+        pathState,
         "unresolved",
       );
-      this.walker.mergeReturnedContextValues(outcome, walkState.guards);
-      return this.walker.getOutcomeValue(outcome, hirFunction.loc, walkState.guards);
+      this.walker.mergeReturnedContextValues(completion, pathState.guards);
+      return this.walker.getCompletionValue(completion, hirFunction.loc, pathState.guards);
     } finally {
       this.#frameClosureIds.pop();
       const outerIdentifierIds = new Set(hirFunction.context.map((place) => place.identifier.id));
@@ -3195,25 +3195,25 @@ export class Interpreter {
     callback: SymbolicValue,
     argumentValues: SymbolicValue[],
     visitedFunctionIds: Set<number>,
-    walkState: WalkState = ROOT_WALK_STATE,
+    pathState: PathState = ROOT_PATH_STATE,
     thisValue?: SymbolicValue,
   ): SymbolicValue | null {
     if (callback.kind === "Conditional") {
       const test = getTestExpression(callback);
-      const consequentWalkState = { ...walkState, guards: [...walkState.guards, test] };
-      const alternateWalkState = { ...walkState, guards: [...walkState.guards, negate(test)] };
+      const consequentPathState = { ...pathState, guards: [...pathState.guards, test] };
+      const alternatePathState = { ...pathState, guards: [...pathState.guards, negate(test)] };
       this.#runCallback(
         callback.consequent,
         argumentValues,
         new Set(visitedFunctionIds),
-        consequentWalkState,
+        consequentPathState,
         thisValue,
       );
       this.#runCallback(
         callback.alternate,
         argumentValues,
         new Set(visitedFunctionIds),
-        alternateWalkState,
+        alternatePathState,
         thisValue,
       );
       return null;
@@ -3223,21 +3223,21 @@ export class Interpreter {
         callback.callee,
         [...callback.argumentValues, ...argumentValues],
         visitedFunctionIds,
-        walkState,
+        pathState,
         callback.receiver,
       );
     if (callback.kind === "Setter")
       this.#handlerEffects?.recordSetterCall(
         callback.binding,
         argumentValues[0] ?? EVENT_ARGUMENT,
-        walkState,
+        pathState,
       );
     if (callback.kind === "Dispatch")
-      this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, walkState);
-    if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
+      this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, pathState);
+    if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, pathState);
     if (callback.kind === "Unknown") {
       const memberCallbacks = this.getMemberCallbacks(callback);
-      if (memberCallbacks) this.callbacks.passCallbacks(memberCallbacks, callback.loc, walkState);
+      if (memberCallbacks) this.callbacks.passCallbacks(memberCallbacks, callback.loc, pathState);
     }
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return null;
     visitedFunctionIds.add(callback.functionId);
@@ -3250,7 +3250,7 @@ export class Interpreter {
     const result = this.#evaluateCallee(
       hirFunction,
       externalArguments,
-      walkState,
+      pathState,
       callback.functionId,
       thisValue,
     );

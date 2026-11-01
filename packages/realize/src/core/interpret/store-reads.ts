@@ -5,8 +5,8 @@ import { formatPlace } from "../values/format";
 import type { CallSite, InstructionValueOfKind, Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "../values/symbolic-values";
 import type { Binding, BindingValue, StoreModel, SymbolicValue } from "../types";
-import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
-import type { WalkState } from "./walk-state";
+import { ROOT_PATH_STATE, getAsyncPathState } from "./path-state";
+import type { PathState } from "./path-state";
 
 const STORE_METHODS = new Set(["getState", "setState"]);
 
@@ -21,7 +21,7 @@ export class StoreReads {
     storeKey: string,
     storeModel: StoreModel,
     callSite: CallSite,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
     const storeBinding = this.#getStoreBinding(storeKey, storeModel, storeHookName, callSite.loc);
@@ -31,7 +31,7 @@ export class StoreReads {
           selector,
           [createBindingValue(storeBinding)],
           callSite.loc,
-          walkState,
+          pathState,
         )
       : createBindingValue(storeBinding);
   }
@@ -56,7 +56,7 @@ export class StoreReads {
     receiver: SymbolicValue,
     methodName: string,
     argumentValues: SymbolicValue[],
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue | null {
     if (receiver.kind !== "Global" || !STORE_METHODS.has(methodName)) return null;
     const storeKey = this.#interpreter.resolver.getDeclarationKey(methodCall.receiver.loc);
@@ -68,17 +68,17 @@ export class StoreReads {
     const state = createBindingValue(storeBinding);
     if (methodName === "getState") return state;
     const [nextState] = argumentValues;
-    const base = this.#interpreter.getQueuedState(storeBinding, walkState);
+    const base = this.#interpreter.getQueuedState(storeBinding, pathState);
     const partial =
       nextState?.kind === "Function"
-        ? this.#interpreter.callFunction(nextState, [base], methodCall.loc, walkState)
+        ? this.#interpreter.callFunction(nextState, [base], methodCall.loc, pathState)
         : nextState;
     this.#interpreter.handlerEffects?.recordSetterCall(
       storeBinding,
       partial?.kind === "ObjectExpression" && argumentValues.length === 1
         ? { ...partial, spreads: [base, ...partial.spreads] }
         : createUnknown("store", methodCall.loc),
-      walkState,
+      pathState,
     );
     return UNDEFINED_VALUE;
   }
@@ -92,14 +92,14 @@ export class StoreReads {
         handlerEffects.addUpdate(
           binding,
           createUnknown("external", GeneratedSource),
-          getAsyncWalkState(ROOT_WALK_STATE),
+          getAsyncPathState(ROOT_PATH_STATE),
         );
   }
 
   recordExternalUpdate(
     handlerEffects: EffectCollector,
     callee: BindingValue,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     handlerEffects.addDelegate(formatPlace(callee.binding, callee.path));
     const affectedBindings = this.#interpreter.bindingTable.bindings.filter(
@@ -112,7 +112,7 @@ export class StoreReads {
         handlerEffects.addUpdate(
           binding,
           createUnknown("external", GeneratedSource),
-          getAsyncWalkState(walkState),
+          getAsyncPathState(pathState),
         );
   }
 }

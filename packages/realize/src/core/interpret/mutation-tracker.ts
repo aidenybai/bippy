@@ -20,7 +20,7 @@ import { getMutatedPlace } from "./get-mutated-place";
 import { isFunctionCreation } from "./is-function-creation";
 import { isStateBinding } from "../values/is-state-binding";
 import { isCollectionWrite } from "../interpret/literal-receivers";
-import type { WalkState } from "./walk-state";
+import type { PathState } from "./path-state";
 
 interface CreationPath {
   guards: SymbolicValue[];
@@ -133,15 +133,15 @@ export class MutationTracker {
     this.#interpreter = interpreter;
   }
 
-  recordCreation(value: SymbolicValue, walkState: WalkState): void {
+  recordCreation(value: SymbolicValue, pathState: PathState): void {
     this.#creationPaths.set(value, {
-      guards: walkState.guards,
+      guards: pathState.guards,
       loopDepth: this.#interpreter.walker.loopDepth,
       isInHandler: this.#interpreter.handlerEffects !== null,
     });
   }
 
-  track(instruction: Instruction, walkState: WalkState): void {
+  track(instruction: Instruction, pathState: PathState): void {
     if (isFunctionCreation(instruction.value)) return;
     const mutatedLiterals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
@@ -150,15 +150,15 @@ export class MutationTracker {
       const mutatedValue = this.#interpreter.read(mutatedPlace);
       if (isMutableLiteral(mutatedValue) && !mutatedLiterals.has(mutatedValue)) {
         mutatedLiterals.add(
-          this.#mutateLiteral(instruction, mutatedPlace, mutatedValue, walkState),
+          this.#mutateLiteral(instruction, mutatedPlace, mutatedValue, pathState),
         );
         if (isTransitiveMutation(effect)) this.#forgetNestedLiterals(mutatedValue, instruction.loc);
         continue;
       }
       if (mutatedValue.kind === "Global")
-        this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc, walkState.guards);
+        this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc, pathState.guards);
       if (mutatedValue.kind === "Binding" && mutatedValue.binding.kind === "module")
-        this.#trackModuleMutation(mutatedValue, mutatedPlace.loc, walkState.guards);
+        this.#trackModuleMutation(mutatedValue, mutatedPlace.loc, pathState.guards);
       if (
         mutatedValue.kind === "Binding" &&
         mutatedValue.binding.kind === "call" &&
@@ -175,13 +175,13 @@ export class MutationTracker {
         mutatedValue,
         mutatedPlace.loc,
         storedProperty,
-        walkState.guards,
+        pathState.guards,
         effect.kind === "MutateFrozen",
       );
     }
   }
 
-  trackPossibleMutations(instruction: Instruction, walkState: WalkState): void {
+  trackPossibleMutations(instruction: Instruction, pathState: PathState): void {
     if (isFunctionCreation(instruction.value)) return;
     for (const effect of instruction.effects ?? []) {
       if (effect.kind === "Freeze") this.#freeze(this.#interpreter.read(effect.value));
@@ -197,7 +197,7 @@ export class MutationTracker {
       const possiblyMutatedValue = this.#interpreter.read(possiblyMutatedPlace);
       if (this.#frozenValues.has(possiblyMutatedValue)) continue;
       if (isMutableLiteral(possiblyMutatedValue)) {
-        this.#mutateLiteral(instruction, possiblyMutatedPlace, possiblyMutatedValue, walkState);
+        this.#mutateLiteral(instruction, possiblyMutatedPlace, possiblyMutatedValue, pathState);
         if (isTransitiveMutation(effect))
           this.#forgetNestedLiterals(possiblyMutatedValue, instruction.loc);
         continue;
@@ -410,19 +410,19 @@ export class MutationTracker {
     instruction: Instruction,
     mutatedPlace: Place,
     literal: MutableLiteral,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const creationPath = this.#creationPaths.get(literal);
     const isInCreationScope =
       creationPath !== undefined &&
       creationPath.loopDepth === this.#interpreter.walker.loopDepth &&
       creationPath.isInHandler === (this.#interpreter.handlerEffects !== null);
-    const isOnCreationPath = isInCreationScope && creationPath.guards === walkState.guards;
+    const isOnCreationPath = isInCreationScope && creationPath.guards === pathState.guards;
     const isUnderCreationPath =
       isInCreationScope &&
-      creationPath.guards.every((guard, index) => walkState.guards[index] === guard);
+      creationPath.guards.every((guard, index) => pathState.guards[index] === guard);
     const writeGuards = isUnderCreationPath
-      ? walkState.guards.slice(creationPath.guards.length)
+      ? pathState.guards.slice(creationPath.guards.length)
       : null;
     const mutatedLiteral = this.#getMutatedLiteral(instruction, mutatedPlace, literal, {
       isOnCreationPath,

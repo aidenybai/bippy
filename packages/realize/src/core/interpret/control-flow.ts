@@ -12,13 +12,13 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
 
-interface ReturnOutcome {
+interface ReturnCompletion {
   kind: "Return";
   value: SymbolicValue;
   contextValues?: ReadonlyMap<IdentifierId, ContextValue>;
 }
 
-export interface FallthroughOutcome {
+export interface FallthroughCompletion {
   kind: "Fallthrough";
   from: BlockId | null;
   to: BlockId;
@@ -30,15 +30,15 @@ export interface ContextValue {
   value: SymbolicValue;
 }
 
-export type Outcome = ReturnOutcome | FallthroughOutcome | SplitOutcome;
+export type Completion = ReturnCompletion | FallthroughCompletion | SplitCompletion;
 
-export interface SplitOutcome {
+export interface SplitCompletion {
   kind: "Split";
   test: SymbolicValue;
   testKind: TestKind;
   branch: BranchSite;
-  consequent: Outcome;
-  alternate: Outcome;
+  consequent: Completion;
+  alternate: Completion;
 }
 
 export type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
@@ -69,15 +69,15 @@ export const getLoopExit = (terminal: LoopTerminal): BlockId =>
   terminal.kind === "for-in" ? terminal.init : terminal.test;
 
 export const mapFallthroughs = (
-  outcome: Outcome,
-  mapFallthrough: (fallthrough: FallthroughOutcome) => Outcome,
-): Outcome => {
-  if (outcome.kind === "Fallthrough") return mapFallthrough(outcome);
-  if (outcome.kind === "Return") return outcome;
+  completion: Completion,
+  mapFallthrough: (fallthrough: FallthroughCompletion) => Completion,
+): Completion => {
+  if (completion.kind === "Fallthrough") return mapFallthrough(completion);
+  if (completion.kind === "Return") return completion;
   return {
-    ...outcome,
-    consequent: mapFallthroughs(outcome.consequent, mapFallthrough),
-    alternate: mapFallthroughs(outcome.alternate, mapFallthrough),
+    ...completion,
+    consequent: mapFallthroughs(completion.consequent, mapFallthrough),
+    alternate: mapFallthroughs(completion.alternate, mapFallthrough),
   };
 };
 
@@ -104,22 +104,24 @@ const isIterationTest = (
   return isIteration;
 };
 
-const isOpaqueLoopSplit = (outcome: Outcome): outcome is SplitOutcome =>
-  outcome.kind === "Split" && outcome.test.kind === "Unknown" && outcome.test.reason === "loop";
+const isOpaqueLoopSplit = (completion: Completion): completion is SplitCompletion =>
+  completion.kind === "Split" &&
+  completion.test.kind === "Unknown" &&
+  completion.test.reason === "loop";
 
 export const collapseLoopSplits = (
-  outcome: Outcome,
+  completion: Completion,
   loopBindings: Binding[],
   loopLoc: SourceLocation,
-): Outcome => {
-  if (outcome.kind !== "Split") return outcome;
-  const consequent = collapseLoopSplits(outcome.consequent, loopBindings, loopLoc);
-  const alternate = collapseLoopSplits(outcome.alternate, loopBindings, loopLoc);
-  if (!isIterationTest(outcome.test, loopBindings, loopLoc))
-    return { ...outcome, consequent, alternate };
-  const opaque: SplitOutcome = {
-    ...outcome,
-    test: createUnknown("loop", outcome.branch.loc),
+): Completion => {
+  if (completion.kind !== "Split") return completion;
+  const consequent = collapseLoopSplits(completion.consequent, loopBindings, loopLoc);
+  const alternate = collapseLoopSplits(completion.alternate, loopBindings, loopLoc);
+  if (!isIterationTest(completion.test, loopBindings, loopLoc))
+    return { ...completion, consequent, alternate };
+  const opaque: SplitCompletion = {
+    ...completion,
+    test: createUnknown("loop", completion.branch.loc),
     testKind: "truthy",
     consequent,
     alternate,
@@ -132,9 +134,9 @@ export const collapseLoopSplits = (
 };
 
 export const createConditional = (
-  split: SplitOutcome,
+  split: SplitCompletion,
   guards: SymbolicValue[],
-  getArmValue: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
+  getArmValue: (arm: Completion, armGuards: SymbolicValue[]) => SymbolicValue,
 ): ConditionalValue => ({
   kind: "Conditional",
   test: split.test,
@@ -144,19 +146,20 @@ export const createConditional = (
   branch: split.branch,
 });
 
-export const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>
-  outcome.kind === "Split"
-    ? isFallthroughOnly(outcome.consequent, join) && isFallthroughOnly(outcome.alternate, join)
-    : outcome.kind === "Fallthrough" && outcome.to === join;
+export const isFallthroughOnly = (completion: Completion, join: BlockId): boolean =>
+  completion.kind === "Split"
+    ? isFallthroughOnly(completion.consequent, join) &&
+      isFallthroughOnly(completion.alternate, join)
+    : completion.kind === "Fallthrough" && completion.to === join;
 
-export const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
-  outcome.kind === "Split"
-    ? hasFallthrough(outcome.consequent, join) || hasFallthrough(outcome.alternate, join)
-    : outcome.kind === "Fallthrough" && outcome.to === join;
+export const hasFallthrough = (completion: Completion, join: BlockId): boolean =>
+  completion.kind === "Split"
+    ? hasFallthrough(completion.consequent, join) || hasFallthrough(completion.alternate, join)
+    : completion.kind === "Fallthrough" && completion.to === join;
 
 export const NO_STOPS: ReadonlySet<BlockId> = new Set();
 
-export const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
+export const getGuard = (split: SplitCompletion, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split);
   return isConsequent ? test : negate(test);
 };

@@ -7,7 +7,7 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { getAssertionGuards, type WalkState } from "./walk-state";
+import { getAssertionGuards, type PathState } from "./path-state";
 import { isNullish } from "../values/is-nullish";
 
 const isNullishCase = (value: AbstractValue): boolean =>
@@ -99,14 +99,14 @@ export class AssertionRecorder {
 
   evaluateTypeCast(
     typeCast: InstructionValueOfKind<"TypeCastExpression">,
-    walkState: WalkState,
+    pathState: PathState,
   ): SymbolicValue {
     const castValue = this.#interpreter.read(typeCast.value);
     const sourceDomain = this.#interpreter.resolver.getDomain(typeCast.value.loc);
     const declaredSourceDomain = this.#interpreter.resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
       if (hasNullishCase(declaredSourceDomain))
-        this.record(createNonNullAssertion(castValue, typeCast.loc, getAssertionGuards(walkState)));
+        this.record(createNonNullAssertion(castValue, typeCast.loc, getAssertionGuards(pathState)));
       return castValue;
     }
     const targetDomain = this.#interpreter.resolver.getDomain(typeCast.loc);
@@ -115,7 +115,7 @@ export class AssertionRecorder {
       declaredSourceDomain,
       targetDomain,
       typeCast.loc,
-      getAssertionGuards(walkState),
+      getAssertionGuards(pathState),
     );
     if (assertion) this.record(this.#widenForNonStrictNulls(assertion));
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
@@ -130,7 +130,7 @@ export class AssertionRecorder {
     name: string | null,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    walkState: WalkState,
+    pathState: PathState,
   ): void {
     const [test] = argumentValues;
     if (name === null || !ASSERTION_FUNCTIONS.has(name) || test === undefined) return;
@@ -138,7 +138,7 @@ export class AssertionRecorder {
       kind: "call",
       subject: test,
       check: { kind: "Condition", test },
-      guards: getAssertionGuards(walkState),
+      guards: getAssertionGuards(pathState),
       description: `${name}(${describeCondition(test)})`,
       loc,
     });

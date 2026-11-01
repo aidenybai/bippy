@@ -31,10 +31,10 @@ import {
 import type {
   BranchTerminal,
   ContextValue,
-  FallthroughOutcome,
+  FallthroughCompletion,
   LoopTerminal,
-  Outcome,
-  SplitOutcome,
+  Completion,
+  SplitCompletion,
   SwitchTerminal,
 } from "./control-flow";
 import {
@@ -51,8 +51,8 @@ import { getIdentifierName } from "./get-identifier-name";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
 import type { Interpreter } from "./interpret";
-import { getAsyncWalkState } from "./walk-state";
-import type { WalkState } from "./walk-state";
+import { getAsyncPathState } from "./path-state";
+import type { PathState } from "./path-state";
 
 export type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-chain-tail";
 
@@ -69,7 +69,7 @@ interface NextStep {
   block: BlockId;
 }
 
-type TerminalStep = Outcome | NextStep;
+type TerminalStep = Completion | NextStep;
 
 interface BranchTest {
   test: SymbolicValue;
@@ -124,13 +124,16 @@ const getBranchTest = (operator: BranchOperator, testedValue: SymbolicValue): Br
 };
 
 const getReachTest = (
-  outcome: Outcome,
+  completion: Completion,
   block: BlockId,
   guards: SymbolicValue[] = [],
 ): SymbolicValue => {
-  if (outcome.kind !== "Split")
-    return { kind: "Primitive", value: outcome.kind === "Fallthrough" && outcome.to === block };
-  const conditional = createConditional(outcome, guards, (arm, armGuards) =>
+  if (completion.kind !== "Split")
+    return {
+      kind: "Primitive",
+      value: completion.kind === "Fallthrough" && completion.to === block,
+    };
+  const conditional = createConditional(completion, guards, (arm, armGuards) =>
     getReachTest(arm, block, armGuards),
   );
   const isUndecided =
@@ -147,7 +150,7 @@ const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
 };
 
 interface ThrowPoint {
-  walkState: WalkState;
+  pathState: PathState;
   test: SymbolicValue;
 }
 
@@ -209,47 +212,47 @@ export class ControlFlowWalker {
     this.#functionScope = functionScope;
   }
 
-  #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {
-    switch (outcome.kind) {
+  #resolvePhi(phi: Phi, completion: Completion, guards: SymbolicValue[]): SymbolicValue {
+    switch (completion.kind) {
       case "Fallthrough": {
-        const operand = outcome.from === null ? undefined : phi.operands.get(outcome.from);
+        const operand = completion.from === null ? undefined : phi.operands.get(completion.from);
         return operand ? this.#interpreter.read(operand) : createUnknown("loop", phi.place.loc);
       }
       case "Split":
-        return createConditional(outcome, guards, (arm, armGuards) =>
+        return createConditional(completion, guards, (arm, armGuards) =>
           this.#resolvePhi(phi, arm, armGuards),
         );
       case "Return":
         return createUnknown("unreachable", phi.place.loc);
       default:
-        return assertExhaustive(outcome, "Unhandled outcome");
+        return assertExhaustive(completion, "Unhandled completion");
     }
   }
 
   #continueAfter(
-    outcome: Outcome,
+    completion: Completion,
     join: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
+    pathState: PathState,
     joinPhiState: PhiState = "unresolved",
-  ): Outcome {
-    if (stops.has(join)) return outcome;
+  ): Completion {
+    if (stops.has(join)) return completion;
     const block = this.#getBlock(join);
-    if (isFallthroughOnly(outcome, join)) {
+    if (isFallthroughOnly(completion, join)) {
       if (joinPhiState === "unresolved")
         for (const phi of block.phis)
-          this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
-      this.#mergeContextValues(outcome, join, walkState.guards);
-      return this.walk(join, stops, null, walkState, "resolved");
+          this.#interpreter.write(phi.place, this.#resolvePhi(phi, completion, pathState.guards));
+      this.#mergeContextValues(completion, join, pathState.guards);
+      return this.walk(join, stops, null, pathState, "resolved");
     }
-    const resumeAtJoin = (arm: Outcome, guards: SymbolicValue[]): Outcome => {
+    const resumeAtJoin = (arm: Completion, guards: SymbolicValue[]): Completion => {
       switch (arm.kind) {
         case "Return":
           return arm;
         case "Fallthrough":
           if (arm.to !== join) return arm;
           this.#restoreContextValues(arm);
-          return this.walk(join, stops, arm.from, { ...walkState, guards }, joinPhiState);
+          return this.walk(join, stops, arm.from, { ...pathState, guards }, joinPhiState);
         case "Split":
           return this.#nestWalk(() => ({
             ...arm,
@@ -257,10 +260,12 @@ export class ControlFlowWalker {
             alternate: resumeAtJoin(arm.alternate, [...guards, getGuard(arm, false)]),
           }));
         default:
-          return assertExhaustive(arm, "Unhandled outcome");
+          return assertExhaustive(arm, "Unhandled completion");
       }
     };
-    return hasFallthrough(outcome, join) ? resumeAtJoin(outcome, walkState.guards) : outcome;
+    return hasFallthrough(completion, join)
+      ? resumeAtJoin(completion, pathState.guards)
+      : completion;
   }
 
   #getBlock(blockId: BlockId): BasicBlock {
@@ -273,8 +278,8 @@ export class ControlFlowWalker {
     terminal: BranchTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
+    pathState: PathState,
+  ): Completion {
     const operator =
       this.#interpreter.getCompilationTables().branchOperators.get(terminal.fallthrough) ??
       "ternary";
@@ -288,17 +293,17 @@ export class ControlFlowWalker {
       this.#interpreter.resolver.isExpression(terminal.test.loc) ? branchTest.testKind : null,
     );
     const walkConsequent = () =>
-      this.#walkArm(terminal.consequent, from, armStops, walkState, consequentGuard);
+      this.#walkArm(terminal.consequent, from, armStops, pathState, consequentGuard);
     const walkAlternate = () =>
-      this.#walkArm(terminal.alternate, from, armStops, walkState, negate(consequentGuard));
+      this.#walkArm(terminal.alternate, from, armStops, pathState, negate(consequentGuard));
     if (branchTest.knownOutcome !== null) {
       const takenArm =
         branchTest.knownOutcome !== isSwapped ? terminal.consequent : terminal.alternate;
       return this.#continueAfter(
-        this.#walkArm(takenArm, from, armStops, walkState, null),
+        this.#walkArm(takenArm, from, armStops, pathState, null),
         terminal.fallthrough,
         stops,
-        walkState,
+        pathState,
       );
     }
     const storedPlaces = this.#getArmStoredContextPlaces(
@@ -306,56 +311,56 @@ export class ControlFlowWalker {
       terminal.fallthrough,
     );
     const valuesBefore = storedPlaces.map((place) => this.#interpreter.read(place));
-    const consequentOutcome = walkConsequent();
+    const consequentCompletion = walkConsequent();
     const consequentValues = storedPlaces.map((place) => this.#interpreter.read(place));
     storedPlaces.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
-    const alternateOutcome = walkAlternate();
-    const splitOutcome: SplitOutcome = {
+    const alternateCompletion = walkAlternate();
+    const splitCompletion: SplitCompletion = {
       kind: "Split",
       test: branchTest.test,
       testKind: branchTest.testKind,
       branch,
-      consequent: isSwapped ? alternateOutcome : consequentOutcome,
-      alternate: isSwapped ? consequentOutcome : alternateOutcome,
+      consequent: isSwapped ? alternateCompletion : consequentCompletion,
+      alternate: isSwapped ? consequentCompletion : alternateCompletion,
     };
     storedPlaces.forEach((place, index) => {
       const consequentValue = consequentValues[index] ?? UNDEFINED_VALUE;
       const alternateValue = this.#interpreter.read(place);
       if (consequentValue === alternateValue) return;
-      const valuesByArm = new Map<Outcome, SymbolicValue>([
-        [consequentOutcome, consequentValue],
-        [alternateOutcome, alternateValue],
+      const valuesByArm = new Map<Completion, SymbolicValue>([
+        [consequentCompletion, consequentValue],
+        [alternateCompletion, alternateValue],
       ]);
       this.#interpreter.write(
         place,
         createConditional(
-          splitOutcome,
-          walkState.guards,
+          splitCompletion,
+          pathState.guards,
           (arm) => valuesByArm.get(arm) ?? alternateValue,
         ),
       );
     });
-    return this.#continueAfter(splitOutcome, terminal.fallthrough, stops, walkState);
+    return this.#continueAfter(splitCompletion, terminal.fallthrough, stops, pathState);
   }
 
   #walkArm(
     armBlock: BlockId,
     from: BlockId,
     armStops: ReadonlySet<BlockId>,
-    walkState: WalkState,
+    pathState: PathState,
     guard: SymbolicValue | null,
-  ): Outcome {
+  ): Completion {
     if (armStops.has(armBlock)) return this.#fallthrough(from, armBlock);
-    const guards = guard ? [...walkState.guards, guard] : walkState.guards;
-    return this.walk(armBlock, armStops, from, { ...walkState, guards }, "unresolved");
+    const guards = guard ? [...pathState.guards, guard] : pathState.guards;
+    return this.walk(armBlock, armStops, from, { ...pathState, guards }, "unresolved");
   }
 
   #walkSwitch(
     terminal: SwitchTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
+    pathState: PathState,
+  ): Completion {
     const switchWalk: SwitchWalk = {
       terminal,
       from,
@@ -364,24 +369,24 @@ export class ControlFlowWalker {
     const caseBlocks = [...new Set(terminal.cases.map((switchCase) => switchCase.block))].filter(
       (block) => block !== terminal.fallthrough,
     );
-    const casesOutcome = caseBlocks.reduce(
-      (outcome, block) =>
+    const casesCompletion = caseBlocks.reduce(
+      (completion, block) =>
         this.#continueAtCase(
-          outcome,
+          completion,
           block,
           new Set([
             ...stops,
             terminal.fallthrough,
             ...caseBlocks.filter((caseBlock) => caseBlock !== block),
           ]),
-          walkState,
+          pathState,
         ),
       this.#dispatchSwitchCase(switchWalk, 0),
     );
-    return this.#continueAfter(casesOutcome, terminal.fallthrough, stops, walkState);
+    return this.#continueAfter(casesCompletion, terminal.fallthrough, stops, pathState);
   }
 
-  #dispatchSwitchCase(switchWalk: SwitchWalk, caseIndex: number): Outcome {
+  #dispatchSwitchCase(switchWalk: SwitchWalk, caseIndex: number): Completion {
     const switchCase = switchWalk.terminal.cases[caseIndex];
     if (!switchCase) {
       const defaultCase = switchWalk.terminal.cases.find((candidate) => candidate.test === null);
@@ -396,7 +401,7 @@ export class ControlFlowWalker {
       switchWalk.discriminant,
       this.#interpreter.read(switchCase.test),
     );
-    const matched: Outcome = this.#fallthrough(switchWalk.from, switchCase.block);
+    const matched: Completion = this.#fallthrough(switchWalk.from, switchCase.block);
     if (caseTest.kind === "Primitive")
       return caseTest.value ? matched : this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
     return {
@@ -410,28 +415,28 @@ export class ControlFlowWalker {
   }
 
   #continueAtCase(
-    outcome: Outcome,
+    completion: Completion,
     block: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
+    pathState: PathState,
+  ): Completion {
     const predecessors = new Set<BlockId | null>();
-    mapFallthroughs(outcome, (fallthrough) => {
+    mapFallthroughs(completion, (fallthrough) => {
       if (fallthrough.to === block) predecessors.add(fallthrough.from);
       return fallthrough;
     });
-    if (predecessors.size < 2) return this.#continueAfter(outcome, block, stops, walkState);
+    if (predecessors.size < 2) return this.#continueAfter(completion, block, stops, pathState);
     for (const phi of this.#getBlock(block).phis)
-      this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
-    this.#mergeContextValues(outcome, block, walkState.guards);
-    const reachTest = getReachTest(outcome, block);
-    const caseWalkState =
+      this.#interpreter.write(phi.place, this.#resolvePhi(phi, completion, pathState.guards));
+    this.#mergeContextValues(completion, block, pathState.guards);
+    const reachTest = getReachTest(completion, block);
+    const casePathState =
       reachTest.kind === "Primitive"
-        ? walkState
-        : { ...walkState, guards: [...walkState.guards, reachTest] };
-    const blockOutcome = this.walk(block, stops, null, caseWalkState, "resolved");
-    return mapFallthroughs(outcome, (fallthrough) =>
-      fallthrough.to === block ? blockOutcome : fallthrough,
+        ? pathState
+        : { ...pathState, guards: [...pathState.guards, reachTest] };
+    const blockCompletion = this.walk(block, stops, null, casePathState, "resolved");
+    return mapFallthroughs(completion, (fallthrough) =>
+      fallthrough.to === block ? blockCompletion : fallthrough,
     );
   }
 
@@ -439,10 +444,10 @@ export class ControlFlowWalker {
     terminal: LoopTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
-    const unrolledOutcome = this.#unrollLoop(terminal, from, stops, walkState);
-    if (unrolledOutcome) return unrolledOutcome;
+    pathState: PathState,
+  ): Completion {
+    const unrolledCompletion = this.#unrollLoop(terminal, from, stops, pathState);
+    if (unrolledCompletion) return unrolledCompletion;
     const loopHeaders = getLoopHeaders(terminal);
     const loopBindings: Binding[] = [];
     for (const loopHeader of loopHeaders) {
@@ -459,13 +464,13 @@ export class ControlFlowWalker {
     const headerBindingCount = loopBindings.length;
     const awaitCountBefore = this.#awaitCount;
     this.#loopDepth++;
-    let bodyOutcome: Outcome;
+    let bodyCompletion: Completion;
     try {
-      bodyOutcome = this.walk(
+      bodyCompletion = this.walk(
         loopEntry,
         new Set([...stops, terminal.fallthrough]),
         null,
-        walkState,
+        pathState,
         "resolved",
       );
     } finally {
@@ -475,13 +480,13 @@ export class ControlFlowWalker {
         this.#loopContextPlaces.delete(loopHeader);
       }
     }
-    const loopExit: Outcome = {
+    const loopExit: Completion = {
       kind: "Fallthrough",
       from: getLoopExit(terminal),
       to: terminal.fallthrough,
     };
-    const exitOutcome = collapseLoopSplits(
-      mapFallthroughs(bodyOutcome, (fallthrough) =>
+    const exitCompletion = collapseLoopSplits(
+      mapFallthroughs(bodyCompletion, (fallthrough) =>
         fallthrough.to === terminal.fallthrough || loopHeaders.includes(fallthrough.to)
           ? loopExit
           : fallthrough,
@@ -498,13 +503,13 @@ export class ControlFlowWalker {
     );
     for (const place of storedContextPlaces)
       this.#interpreter.write(place, createUnknown("loop", place.loc));
-    const afterWalkState =
-      this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
+    const afterPathState =
+      this.#awaitCount > awaitCountBefore ? getAsyncPathState(pathState) : pathState;
     return this.#continueAfter(
-      exitOutcome,
+      exitCompletion,
       terminal.fallthrough,
       stops,
-      afterWalkState,
+      afterPathState,
       "resolved",
     );
   }
@@ -513,8 +518,8 @@ export class ControlFlowWalker {
     terminal: LoopTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome | null {
+    pathState: PathState,
+  ): Completion | null {
     const loopHeaders = getLoopHeaders(terminal);
     const [loopEntry = terminal.fallthrough] = loopHeaders;
     const isUnrollable = this.#getLoopBlocks(loopEntry, terminal.fallthrough).every(
@@ -527,19 +532,19 @@ export class ControlFlowWalker {
     if (!isUnrollable) return null;
     const loopStops = new Set([...stops, terminal.fallthrough]);
     for (const loopHeader of loopHeaders) this.#unrolledLoopHeaders.add(loopHeader);
-    let outcome: Outcome = { kind: "Fallthrough", from, to: loopEntry };
+    let completion: Completion = { kind: "Fallthrough", from, to: loopEntry };
     try {
-      for (let iteration = 0; outcome.kind === "Fallthrough"; iteration++) {
-        const header = outcome.to;
+      for (let iteration = 0; completion.kind === "Fallthrough"; iteration++) {
+        const header = completion.to;
         if (!loopHeaders.includes(header)) break;
         if (iteration > MAX_UNROLLED_ITERATIONS) return null;
         const headerBlock = this.#getBlock(header);
-        if (outcome.from !== null)
-          this.#resolveBlockPhis(headerBlock, outcome.from, walkState.guards);
+        if (completion.from !== null)
+          this.#resolveBlockPhis(headerBlock, completion.from, pathState.guards);
         for (const phi of headerBlock.phis)
           if (this.#interpreter.read(phi.place).kind !== "Primitive") return null;
         for (const loopHeader of loopHeaders) this.#enteredLoopHeaders.set(loopHeader, false);
-        outcome = this.walk(header, loopStops, outcome.from, walkState, "resolved");
+        completion = this.walk(header, loopStops, completion.from, pathState, "resolved");
       }
     } finally {
       for (const loopHeader of loopHeaders) {
@@ -547,8 +552,8 @@ export class ControlFlowWalker {
         this.#enteredLoopHeaders.delete(loopHeader);
       }
     }
-    if (outcome.kind === "Split") return null;
-    return this.#continueAfter(outcome, terminal.fallthrough, stops, walkState);
+    if (completion.kind === "Split") return null;
+    return this.#continueAfter(completion, terminal.fallthrough, stops, pathState);
   }
 
   #getLoopBlocks(loopEntry: BlockId, loopFallthrough: BlockId): BasicBlock[] {
@@ -597,65 +602,65 @@ export class ControlFlowWalker {
     );
   }
 
-  #fallthrough(from: BlockId | null, to: BlockId): FallthroughOutcome {
+  #fallthrough(from: BlockId | null, to: BlockId): FallthroughCompletion {
     const contextValues = this.#getContextValues();
     return contextValues
       ? { kind: "Fallthrough", from, to, contextValues }
       : { kind: "Fallthrough", from, to };
   }
 
-  #return(value: SymbolicValue): Outcome {
+  #return(value: SymbolicValue): Completion {
     const contextValues = this.#getContextValues();
     return contextValues ? { kind: "Return", value, contextValues } : { kind: "Return", value };
   }
 
-  mergeReturnedContextValues(outcome: Outcome, guards: SymbolicValue[]): void {
+  mergeReturnedContextValues(completion: Completion, guards: SymbolicValue[]): void {
     for (const place of this.#getTrackedContextPlaces()) {
-      const returned = this.#getReturnedContextValue(outcome, place.identifier.id, guards);
+      const returned = this.#getReturnedContextValue(completion, place.identifier.id, guards);
       if (returned) this.#interpreter.write(place, returned);
     }
   }
 
   #getReturnedContextValue(
-    outcome: Outcome,
+    completion: Completion,
     id: IdentifierId,
     guards: SymbolicValue[],
   ): SymbolicValue | null {
-    if (outcome.kind !== "Split") return outcome.contextValues?.get(id)?.value ?? null;
-    const consequent = this.#getReturnedContextValue(outcome.consequent, id, guards);
-    const alternate = this.#getReturnedContextValue(outcome.alternate, id, guards);
+    if (completion.kind !== "Split") return completion.contextValues?.get(id)?.value ?? null;
+    const consequent = this.#getReturnedContextValue(completion.consequent, id, guards);
+    const alternate = this.#getReturnedContextValue(completion.alternate, id, guards);
     if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
-    return createConditional(outcome, guards, (arm) =>
-      arm === outcome.consequent ? consequent : alternate,
+    return createConditional(completion, guards, (arm) =>
+      arm === completion.consequent ? consequent : alternate,
     );
   }
 
-  #restoreContextValues(fallthrough: FallthroughOutcome): void {
+  #restoreContextValues(fallthrough: FallthroughCompletion): void {
     for (const contextValue of fallthrough.contextValues?.values() ?? [])
       this.#interpreter.write(contextValue.place, contextValue.value);
   }
 
-  #mergeContextValues(outcome: Outcome, join: BlockId, guards: SymbolicValue[]): void {
+  #mergeContextValues(completion: Completion, join: BlockId, guards: SymbolicValue[]): void {
     for (const place of this.#getTrackedContextPlaces()) {
-      const merged = this.#getJoinedContextValue(outcome, join, place.identifier.id, guards);
+      const merged = this.#getJoinedContextValue(completion, join, place.identifier.id, guards);
       if (merged) this.#interpreter.write(place, merged);
     }
   }
 
   #getJoinedContextValue(
-    outcome: Outcome,
+    completion: Completion,
     join: BlockId,
     id: IdentifierId,
     guards: SymbolicValue[],
   ): SymbolicValue | null {
-    if (outcome.kind === "Return") return null;
-    if (outcome.kind === "Fallthrough")
-      return outcome.to === join ? (outcome.contextValues?.get(id)?.value ?? null) : null;
-    const consequent = this.#getJoinedContextValue(outcome.consequent, join, id, guards);
-    const alternate = this.#getJoinedContextValue(outcome.alternate, join, id, guards);
+    if (completion.kind === "Return") return null;
+    if (completion.kind === "Fallthrough")
+      return completion.to === join ? (completion.contextValues?.get(id)?.value ?? null) : null;
+    const consequent = this.#getJoinedContextValue(completion.consequent, join, id, guards);
+    const alternate = this.#getJoinedContextValue(completion.alternate, join, id, guards);
     if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
-    return createConditional(outcome, guards, (arm) =>
-      arm === outcome.consequent ? consequent : alternate,
+    return createConditional(completion, guards, (arm) =>
+      arm === completion.consequent ? consequent : alternate,
     );
   }
 
@@ -736,13 +741,13 @@ export class ControlFlowWalker {
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
     from: BlockId | null,
-    walkState: WalkState,
+    pathState: PathState,
     entryPhiState: PhiState,
-  ): Outcome {
-    return this.#nestWalk(() => this.#walkBlocks(blockId, stops, from, walkState, entryPhiState));
+  ): Completion {
+    return this.#nestWalk(() => this.#walkBlocks(blockId, stops, from, pathState, entryPhiState));
   }
 
-  #nestWalk(walkNested: () => Outcome): Outcome {
+  #nestWalk(walkNested: () => Completion): Completion {
     if (this.#walkDepth >= MAX_WALK_DEPTH) return this.#bailOutTooComplex("nests too many blocks");
     this.#walkDepth++;
     try {
@@ -752,7 +757,7 @@ export class ControlFlowWalker {
     }
   }
 
-  #bailOutTooComplex(message: string): Outcome {
+  #bailOutTooComplex(message: string): Completion {
     this.#interpreter.diagnostics.bailOut("too-complex", message, GeneratedSource);
     return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
   }
@@ -761,13 +766,13 @@ export class ControlFlowWalker {
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
     from: BlockId | null,
-    walkState: WalkState,
+    pathState: PathState,
     entryPhiState: PhiState,
-  ): Outcome {
+  ): Completion {
     let currentId = blockId;
     let previousId = from;
     let isPhiResolved = entryPhiState === "resolved";
-    let currentWalkState = walkState;
+    let currentPathState = pathState;
     while (true) {
       if (++this.#blockVisits > MAX_BLOCK_VISITS)
         return this.#bailOutTooComplex("visits too many blocks");
@@ -781,13 +786,13 @@ export class ControlFlowWalker {
       }
       const block = this.#getBlock(currentId);
       if (!isPhiResolved && (!isLoopHeader || this.#unrolledLoopHeaders.has(currentId)))
-        this.#resolveBlockPhis(block, previousId, currentWalkState.guards);
+        this.#resolveBlockPhis(block, previousId, currentPathState.guards);
       for (const instruction of block.instructions) {
-        this.#interpreter.evaluateInstruction(instruction, currentWalkState);
+        this.#interpreter.evaluateInstruction(instruction, currentPathState);
         if (instruction.value.kind === "Await")
-          currentWalkState = this.#passAwait(currentWalkState, instruction.loc);
+          currentPathState = this.#passAwait(currentPathState, instruction.loc);
       }
-      const step = this.#walkTerminal(block.terminal, currentId, stops, currentWalkState);
+      const step = this.#walkTerminal(block.terminal, currentId, stops, currentPathState);
       if (step.kind !== "Next") return step;
       previousId = currentId;
       currentId = step.block;
@@ -807,7 +812,7 @@ export class ControlFlowWalker {
     terminal: Terminal,
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
+    pathState: PathState,
   ): TerminalStep {
     switch (terminal.kind) {
       case "return":
@@ -822,17 +827,17 @@ export class ControlFlowWalker {
           : { kind: "Next", block: terminal.block };
       case "if":
       case "branch":
-        return this.#walkBranch(terminal, blockId, stops, walkState);
+        return this.#walkBranch(terminal, blockId, stops, pathState);
       case "switch":
-        return this.#walkSwitch(terminal, blockId, stops, walkState);
+        return this.#walkSwitch(terminal, blockId, stops, pathState);
       case "ternary":
       case "logical":
       case "optional":
-        return this.#walkValueBranch(terminal, blockId, stops, walkState);
+        return this.#walkValueBranch(terminal, blockId, stops, pathState);
       case "try":
         this.#functionScope.catchBindings.set(terminal.handler, terminal.handlerBinding);
         return this.#interpreter.handlerEffects
-          ? this.#walkTryInHandler(terminal, blockId, stops, walkState)
+          ? this.#walkTryInHandler(terminal, blockId, stops, pathState)
           : { kind: "Next", block: terminal.block };
       case "label":
       case "sequence":
@@ -840,13 +845,13 @@ export class ControlFlowWalker {
       case "pruned-scope":
         return { kind: "Next", block: terminal.block };
       case "maybe-throw":
-        return this.#walkMaybeThrow(terminal, blockId, stops, walkState);
+        return this.#walkMaybeThrow(terminal, blockId, stops, pathState);
       case "for":
       case "for-of":
       case "for-in":
       case "while":
       case "do-while":
-        return this.#walkLoop(terminal, blockId, stops, walkState);
+        return this.#walkLoop(terminal, blockId, stops, pathState);
       default:
         return assertExhaustive(terminal, "Unhandled terminal");
     }
@@ -856,26 +861,26 @@ export class ControlFlowWalker {
     terminal: ValueBranchTerminal,
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
+    pathState: PathState,
+  ): Completion {
     this.#interpreter
       .getCompilationTables()
       .branchOperators.set(terminal.fallthrough, getBranchOperator(terminal));
-    const testOutcome = this.walk(
+    const testCompletion = this.walk(
       terminal.test,
       new Set([...stops, terminal.fallthrough]),
       blockId,
-      walkState,
+      pathState,
       "unresolved",
     );
-    return this.#continueAfter(testOutcome, terminal.fallthrough, stops, walkState);
+    return this.#continueAfter(testCompletion, terminal.fallthrough, stops, pathState);
   }
 
   #walkMaybeThrow(
     terminal: MaybeThrowTerminal,
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
+    pathState: PathState,
   ): TerminalStep {
     if (terminal.value !== null && terminal.handler !== null)
       return this.#walkCaughtThrow(terminal.value, terminal.handler, blockId, stops);
@@ -891,7 +896,7 @@ export class ControlFlowWalker {
     const throwTest = createUnknown("throws", terminal.loc);
     const places = this.#getTrackedContextPlaces();
     const valuesBefore = places.map((place) => this.#interpreter.read(place));
-    const consequent = this.#walkArm(terminal.handler, blockId, stops, walkState, throwTest);
+    const consequent = this.#walkArm(terminal.handler, blockId, stops, pathState, throwTest);
     places.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
     return {
       kind: "Split",
@@ -899,7 +904,7 @@ export class ControlFlowWalker {
       testKind: "truthy",
       branch: this.#interpreter.createBranchSite(terminal.loc),
       consequent,
-      alternate: this.#walkArm(terminal.continuation, blockId, stops, walkState, negate(throwTest)),
+      alternate: this.#walkArm(terminal.continuation, blockId, stops, pathState, negate(throwTest)),
     };
   }
 
@@ -916,72 +921,76 @@ export class ControlFlowWalker {
       : { kind: "Next", block: handler };
   }
 
-  #passAwait(walkState: WalkState, loc: SourceLocation): WalkState {
+  #passAwait(pathState: PathState, loc: SourceLocation): PathState {
     this.#awaitCount++;
     this.#interpreter.cells.passAwait();
-    const asyncWalkState = getAsyncWalkState(walkState);
+    const asyncPathState = getAsyncPathState(pathState);
     const throwPoints = this.#functionScope.throwPointsByTry.at(-1);
-    if (!throwPoints) return asyncWalkState;
+    if (!throwPoints) return asyncPathState;
     const test = createUnknown("throws", loc);
-    throwPoints.push({ walkState: asyncWalkState, test });
-    return { ...asyncWalkState, guards: [...asyncWalkState.guards, negate(test)] };
+    throwPoints.push({ pathState: asyncPathState, test });
+    return { ...asyncPathState, guards: [...asyncPathState.guards, negate(test)] };
   }
 
   #walkTryInHandler(
     terminal: TryTerminal,
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
-    walkState: WalkState,
-  ): Outcome {
+    pathState: PathState,
+  ): Completion {
     const bodyStops = new Set([...stops, terminal.fallthrough]);
     const awaitCountBefore = this.#awaitCount;
     const throwPoints: ThrowPoint[] = [];
     this.#functionScope.throwPointsByTry.push(throwPoints);
-    const bodyOutcome = this.walk(terminal.block, bodyStops, blockId, walkState, "unresolved");
+    const bodyCompletion = this.walk(terminal.block, bodyStops, blockId, pathState, "unresolved");
     this.#functionScope.throwPointsByTry.pop();
-    const afterWalkState =
-      this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
+    const afterPathState =
+      this.#awaitCount > awaitCountBefore ? getAsyncPathState(pathState) : pathState;
     if (!this.#throwingCatches.delete(terminal.handler))
-      return this.#continueAfter(bodyOutcome, terminal.fallthrough, stops, afterWalkState);
+      return this.#continueAfter(bodyCompletion, terminal.fallthrough, stops, afterPathState);
     if (throwPoints.length === 0)
-      throwPoints.push({ walkState: afterWalkState, test: createUnknown("throws", terminal.loc) });
+      throwPoints.push({ pathState: afterPathState, test: createUnknown("throws", terminal.loc) });
     const branch = this.#interpreter.createBranchSite(terminal.loc);
     const catchArms = throwPoints.map((throwPoint) => ({
       test: throwPoint.test,
-      outcome: this.#walkArm(
+      completion: this.#walkArm(
         terminal.handler,
         blockId,
         bodyStops,
-        throwPoint.walkState,
+        throwPoint.pathState,
         throwPoint.test,
       ),
     }));
-    const outcome = catchArms.reduceRight<Outcome>(
+    const completion = catchArms.reduceRight<Completion>(
       (alternate, catchArm) => ({
         kind: "Split",
         test: catchArm.test,
         testKind: "truthy",
         branch,
-        consequent: catchArm.outcome,
+        consequent: catchArm.completion,
         alternate,
       }),
-      bodyOutcome,
+      bodyCompletion,
     );
-    return this.#continueAfter(outcome, terminal.fallthrough, stops, afterWalkState);
+    return this.#continueAfter(completion, terminal.fallthrough, stops, afterPathState);
   }
 
-  getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
-    switch (outcome.kind) {
+  getCompletionValue(
+    completion: Completion,
+    loc: SourceLocation,
+    guards: SymbolicValue[],
+  ): SymbolicValue {
+    switch (completion.kind) {
       case "Return":
-        return outcome.value;
+        return completion.value;
       case "Fallthrough":
         return createUnknown("fallthrough", loc);
       case "Split":
-        return createConditional(outcome, guards, (arm, armGuards) =>
-          this.getOutcomeValue(arm, loc, armGuards),
+        return createConditional(completion, guards, (arm, armGuards) =>
+          this.getCompletionValue(arm, loc, armGuards),
         );
       default:
-        return assertExhaustive(outcome, "Unhandled outcome");
+        return assertExhaustive(completion, "Unhandled completion");
     }
   }
 }
