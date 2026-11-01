@@ -20,7 +20,7 @@ import { hydrateProp } from "./hydrate";
 import { importComponentModule, loadWrapper, runScenario } from "./load";
 import type { LoadedWrapper } from "./load";
 import { resetMutationTracking } from "./mutations";
-import { resetBranchHits } from "./coverage";
+import { resetCoverage } from "./coverage";
 import {
   callServerComponent,
   isAsyncFunction,
@@ -64,7 +64,7 @@ const resetRenderState = (): void => {
 
 const resetMountState = (): void => {
   resetRenderState();
-  resetBranchHits();
+  resetCoverage();
   resetMutationTracking();
 };
 

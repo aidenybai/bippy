@@ -64,9 +64,11 @@ XMLHttpRequest.prototype.send = function send(...sendArguments) {
   originalSend.apply(this, sendArguments);
 };
 
+// HACK: polls on a native timer because the page exposes no signal for in-flight work
 const waitForPoll = (): Promise<void> =>
   new Promise((resolve) => nativeSetTimeout(resolve, POLL_MS));
 
+// HACK: falls back to a timer when a hidden page throttles animation frames
 const waitForFrame = (): Promise<void> =>
   new Promise((resolve) => {
     const fallbackId = nativeSetTimeout(resolve, SETTLE_MS);

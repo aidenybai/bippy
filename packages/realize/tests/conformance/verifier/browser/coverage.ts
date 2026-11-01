@@ -97,13 +97,14 @@ const wrapHandler = (id: string, value: unknown, isEveryCallbackAHandler = false
   return proxy;
 };
 
-export const resetBranchHits = (): void => {
+export const resetCoverage = (): void => {
   branchHits = [];
+  handlerCalls = [];
 };
 
 export const takeBranchHits = (): BranchHit[] => {
   const hits = branchHits;
-  resetBranchHits();
+  branchHits = [];
   return hits;
 };
 
