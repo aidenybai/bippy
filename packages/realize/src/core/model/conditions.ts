@@ -6,6 +6,13 @@ export const FALSE: Condition = { kind: "False" };
 
 export const KEEP: Choice = { kind: "Keep" };
 
+export const choose = (condition: Condition, then: Choice, otherwise: Choice): Choice => {
+  if (condition.kind === "True") return then;
+  if (condition.kind === "False") return otherwise;
+  if (JSON.stringify(then) === JSON.stringify(otherwise)) return then;
+  return { kind: "If", condition, then, otherwise };
+};
+
 export const not = (condition: Condition): Condition => {
   if (condition.kind === "In")
     return inCells(

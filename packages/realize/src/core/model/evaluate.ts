@@ -2,7 +2,15 @@ import type { SymbolicValue } from "../types";
 import { getChildValues } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
-import { and, collectConditionLanes, evaluateCondition, inCells, or } from "./conditions";
+import {
+  KEEP,
+  and,
+  choose,
+  collectConditionLanes,
+  evaluateCondition,
+  inCells,
+  or,
+} from "./conditions";
 import type { LaneTable } from "./lanes";
 import type { Abstract, Choice, Condition, Lane } from "./types";
 
@@ -232,36 +240,67 @@ const toAssignmentCondition = (
   );
 };
 
+interface Outcome {
+  assignment: Map<string, string>;
+  cells: string[];
+  key: string;
+}
+
+const isKeptBy = (lane: Lane, outcomes: Outcome[]): boolean =>
+  outcomes.every(
+    ({ assignment, cells }) => cells.length === 1 && assignment.get(lane.name) === cells[0],
+  );
+
+const getRelevantDependencies = (dependencies: Lane[], outcomes: Outcome[]): Lane[] =>
+  dependencies.reduce<Lane[]>((relevant, dependency) => {
+    const remaining = relevant.filter((lane) => lane !== dependency);
+    const keysByRest = new Map<string, string>();
+    const isIrrelevant = outcomes.every(({ assignment, key }) => {
+      const restKey = remaining.map((lane) => assignment.get(lane.name)).join("\0");
+      const existing = keysByRest.get(restKey);
+      keysByRest.set(restKey, key);
+      return existing === undefined || existing === key;
+    });
+    return isIrrelevant ? remaining : relevant;
+  }, dependencies);
+
 export const compileChoice = (table: LaneTable, lane: Lane, value: SymbolicValue): Choice => {
   const allCells = lane.cells.map((cell) => cell.label);
   const dependencies = collectDependencies(table, value);
   if (countAssignments(dependencies) > MAX_DEPENDENCY_COMBINATIONS)
     return { kind: "Cells", cells: allCells };
-  const outcomes: Array<{ assignment: Map<string, string>; cells: string[] }> = [];
+  const outcomes: Outcome[] = [];
   forEachAssignment(dependencies, (assignment) => {
     const cells = toCells(
       lane,
       evaluate({ table, cellOf: (name) => assignment.get(name) }, value, lane.path),
     );
-    outcomes.push({ assignment, cells });
+    outcomes.push({ assignment, cells, key: cells.join("\0") });
   });
-  const groups = new Map<string, { cells: string[]; assignments: Array<Map<string, string>> }>();
-  for (const { assignment, cells } of outcomes) {
-    const key = cells.join("\0");
-    const group = groups.get(key) ?? { cells, assignments: [] };
-    group.assignments.push(assignment);
+  if (isKeptBy(lane, outcomes)) return KEEP;
+  const relevant = getRelevantDependencies(dependencies, outcomes);
+  const groups = new Map<
+    string,
+    { cells: string[]; assignments: Map<string, Map<string, string>> }
+  >();
+  for (const { assignment, cells, key } of outcomes) {
+    const projected = new Map(
+      relevant.map((dependency) => [dependency.name, assignment.get(dependency.name) ?? ""]),
+    );
+    const group = groups.get(key) ?? { cells, assignments: new Map() };
+    group.assignments.set([...projected.values()].join("\0"), projected);
     groups.set(key, group);
   }
   const ordered = [...groups.values()];
   const fallback = ordered.pop();
   if (!fallback) return { kind: "Cells", cells: allCells };
   return ordered.reduceRight<Choice>(
-    (otherwise, group) => ({
-      kind: "If",
-      condition: toAssignmentCondition(dependencies, group.assignments),
-      then: { kind: "Cells", cells: group.cells },
-      otherwise,
-    }),
+    (otherwise, group) =>
+      choose(
+        toAssignmentCondition(relevant, [...group.assignments.values()]),
+        { kind: "Cells", cells: group.cells },
+        otherwise,
+      ),
     { kind: "Cells", cells: fallback.cells },
   );
 };

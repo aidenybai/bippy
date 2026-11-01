@@ -1,5 +1,5 @@
 import type { Handler, HandlerTrigger, StateUpdate, SymbolicValue } from "../types";
-import { KEEP, TRUE, and, inCells } from "./conditions";
+import { KEEP, TRUE, and, choose, inCells } from "./conditions";
 import { compileChoice } from "./evaluate";
 import type { LaneTable } from "./lanes";
 import type { Action, ActionPhase, Choice, Condition, Lane } from "./types";
@@ -54,9 +54,7 @@ const compileLaneWrite = (table: LaneTable, lane: Lane, updates: StateUpdate[]):
   updates.reduce<Choice>((previous, update) => {
     const guard = compileUpdateGuard(table, update);
     const choice = compileChoice(table, lane, update.value);
-    return guard.kind === "True"
-      ? choice
-      : { kind: "If", condition: guard, then: choice, otherwise: previous };
+    return choose(guard, choice, previous);
   }, KEEP);
 
 const compileWrites = (
@@ -66,7 +64,8 @@ const compileWrites = (
   table.lanes.flatMap((lane) => {
     const laneUpdates = updates.filter((update) => update.binding.id === lane.bindingId);
     if (laneUpdates.length === 0 || lane.source !== "state") return [];
-    return [{ lane: lane.name, choice: compileLaneWrite(table, lane, laneUpdates) }];
+    const choice = compileLaneWrite(table, lane, laneUpdates);
+    return choice.kind === "Keep" ? [] : [{ lane: lane.name, choice }];
   });
 
 const getBindingIds = (updates: StateUpdate[]): number[] => [

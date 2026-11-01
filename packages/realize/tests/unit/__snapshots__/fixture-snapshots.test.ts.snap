@@ -391,7 +391,7 @@ Init ==
 
 \\* after serverChecked changes
 t1 ==
-  /\\ checked' \\in (IF (flags = "undefined" /\\ test_flags_some_function_null = "false") \\/ (flags = "{ ok: boolean; }[]" /\\ test_flags_some_function_null = "false") THEN {"false"} ELSE {"false", "true"})
+  /\\ checked' \\in (IF test_flags_some_function_null = "false" THEN {"false"} ELSE {"false", "true"})
   /\\ UNCHANGED <<flags, test_flags_some_function_null>>
 
 \\* parent changes flags
@@ -1554,7 +1554,7 @@ Init ==
 
 \\* setOpened(opened + 1)
 t1 ==
-  /\\ opened' \\in (IF (opened = "<0" /\\ test_opened_1 = "false") \\/ (opened = "<0" /\\ test_opened_1 = "true") THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
   /\\ UNCHANGED <<path_endsWith_ts, test_opened_1>>
 
 \\* opened + 1 changes
@@ -2707,7 +2707,7 @@ Init ==
 
 \\* "Save"
 t1 ==
-  /\\ name' \\in (IF (name = "empty" /\\ test_typeof_data_get_name_string = "false" /\\ test_typeof_data_get_name = "false") \\/ (name = "empty" /\\ test_typeof_data_get_name_string = "false" /\\ test_typeof_data_get_name = "true") THEN {"empty"} ELSE (IF (name = "empty" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "false") \\/ (name = "empty" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "true") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "false") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "true") THEN {"empty", "other string"} ELSE {"other string"}))
+  /\\ name' \\in (IF name = "empty" /\\ test_typeof_data_get_name_string = "false" THEN {"empty"} ELSE (IF (name = "empty" /\\ test_typeof_data_get_name_string = "true") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true") THEN {"empty", "other string"} ELSE {"other string"}))
   /\\ UNCHANGED <<isPending, test_typeof_data_get_name_string, test_typeof_data_get_name>>
 
 \\* isPending changes
@@ -5619,8 +5619,7 @@ t2 ==
 
 \\* setTodos( todos.map((other) => other.id…
 t3 ==
-  /\\ todos_length' \\in (IF todos_length = "0" THEN {"0"} ELSE {">0"})
-  /\\ UNCHANGED <<todo_isDone, isEditing, draft, draft_trim>>
+  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
 
 \\* "All"
 t4 ==
@@ -5893,7 +5892,7 @@ Init ==
 
 \\* setCount(count + 1)
 t1 ==
-  /\\ count' \\in (IF (count = "<0" /\\ test_count_1 = "false") \\/ (count = "<0" /\\ test_count_1 = "true") THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
   /\\ UNCHANGED <<tone, test_count_1>>
 
 \\* parent changes tone
@@ -6251,7 +6250,7 @@ t1 ==
 \\* "Upload" resolves
 t1_resolves ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF FALSE THEN {"other string"} ELSE (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error}))
+  /\\ error' \\in (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error})
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<test_Unknown_throws>>
 
@@ -6397,12 +6396,12 @@ Init ==
 t1 ==
   /\\ state_step = "payment"
   /\\ state_step' = "details"
-  /\\ state_hasError' \\in (IF (state_step = "details" /\\ state_hasError = "false") \\/ (state_step = "done" /\\ state_hasError = "false") \\/ (state_step = "payment" /\\ state_hasError = "false") THEN {"false"} ELSE {"true"})
+  /\\ UNCHANGED <<state_hasError>>
 
 \\* "Next"
 t2 ==
   /\\ state_step /= "done"
-  /\\ state_step' \\in (IF (state_step = "details" /\\ state_hasError = "false") \\/ (state_step = "details" /\\ state_hasError = "true") THEN {"payment"} ELSE {"done"})
+  /\\ state_step' \\in (IF state_step = "details" THEN {"payment"} ELSE {"done"})
   /\\ state_hasError' = "false"
 
 Next == t1 \\/ t2
