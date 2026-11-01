@@ -1,312 +1,325 @@
 import { isEffectHandler } from "../../../src/core/handlers/handler-predicates";
-import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/values/format";
-import type { Binding, ComponentAnalysis, Sample, StateReport } from "../../../src/core/types";
+import { containsValue } from "../../../src/core/model/abstract";
+import { and, inCells, or } from "../../../src/core/model/conditions";
+import { exploreModel } from "../../../src/core/model/explore";
+import type { ExploredModel } from "../../../src/core/model/explore";
+import type {
+  Action,
+  ComponentModel,
+  Condition,
+  Lane,
+  Screen,
+} from "../../../src/core/model/types";
+import type { ComponentAnalysis, Handler } from "../../../src/core/types";
+import { formatLine } from "../../../src/core/values/format";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
+import { collectProbes, getHandlerIdsByProbeId, getProbeId, getSideKey } from "./branch-probes";
 import type { Observation } from "./driver";
-import { explainMismatch, findClosest, formatShapes, normalizeShapes, toExpected } from "./match";
-import type { ExpectedShape } from "./match";
+import { MISSING_PLACE, formatRuntimeValue, getStateBindings, readPath } from "./hook-states";
 import { scoreWarnings } from "./mutation";
 import { TRUNCATED_VALUE, getStateOwner } from "./types";
-import type { Capture, Shape } from "./types";
-import {
-  collectProbes,
-  getHandlerIdsByProbeId,
-  getPathKey,
-  getProbeId,
-  getSideKey,
-} from "./branch-probes";
-import {
-  EXTERNAL_DATA_BINDING_KINDS,
-  MISSING_PLACE,
-  formatRuntimeValue,
-  getMatchedStates,
-  getRegionsMatchedOnBothSides,
-  getStateBindings,
-  getStatesInRegion,
-  getRegionData,
-  isEveryRegionMatched,
-  isPredictedValue,
-  isRegionUnchanged,
-  readPath,
-} from "./region-matching";
-import type { RegionData } from "./region-matching";
-import {
-  getReachableStates,
-  getTargetStates,
-  isSpontaneousHandler,
-  scoreTransition,
-} from "./transition-scoring";
-import { MAX_RENDERED_LENGTH } from "./verdict-report";
-import type { ComponentVerdict } from "./verdicts";
+import type { Capture } from "./types";
 import { createEmptyVerdict, getMountFailedVerdict } from "./verdicts";
+import type { ComponentVerdict } from "./verdicts";
 
-const FIRST_COMMIT = "first commit";
+const OPAQUE_VALUES = new Set<unknown>([
+  TRUNCATED_VALUE,
+  MISSING_PLACE,
+  "[function]",
+  "[value]",
+  "[node]",
+]);
 
-export interface ScoringContext {
-  analysis: ComponentAnalysis;
-  report: StateReport;
-  verdict: ComponentVerdict;
-  expectedStates: ExpectedShape[][];
-  handlerIdsByProbeId: Map<string, string[]>;
-  stateBindings: Binding[] | null;
-  externalBindingIds: Set<number>;
-  effectIds: Set<string>;
-  backgroundHandlerIds: Set<string>;
-  spontaneousIds: Set<string>;
-  capturesByPathKey: Map<string, Capture>;
-  beforeCapturesByPathKey: Map<string, Capture>;
-  coveredStates: Set<number>;
-  matchedStatesCache: Map<string, number[]>;
-  regionData: RegionData[];
-  freshObservation: Observation | null;
+const SPONTANEOUS_EVENTS = new Set([
+  "onLoad",
+  "onError",
+  "onLoadStart",
+  "onLoadedData",
+  "onLoadedMetadata",
+  "onCanPlay",
+  "onCanPlayThrough",
+  "onPlay",
+  "onPlaying",
+  "onPause",
+  "onEnded",
+  "onTimeUpdate",
+  "onDurationChange",
+  "onProgress",
+  "onAnimationStart",
+  "onAnimationIteration",
+  "onAnimationEnd",
+  "onTransitionStart",
+  "onTransitionEnd",
+]);
+
+const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
+  trigger.kind === "Event"
+    ? SPONTANEOUS_EVENTS.has(trigger.event)
+    : trigger.kind === "Effect" && trigger.hookKind === "Custom";
+
+interface Side {
+  condition: Condition;
+  description: string;
+  isReachable: boolean | null;
 }
 
-const scoreRender = (
-  context: ScoringContext,
-  props: Record<string, Sample>,
-  path: string[],
-  shapes: Shape[],
-): number[] => {
-  const matchedStates = getMatchedStates(context, shapes);
-  for (const stateIndex of matchedStates) context.coveredStates.add(stateIndex);
-  if (isEveryRegionMatched(context, matchedStates) || context.report.isTruncated)
-    return matchedStates;
-  const normalized = normalizeShapes(shapes);
-  const closestState = findClosest(context.expectedStates, normalized);
-  context.verdict.stateCounterexamples.push({
-    props,
-    path,
-    rendered: formatShapes(normalized).slice(0, MAX_RENDERED_LENGTH),
-    closestState,
-    reason: explainMismatch(context.expectedStates[closestState] ?? [], normalized),
-  });
-  return matchedStates;
+interface StateLane {
+  lane: Lane;
+  hookIndex: number;
+}
+
+interface Misfit {
+  lane: string;
+  value: string;
+  cells: string[];
+}
+
+export interface Coverage {
+  model: ComponentModel;
+  explored: ExploredModel;
+  sides: Map<string, Side>;
+  stateLanes: StateLane[];
+  lanesByName: Map<string, Lane>;
+}
+
+export interface Observed {
+  condition: Condition;
+  sides: string[];
+  values: string[];
+  misfits: Misfit[];
+}
+
+const combineReachability = (left: boolean | null, right: boolean | null): boolean | null => {
+  if (left === true || right === true) return true;
+  return left === null || right === null ? null : false;
 };
 
-const isFirstRenderChecked = (
-  context: ScoringContext,
-  observation: Observation,
-  regionIndex: number,
-): boolean => {
-  const regionData = context.regionData[regionIndex];
-  return (
-    regionData === "local" || (regionData === "store" && observation === context.freshObservation)
-  );
-};
-
-const getUnpredictedFirstStates = (
-  context: ScoringContext,
-  observation: Observation,
-  firstMatches: number[],
-): number[] =>
-  context.report.regions.flatMap((region, regionIndex) => {
-    const matchedStates = getStatesInRegion(context, firstMatches, regionIndex);
-    const isPredicted =
-      region.possibleFirstRenderStates.length === 0 ||
-      !isFirstRenderChecked(context, observation, regionIndex) ||
-      matchedStates.some((stateIndex) => region.possibleFirstRenderStates.includes(stateIndex));
-    return isPredicted ? [] : matchedStates;
-  });
-
-const scoreFirstRenderStates = (
-  context: ScoringContext,
-  observation: Observation,
-  firstCommitShapes: Shape[],
-  firstMatches: number[],
-): void => {
-  const unpredictedStates = getUnpredictedFirstStates(context, observation, firstMatches);
-  const [closestState] = unpredictedStates;
-  if (closestState === undefined) return;
-  const predictedStates = context.report.regions.flatMap(
-    (region) => region.possibleFirstRenderStates,
-  );
-  context.verdict.stateCounterexamples.push({
-    props: observation.props,
-    path: [FIRST_COMMIT],
-    rendered: formatShapes(normalizeShapes(firstCommitShapes)).slice(0, MAX_RENDERED_LENGTH),
-    closestState,
-    reason: `first rendered state ${unpredictedStates.join(", ")}, predicted a first render in ${predictedStates.join(", ")}`,
-  });
-};
-
-const scoreFirstCommit = (
-  context: ScoringContext,
-  observation: Observation,
-  settledMatches: number[],
-): void => {
-  const { firstCommitShapes } = observation.after;
-  if (observation.action || !firstCommitShapes) return;
-  const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
-  scoreFirstRenderStates(context, observation, firstCommitShapes, firstMatches);
-  if (context.externalBindingIds.size > 0) return;
-  const isUnexplained = getRegionsMatchedOnBothSides(context, firstMatches, settledMatches).some(
-    (regionIndex) =>
-      !isRegionUnchanged(context, firstMatches, settledMatches, regionIndex) &&
-      ![
-        ...getReachableStates(
-          context,
-          getStatesInRegion(context, firstMatches, regionIndex),
-          context.backgroundHandlerIds,
-        ),
-      ].some((target) => settledMatches.includes(target)),
-  );
-  if (isUnexplained)
-    context.verdict.transitionCounterexamples.push({
-      path: [],
-      action: FIRST_COMMIT,
-      fromStates: firstMatches,
-      toStates: settledMatches,
-      predictedStates: getTargetStates(context, firstMatches, context.backgroundHandlerIds),
-      reason: "unpredicted-effect",
+const collectSides = (model: ComponentModel): Map<string, Side> => {
+  const sides = new Map<string, Side>();
+  for (const arm of model.arms) {
+    if (arm.loc === GeneratedSource) continue;
+    const key = getSideKey(getProbeId(arm.file, arm.loc), arm.isTrueSide);
+    const existing = sides.get(key);
+    sides.set(key, {
+      condition: existing ? or([existing.condition, arm.condition]) : arm.condition,
+      description: `${arm.test} is ${arm.isTrueSide ? "true" : "false"} ${formatLine(arm.loc)}`,
+      isReachable: existing
+        ? combineReachability(existing.isReachable, arm.isReachable)
+        : arm.isReachable,
     });
+  }
+  return sides;
 };
 
-const isMutatedInPlace = (context: ScoringContext, path: string[], owner: string): boolean =>
-  path.some(
-    (_action, index) =>
-      context.capturesByPathKey
-        .get(getPathKey(path.slice(0, index + 1)))
-        ?.mutatedOwners.includes(owner) ?? false,
-  );
-
-const scoreValues = (context: ScoringContext, observation: Observation): void => {
-  context.stateBindings?.forEach((binding, hookIndex) => {
-    if (isMutatedInPlace(context, observation.path, getStateOwner(hookIndex))) return;
-    for (const [{ bindingId, path: placePath }, predicted] of context.report.places) {
-      if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
-        continue;
-      const value = readPath(observation.after.hookStates[hookIndex], placePath);
-      if (
-        value === TRUNCATED_VALUE ||
-        value === MISSING_PLACE ||
-        isPredictedValue(value, predicted)
-      )
-        continue;
-      context.verdict.valueCounterexamples.push({
-        path: observation.path,
-        place: formatPlace(binding, placePath),
-        value: formatRuntimeValue(value),
-        predicted: predicted.map(formatAbstractValue),
-      });
-    }
+const collectStateLanes = (
+  analysis: ComponentAnalysis,
+  model: ComponentModel,
+  observations: Observation[],
+): StateLane[] => {
+  const stateBindings = getStateBindings(analysis, observations) ?? [];
+  const mutatedOwners = new Set(observations.flatMap(({ after }) => after.mutatedOwners));
+  return model.lanes.flatMap((lane) => {
+    if (lane.source !== "state") return [];
+    const hookIndex = stateBindings.findIndex((binding) => binding.id === lane.bindingId);
+    return hookIndex === -1 || mutatedOwners.has(getStateOwner(hookIndex))
+      ? []
+      : [{ lane, hookIndex }];
   });
 };
 
-const createScoringContext = (
+export const createCoverage = (
   analysis: ComponentAnalysis,
-  report: StateReport,
-  verdict: ComponentVerdict,
+  model: ComponentModel,
   observations: Observation[],
-  knownComponents: Map<string, string>,
-  isOnFreshPage: boolean,
-): ScoringContext => ({
-  analysis,
-  report,
-  verdict,
-  expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
-  handlerIdsByProbeId: getHandlerIdsByProbeId(analysis),
-  stateBindings: getStateBindings(analysis, observations),
-  externalBindingIds: new Set(
-    analysis.bindings
-      .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
-      .map((binding) => binding.id),
-  ),
-  effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
-  backgroundHandlerIds: new Set(
-    analysis.handlers
-      .filter((handler) => isEffectHandler(handler) || isSpontaneousHandler(handler))
-      .map((handler) => handler.id),
-  ),
-  spontaneousIds: new Set(
-    analysis.handlers.filter(isSpontaneousHandler).map((handler) => handler.id),
-  ),
-  capturesByPathKey: new Map(
-    observations.flatMap((observation) =>
-      observation.action ? [[getPathKey(observation.path), observation.after]] : [],
-    ),
-  ),
-  beforeCapturesByPathKey: new Map(
-    observations.flatMap((observation) =>
-      observation.action && observation.before
-        ? [[getPathKey(observation.path), observation.before]]
-        : [],
-    ),
-  ),
-  coveredStates: new Set(),
-  matchedStatesCache: new Map(),
-  regionData: report.regions.map((region) => getRegionData(analysis, region)),
-  freshObservation: isOnFreshPage ? (observations[0] ?? null) : null,
+): Coverage => ({
+  model,
+  explored: exploreModel(model.lanes, model.actions, model.screens),
+  sides: collectSides(model),
+  stateLanes: collectStateLanes(analysis, model, observations),
+  lanesByName: new Map(model.lanes.map((lane) => [lane.name, lane])),
 });
 
-const getReachedUnreachableBranches = (report: StateReport, coveredSides: Set<string>): string[] =>
-  report.unreachableBranches
-    .filter(
-      (unreachableBranch) =>
-        unreachableBranch.branch.loc !== GeneratedSource &&
-        coveredSides.has(
-          getSideKey(
-            getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc),
-            unreachableBranch.isTrueSide,
-          ),
-        ),
-    )
-    .map((unreachableBranch) =>
-      `${unreachableBranch.description} ${formatLine(unreachableBranch.branch.loc)}`.trim(),
-    );
-
-const scoreObservation = (
-  context: ScoringContext,
-  observation: Observation,
-  probeIds: Set<string>,
-  coveredSides: Set<string>,
-): void => {
-  for (const probeHit of observation.after.probes)
-    if (probeIds.has(probeHit.id)) coveredSides.add(getSideKey(probeHit.id, probeHit.isTrueSide));
-  if (observation.after.error) {
-    context.verdict.renderErrorCount++;
-    return;
+const getObservedSideKeys = (coverage: Coverage, capture: Capture): string[] => {
+  const sidesByProbe = new Map<string, Set<boolean>>();
+  for (const hit of capture.probes) {
+    const sides = sidesByProbe.get(hit.id) ?? new Set<boolean>();
+    sides.add(hit.isTrueSide);
+    sidesByProbe.set(hit.id, sides);
   }
-  const afterMatches = scoreRender(
-    context,
-    observation.props,
-    observation.path,
-    observation.after.shapes,
-  );
-  scoreFirstCommit(context, observation, afterMatches);
-  scoreValues(context, observation);
-  scoreTransition(context, observation, afterMatches);
+  return [...sidesByProbe].flatMap(([probeId, sides]) => {
+    const [isTrueSide] = sides;
+    const key = getSideKey(probeId, isTrueSide ?? true);
+    return sides.size === 1 && coverage.sides.has(key) ? [key] : [];
+  });
 };
+
+export const observe = (coverage: Coverage, capture: Capture): Observed => {
+  const sideKeys = getObservedSideKeys(coverage, capture);
+  const values: string[] = [];
+  const misfits: Misfit[] = [];
+  const valueConditions: Condition[] = [];
+  for (const { lane, hookIndex } of coverage.stateLanes) {
+    const value = readPath(capture.hookStates[hookIndex], lane.path);
+    if (OPAQUE_VALUES.has(value)) continue;
+    const allCells = lane.cells.map((cell) => cell.label);
+    const cells = lane.cells
+      .filter((cell) => containsValue(cell.value, value))
+      .map((cell) => cell.label);
+    values.push(`${lane.label} = ${formatRuntimeValue(value)}`);
+    if (cells.length === 0)
+      misfits.push({ lane: lane.label, value: formatRuntimeValue(value), cells: allCells });
+    else valueConditions.push(inCells(lane.name, cells, allCells));
+  }
+  return {
+    condition: and([
+      ...sideKeys.flatMap((key) => coverage.sides.get(key)?.condition ?? []),
+      ...valueConditions,
+    ]),
+    sides: sideKeys.flatMap((key) => coverage.sides.get(key)?.description ?? []),
+    values,
+    misfits,
+  };
+};
+
+export const isShowingScreen = (coverage: Coverage, observed: Observed, screen: Screen): boolean =>
+  coverage.explored.findWitness(and([observed.condition, screen.condition])) !== null;
+
+const isPropInput = (coverage: Coverage, action: Action): boolean =>
+  action.writes.some(({ lane }) => coverage.lanesByName.get(lane)?.bindingKind === "prop");
+
+const createActionFilter =
+  (coverage: Coverage, handlerIds: Set<string>, backgroundIds: Set<string>) =>
+  (action: Action, taken: Action[]): boolean => {
+    if (action.phase === "input") return !isPropInput(coverage, action);
+    if (action.phase === "resolves" || action.phase === "rejects") return true;
+    if (action.handlerId === null) return false;
+    if (backgroundIds.has(action.handlerId)) return true;
+    return handlerIds.has(action.handlerId) && !taken.includes(action);
+  };
+
+class ComponentScore {
+  readonly #coverage: Coverage;
+  readonly #verdict: ComponentVerdict;
+  readonly #handlerIdsByProbeId: Map<string, string[]>;
+  readonly #backgroundIds: Set<string>;
+  readonly #coveredScreens = new Set<string>();
+  readonly #seenKeys = new Set<string>();
+
+  constructor(analysis: ComponentAnalysis, coverage: Coverage, verdict: ComponentVerdict) {
+    this.#coverage = coverage;
+    this.#verdict = verdict;
+    this.#handlerIdsByProbeId = getHandlerIdsByProbeId(analysis);
+    this.#backgroundIds = new Set(
+      analysis.handlers
+        .filter((handler) => isEffectHandler(handler) || isSpontaneousHandler(handler))
+        .map((handler) => handler.id),
+    );
+  }
+
+  get coveredScreens(): string[] {
+    return [...this.#coveredScreens].sort();
+  }
+
+  #isFirstSeen(key: string): boolean {
+    if (this.#seenKeys.has(key)) return false;
+    this.#seenKeys.add(key);
+    return true;
+  }
+
+  scoreRender(observation: Observation, observed: Observed): void {
+    for (const misfit of observed.misfits)
+      if (this.#isFirstSeen(JSON.stringify(["value", misfit])))
+        this.#verdict.valueCounterexamples.push({ path: observation.path, ...misfit });
+    if (observed.misfits.length > 0) return;
+    const { model, explored } = this.#coverage;
+    const witness = explored.findWitness(observed.condition);
+    if (witness) {
+      for (const screen of model.screens)
+        if (
+          !this.#coveredScreens.has(screen.label) &&
+          isShowingScreen(this.#coverage, observed, screen)
+        )
+          this.#coveredScreens.add(screen.label);
+      return;
+    }
+    if (this.#isFirstSeen(JSON.stringify(["render", observed.sides, observed.values])))
+      this.#verdict.renderCounterexamples.push({
+        props: observation.props,
+        path: observation.path,
+        sides: observed.sides,
+        values: observed.values,
+      });
+  }
+
+  scoreTransition(observation: Observation, after: Observed): void {
+    const { action, before } = observation;
+    if (!action || !before || before.error) return;
+    const handlerIds = new Set(
+      observation.after.handlerHits.flatMap(
+        (probeId) => this.#handlerIdsByProbeId.get(probeId) ?? [],
+      ),
+    );
+    if (handlerIds.size === 0) return;
+    const beforeObserved = observe(this.#coverage, before);
+    if (beforeObserved.misfits.length > 0 || after.misfits.length > 0) return;
+    this.#verdict.checkedTransitionCount++;
+    const isCovered = this.#coverage.explored.findTransition(
+      beforeObserved.condition,
+      after.condition,
+      createActionFilter(this.#coverage, handlerIds, this.#backgroundIds),
+    );
+    if (isCovered !== false) return;
+    const handlers = [...handlerIds].sort();
+    if (
+      this.#isFirstSeen(
+        JSON.stringify(["transition", action.label, handlers, beforeObserved.sides, after.sides]),
+      )
+    )
+      this.#verdict.transitionCounterexamples.push({
+        path: observation.path,
+        action: action.label,
+        handlers,
+      });
+  }
+}
 
 export const scoreComponent = (
   analysis: ComponentAnalysis,
-  report: StateReport,
+  model: ComponentModel,
   observations: Observation[],
-  knownComponents: Map<string, string>,
-  isOnFreshPage = false,
 ): ComponentVerdict => {
   const verdict: ComponentVerdict = {
-    ...createEmptyVerdict(analysis, report),
+    ...createEmptyVerdict(analysis, model),
     observationCount: observations.length,
   };
   if (!analysis.exportName) return verdict;
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
-  const context = createScoringContext(
-    analysis,
-    report,
-    verdict,
-    observations,
-    knownComponents,
-    isOnFreshPage,
-  );
-  const probes = collectProbes(analysis);
-  const probeIds = new Set(probes.map((probe) => probe.id));
+  const coverage = createCoverage(analysis, model, observations);
+  const score = new ComponentScore(analysis, coverage, verdict);
+  const probeIds = new Set(collectProbes(analysis).map((probe) => probe.id));
   const coveredSides = new Set<string>();
-  for (const observation of observations)
-    scoreObservation(context, observation, probeIds, coveredSides);
-  verdict.coveredStateIndices = [...context.coveredStates].sort((left, right) => left - right);
-  verdict.branchSideCount = probes.length * 2;
+  for (const observation of observations) {
+    for (const hit of observation.after.probes)
+      if (probeIds.has(hit.id)) coveredSides.add(getSideKey(hit.id, hit.isTrueSide));
+    if (observation.after.error) {
+      verdict.renderErrorCount++;
+      continue;
+    }
+    if (verdict.isTruncated) continue;
+    const observed = observe(coverage, observation.after);
+    score.scoreRender(observation, observed);
+    score.scoreTransition(observation, observed);
+  }
+  verdict.coveredScreens = score.coveredScreens;
+  verdict.branchSideCount = probeIds.size * 2;
   verdict.coveredBranchSideCount = coveredSides.size;
-  verdict.reachedUnreachableBranches = getReachedUnreachableBranches(report, coveredSides);
-  return { ...verdict, ...scoreWarnings(analysis, observations, context.stateBindings) };
+  verdict.reachedUnreachableSides = [...coveredSides].flatMap((key) => {
+    const side = coverage.sides.get(key);
+    return side?.isReachable === false ? [side.description] : [];
+  });
+  return {
+    ...verdict,
+    ...scoreWarnings(analysis, observations, getStateBindings(analysis, observations)),
+  };
 };

@@ -7,7 +7,11 @@ export const COMPARISONS = new Set<string>(["===", "!==", "==", "!=", "<", "<=",
 
 export const ANY: Abstract = { kind: "Any" };
 
-const compareExact = (left: PrimitiveValue, operator: Comparison, right: PrimitiveValue): boolean => {
+const compareExact = (
+  left: PrimitiveValue,
+  operator: Comparison,
+  right: PrimitiveValue,
+): boolean => {
   switch (operator) {
     case "===":
       return left === right;
@@ -112,7 +116,9 @@ export const compareAbstract = (
     case "Other": {
       if (!isEqualityOperator(operator) && !isInequalityOperator(operator)) return null;
       const isOtherType = value.type === "string" && typeof literal !== "string";
-      return isOtherType || value.excluded.includes(literal) ? isInequalityOperator(operator) : null;
+      return isOtherType || value.excluded.includes(literal)
+        ? isInequalityOperator(operator)
+        : null;
     }
     case "Object":
       return isEqualityOperator(operator) || isInequalityOperator(operator)
@@ -201,8 +207,7 @@ export const mayOverlap = (cell: Abstract, value: Abstract): boolean => {
 export const shiftAbstract = (value: Abstract, amount: number): Abstract => {
   if (value.kind === "Exact" && typeof value.value === "number")
     return { kind: "Exact", value: value.value + amount };
-  if (value.kind === "Range")
-    return { ...value, min: value.min + amount, max: value.max + amount };
+  if (value.kind === "Range") return { ...value, min: value.min + amount, max: value.max + amount };
   return ANY;
 };
 
@@ -235,3 +240,18 @@ export const addAbstract = (left: Abstract, right: Abstract): Abstract => {
     isMaxIncluded: leftRange.isMaxIncluded && rightRange.isMaxIncluded,
   };
 };
+
+const isPrimitive = (value: unknown): value is PrimitiveValue =>
+  value === null ||
+  value === undefined ||
+  typeof value === "string" ||
+  typeof value === "number" ||
+  typeof value === "boolean";
+
+export const containsValue = (cell: Abstract, value: unknown): boolean =>
+  isPrimitive(value)
+    ? containsExact(cell, value)
+    : cell.kind === "Object" ||
+      cell.kind === "Truthy" ||
+      cell.kind === "Any" ||
+      (cell.kind === "Other" && cell.type === "any");

@@ -1,19 +1,15 @@
 import { evaluateChoice, evaluateCondition } from "./conditions";
-import type {
-  Action,
-  Condition,
-  Exploration,
-  Lane,
-  Screen,
-  ScreenEdge,
-  TraceStep,
-} from "./types";
+import type { Action, Condition, Exploration, Lane, Screen, ScreenEdge, TraceStep } from "./types";
 
 const MAX_STATES = 20_000;
 
 const MAX_LANES = 64;
 
 const MAX_SUCCESSORS = 400_000;
+
+const MAX_TRANSITION_STEPS = 3;
+
+const MAX_TRANSITION_SUCCESSORS = 50_000;
 
 const NO_SCREEN = "nothing";
 
@@ -27,6 +23,11 @@ export interface ExploredModel {
   exploration: Exploration;
   findWitness: (condition: Condition) => TraceStep[] | null;
   isActionEffective: (action: Action) => boolean;
+  findTransition: (
+    from: Condition,
+    to: Condition,
+    canTake: (action: Action, taken: Action[]) => boolean,
+  ) => boolean | null;
 }
 
 const forEachProduct = (
@@ -58,7 +59,9 @@ export const exploreModel = (
   screens: Screen[],
 ): ExploredModel => {
   const laneIndexes = new Map(lanes.map((lane, index) => [lane.name, index]));
-  const observedIndexes = lanes.flatMap((lane, index) => (lane.source === "pending" ? [] : [index]));
+  const observedIndexes = lanes.flatMap((lane, index) =>
+    lane.source === "pending" ? [] : [index],
+  );
   const visits = new Map<string, Visit>();
   const queue: string[] = [];
   const effectiveActions = new Set<string>();
@@ -77,6 +80,30 @@ export const exploreModel = (
     return (
       screens.find((screen) => evaluateCondition(screen.condition, cellOf) === true)?.label ??
       NO_SCREEN
+    );
+  };
+
+  const forEachSuccessor = (
+    cells: string[],
+    action: Action,
+    visit: (next: string[]) => void,
+  ): void => {
+    const cellOf = cellGetter(cells);
+    if (evaluateCondition(action.guard, cellOf) !== true) return;
+    const writeIndexes = action.writes.map(({ lane }) => laneIndexes.get(lane) ?? -1);
+    const options = action.writes.map(({ choice }, writeIndex) =>
+      evaluateChoice(choice, cells[writeIndexes[writeIndex]], cellOf),
+    );
+    forEachProduct(
+      options,
+      (written) => {
+        const next = [...cells];
+        written.forEach((cell, writeIndex) => {
+          next[writeIndexes[writeIndex]] = cell;
+        });
+        visit(next);
+      },
+      MAX_STATES,
     );
   };
 
@@ -107,50 +134,39 @@ export const exploreModel = (
     const key = queue[index];
     const visit = visits.get(key);
     if (!visit) continue;
-    const cellOf = cellGetter(visit.cells);
     const fromScreen = getScreen(visit.cells);
     for (const action of actions) {
-      if (evaluateCondition(action.guard, cellOf) !== true) continue;
-      const writeIndexes = action.writes.map(({ lane }) => laneIndexes.get(lane) ?? -1);
-      const options = action.writes.map(({ choice }, writeIndex) =>
-        evaluateChoice(choice, visit.cells[writeIndexes[writeIndex]], cellOf),
-      );
-      forEachProduct(
-        options,
-        (written) => {
-          successorCount++;
-          const next = [...visit.cells];
-          written.forEach((cell, writeIndex) => {
-            next[writeIndexes[writeIndex]] = cell;
+      forEachSuccessor(visit.cells, action, (next) => {
+        successorCount++;
+        enqueue(next, key, action.name);
+        const isChanged =
+          action.isVisible ||
+          observedIndexes.some((laneIndex) => next[laneIndex] !== visit.cells[laneIndex]);
+        if (!isChanged) return;
+        effectiveActions.add(action.name);
+        const toScreen = getScreen(next);
+        if (action.phase === "input" && toScreen === fromScreen) return;
+        const edgeKey = `${fromScreen}\0${action.label}\0${toScreen}`;
+        if (!edges.has(edgeKey))
+          edges.set(edgeKey, {
+            from: fromScreen,
+            to: toScreen,
+            action: action.label,
+            actionName: action.name,
+            handlerId: action.handlerId,
+            isAsync: action.phase === "resolves" || action.phase === "rejects",
+            isInput: action.phase === "input",
           });
-          enqueue(next, key, action.name);
-          const isChanged =
-            action.isVisible || observedIndexes.some((laneIndex) => next[laneIndex] !== visit.cells[laneIndex]);
-          if (!isChanged) return;
-          effectiveActions.add(action.name);
-          const toScreen = getScreen(next);
-          if (action.phase === "input" && toScreen === fromScreen) return;
-          const edgeKey = `${fromScreen}\0${action.label}\0${toScreen}`;
-          if (!edges.has(edgeKey))
-            edges.set(edgeKey, {
-              from: fromScreen,
-              to: toScreen,
-              action: action.label,
-              actionName: action.name,
-              handlerId: action.handlerId,
-              isAsync: action.phase === "resolves" || action.phase === "rejects",
-              isInput: action.phase === "input",
-            });
-        },
-        MAX_STATES,
-      );
+      });
     }
   }
 
   if (successorCount >= MAX_SUCCESSORS) isTruncated = true;
   const initialScreens = [
     ...new Set(
-      [...visits.values()].filter((visit) => visit.parent === null).map((visit) => getScreen(visit.cells)),
+      [...visits.values()]
+        .filter((visit) => visit.parent === null)
+        .map((visit) => getScreen(visit.cells)),
     ),
   ];
   const reachableScreens = [
@@ -159,7 +175,7 @@ export const exploreModel = (
 
   const toTrace = (key: string): TraceStep[] => {
     const steps: TraceStep[] = [];
-    for (let current: string | null = key; current !== null; ) {
+    for (let current: string | null = key; current !== null;) {
       const visit = visits.get(current);
       if (!visit) break;
       steps.push({
@@ -178,6 +194,41 @@ export const exploreModel = (
     return null;
   };
 
+  const findTransition = (
+    from: Condition,
+    to: Condition,
+    canTake: (action: Action, taken: Action[]) => boolean,
+  ): boolean | null => {
+    if (isTruncated) return null;
+    let budget = MAX_TRANSITION_SUCCESSORS;
+    for (const visit of visits.values()) {
+      if (evaluateCondition(from, cellGetter(visit.cells)) !== true) continue;
+      let frontier = [{ cells: visit.cells, taken: [] as Action[] }];
+      const seen = new Set<string>();
+      for (let step = 0; step < MAX_TRANSITION_STEPS && frontier.length > 0; step++) {
+        const nextFrontier: typeof frontier = [];
+        let isFound = false;
+        for (const { cells, taken } of frontier)
+          for (const action of actions) {
+            if (!canTake(action, taken)) continue;
+            forEachSuccessor(cells, action, (next) => {
+              budget--;
+              if (evaluateCondition(to, cellGetter(next)) === true) isFound = true;
+              const nextTaken = [...taken, action];
+              const key = [next.join("\0"), ...nextTaken.map(({ name }) => name).sort()].join("\n");
+              if (seen.has(key)) return;
+              seen.add(key);
+              nextFrontier.push({ cells: next, taken: nextTaken });
+            });
+          }
+        if (isFound) return true;
+        if (budget <= 0) return null;
+        frontier = nextFrontier;
+      }
+    }
+    return false;
+  };
+
   return {
     exploration: {
       stateCount: visits.size,
@@ -188,6 +239,7 @@ export const exploreModel = (
     },
     findWitness,
     isActionEffective: (action) => effectiveActions.has(action.name),
+    findTransition,
   };
 };
 

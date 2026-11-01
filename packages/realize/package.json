@@ -25,7 +25,6 @@
     "@babel/types": "7.26.3",
     "bippy": "workspace:*",
     "commander": "^15.0.0",
-    "diff": "^8.0.4",
     "invariant": "^2.2.4",
     "magic-string": "^0.30.21",
     "picocolors": "^1.1.1",

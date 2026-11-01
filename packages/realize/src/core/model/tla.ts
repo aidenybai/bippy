@@ -77,8 +77,7 @@ const formatScreen = (model: ComponentModel): string[] => {
   return [
     `screen == CASE ${formatCondition(first.condition)} -> ${quote(first.label)}`,
     ...rest.map(
-      (screen) =>
-        `            [] ${formatCondition(screen.condition)} -> ${quote(screen.label)}`,
+      (screen) => `            [] ${formatCondition(screen.condition)} -> ${quote(screen.label)}`,
     ),
     `            [] OTHER -> "nothing"`,
   ];

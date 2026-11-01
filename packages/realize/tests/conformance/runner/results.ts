@@ -27,7 +27,7 @@ const TABLE_HEADER = [
   "verified",
   "unmountable",
   "counterexamples",
-  "covered",
+  "screens covered",
   "time",
 ];
 
@@ -68,7 +68,7 @@ const formatResultRow = ({ id, summary }: RepoResult): string[] => {
     verification ? String(verification.verifiedCount) : "-",
     verification ? String(verification.unmountableCount) : "-",
     verification ? String(verification.counterexampleCount) : "-",
-    verification ? `${verification.coveredStateCount}/${verification.predictedStateCount}` : "-",
+    verification ? `${verification.coveredScreenCount}/${verification.screenCount}` : "-",
     `${summary.durationMs + (verification?.durationMs ?? 0)} ms`,
   ];
 };

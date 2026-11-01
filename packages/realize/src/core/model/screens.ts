@@ -168,7 +168,8 @@ export const collectScreens = (
   const variants = walk(render, TRUE, true).slice(0, MAX_SCREENS);
   const usedLabels = new Set<string>();
   const screens = variants.map((variant, index): Screen => {
-    const parts = rootPart && render.kind !== "Conditional" ? [rootPart, ...variant.parts] : variant.parts;
+    const parts =
+      rootPart && render.kind !== "Conditional" ? [rootPart, ...variant.parts] : variant.parts;
     const baseLabel = parts.join(" > ") || "nothing";
     let label = baseLabel;
     for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} (${suffix})`;

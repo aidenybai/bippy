@@ -222,10 +222,7 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
     return inCells(lane.name, ["true"], ["false", "true"]);
   };
 
-  const selectCells = (
-    lane: Lane,
-    predicate: (cell: Cell) => boolean | null,
-  ): Condition | null => {
+  const selectCells = (lane: Lane, predicate: (cell: Cell) => boolean | null): Condition | null => {
     const selected: string[] = [];
     for (const cell of lane.cells) {
       const result = predicate(cell);
@@ -253,10 +250,7 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
 
   const compileConditional = (value: ConditionalValue): Condition => {
     const test = compile(getTestExpression(value));
-    return or([
-      and([test, compile(value.consequent)]),
-      and([not(test), compile(value.alternate)]),
-    ]);
+    return or([and([test, compile(value.consequent)]), and([not(test), compile(value.alternate)])]);
   };
 
   const compile = (test: SymbolicValue): Condition => {

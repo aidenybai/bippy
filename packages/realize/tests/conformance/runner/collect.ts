@@ -26,10 +26,13 @@ const summarize = (
   return {
     fileCount,
     componentCount: components.length,
-    stateCount: sum(components, ({ report }) => report.states.length),
+    stateCount: sum(components, ({ model }) => model.exploration.stateCount),
     handlerCount: sum(components, ({ analysis }) => analysis.handlers.length),
-    unreachableBranchCount: sum(components, ({ report }) => report.unreachableBranches.length),
-    truncatedComponentCount: components.filter(({ report }) => report.isTruncated).length,
+    unreachableBranchCount: sum(
+      components,
+      ({ model }) => model.arms.filter((arm) => arm.isReachable === false).length,
+    ),
+    truncatedComponentCount: components.filter(({ model }) => model.exploration.isTruncated).length,
     bindingCount: bindings.length,
     untypedBindingCount: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
     unresolvedTypeBindingCount: bindings.filter(

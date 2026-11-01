@@ -1,10 +1,7 @@
-import { formatStateLabel } from "../../../src/core/values/format";
 import type { Sample } from "../../../src/core/types";
 import type { MountFailure } from "./reasons";
 import { isMountFailedVerdict } from "./verdicts";
 import type { ComponentVerdict, VerificationSummary } from "./verdicts";
-
-export const MAX_RENDERED_LENGTH = 300;
 
 const MAX_PROPS_LENGTH = 160;
 
@@ -40,31 +37,30 @@ const formatProps = (props: Record<string, Sample>): string =>
     .join(" ")
     .slice(0, MAX_PROPS_LENGTH) || "no props";
 
-const formatStates = (stateIndices: number[]): string =>
-  stateIndices.map(formatStateLabel).join("|");
+const formatPath = (path: string[]): string => path.join(" → ") || "mount";
 
 export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
-  ...verdict.stateCounterexamples.map(
+  ...verdict.renderCounterexamples.map(
     (counterexample) =>
-      `unpredicted state after [${counterexample.path.join(" → ") || "mount"}] with ${formatProps(counterexample.props)}: ${counterexample.reason} (closest ${formatStates([counterexample.closestState])})`,
+      `no model state renders this after [${formatPath(counterexample.path)}] with ${formatProps(counterexample.props)}: ${[...counterexample.sides, ...counterexample.values].join(", ") || "nothing observed"}`,
   ),
   ...verdict.transitionCounterexamples.map(
     (counterexample) =>
-      `${counterexample.reason}: ${counterexample.action} went ${formatStates(counterexample.fromStates)} → ${formatStates(counterexample.toStates)}, predicted ${formatStates(counterexample.predictedStates) || "no change"}`,
+      `no model transition explains ${counterexample.action} after [${formatPath(counterexample.path)}] (ran ${counterexample.handlers.join(", ")})`,
   ),
   ...verdict.valueCounterexamples.map(
     (counterexample) =>
-      `${counterexample.place} = ${counterexample.value}, predicted ${counterexample.predicted.join(" | ")}`,
+      `${counterexample.lane} = ${counterexample.value} fits no cell of ${counterexample.cells.join(" | ")}`,
   ),
-  ...verdict.reachedUnreachableBranches.map((claim) => `unreachable branch was reached: ${claim}`),
+  ...verdict.reachedUnreachableSides.map((side) => `unreachable branch ran: ${side}`),
   ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
 ];
 
 export const countCounterexamples = (verdict: ComponentVerdict): number =>
-  verdict.stateCounterexamples.length +
+  verdict.renderCounterexamples.length +
   verdict.transitionCounterexamples.length +
   verdict.valueCounterexamples.length +
-  verdict.reachedUnreachableBranches.length +
+  verdict.reachedUnreachableSides.length +
   verdict.refutedWarnings.length;
 
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
@@ -93,8 +89,8 @@ export const summarizeVerdicts = (
     unmountableCount: mountFailedVerdicts.length,
     notExportedCount: verdicts.filter((verdict) => verdict.status === "not-exported").length,
     counterexampleCount: sum(verifiedVerdicts, countCounterexamples),
-    predictedStateCount: sum(verifiedVerdicts, (verdict) => verdict.predictedStateCount),
-    coveredStateCount: sum(verifiedVerdicts, (verdict) => verdict.coveredStateIndices.length),
+    screenCount: sum(verifiedVerdicts, (verdict) => verdict.screenCount),
+    coveredScreenCount: sum(verifiedVerdicts, (verdict) => verdict.coveredScreens.length),
     branchSideCount: sum(verifiedVerdicts, (verdict) => verdict.branchSideCount),
     coveredBranchSideCount: sum(verifiedVerdicts, (verdict) => verdict.coveredBranchSideCount),
     warningCount: sum(verifiedVerdicts, (verdict) => verdict.warningCount),

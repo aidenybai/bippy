@@ -1,6 +1,6 @@
 import type { SymbolicValue } from "../../../src/core/types";
-import { toExpected } from "../verifier/match";
-import type { ExpectedShape } from "../verifier/match";
+import { toExpected } from "./expected";
+import type { ExpectedShape } from "./expected";
 
 type OutputShape =
   | { kind: "element"; tag: string; children: OutputShape[] }
@@ -209,7 +209,7 @@ const toRenderTokens = (value: SymbolicValue): ExpectedToken[] => {
   switch (value.kind) {
     case "JsxExpression":
     case "JsxFragment":
-      return toExpectedTokens(toExpected(value, new Map()));
+      return toExpectedTokens(toExpected(value));
     case "Conditional":
       return [
         {

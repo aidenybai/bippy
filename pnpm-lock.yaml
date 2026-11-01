@@ -261,9 +261,6 @@ importers:
       commander:
         specifier: ^15.0.0
         version: 15.0.0
-      diff:
-        specifier: ^8.0.4
-        version: 8.0.4
       invariant:
         specifier: ^2.2.4
         version: 2.2.4

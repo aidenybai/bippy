@@ -125,10 +125,11 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
         : picocolors.green("0 counterexamples")
     }  ` +
       picocolors.dim(
-        `states ${verdict.coveredStateIndices.length}/${verdict.predictedStateCount} covered · transitions ${verdict.coveredTransitionCount} · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
+        `screens ${verdict.coveredScreens.length}/${verdict.screenCount} covered · transitions ${verdict.checkedTransitionCount} checked · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
       ),
   ];
-  for (const claim of formatCounterexamples(verdict)) lines.push(picocolors.red(`  ✗ ${claim}`));
+  for (const counterexample of formatCounterexamples(verdict))
+    lines.push(picocolors.red(`  ✗ ${counterexample}`));
   for (const unwarned of verdict.unwarnedMutations)
     lines.push(picocolors.dim(`  · unwarned mutation: ${unwarned}`));
   if (verdict.renderErrorCount > 0)
@@ -141,7 +142,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
 const program = new Command()
   .name("conformance")
   .description(
-    "Run the analyzer against pinned real-world repos and check its claims in a browser.",
+    "Run the analyzer against pinned real-world repos and check its models in a browser.",
   );
 
 program
@@ -156,7 +157,7 @@ program
     getRunName(),
   )
   .option("-n, --concurrency <n>", "repos to run at once", parsePositiveInteger, 1)
-  .option("--no-verify", "skip mounting components in a browser to check the analyzer's claims")
+  .option("--no-verify", "skip mounting components in a browser to check the models")
   .action(run);
 
 program
@@ -169,7 +170,7 @@ program
 program
   .command("verify")
   .description(
-    "Mount each exported component of one project in a real browser, explore it, and check the analyzer's claims against what renders.",
+    "Mount each exported component of one project in a real browser, explore it, and check that the model covers every render and transition.",
   )
   .argument("<tsconfig>", "path to the project's tsconfig.json")
   .option("-c, --component <names...>", "only verify these components")
@@ -191,7 +192,7 @@ program
     const summary = summarizeVerdicts(report.verdicts, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · states ${summary.coveredStateCount}/${summary.predictedStateCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,
+        `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · screens ${summary.coveredScreenCount}/${summary.screenCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   });

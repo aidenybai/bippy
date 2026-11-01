@@ -3,12 +3,12 @@ import playwrightTest, { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
-import type { AnalyzedComponent, ComponentAnalysis, Sample, State } from "../../../src/core/types";
+import type { AnalyzedComponent, ComponentAnalysis, Sample } from "../../../src/core/types";
+import type { Screen } from "../../../src/core/model/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
-import { matchesExpected, normalizeShapes, toExpected } from "./match";
-import { scoreComponent } from "./score";
+import { createCoverage, isShowingScreen, observe, scoreComponent } from "./score";
 import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
@@ -52,14 +52,13 @@ interface VerifyWorkerFixtures {
 
 interface FixtureContext {
   page: Page;
-  project: VerifyProject;
   session: Session;
   props: Record<string, Sample>;
   initialCapture: Capture;
 }
 
-const getStateLabel = (state: State): string =>
-  state.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+const getScreenLabel = (screen: Screen): string =>
+  screen.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
@@ -96,31 +95,23 @@ const findClickAction = async (
   );
 };
 
-const expectShowingState = (
-  project: VerifyProject,
-  component: AnalyzedComponent,
-  capture: Capture,
-  label: string,
-): void => {
-  const { name: componentName } = component.analysis;
-  const { states } = component.report;
-  const labelledStates = states.filter((state) => getStateLabel(state) === label);
+const expectShowingScreen = (session: Session, capture: Capture, label: string): void => {
+  const { analysis, model } = session.component;
+  const labelledScreens = model.screens.filter((screen) => getScreenLabel(screen) === label);
   expect(
-    labelledStates.length,
-    `${componentName} has no state labelled "${label}". Its states are:\n${states.map(getStateLabel).join("\n")}`,
+    labelledScreens.length,
+    `${analysis.name} has no screen labelled "${label}". Its screens are:\n${model.screens.map(getScreenLabel).join("\n")}`,
   ).toBeGreaterThan(0);
-  const shapes = normalizeShapes(capture.shapes);
+  const coverage = createCoverage(analysis, model, session.observations);
+  const observed = observe(coverage, capture);
   expect(
-    labelledStates.some((state) =>
-      matchesExpected(toExpected(state.render, project.knownComponents), shapes),
-    ),
-    `${componentName} isn't showing "${label}"`,
+    labelledScreens.some((screen) => isShowingScreen(coverage, observed, screen)),
+    `${analysis.name} isn't showing "${label}"`,
   ).toBe(true);
 };
 
 const createComponentFixture = ({
   page,
-  project,
   session,
   props,
   initialCapture,
@@ -141,7 +132,7 @@ const createComponentFixture = ({
       current = await page.evaluate(() => window.__verify.observe());
       session.observations.push({ props, path, action: null, before: null, after: current });
     },
-    expectState: (label) => expectShowingState(project, session.component, current, label),
+    expectState: (label) => expectShowingScreen(session, current, label),
   };
 };
 
@@ -193,15 +184,14 @@ const startSession = async (
     component,
     observations: [{ props, path: [], action: null, before: null, after: initialCapture }],
   };
-  return { page, project, session, props, initialCapture };
+  return { page, session, props, initialCapture };
 };
 
-const expectNoCounterexamples = (project: VerifyProject, session: Session): void => {
+const expectNoCounterexamples = (session: Session): void => {
   const verdict = scoreComponent(
     session.component.analysis,
-    session.component.report,
+    session.component.model,
     session.observations,
-    project.knownComponents,
   );
   expect(formatCounterexamples(verdict), `${verdict.name} has counterexamples`).toEqual([]);
 };
@@ -234,7 +224,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
       return createComponentFixture(fixtureContext);
     });
     await page.close();
-    for (const session of sessions) expectNoCounterexamples(project, session);
+    for (const session of sessions) expectNoCounterexamples(session);
   },
 });
 

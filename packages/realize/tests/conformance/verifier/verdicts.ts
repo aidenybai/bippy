@@ -1,30 +1,27 @@
-import type { ComponentAnalysis, Sample, StateReport } from "../../../src/core/types";
+import type { ComponentAnalysis, Sample } from "../../../src/core/types";
+import type { ComponentModel } from "../../../src/core/model/types";
 import type { Observation } from "./driver";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
 
-interface StateCounterexample {
+interface RenderCounterexample {
   props: Record<string, Sample>;
   path: string[];
-  rendered: string;
-  closestState: number;
-  reason: string;
+  sides: string[];
+  values: string[];
 }
 
-export interface TransitionCounterexample {
+interface TransitionCounterexample {
   path: string[];
   action: string;
-  fromStates: number[];
-  toStates: number[];
-  predictedStates: number[];
-  reason: "unpredicted-target" | "unmodeled-handler" | "unpredicted-effect";
+  handlers: string[];
 }
 
 interface ValueCounterexample {
   path: string[];
-  place: string;
+  lane: string;
   value: string;
-  predicted: string[];
+  cells: string[];
 }
 
 type VerdictOutcome =
@@ -34,17 +31,17 @@ type VerdictOutcome =
 interface VerdictCounts {
   name: string;
   file: string;
+  isTruncated: boolean;
   observationCount: number;
   renderErrorCount: number;
-  predictedStateCount: number;
-  coveredStateIndices: number[];
-  stateCounterexamples: StateCounterexample[];
-  coveredTransitionCount: number;
-  transitionCounterexamples: TransitionCounterexample[];
+  screenCount: number;
+  coveredScreens: string[];
+  checkedTransitionCount: number;
   branchSideCount: number;
   coveredBranchSideCount: number;
-  unreachableClaimCount: number;
-  reachedUnreachableBranches: string[];
+  reachedUnreachableSides: string[];
+  renderCounterexamples: RenderCounterexample[];
+  transitionCounterexamples: TransitionCounterexample[];
   valueCounterexamples: ValueCounterexample[];
   warningCount: number;
   coveredWarningCount: number;
@@ -65,8 +62,8 @@ export interface VerificationSummary {
   unmountableCount: number;
   notExportedCount: number;
   counterexampleCount: number;
-  predictedStateCount: number;
-  coveredStateCount: number;
+  screenCount: number;
+  coveredScreenCount: number;
   branchSideCount: number;
   coveredBranchSideCount: number;
   warningCount: number;
@@ -78,24 +75,24 @@ export interface VerificationSummary {
 
 export const createEmptyVerdict = (
   analysis: ComponentAnalysis,
-  report: StateReport,
+  model: ComponentModel,
 ): ComponentVerdict => ({
   name: analysis.name,
   file: analysis.file,
   status: analysis.exportName ? "verified" : "not-exported",
   error: null,
   mountFailure: null,
+  isTruncated: model.exploration.isTruncated,
   observationCount: 0,
   renderErrorCount: 0,
-  predictedStateCount: report.states.length,
-  coveredStateIndices: [],
-  stateCounterexamples: [],
-  coveredTransitionCount: 0,
-  transitionCounterexamples: [],
+  screenCount: model.exploration.reachableScreens.length,
+  coveredScreens: [],
+  checkedTransitionCount: 0,
   branchSideCount: 0,
   coveredBranchSideCount: 0,
-  unreachableClaimCount: report.unreachableBranches.length,
-  reachedUnreachableBranches: [],
+  reachedUnreachableSides: [],
+  renderCounterexamples: [],
+  transitionCounterexamples: [],
   valueCounterexamples: [],
   warningCount: analysis.warnings.length,
   coveredWarningCount: 0,

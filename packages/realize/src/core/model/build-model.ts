@@ -94,7 +94,7 @@ const withDerivedWrites = (action: Action, derivedLanes: Lane[]): Action => {
   const written = new Set(action.writtenBindingIds);
   const writtenLanes = new Set(action.writes.map(({ lane }) => lane));
   const added: Lane[] = [];
-  for (let isGrowing = true; isGrowing; ) {
+  for (let isGrowing = true; isGrowing;) {
     isGrowing = false;
     for (const lane of derivedLanes) {
       if (writtenLanes.has(lane.name) || lane.bindingId === null) continue;
@@ -165,24 +165,20 @@ const collectFindings = (
   return [
     ...arms
       .filter((arm) => arm.isReachable === false)
-      .map(
-        (arm): Finding => ({
-          kind: "unreachable-arm",
-          message: describeArm(arm),
-          loc: arm.loc,
-          trace: null,
-        }),
-      ),
+      .map((arm): Finding => ({
+        kind: "unreachable-arm",
+        message: describeArm(arm),
+        loc: arm.loc,
+        trace: null,
+      })),
     ...handlerActions
       .filter((action) => !isEffective(action))
-      .map(
-        (action): Finding => ({
-          kind: "silent-action",
-          message: describeSilentAction(action),
-          loc: action.loc,
-          trace: explored.findWitness(action.guard),
-        }),
-      ),
+      .map((action): Finding => ({
+        kind: "silent-action",
+        message: describeSilentAction(action),
+        loc: action.loc,
+        trace: explored.findWitness(action.guard),
+      })),
     ...properties
       .filter((property) => isStateOnly(property, lanes))
       .flatMap((property): Finding[] => {
@@ -222,7 +218,8 @@ export const buildComponentModel = (
   }
   const explored = exploreModel(table.lanes, actions, screens);
   const isComplete = !explored.exploration.isTruncated;
-  for (const arm of arms) arm.isReachable = isComplete ? explored.findWitness(arm.condition) !== null : null;
+  for (const arm of arms)
+    arm.isReachable = isComplete ? explored.findWitness(arm.condition) !== null : null;
   const findings = isComplete
     ? collectFindings(explored, arms, handlerActions, properties, table.lanes)
     : [];
