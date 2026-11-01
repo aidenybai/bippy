@@ -1,16 +1,25 @@
 import type { Claim, ComponentAnalysis, SymbolicValue } from "../types";
+import { getValueLabels } from "./domains";
 import { forEachRenderNode } from "../render/for-each-render-node";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { foldBinary } from "../values/symbolic-values";
 import { COMPARISONS } from "./abstract";
 import { compileHandlerActions, compileInputActions } from "./actions";
-import { and, collectConditionLanes, not, or } from "./conditions";
-import { evaluateInitialCells, forEachEvaluatedValue } from "./evaluate";
+import { and, collectPredicateVariables, not, or } from "./predicates";
+import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
 import { exploreModel, type ExploredModel } from "./explore";
-import { STATE_KINDS, createLaneTable, type LaneTable } from "./lanes";
-import { collectScreens } from "./screens";
-import type { Action, Arm, ComponentModel, Finding, Lane, Property } from "./types";
+import { STATE_KINDS, createVariableTable, type VariableTable } from "./variables";
+import { collectViews } from "./views";
+import type {
+  Action,
+  Branch,
+  BranchEdge,
+  ComponentModel,
+  Finding,
+  Property,
+  Variable,
+} from "./types";
 
 interface ScopedClaim {
   claim: Claim;
@@ -90,18 +99,18 @@ const collectDisplayedBindingIds = (analysis: ComponentAnalysis): Set<number> =>
   return ids;
 };
 
-const withDerivedWrites = (action: Action, derivedLanes: Lane[]): Action => {
+const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action => {
   const written = new Set(action.writtenBindingIds);
-  const writtenLanes = new Set(action.writes.map(({ lane }) => lane));
-  const added: Lane[] = [];
+  const writtenVariables = new Set(action.writes.map(({ variable }) => variable));
+  const added: Variable[] = [];
   for (let isGrowing = true; isGrowing;) {
     isGrowing = false;
-    for (const lane of derivedLanes) {
-      if (writtenLanes.has(lane.name) || lane.bindingId === null) continue;
-      if (!lane.inputBindingIds.some((id) => written.has(id))) continue;
-      writtenLanes.add(lane.name);
-      written.add(lane.bindingId);
-      added.push(lane);
+    for (const variable of derivedVariables) {
+      if (writtenVariables.has(variable.name) || variable.bindingId === null) continue;
+      if (!variable.inputBindingIds.some((id) => written.has(id))) continue;
+      writtenVariables.add(variable.name);
+      written.add(variable.bindingId);
+      added.push(variable);
       isGrowing = true;
     }
   }
@@ -110,9 +119,9 @@ const withDerivedWrites = (action: Action, derivedLanes: Lane[]): Action => {
     ...action,
     writes: [
       ...action.writes,
-      ...added.map((lane) => ({
-        lane: lane.name,
-        choice: { kind: "Cells" as const, cells: lane.cells.map((cell) => cell.label) },
+      ...added.map((variable) => ({
+        variable: variable.name,
+        next: { kind: "Values" as const, values: getValueLabels(variable.domain) },
       })),
     ],
     writtenBindingIds: [...written],
@@ -120,38 +129,38 @@ const withDerivedWrites = (action: Action, derivedLanes: Lane[]): Action => {
 };
 
 const compileProperty = (
-  table: LaneTable,
+  table: VariableTable,
   { claim, guards, tests }: ScopedClaim,
   index: number,
 ): Property => ({
-  name: `Claim${index + 1}`,
+  name: `Assertion${index + 1}`,
   label: claim.description,
-  condition: or([not(and(guards.map(table.compile))), or(tests.map(table.compile))]),
+  predicate: or([not(and(guards.map(table.compile))), or(tests.map(table.compile))]),
   loc: claim.loc,
 });
 
-const isStateOnly = (property: Property, lanes: Lane[]): boolean => {
-  const sources = new Map(lanes.map((lane) => [lane.name, lane.source]));
-  return [...collectConditionLanes(property.condition, new Set())].every((lane) => {
-    const source = sources.get(lane);
+const isStateOnly = (property: Property, variables: Variable[]): boolean => {
+  const sources = new Map(variables.map((variable) => [variable.name, variable.source]));
+  return [...collectPredicateVariables(property.predicate, new Set())].every((variable) => {
+    const source = sources.get(variable);
     return source === "state" || source === "pending";
   });
 };
 
-const describeArm = (arm: Arm): string =>
-  `${arm.test} is never ${arm.isTrueSide ? "true" : "false"} here`;
+const describeUnreachableEdge = (branch: Branch, edge: BranchEdge): string =>
+  `${branch.test} is never ${edge === branch.consequent ? "true" : "false"} here`;
 
-const describeSilentAction = (action: Action): string =>
+const describeStutteringAction = (action: Action): string =>
   action.phase === "rejects"
-    ? `When ${action.label.replace(/ rejects$/, "")} fails, nothing on screen changes`
-    : `${action.label} never changes anything on screen`;
+    ? `When ${action.label.replace(/ rejects$/, "")} fails, the render stays the same`
+    : `${action.label} never changes the render`;
 
 const collectFindings = (
   explored: ExploredModel,
-  arms: Arm[],
+  branches: Branch[],
   handlerActions: Action[],
   properties: Property[],
-  lanes: Lane[],
+  variables: Variable[],
 ): Finding[] => {
   const isEffective = (action: Action): boolean =>
     explored.isActionEffective(action) ||
@@ -163,28 +172,37 @@ const collectFindings = (
           explored.isActionEffective(settle),
       ));
   return [
-    ...arms
-      .filter((arm) => arm.isReachable === false)
-      .map((arm): Finding => ({
-        kind: "unreachable-arm",
-        message: describeArm(arm),
-        loc: arm.loc,
-        trace: null,
-      })),
+    ...branches.flatMap((branch) =>
+      [branch.consequent, branch.alternate]
+        .filter((edge) => edge.isReachable === false)
+        .map((edge): Finding => ({
+          kind: "unreachable-branch",
+          message: describeUnreachableEdge(branch, edge),
+          loc: branch.loc,
+          trace: null,
+        })),
+    ),
     ...handlerActions
       .filter((action) => !isEffective(action))
       .map((action): Finding => ({
-        kind: "silent-action",
-        message: describeSilentAction(action),
+        kind: "stuttering-action",
+        message: describeStutteringAction(action),
         loc: action.loc,
-        trace: explored.findWitness(action.guard),
+        trace: explored.findTrace(action.guard),
       })),
     ...properties
-      .filter((property) => isStateOnly(property, lanes))
+      .filter((property) => isStateOnly(property, variables))
       .flatMap((property): Finding[] => {
-        const trace = explored.findWitness(not(property.condition));
+        const trace = explored.findTrace(not(property.predicate));
         return trace
-          ? [{ kind: "claim", message: `${property.label} can fail`, loc: property.loc, trace }]
+          ? [
+              {
+                kind: "violated-assertion",
+                message: `${property.label} can fail`,
+                loc: property.loc,
+                trace,
+              },
+            ]
           : [];
       }),
   ];
@@ -195,41 +213,44 @@ export const buildComponentModel = (
   triggerLabels: ReadonlyMap<string, string> = new Map(),
 ): ComponentModel => {
   const claims = collectClaims(analysis);
-  const table = createLaneTable(analysis, collectTests(analysis, claims));
-  const { screens, arms } = collectScreens(table, analysis.render, analysis.file);
+  const table = createVariableTable(analysis, collectTests(analysis, claims));
+  const { views, branches } = collectViews(table, analysis.render, analysis.file);
   const properties = claims.map((claim, index) => compileProperty(table, claim, index));
   const displayedBindingIds = collectDisplayedBindingIds(analysis);
   const compiledHandlerActions = analysis.handlers.flatMap((handler) =>
     compileHandlerActions(table, handler, displayedBindingIds, triggerLabels.get(handler.id)),
   );
-  const derivedLanes = table.lanes.filter((lane) => lane.source === "derived");
+  const derivedVariables = table.variables.filter((variable) => variable.source === "derived");
   const handlerActions = compiledHandlerActions.map((action) =>
-    withDerivedWrites(action, derivedLanes),
+    withDerivedWrites(action, derivedVariables),
   );
   const actions = [
     ...handlerActions,
-    ...compileInputActions(table.lanes).map((action) => withDerivedWrites(action, derivedLanes)),
+    ...compileInputActions(table.variables).map((action) =>
+      withDerivedWrites(action, derivedVariables),
+    ),
   ];
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
-  for (const lane of table.lanes) {
-    if (lane.source !== "state" || lane.bindingId === null) continue;
-    const initial = bindingsById.get(lane.bindingId)?.initial;
-    if (initial) lane.initial = evaluateInitialCells(table, lane, initial);
+  for (const variable of table.variables) {
+    if (variable.source !== "state" || variable.bindingId === null) continue;
+    const initial = bindingsById.get(variable.bindingId)?.initial;
+    if (initial) variable.initial = evaluateInitialValues(table, variable, initial);
   }
-  const explored = exploreModel(table.lanes, actions, screens);
-  const isComplete = !explored.exploration.isTruncated;
-  for (const arm of arms)
-    arm.isReachable = isComplete ? explored.findWitness(arm.condition) !== null : null;
+  const explored = exploreModel(table.variables, actions, views);
+  const isComplete = !explored.stateSpace.isTruncated;
+  for (const branch of branches)
+    for (const edge of [branch.consequent, branch.alternate])
+      edge.isReachable = isComplete ? explored.findTrace(edge.predicate) !== null : null;
   const findings = isComplete
-    ? collectFindings(explored, arms, handlerActions, properties, table.lanes)
+    ? collectFindings(explored, branches, handlerActions, properties, table.variables)
     : [];
   return {
-    lanes: table.lanes,
+    variables: table.variables,
     actions,
-    screens,
-    arms,
+    views,
+    branches,
     properties,
-    exploration: explored.exploration,
+    stateSpace: explored.stateSpace,
     findings,
   };
 };

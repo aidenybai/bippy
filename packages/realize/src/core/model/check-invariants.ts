@@ -13,25 +13,25 @@ const unquote = (text: string): string =>
 const toTraceStep = (
   step: TlaTraceStep,
   model: ComponentModel,
-  screenOf: (cells: Record<string, string>) => string,
+  viewOf: (state: Record<string, string>) => string,
 ): TraceStep => {
-  const cells = Object.fromEntries(
-    model.lanes.map((lane) => {
-      const value = step.state[lane.name];
-      return [lane.name, value === undefined ? "?" : unquote(formatValue(value))];
+  const state = Object.fromEntries(
+    model.variables.map((variable) => {
+      const value = step.state[variable.name];
+      return [variable.name, value === undefined ? "?" : unquote(formatValue(value))];
     }),
   );
   const action = step.action
     ? (model.actions.find((candidate) => candidate.name === step.action)?.label ?? step.action)
     : null;
-  return { action, cells, screen: screenOf(cells) };
+  return { action, state, view: viewOf(state) };
 };
 
 export const checkInvariant = async (
   name: string,
   model: ComponentModel,
   invariant: Invariant,
-  screenOf: (cells: Record<string, string>) => string,
+  viewOf: (state: Record<string, string>) => string,
 ): Promise<InvariantResult> => {
   const result = await check({
     source: formatTla(name, model, [invariant]),
@@ -42,7 +42,7 @@ export const checkInvariant = async (
     return {
       name: invariant.name,
       status: "violated",
-      trace: result.violation.trace.map((step) => toTraceStep(step, model, screenOf)),
+      trace: result.violation.trace.map((step) => toTraceStep(step, model, viewOf)),
     };
   return {
     name: invariant.name,

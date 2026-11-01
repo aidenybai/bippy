@@ -15,37 +15,37 @@ export type Abstract =
   | { kind: "Falsy" }
   | { kind: "Any" };
 
-export interface Cell {
+export interface Value {
   label: string;
-  value: Abstract;
+  abstract: Abstract;
 }
 
-export type LaneSource = "state" | "input" | "derived" | "test" | "pending";
+export type VariableSource = "state" | "input" | "derived" | "test" | "pending";
 
-export interface Lane {
+export interface Variable {
   name: string;
   label: string;
-  source: LaneSource;
+  source: VariableSource;
   bindingKind: BindingKind | null;
   bindingId: number | null;
   inputBindingIds: number[];
   path: string[];
-  cells: Cell[];
+  domain: Value[];
   initial: string[];
 }
 
-export type Condition =
+export type Predicate =
   | { kind: "True" }
   | { kind: "False" }
-  | { kind: "In"; lane: string; cells: string[]; allCells: string[] }
-  | { kind: "Not"; condition: Condition }
-  | { kind: "And"; conditions: Condition[] }
-  | { kind: "Or"; conditions: Condition[] };
+  | { kind: "In"; variable: string; values: string[]; domain: string[] }
+  | { kind: "Not"; operand: Predicate }
+  | { kind: "And"; conjuncts: Predicate[] }
+  | { kind: "Or"; disjuncts: Predicate[] };
 
-export type Choice =
-  | { kind: "Cells"; cells: string[] }
-  | { kind: "Keep" }
-  | { kind: "If"; condition: Condition; consequent: Choice; alternate: Choice };
+export type NextValue =
+  | { kind: "Values"; values: string[] }
+  | { kind: "Unchanged" }
+  | { kind: "If"; predicate: Predicate; consequent: NextValue; alternate: NextValue };
 
 export type ActionPhase = "run" | "resolves" | "rejects" | "input";
 
@@ -54,36 +54,40 @@ export interface Action {
   label: string;
   handlerId: string | null;
   phase: ActionPhase;
-  guard: Condition;
-  writes: Array<{ lane: string; choice: Choice }>;
+  guard: Predicate;
+  writes: Array<{ variable: string; next: NextValue }>;
   writtenBindingIds: number[];
   isVisible: boolean;
   loc: SourceLocation | null;
 }
 
-export interface Screen {
+export interface View {
   name: string;
   label: string;
-  condition: Condition;
-  conditions: string[];
+  predicate: Predicate;
+  path: string[];
 }
 
-export interface Arm {
-  test: string;
-  isTrueSide: boolean;
+export interface BranchEdge {
+  predicate: Predicate;
   isReachable: boolean | null;
-  condition: Condition;
+}
+
+export interface Branch {
+  test: string;
   loc: SourceLocation;
   file: string;
+  consequent: BranchEdge;
+  alternate: BranchEdge;
 }
 
 export interface TraceStep {
   action: string | null;
-  cells: Record<string, string>;
-  screen: string;
+  state: Record<string, string>;
+  view: string;
 }
 
-export interface ScreenEdge {
+export interface ViewEdge {
   from: string;
   to: string;
   action: string;
@@ -93,22 +97,22 @@ export interface ScreenEdge {
   isInput: boolean;
 }
 
-export interface Exploration {
+export interface StateSpace {
   stateCount: number;
   isTruncated: boolean;
-  initialScreens: string[];
-  reachableScreens: string[];
-  edges: ScreenEdge[];
+  initialViews: string[];
+  reachableViews: string[];
+  edges: ViewEdge[];
 }
 
 export interface Property {
   name: string;
   label: string;
-  condition: Condition;
+  predicate: Predicate;
   loc: SourceLocation;
 }
 
-export type FindingKind = "unreachable-arm" | "silent-action" | "claim";
+export type FindingKind = "unreachable-branch" | "stuttering-action" | "violated-assertion";
 
 export interface Finding {
   kind: FindingKind;
@@ -118,11 +122,11 @@ export interface Finding {
 }
 
 export interface ComponentModel {
-  lanes: Lane[];
+  variables: Variable[];
   actions: Action[];
-  screens: Screen[];
-  arms: Arm[];
+  views: View[];
+  branches: Branch[];
   properties: Property[];
-  exploration: Exploration;
+  stateSpace: StateSpace;
   findings: Finding[];
 }

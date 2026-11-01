@@ -8,9 +8,9 @@ import type {
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
 import { COMPARISONS, compareAbstract, getAbstractTruthiness, type Comparison } from "./abstract";
-import { createCells, type PlaceTests } from "./cells";
-import { FALSE, TRUE, and, inCells, not, or } from "./conditions";
-import type { Cell, Condition, Lane, LaneSource } from "./types";
+import { createDomain, getValueLabels, type PlaceTests } from "./domains";
+import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
+import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
 
 const FLIPPED: Record<Comparison, Comparison> = {
   "===": "===",
@@ -50,7 +50,7 @@ const TLA_KEYWORDS = new Set([
   "Next",
   "Spec",
   "vars",
-  "screen",
+  "view",
 ]);
 
 type Atom =
@@ -70,12 +70,12 @@ interface PlaceEntry {
   tests: PlaceTests;
 }
 
-export interface LaneTable {
-  lanes: Lane[];
-  compile: (test: SymbolicValue) => Condition;
-  getLane: (binding: Binding, path: string[]) => Lane | null;
-  getCellValue: (lane: Lane, label: string) => Cell["value"];
-  addLane: (lane: Lane) => void;
+export interface VariableTable {
+  variables: Variable[];
+  compile: (test: SymbolicValue) => Predicate;
+  getVariable: (binding: Binding, path: string[]) => Variable | null;
+  getAbstract: (variable: Variable, label: string) => Abstract;
+  addVariable: (variable: Variable) => void;
 }
 
 export const getPlaceKey = (bindingId: number, path: string[]): string =>
@@ -131,33 +131,36 @@ const toIdentifier = (label: string): string => {
   return TLA_KEYWORDS.has(prefixed) ? `${prefixed}_` : prefixed;
 };
 
-const getLaneSource = (binding: Binding): LaneSource => {
+const getVariableSource = (binding: Binding): VariableSource => {
   if (STATE_KINDS.has(binding.kind)) return "state";
   return DERIVED_KINDS.has(binding.kind) && binding.inputPlaces.length > 0 ? "derived" : "input";
 };
 
-const BOOLEAN_CELLS: Cell[] = [
-  { label: "false", value: { kind: "Exact", value: false } },
-  { label: "true", value: { kind: "Exact", value: true } },
+const BOOLEAN_DOMAIN: Value[] = [
+  { label: "false", abstract: { kind: "Exact", value: false } },
+  { label: "true", abstract: { kind: "Exact", value: true } },
 ];
 
-export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValue[]): LaneTable => {
+export const createVariableTable = (
+  analysis: ComponentAnalysis,
+  tests: SymbolicValue[],
+): VariableTable => {
   const entries = new Map<string, PlaceEntry>();
-  const lanes: Lane[] = [];
-  const lanesByPlace = new Map<string, Lane>();
-  const lanesByName = new Map<string, Lane>();
-  const opaqueLanes = new Map<string, Lane>();
+  const variables: Variable[] = [];
+  const variablesByPlace = new Map<string, Variable>();
+  const variablesByName = new Map<string, Variable>();
+  const opaqueVariables = new Map<string, Variable>();
 
   const createName = (label: string): string => {
     const base = toIdentifier(label);
     let name = base;
-    for (let suffix = 2; lanesByName.has(name); suffix++) name = `${base}_${suffix}`;
+    for (let suffix = 2; variablesByName.has(name); suffix++) name = `${base}_${suffix}`;
     return name;
   };
 
-  const addLane = (lane: Lane): void => {
-    lanes.push(lane);
-    lanesByName.set(lane.name, lane);
+  const addVariable = (variable: Variable): void => {
+    variables.push(variable);
+    variablesByName.set(variable.name, variable);
   };
 
   const record = (atom: Atom): void => {
@@ -176,32 +179,32 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
   for (const test of tests) forEachAtom(test, record);
 
   for (const [key, { binding, path, tests: placeTests }] of entries) {
-    const domain =
+    const typeDomain =
       path.length === 0
         ? binding.domain
         : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
-    const cells = createCells(domain, placeTests, path.at(-1) === "length");
+    const values = createDomain(typeDomain, placeTests, path.at(-1) === "length");
     const label = formatPlace(binding, path);
-    const lane: Lane = {
+    const variable: Variable = {
       name: createName(label),
       label,
-      source: getLaneSource(binding),
+      source: getVariableSource(binding),
       bindingKind: binding.kind,
       bindingId: binding.id,
       inputBindingIds: [...new Set(binding.inputPlaces.map((place) => place.bindingId))],
       path,
-      cells,
-      initial: cells.map((cell) => cell.label),
+      domain: values,
+      initial: getValueLabels(values),
     };
-    addLane(lane);
-    lanesByPlace.set(key, lane);
+    addVariable(variable);
+    variablesByPlace.set(key, variable);
   }
 
-  const getOpaqueLane = (value: SymbolicValue): Lane => {
+  const getOpaqueVariable = (value: SymbolicValue): Variable => {
     const label = formatSymbolicValue(value);
-    const existing = opaqueLanes.get(label);
+    const existing = opaqueVariables.get(label);
     if (existing) return existing;
-    const lane: Lane = {
+    const variable: Variable = {
       name: createName(`test_${label}`),
       label,
       source: "test",
@@ -209,51 +212,52 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
       bindingId: null,
       inputBindingIds: [],
       path: [],
-      cells: BOOLEAN_CELLS,
+      domain: BOOLEAN_DOMAIN,
       initial: ["false", "true"],
     };
-    addLane(lane);
-    opaqueLanes.set(label, lane);
-    return lane;
+    addVariable(variable);
+    opaqueVariables.set(label, variable);
+    return variable;
   };
 
-  const opaque = (value: SymbolicValue): Condition => {
-    const lane = getOpaqueLane(value);
-    return inCells(lane.name, ["true"], ["false", "true"]);
+  const opaque = (value: SymbolicValue): Predicate => {
+    const variable = getOpaqueVariable(value);
+    return inValues(variable.name, ["true"], ["false", "true"]);
   };
 
-  const selectCells = (lane: Lane, predicate: (cell: Cell) => boolean | null): Condition | null => {
+  const selectValues = (
+    variable: Variable,
+    isSelected: (value: Value) => boolean | null,
+  ): Predicate | null => {
     const selected: string[] = [];
-    for (const cell of lane.cells) {
-      const result = predicate(cell);
+    for (const value of variable.domain) {
+      const result = isSelected(value);
       if (result === null) return null;
-      if (result) selected.push(cell.label);
+      if (result) selected.push(value.label);
     }
-    return inCells(
-      lane.name,
-      selected,
-      lane.cells.map((cell) => cell.label),
-    );
+    return inValues(variable.name, selected, getValueLabels(variable.domain));
   };
 
-  const compileAtom = (value: SymbolicValue): Condition => {
+  const compileAtom = (value: SymbolicValue): Predicate => {
     const atom = toAtom(value);
     if (!atom || atom.kind === "Opaque") return opaque(value);
-    const lane = lanesByPlace.get(getPlaceKey(atom.binding.id, atom.path));
-    if (!lane) return opaque(value);
-    const condition =
+    const variable = variablesByPlace.get(getPlaceKey(atom.binding.id, atom.path));
+    if (!variable) return opaque(value);
+    const predicate =
       atom.kind === "Truthy"
-        ? selectCells(lane, (cell) => getAbstractTruthiness(cell.value))
-        : selectCells(lane, (cell) => compareAbstract(cell.value, atom.operator, atom.literal));
-    return condition ?? opaque(value);
+        ? selectValues(variable, (candidate) => getAbstractTruthiness(candidate.abstract))
+        : selectValues(variable, (candidate) =>
+            compareAbstract(candidate.abstract, atom.operator, atom.literal),
+          );
+    return predicate ?? opaque(value);
   };
 
-  const compileConditional = (value: ConditionalValue): Condition => {
+  const compileConditional = (value: ConditionalValue): Predicate => {
     const test = compile(getTestExpression(value));
     return or([and([test, compile(value.consequent)]), and([not(test), compile(value.alternate)])]);
   };
 
-  const compile = (test: SymbolicValue): Condition => {
+  const compile = (test: SymbolicValue): Predicate => {
     switch (test.kind) {
       case "Primitive":
         return test.value ? TRUE : FALSE;
@@ -275,11 +279,11 @@ export const createLaneTable = (analysis: ComponentAnalysis, tests: SymbolicValu
     }
   };
 
-  const getLane = (binding: Binding, path: string[]): Lane | null =>
-    lanesByPlace.get(getPlaceKey(binding.id, path)) ?? null;
+  const getVariable = (binding: Binding, path: string[]): Variable | null =>
+    variablesByPlace.get(getPlaceKey(binding.id, path)) ?? null;
 
-  const getCellValue = (lane: Lane, label: string): Cell["value"] =>
-    lane.cells.find((cell) => cell.label === label)?.value ?? { kind: "Any" };
+  const getAbstract = (variable: Variable, label: string): Abstract =>
+    variable.domain.find((value) => value.label === label)?.abstract ?? { kind: "Any" };
 
-  return { lanes, compile, getLane, getCellValue, addLane };
+  return { variables, compile, getVariable, getAbstract, addVariable };
 };

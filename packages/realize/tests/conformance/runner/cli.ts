@@ -125,7 +125,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
         : picocolors.green("0 counterexamples")
     }  ` +
       picocolors.dim(
-        `screens ${verdict.coveredScreens.length}/${verdict.screenCount} covered · transitions ${verdict.checkedTransitionCount} checked · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
+        `views ${verdict.coveredViews.length}/${verdict.viewCount} covered · transitions ${verdict.checkedTransitionCount} checked · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
       ),
   ];
   for (const counterexample of formatCounterexamples(verdict))
@@ -192,7 +192,7 @@ program
     const summary = summarizeVerdicts(report.verdicts, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · screens ${summary.coveredScreenCount}/${summary.screenCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,
+        `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · views ${summary.coveredViewCount}/${summary.viewCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   });

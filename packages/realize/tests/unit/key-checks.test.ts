@@ -19,8 +19,6 @@ describe("key checks on object literals", () => {
 
   it("decides a listed key, and leaves a key the prototype has undecided", () => {
     const { model } = getComponent(project, "EntryLabel");
-    expect([...new Set(model.arms.map((arm) => arm.test))]).toEqual([
-      '"toString" in { label: label }',
-    ]);
+    expect(model.branches.map((branch) => branch.test)).toEqual(['"toString" in { label: label }']);
   });
 });

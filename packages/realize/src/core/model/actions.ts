@@ -1,8 +1,9 @@
 import type { Handler, HandlerTrigger, StateUpdate, SymbolicValue } from "../types";
-import { KEEP, TRUE, and, choose, inCells } from "./conditions";
-import { compileChoice } from "./evaluate";
-import type { LaneTable } from "./lanes";
-import type { Action, ActionPhase, Choice, Condition, Lane } from "./types";
+import { getValueLabels } from "./domains";
+import { UNCHANGED, TRUE, and, ifThenElse, inValues } from "./predicates";
+import { compileNextValue } from "./evaluate";
+import type { VariableTable } from "./variables";
+import type { Action, ActionPhase, NextValue, Predicate, Variable } from "./types";
 
 type Outcome = "resolved" | "rejected";
 
@@ -43,36 +44,40 @@ const PHASE_SUFFIX: Record<ActionPhase, string> = {
   input: "",
 };
 
-const compileUpdateGuard = (table: LaneTable, update: StateUpdate): Condition =>
+const compileUpdateGuard = (table: VariableTable, update: StateUpdate): Predicate =>
   and(
     update.guards
       .filter((guard) => getSettledOutcome(guard) === null)
       .map((guard) => table.compile(guard)),
   );
 
-const compileLaneWrite = (table: LaneTable, lane: Lane, updates: StateUpdate[]): Choice =>
-  updates.reduce<Choice>((previous, update) => {
+const compileVariableWrite = (
+  table: VariableTable,
+  variable: Variable,
+  updates: StateUpdate[],
+): NextValue =>
+  updates.reduce<NextValue>((previous, update) => {
     const guard = compileUpdateGuard(table, update);
-    const choice = compileChoice(table, lane, update.value);
-    return choose(guard, choice, previous);
-  }, KEEP);
+    const next = compileNextValue(table, variable, update.value);
+    return ifThenElse(guard, next, previous);
+  }, UNCHANGED);
 
 const compileWrites = (
-  table: LaneTable,
+  table: VariableTable,
   updates: StateUpdate[],
-): Array<{ lane: string; choice: Choice }> =>
-  table.lanes.flatMap((lane) => {
-    const laneUpdates = updates.filter((update) => update.binding.id === lane.bindingId);
-    if (laneUpdates.length === 0 || lane.source !== "state") return [];
-    const choice = compileLaneWrite(table, lane, laneUpdates);
-    return choice.kind === "Keep" ? [] : [{ lane: lane.name, choice }];
+): Array<{ variable: string; next: NextValue }> =>
+  table.variables.flatMap((variable) => {
+    const variableUpdates = updates.filter((update) => update.binding.id === variable.bindingId);
+    if (variableUpdates.length === 0 || variable.source !== "state") return [];
+    const next = compileVariableWrite(table, variable, variableUpdates);
+    return next.kind === "Unchanged" ? [] : [{ variable: variable.name, next }];
   });
 
 const getBindingIds = (updates: StateUpdate[]): number[] => [
   ...new Set(updates.map((update) => update.binding.id)),
 ];
 
-const createPendingLane = (handler: Handler): Lane => ({
+const createPendingVariable = (handler: Handler): Variable => ({
   name: `pending_${handler.id}`,
   label: `${handler.id} pending`,
   source: "pending",
@@ -80,27 +85,23 @@ const createPendingLane = (handler: Handler): Lane => ({
   bindingId: null,
   inputBindingIds: [],
   path: [],
-  cells: [
-    { label: IDLE, value: { kind: "Exact", value: false } },
-    { label: PENDING, value: { kind: "Exact", value: true } },
+  domain: [
+    { label: IDLE, abstract: { kind: "Exact", value: false } },
+    { label: PENDING, abstract: { kind: "Exact", value: true } },
   ],
   initial: [IDLE],
 });
 
-const isPending = (lane: Lane, cell: string): Condition =>
-  inCells(
-    lane.name,
-    [cell],
-    lane.cells.map((pendingCell) => pendingCell.label),
-  );
+const isPending = (variable: Variable, value: string): Predicate =>
+  inValues(variable.name, [value], getValueLabels(variable.domain));
 
-const setPending = (lane: Lane, cell: string): { lane: string; choice: Choice } => ({
-  lane: lane.name,
-  choice: { kind: "Cells", cells: [cell] },
+const setPending = (variable: Variable, value: string): { variable: string; next: NextValue } => ({
+  variable: variable.name,
+  next: { kind: "Values", values: [value] },
 });
 
 export const compileHandlerActions = (
-  table: LaneTable,
+  table: VariableTable,
   handler: Handler,
   displayedBindingIds: ReadonlySet<number>,
   triggerLabel: string | undefined,
@@ -112,8 +113,8 @@ export const compileHandlerActions = (
   const isVisible = (updates: StateUpdate[]): boolean =>
     updates.some((update) => displayedBindingIds.has(update.binding.id));
   const hasAsync = handler.updates.some((update) => update.isAsync);
-  const pendingLane = hasAsync ? createPendingLane(handler) : null;
-  if (pendingLane) table.addLane(pendingLane);
+  const pendingVariable = hasAsync ? createPendingVariable(handler) : null;
+  if (pendingVariable) table.addVariable(pendingVariable);
   const guard = and(handler.guards.map((handlerGuard) => table.compile(handlerGuard)));
   const runUpdates = updatesByPhase("run");
   const run: Action = {
@@ -121,16 +122,16 @@ export const compileHandlerActions = (
     label,
     handlerId: handler.id,
     phase: "run",
-    guard: pendingLane ? and([guard, isPending(pendingLane, IDLE)]) : guard,
+    guard: pendingVariable ? and([guard, isPending(pendingVariable, IDLE)]) : guard,
     writes: [
       ...compileWrites(table, runUpdates),
-      ...(pendingLane ? [setPending(pendingLane, PENDING)] : []),
+      ...(pendingVariable ? [setPending(pendingVariable, PENDING)] : []),
     ],
     writtenBindingIds: getBindingIds(runUpdates),
     isVisible: isVisible(runUpdates),
     loc: handler.loc,
   };
-  if (!pendingLane) return [run];
+  if (!pendingVariable) return [run];
   const settle = (phase: "resolves" | "rejects"): Action => {
     const updates = updatesByPhase(phase);
     return {
@@ -138,8 +139,8 @@ export const compileHandlerActions = (
       label: `${label}${PHASE_SUFFIX[phase]}`,
       handlerId: handler.id,
       phase,
-      guard: isPending(pendingLane, PENDING),
-      writes: [...compileWrites(table, updates), setPending(pendingLane, IDLE)],
+      guard: isPending(pendingVariable, PENDING),
+      writes: [...compileWrites(table, updates), setPending(pendingVariable, IDLE)],
       writtenBindingIds: getBindingIds(updates),
       isVisible: isVisible(updates),
       loc: handler.loc,
@@ -148,30 +149,36 @@ export const compileHandlerActions = (
   return [run, settle("resolves"), settle("rejects")];
 };
 
-const describeInput = (lane: Lane): string => {
-  switch (lane.bindingKind) {
+const describeInput = (variable: Variable): string => {
+  switch (variable.bindingKind) {
     case "prop":
-      return `parent changes ${lane.label}`;
+      return `parent changes ${variable.label}`;
     case "context":
-      return `context changes ${lane.label}`;
+      return `context changes ${variable.label}`;
     default:
-      return `${lane.label} changes`;
+      return `${variable.label} changes`;
   }
 };
 
-export const compileInputActions = (lanes: Lane[]): Action[] =>
-  lanes
-    .filter((lane) => (lane.source === "input" || lane.source === "test") && lane.cells.length > 1)
-    .map((lane) => ({
-      name: `change_${lane.name}`,
-      label: describeInput(lane),
+export const compileInputActions = (variables: Variable[]): Action[] =>
+  variables
+    .filter(
+      (variable) =>
+        (variable.source === "input" || variable.source === "test") && variable.domain.length > 1,
+    )
+    .map((variable) => ({
+      name: `change_${variable.name}`,
+      label: describeInput(variable),
       handlerId: null,
       phase: "input",
       guard: TRUE,
       writes: [
-        { lane: lane.name, choice: { kind: "Cells", cells: lane.cells.map((cell) => cell.label) } },
+        {
+          variable: variable.name,
+          next: { kind: "Values", values: getValueLabels(variable.domain) },
+        },
       ],
-      writtenBindingIds: lane.bindingId === null ? [] : [lane.bindingId],
+      writtenBindingIds: variable.bindingId === null ? [] : [variable.bindingId],
       isVisible: false,
       loc: null,
     }));

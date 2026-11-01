@@ -3,19 +3,19 @@ import { formatNegated, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
 import { isNullish } from "../values/is-nullish";
 import { getMemoizedRender } from "../render/get-memoized-render";
-import { TRUE, and, not } from "./conditions";
-import type { LaneTable } from "./lanes";
-import type { Arm, Condition, Screen } from "./types";
+import { TRUE, and, not } from "./predicates";
+import type { VariableTable } from "./variables";
+import type { Branch, Predicate, View } from "./types";
 
-const MAX_SCREENS = 64;
+const MAX_VIEWS = 64;
 
 interface Variant {
-  condition: Condition;
-  conditions: string[];
+  predicate: Predicate;
+  path: string[];
   parts: string[];
 }
 
-const SINGLE: Variant[] = [{ condition: TRUE, conditions: [], parts: [] }];
+const SINGLE: Variant[] = [{ predicate: TRUE, path: [], parts: [] }];
 
 const getDirectText = (children: SymbolicValue[]): string =>
   children
@@ -57,62 +57,54 @@ const describeRoot = (value: SymbolicValue): string | null => {
 const multiply = (left: Variant[], right: Variant[]): Variant[] =>
   left.flatMap((leftVariant) =>
     right.flatMap((rightVariant) => {
-      const condition = and([leftVariant.condition, rightVariant.condition]);
-      if (condition.kind === "False") return [];
+      const predicate = and([leftVariant.predicate, rightVariant.predicate]);
+      if (predicate.kind === "False") return [];
       return [
         {
-          condition,
-          conditions: [...leftVariant.conditions, ...rightVariant.conditions],
+          predicate,
+          path: [...leftVariant.path, ...rightVariant.path],
           parts: [...leftVariant.parts, ...rightVariant.parts],
         },
       ];
     }),
   );
 
-export const collectScreens = (
-  table: LaneTable,
+export const collectViews = (
+  table: VariableTable,
   render: SymbolicValue,
   file: string,
-): { screens: Screen[]; arms: Arm[] } => {
-  const arms: Arm[] = [];
+): { views: View[]; branches: Branch[] } => {
+  const branches: Branch[] = [];
   const visited = new WeakSet<SymbolicValue>();
 
-  const recordArms = (node: ConditionalValue, test: Condition, path: Condition): void => {
-    const text = formatSymbolicValue(getTestExpression(node));
-    const loc = node.branch.loc;
-    const armFile = node.branch.file || file;
-    arms.push({
-      test: text,
-      isTrueSide: true,
-      isReachable: null,
-      condition: and([path, test]),
-      loc,
-      file: armFile,
-    });
-    arms.push({
-      test: text,
-      isTrueSide: false,
-      isReachable: null,
-      condition: and([path, not(test)]),
-      loc,
-      file: armFile,
+  const recordBranch = (
+    node: ConditionalValue,
+    test: Predicate,
+    pathCondition: Predicate,
+  ): void => {
+    branches.push({
+      test: formatSymbolicValue(getTestExpression(node)),
+      loc: node.branch.loc,
+      file: node.branch.file || file,
+      consequent: { predicate: and([pathCondition, test]), isReachable: null },
+      alternate: { predicate: and([pathCondition, not(test)]), isReachable: null },
     });
   };
 
-  const withArm = (
-    arm: SymbolicValue,
-    test: Condition,
+  const withEdge = (
+    successor: SymbolicValue,
+    test: Predicate,
     text: string,
     variants: Variant[],
   ): Variant[] => {
-    const part = describeRoot(arm);
+    const part = describeRoot(successor);
     return variants.flatMap((variant) => {
-      const condition = and([test, variant.condition]);
-      if (condition.kind === "False") return [];
+      const predicate = and([test, variant.predicate]);
+      if (predicate.kind === "False") return [];
       return [
         {
-          condition,
-          conditions: [text, ...variant.conditions],
+          predicate,
+          path: [text, ...variant.path],
           parts: part ? [part, ...variant.parts] : variant.parts,
         },
       ];
@@ -121,43 +113,43 @@ export const collectScreens = (
 
   const collectChildren = (
     children: SymbolicValue[],
-    path: Condition,
+    pathCondition: Predicate,
     isSplitting: boolean,
   ): Variant[] =>
     children.reduce<Variant[]>((variants, child) => {
-      const childVariants = walk(child, path, isSplitting);
-      return variants.length * childVariants.length > MAX_SCREENS
+      const childVariants = walk(child, pathCondition, isSplitting);
+      return variants.length * childVariants.length > MAX_VIEWS
         ? variants
         : multiply(variants, childVariants);
     }, SINGLE);
 
-  const walk = (node: SymbolicValue, path: Condition, isSplitting: boolean): Variant[] => {
+  const walk = (node: SymbolicValue, pathCondition: Predicate, isSplitting: boolean): Variant[] => {
     if (visited.has(node)) return SINGLE;
     visited.add(node);
     switch (node.kind) {
       case "Conditional": {
         const test = table.compile(getTestExpression(node));
-        recordArms(node, test, path);
-        const consequent = walk(node.consequent, and([path, test]), isSplitting);
-        const alternate = walk(node.alternate, and([path, not(test)]), isSplitting);
+        recordBranch(node, test, pathCondition);
+        const consequent = walk(node.consequent, and([pathCondition, test]), isSplitting);
+        const alternate = walk(node.alternate, and([pathCondition, not(test)]), isSplitting);
         if (!isSplitting) return SINGLE;
         const testValue = getTestExpression(node);
         return [
-          ...withArm(node.consequent, test, formatSymbolicValue(testValue), consequent),
-          ...withArm(node.alternate, not(test), formatNegated(testValue), alternate),
+          ...withEdge(node.consequent, test, formatSymbolicValue(testValue), consequent),
+          ...withEdge(node.alternate, not(test), formatNegated(testValue), alternate),
         ];
       }
       case "JsxExpression":
       case "JsxFragment":
-        return collectChildren(node.children, path, isSplitting);
+        return collectChildren(node.children, pathCondition, isSplitting);
       case "ArrayExpression":
-        return collectChildren([...node.elements, ...node.spreads], path, isSplitting);
+        return collectChildren([...node.elements, ...node.spreads], pathCondition, isSplitting);
       case "ArrayMap":
-        walk(node.item, path, false);
+        walk(node.item, pathCondition, false);
         return SINGLE;
       case "Binding": {
         const memoized = getMemoizedRender(node);
-        return memoized ? walk(memoized, path, isSplitting) : SINGLE;
+        return memoized ? walk(memoized, pathCondition, isSplitting) : SINGLE;
       }
       default:
         return SINGLE;
@@ -165,9 +157,9 @@ export const collectScreens = (
   };
 
   const rootPart = describeRoot(render);
-  const variants = walk(render, TRUE, true).slice(0, MAX_SCREENS);
+  const variants = walk(render, TRUE, true).slice(0, MAX_VIEWS);
   const usedLabels = new Set<string>();
-  const screens = variants.map((variant, index): Screen => {
+  const views = variants.map((variant, index): View => {
     const parts =
       rootPart && render.kind !== "Conditional" ? [rootPart, ...variant.parts] : variant.parts;
     const baseLabel = parts.join(" > ") || "nothing";
@@ -177,9 +169,9 @@ export const collectScreens = (
     return {
       name: `S${index + 1}`,
       label,
-      condition: variant.condition,
-      conditions: variant.conditions,
+      predicate: variant.predicate,
+      path: variant.path,
     };
   });
-  return { screens, arms };
+  return { views, branches };
 };

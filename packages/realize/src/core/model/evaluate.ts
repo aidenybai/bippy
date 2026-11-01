@@ -1,18 +1,19 @@
 import type { SymbolicValue } from "../types";
+import { getValueLabels } from "./domains";
 import { getChildValues } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
 import {
-  KEEP,
+  UNCHANGED,
   and,
-  choose,
-  collectConditionLanes,
-  evaluateCondition,
-  inCells,
+  ifThenElse,
+  collectPredicateVariables,
+  evaluatePredicate,
+  inValues,
   or,
-} from "./conditions";
-import type { LaneTable } from "./lanes";
-import type { Abstract, Choice, Condition, Lane } from "./types";
+} from "./predicates";
+import type { VariableTable } from "./variables";
+import type { Abstract, NextValue, Predicate, Variable } from "./types";
 
 const MAX_DEPENDENCY_COMBINATIONS = 64;
 
@@ -21,24 +22,24 @@ const BOOLEANS: Abstract[] = [
   { kind: "Exact", value: true },
 ];
 
-type CellOf = (lane: string) => string | undefined;
+type ValueOf = (variable: string) => string | undefined;
 
 interface Evaluator {
-  table: LaneTable;
-  cellOf: CellOf;
+  table: VariableTable;
+  valueOf: ValueOf;
 }
 
-const fromCondition = ({ cellOf }: Evaluator, condition: Condition): Abstract[] => {
-  const result = evaluateCondition(condition, cellOf);
+const fromPredicate = ({ valueOf }: Evaluator, predicate: Predicate): Abstract[] => {
+  const result = evaluatePredicate(predicate, valueOf);
   return result === null ? BOOLEANS : [{ kind: "Exact", value: result }];
 };
 
 const lookupPlace = (evaluator: Evaluator, value: SymbolicValue, path: string[]): Abstract[] => {
   if (value.kind !== "Binding") return [ANY];
-  const lane = evaluator.table.getLane(value.binding, [...value.path, ...path]);
-  if (!lane) return [ANY];
-  const cell = evaluator.cellOf(lane.name);
-  return cell === undefined ? [ANY] : [evaluator.table.getCellValue(lane, cell)];
+  const variable = evaluator.table.getVariable(value.binding, [...value.path, ...path]);
+  if (!variable) return [ANY];
+  const label = evaluator.valueOf(variable.name);
+  return label === undefined ? [ANY] : [evaluator.table.getAbstract(variable, label)];
 };
 
 const addAll = (left: Abstract[], right: Abstract[]): Abstract[] =>
@@ -91,7 +92,7 @@ const evaluateBinary = (
     case "<=":
     case ">":
     case ">=":
-      return fromCondition(evaluator, evaluator.table.compile(value));
+      return fromPredicate(evaluator, evaluator.table.compile(value));
     default:
       return [ANY];
   }
@@ -107,9 +108,9 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
     case "Binding":
       return lookupPlace(evaluator, value, path);
     case "Conditional": {
-      const result = evaluateCondition(
+      const result = evaluatePredicate(
         evaluator.table.compile(getTestExpression(value)),
-        evaluator.cellOf,
+        evaluator.valueOf,
       );
       if (result === true) return evaluate(evaluator, value.consequent, path);
       if (result === false) return evaluate(evaluator, value.alternate, path);
@@ -134,7 +135,7 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
       return path.length === 0 ? evaluateBinary(evaluator, value) : [ANY];
     case "UnaryExpression":
       if (path.length > 0) return [ANY];
-      if (value.operator === "!") return fromCondition(evaluator, evaluator.table.compile(value));
+      if (value.operator === "!") return fromPredicate(evaluator, evaluator.table.compile(value));
       if (value.operator === "-") return evaluate(evaluator, value.value, []).map(negate);
       return [ANY];
     case "Unknown":
@@ -153,19 +154,22 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
   }
 };
 
-const toCells = (lane: Lane, values: Abstract[]): string[] => {
-  const cells = lane.cells
-    .filter((cell) => values.some((value) => mayOverlap(cell.value, value)))
-    .map((cell) => cell.label);
-  return cells.length > 0 ? cells : lane.cells.map((cell) => cell.label);
+const toValues = (variable: Variable, abstracts: Abstract[]): string[] => {
+  const values = variable.domain.filter((value) =>
+    abstracts.some((abstract) => mayOverlap(value.abstract, abstract)),
+  );
+  return getValueLabels(values.length > 0 ? values : variable.domain);
 };
 
-export const evaluateInitialCells = (
-  table: LaneTable,
-  lane: Lane,
+export const evaluateInitialValues = (
+  table: VariableTable,
+  variable: Variable,
   initial: SymbolicValue,
 ): string[] =>
-  toCells(lane, evaluate({ table, cellOf: () => undefined }, initial, lane.path.slice(0)));
+  toValues(
+    variable,
+    evaluate({ table, valueOf: () => undefined }, initial, variable.path.slice(0)),
+  );
 
 export const forEachEvaluatedValue = (
   root: SymbolicValue,
@@ -181,23 +185,25 @@ export const forEachEvaluatedValue = (
   }
 };
 
-const collectDependencies = (table: LaneTable, value: SymbolicValue): Lane[] => {
+const collectDependencies = (table: VariableTable, value: SymbolicValue): Variable[] => {
   const names = new Set<string>();
   const bindingIds = new Set<number>();
   forEachEvaluatedValue(value, (node) => {
     if (node.kind === "Binding") bindingIds.add(node.binding.id);
     if (node.kind === "Conditional")
-      collectConditionLanes(table.compile(getTestExpression(node)), names);
+      collectPredicateVariables(table.compile(getTestExpression(node)), names);
     if (node.kind === "BinaryExpression" || node.kind === "UnaryExpression")
-      collectConditionLanes(table.compile(node), names);
+      collectPredicateVariables(table.compile(node), names);
   });
-  return table.lanes.filter(
-    (lane) => names.has(lane.name) || (lane.bindingId !== null && bindingIds.has(lane.bindingId)),
+  return table.variables.filter(
+    (variable) =>
+      names.has(variable.name) ||
+      (variable.bindingId !== null && bindingIds.has(variable.bindingId)),
   );
 };
 
 const forEachAssignment = (
-  dependencies: Lane[],
+  dependencies: Variable[],
   visit: (assignment: Map<string, string>) => void,
 ): void => {
   const walk = (index: number, assignment: Map<string, string>): void => {
@@ -205,58 +211,62 @@ const forEachAssignment = (
       visit(new Map(assignment));
       return;
     }
-    const lane = dependencies[index];
-    for (const cell of lane.cells) {
-      assignment.set(lane.name, cell.label);
+    const variable = dependencies[index];
+    for (const value of variable.domain) {
+      assignment.set(variable.name, value.label);
       walk(index + 1, assignment);
     }
-    assignment.delete(lane.name);
+    assignment.delete(variable.name);
   };
   walk(0, new Map());
 };
 
-const countAssignments = (dependencies: Lane[]): number =>
-  dependencies.reduce((total, lane) => total * lane.cells.length, 1);
+const countAssignments = (dependencies: Variable[]): number =>
+  dependencies.reduce((total, variable) => total * variable.domain.length, 1);
 
-const toAssignmentCondition = (
-  dependencies: Lane[],
+const toAssignmentPredicate = (
+  dependencies: Variable[],
   assignments: Array<Map<string, string>>,
-): Condition => {
-  const getAllCells = (name: string): string[] =>
-    dependencies.find((lane) => lane.name === name)?.cells.map((cell) => cell.label) ?? [];
+): Predicate => {
+  const getDomain = (name: string): string[] =>
+    getValueLabels(dependencies.find((variable) => variable.name === name)?.domain ?? []);
   const [first] = assignments;
   if (first && first.size === 1) {
-    const [lane] = first.keys();
-    return inCells(
-      lane,
-      assignments.map((assignment) => assignment.get(lane) ?? ""),
-      getAllCells(lane),
+    const [variable] = first.keys();
+    return inValues(
+      variable,
+      assignments.map((assignment) => assignment.get(variable) ?? ""),
+      getDomain(variable),
     );
   }
   return or(
     assignments.map((assignment) =>
-      and([...assignment].map(([lane, cell]) => inCells(lane, [cell], getAllCells(lane)))),
+      and(
+        [...assignment].map(([variable, value]) =>
+          inValues(variable, [value], getDomain(variable)),
+        ),
+      ),
     ),
   );
 };
 
 interface Outcome {
   assignment: Map<string, string>;
-  cells: string[];
+  values: string[];
   key: string;
 }
 
-const isKeptBy = (lane: Lane, outcomes: Outcome[]): boolean =>
+const isUnchangedBy = (variable: Variable, outcomes: Outcome[]): boolean =>
   outcomes.every(
-    ({ assignment, cells }) => cells.length === 1 && assignment.get(lane.name) === cells[0],
+    ({ assignment, values }) => values.length === 1 && assignment.get(variable.name) === values[0],
   );
 
-const getRelevantDependencies = (dependencies: Lane[], outcomes: Outcome[]): Lane[] =>
-  dependencies.reduce<Lane[]>((relevant, dependency) => {
-    const remaining = relevant.filter((lane) => lane !== dependency);
+const getRelevantDependencies = (dependencies: Variable[], outcomes: Outcome[]): Variable[] =>
+  dependencies.reduce<Variable[]>((relevant, dependency) => {
+    const remaining = relevant.filter((variable) => variable !== dependency);
     const keysByRest = new Map<string, string>();
     const isIrrelevant = outcomes.every(({ assignment, key }) => {
-      const restKey = remaining.map((lane) => assignment.get(lane.name)).join("\0");
+      const restKey = remaining.map((variable) => assignment.get(variable.name)).join("\0");
       const existing = keysByRest.get(restKey);
       keysByRest.set(restKey, key);
       return existing === undefined || existing === key;
@@ -264,43 +274,47 @@ const getRelevantDependencies = (dependencies: Lane[], outcomes: Outcome[]): Lan
     return isIrrelevant ? remaining : relevant;
   }, dependencies);
 
-export const compileChoice = (table: LaneTable, lane: Lane, value: SymbolicValue): Choice => {
-  const allCells = lane.cells.map((cell) => cell.label);
+export const compileNextValue = (
+  table: VariableTable,
+  variable: Variable,
+  value: SymbolicValue,
+): NextValue => {
+  const domain = getValueLabels(variable.domain);
   const dependencies = collectDependencies(table, value);
   if (countAssignments(dependencies) > MAX_DEPENDENCY_COMBINATIONS)
-    return { kind: "Cells", cells: allCells };
+    return { kind: "Values", values: domain };
   const outcomes: Outcome[] = [];
   forEachAssignment(dependencies, (assignment) => {
-    const cells = toCells(
-      lane,
-      evaluate({ table, cellOf: (name) => assignment.get(name) }, value, lane.path),
+    const values = toValues(
+      variable,
+      evaluate({ table, valueOf: (name) => assignment.get(name) }, value, variable.path),
     );
-    outcomes.push({ assignment, cells, key: cells.join("\0") });
+    outcomes.push({ assignment, values, key: values.join("\0") });
   });
-  if (isKeptBy(lane, outcomes)) return KEEP;
+  if (isUnchangedBy(variable, outcomes)) return UNCHANGED;
   const relevant = getRelevantDependencies(dependencies, outcomes);
   const groups = new Map<
     string,
-    { cells: string[]; assignments: Map<string, Map<string, string>> }
+    { values: string[]; assignments: Map<string, Map<string, string>> }
   >();
-  for (const { assignment, cells, key } of outcomes) {
+  for (const { assignment, values, key } of outcomes) {
     const projected = new Map(
       relevant.map((dependency) => [dependency.name, assignment.get(dependency.name) ?? ""]),
     );
-    const group = groups.get(key) ?? { cells, assignments: new Map() };
+    const group = groups.get(key) ?? { values, assignments: new Map() };
     group.assignments.set([...projected.values()].join("\0"), projected);
     groups.set(key, group);
   }
   const ordered = [...groups.values()];
   const fallback = ordered.pop();
-  if (!fallback) return { kind: "Cells", cells: allCells };
-  return ordered.reduceRight<Choice>(
+  if (!fallback) return { kind: "Values", values: domain };
+  return ordered.reduceRight<NextValue>(
     (otherwise, group) =>
-      choose(
-        toAssignmentCondition(relevant, [...group.assignments.values()]),
-        { kind: "Cells", cells: group.cells },
+      ifThenElse(
+        toAssignmentPredicate(relevant, [...group.assignments.values()]),
+        { kind: "Values", values: group.values },
         otherwise,
       ),
-    { kind: "Cells", cells: fallback.cells },
+    { kind: "Values", values: fallback.values },
   );
 };

@@ -6,7 +6,7 @@ import { ConfigError } from "../core/project/config-error";
 import { serializeProjectAnalysis } from "../core/project/serialize";
 import { createTracer, NO_TRACER } from "../core/project/tracer";
 import { checkInvariant, type InvariantResult } from "../core/model/check-invariants";
-import { getScreenLabel } from "../core/model/explore";
+import { getViewLabel } from "../core/model/explore";
 import { formatTla } from "../core/model/tla";
 import type { Invariant } from "../core/model/tla";
 import type { TraceStep } from "../core/model/types";
@@ -46,7 +46,7 @@ const formatTotals = (
   elapsedMs: number,
 ): string[] => {
   const stateCount = components.reduce(
-    (total, { model }) => total + model.exploration.stateCount,
+    (total, { model }) => total + model.stateSpace.stateCount,
     0,
   );
   const findingCount = components.reduce((total, { model }) => total + model.findings.length, 0);
@@ -61,11 +61,11 @@ const formatTotals = (
 };
 
 const formatTraceStep = (step: TraceStep, index: number): string => {
-  const cells = Object.entries(step.cells)
-    .map(([lane, cell]) => `${lane}=${cell}`)
+  const state = Object.entries(step.state)
+    .map(([variable, value]) => `${variable}=${value}`)
     .join(", ");
   const head = index === 0 ? "start" : (step.action ?? "step");
-  return `  ${index + 1}. ${head}: ${cells} → ${step.screen}`;
+  return `  ${index + 1}. ${head}: ${state} → ${step.view}`;
 };
 
 const formatInvariantResult = (component: AnalyzedComponent, result: InvariantResult): string => {
@@ -91,7 +91,7 @@ const checkInvariants = async (
         component.analysis.name,
         component.model,
         invariant,
-        (cells) => getScreenLabel(component.model.screens, cells),
+        (state) => getViewLabel(component.model.views, state),
       );
       lines.push(formatInvariantResult(component, result));
     }
@@ -169,7 +169,7 @@ new Command()
   .option("--tla", "print each component as a TLA+ module instead", false)
   .option(
     "-i, --invariant <invariants...>",
-    'check invariants written as "Name: TLA+ expression" over the lanes and screen',
+    'check invariants written as "Name: TLA+ expression" over the variables and view',
   )
   .option("--trace <file>", "write the time and memory of each phase as a Chrome trace")
   .action(async (tsconfig: string, options: AnalyzeCliOptions) => {

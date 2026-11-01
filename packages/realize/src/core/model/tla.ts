@@ -1,4 +1,4 @@
-import type { Action, Choice, ComponentModel, Condition, Lane } from "./types";
+import type { Action, NextValue, ComponentModel, Predicate, Variable } from "./types";
 
 export interface Invariant {
   name: string;
@@ -7,56 +7,59 @@ export interface Invariant {
 
 const quote = (text: string): string => `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 
-const formatSet = (cells: string[]): string => `{${cells.map(quote).join(", ")}}`;
+const formatSet = (values: string[]): string => `{${values.map(quote).join(", ")}}`;
 
-export const formatCondition = (condition: Condition): string => {
-  switch (condition.kind) {
+export const formatPredicate = (predicate: Predicate): string => {
+  switch (predicate.kind) {
     case "True":
       return "TRUE";
     case "False":
       return "FALSE";
     case "In": {
-      if (condition.cells.length === 1) return `${condition.lane} = ${quote(condition.cells[0])}`;
-      const excluded = condition.allCells.filter((cell) => !condition.cells.includes(cell));
-      if (excluded.length === 1) return `${condition.lane} /= ${quote(excluded[0])}`;
-      return `${condition.lane} \\in ${formatSet(condition.cells)}`;
+      if (predicate.values.length === 1)
+        return `${predicate.variable} = ${quote(predicate.values[0])}`;
+      const excluded = predicate.domain.filter((value) => !predicate.values.includes(value));
+      if (excluded.length === 1) return `${predicate.variable} /= ${quote(excluded[0])}`;
+      return `${predicate.variable} \\in ${formatSet(predicate.values)}`;
     }
     case "Not":
-      return `~(${formatCondition(condition.condition)})`;
+      return `~(${formatPredicate(predicate.operand)})`;
     case "And":
-      return condition.conditions.map(formatPart).join(" /\\ ");
+      return predicate.conjuncts.map(formatPart).join(" /\\ ");
     case "Or":
-      return condition.conditions.map(formatPart).join(" \\/ ");
+      return predicate.disjuncts.map(formatPart).join(" \\/ ");
   }
 };
 
-const formatPart = (condition: Condition): string =>
-  condition.kind === "And" || condition.kind === "Or"
-    ? `(${formatCondition(condition)})`
-    : formatCondition(condition);
+const formatPart = (predicate: Predicate): string =>
+  predicate.kind === "And" || predicate.kind === "Or"
+    ? `(${formatPredicate(predicate)})`
+    : formatPredicate(predicate);
 
-const formatChoice = (choice: Choice, lane: string): string => {
-  switch (choice.kind) {
-    case "Keep":
-      return `{${lane}}`;
-    case "Cells":
-      return formatSet(choice.cells);
+const formatNextValue = (next: NextValue, variable: string): string => {
+  switch (next.kind) {
+    case "Unchanged":
+      return `{${variable}}`;
+    case "Values":
+      return formatSet(next.values);
     case "If":
-      return `(IF ${formatCondition(choice.condition)} THEN ${formatChoice(choice.consequent, lane)} ELSE ${formatChoice(choice.alternate, lane)})`;
+      return `(IF ${formatPredicate(next.predicate)} THEN ${formatNextValue(next.consequent, variable)} ELSE ${formatNextValue(next.alternate, variable)})`;
   }
 };
 
-const formatWrite = (lane: string, choice: Choice): string =>
-  choice.kind === "Cells" && choice.cells.length === 1
-    ? `${lane}' = ${quote(choice.cells[0])}`
-    : `${lane}' \\in ${formatChoice(choice, lane)}`;
+const formatWrite = (variable: string, next: NextValue): string =>
+  next.kind === "Values" && next.values.length === 1
+    ? `${variable}' = ${quote(next.values[0])}`
+    : `${variable}' \\in ${formatNextValue(next, variable)}`;
 
-const formatAction = (action: Action, lanes: Lane[]): string[] => {
-  const written = new Set(action.writes.map(({ lane }) => lane));
-  const unchanged = lanes.filter((lane) => !written.has(lane.name)).map((lane) => lane.name);
+const formatAction = (action: Action, variables: Variable[]): string[] => {
+  const written = new Set(action.writes.map(({ variable }) => variable));
+  const unchanged = variables
+    .filter((variable) => !written.has(variable.name))
+    .map((variable) => variable.name);
   const conjuncts = [
-    formatCondition(action.guard),
-    ...action.writes.map(({ lane, choice }) => formatWrite(lane, choice)),
+    formatPredicate(action.guard),
+    ...action.writes.map(({ variable, next }) => formatWrite(variable, next)),
     ...(unchanged.length > 0 ? [`UNCHANGED <<${unchanged.join(", ")}>>`] : []),
   ].filter((conjunct) => conjunct !== "TRUE");
   return [
@@ -66,20 +69,20 @@ const formatAction = (action: Action, lanes: Lane[]): string[] => {
   ];
 };
 
-const formatInitial = (lane: Lane): string =>
-  lane.initial.length === 1
-    ? `${lane.name} = ${quote(lane.initial[0])}`
-    : `${lane.name} \\in ${formatSet(lane.initial)}`;
+const formatInitial = (variable: Variable): string =>
+  variable.initial.length === 1
+    ? `${variable.name} = ${quote(variable.initial[0])}`
+    : `${variable.name} \\in ${formatSet(variable.initial)}`;
 
-const formatScreen = (model: ComponentModel): string[] => {
-  if (model.screens.length === 0) return ['screen == "nothing"'];
-  const [first, ...rest] = model.screens;
+const formatView = (model: ComponentModel): string[] => {
+  if (model.views.length === 0) return ['view == "nothing"'];
+  const [first, ...rest] = model.views;
   return [
-    `screen == CASE ${formatCondition(first.condition)} -> ${quote(first.label)}`,
+    `view == CASE ${formatPredicate(first.predicate)} -> ${quote(first.label)}`,
     ...rest.map(
-      (screen) => `            [] ${formatCondition(screen.condition)} -> ${quote(screen.label)}`,
+      (view) => `          [] ${formatPredicate(view.predicate)} -> ${quote(view.label)}`,
     ),
-    `            [] OTHER -> "nothing"`,
+    `          [] OTHER -> "nothing"`,
   ];
 };
 
@@ -91,30 +94,33 @@ export const formatTla = (
   model: ComponentModel,
   invariants: Invariant[] = [],
 ): string => {
-  const { lanes, actions } = model;
-  const variables = lanes.map((lane) => lane.name);
-  const laneComments = lanes.map(
-    (lane) => `\\* ${lane.name}: ${lane.label} (${lane.source}), ${lane.cells.length} cells`,
+  const { variables, actions } = model;
+  const names = variables.map((variable) => variable.name);
+  const variableComments = variables.map(
+    (variable) =>
+      `\\* ${variable.name}: ${variable.label} (${variable.source}), ${variable.domain.length} values`,
   );
   const lines = [
     `---- MODULE ${toModuleName(name)} ----`,
-    ...laneComments,
-    ...(variables.length > 0 ? [`VARIABLES ${variables.join(", ")}`, ""] : [""]),
-    `vars == <<${variables.join(", ")}>>`,
+    ...variableComments,
+    ...(names.length > 0 ? [`VARIABLES ${names.join(", ")}`, ""] : [""]),
+    `vars == <<${names.join(", ")}>>`,
     "",
-    ...formatScreen(model),
+    ...formatView(model),
     "",
     "Init ==",
-    ...(lanes.length > 0 ? lanes.map((lane) => `  /\\ ${formatInitial(lane)}`) : ["  TRUE"]),
+    ...(variables.length > 0
+      ? variables.map((variable) => `  /\\ ${formatInitial(variable)}`)
+      : ["  TRUE"]),
     "",
-    ...actions.flatMap((action) => [...formatAction(action, lanes), ""]),
+    ...actions.flatMap((action) => [...formatAction(action, variables), ""]),
     `Next == ${actions.length > 0 ? actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",
     ...model.properties.flatMap((property) => [
       "",
       `\\* ${property.label.replace(/\s+/g, " ")}`,
-      `${property.name} == ${formatCondition(property.condition)}`,
+      `${property.name} == ${formatPredicate(property.predicate)}`,
     ]),
     ...invariants.flatMap((invariant) => ["", `${invariant.name} == ${invariant.expression}`]),
     "====",

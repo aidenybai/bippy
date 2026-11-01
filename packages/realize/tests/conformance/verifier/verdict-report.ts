@@ -50,7 +50,7 @@ export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
   ),
   ...verdict.valueCounterexamples.map(
     (counterexample) =>
-      `${counterexample.lane} = ${counterexample.value} fits no cell of ${counterexample.cells.join(" | ")}`,
+      `${counterexample.variable} = ${counterexample.value} is outside the domain ${counterexample.domain.join(" | ")}`,
   ),
   ...verdict.reachedUnreachableSides.map((side) => `unreachable branch ran: ${side}`),
   ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
@@ -89,8 +89,8 @@ export const summarizeVerdicts = (
     unmountableCount: mountFailedVerdicts.length,
     notExportedCount: verdicts.filter((verdict) => verdict.status === "not-exported").length,
     counterexampleCount: sum(verifiedVerdicts, countCounterexamples),
-    screenCount: sum(verifiedVerdicts, (verdict) => verdict.screenCount),
-    coveredScreenCount: sum(verifiedVerdicts, (verdict) => verdict.coveredScreens.length),
+    viewCount: sum(verifiedVerdicts, (verdict) => verdict.viewCount),
+    coveredViewCount: sum(verifiedVerdicts, (verdict) => verdict.coveredViews.length),
     branchSideCount: sum(verifiedVerdicts, (verdict) => verdict.branchSideCount),
     coveredBranchSideCount: sum(verifiedVerdicts, (verdict) => verdict.coveredBranchSideCount),
     warningCount: sum(verifiedVerdicts, (verdict) => verdict.warningCount),

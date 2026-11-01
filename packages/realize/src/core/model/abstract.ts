@@ -169,14 +169,17 @@ const rangesOverlap = (
   return true;
 };
 
-const containsExact = (cell: Abstract, value: PrimitiveValue): boolean => {
-  switch (cell.kind) {
+const containsExact = (container: Abstract, value: PrimitiveValue): boolean => {
+  switch (container.kind) {
     case "Exact":
-      return cell.value === value;
+      return container.value === value;
     case "Range":
-      return typeof value === "number" && isInRange(cell, value);
+      return typeof value === "number" && isInRange(container, value);
     case "Other":
-      return (cell.type === "any" || typeof value === "string") && !cell.excluded.includes(value);
+      return (
+        (container.type === "any" || typeof value === "string") &&
+        !container.excluded.includes(value)
+      );
     case "Object":
       return false;
     case "Truthy":
@@ -188,27 +191,27 @@ const containsExact = (cell: Abstract, value: PrimitiveValue): boolean => {
   }
 };
 
-export const mayOverlap = (cell: Abstract, value: Abstract): boolean => {
-  if (cell.kind === "Any" || value.kind === "Any") return true;
-  if (value.kind === "Exact") return containsExact(cell, value.value);
-  if (cell.kind === "Exact") return mayOverlap(value, cell);
+export const mayOverlap = (other: Abstract, value: Abstract): boolean => {
+  if (other.kind === "Any" || value.kind === "Any") return true;
+  if (value.kind === "Exact") return containsExact(other, value.value);
+  if (other.kind === "Exact") return mayOverlap(value, other);
   switch (value.kind) {
     case "Range":
-      if (cell.kind === "Range") return rangesOverlap(cell, value);
-      if (cell.kind === "Truthy") return !(value.min === 0 && value.max === 0);
-      if (cell.kind === "Falsy") return isInRange(value, 0);
-      return cell.kind === "Other" && cell.type === "any";
+      if (other.kind === "Range") return rangesOverlap(other, value);
+      if (other.kind === "Truthy") return !(value.min === 0 && value.max === 0);
+      if (other.kind === "Falsy") return isInRange(value, 0);
+      return other.kind === "Other" && other.type === "any";
     case "Other":
-      if (cell.kind === "Other") return true;
-      if (cell.kind === "Truthy") return true;
-      if (cell.kind === "Falsy") return !value.excluded.includes("");
-      return value.type === "any" && cell.kind !== "Range";
+      if (other.kind === "Other") return true;
+      if (other.kind === "Truthy") return true;
+      if (other.kind === "Falsy") return !value.excluded.includes("");
+      return value.type === "any" && other.kind !== "Range";
     case "Object":
-      return cell.kind === "Object" || cell.kind === "Truthy" || cell.kind === "Other";
+      return other.kind === "Object" || other.kind === "Truthy" || other.kind === "Other";
     case "Truthy":
-      return cell.kind !== "Falsy";
+      return other.kind !== "Falsy";
     case "Falsy":
-      return cell.kind === "Falsy" || cell.kind === "Other" || cell.kind === "Range";
+      return other.kind === "Falsy" || other.kind === "Other" || other.kind === "Range";
   }
 };
 
@@ -256,10 +259,10 @@ const isPrimitive = (value: unknown): value is PrimitiveValue =>
   typeof value === "number" ||
   typeof value === "boolean";
 
-export const containsValue = (cell: Abstract, value: unknown): boolean =>
+export const containsValue = (container: Abstract, value: unknown): boolean =>
   isPrimitive(value)
-    ? containsExact(cell, value)
-    : cell.kind === "Object" ||
-      cell.kind === "Truthy" ||
-      cell.kind === "Any" ||
-      (cell.kind === "Other" && cell.type === "any");
+    ? containsExact(container, value)
+    : container.kind === "Object" ||
+      container.kind === "Truthy" ||
+      container.kind === "Any" ||
+      (container.kind === "Other" && container.type === "any");

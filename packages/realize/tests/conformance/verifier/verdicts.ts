@@ -19,9 +19,9 @@ interface TransitionCounterexample {
 
 interface ValueCounterexample {
   path: string[];
-  lane: string;
+  variable: string;
   value: string;
-  cells: string[];
+  domain: string[];
 }
 
 type VerdictOutcome =
@@ -34,8 +34,8 @@ interface VerdictCounts {
   isTruncated: boolean;
   observationCount: number;
   renderErrorCount: number;
-  screenCount: number;
-  coveredScreens: string[];
+  viewCount: number;
+  coveredViews: string[];
   checkedTransitionCount: number;
   branchSideCount: number;
   coveredBranchSideCount: number;
@@ -62,8 +62,8 @@ export interface VerificationSummary {
   unmountableCount: number;
   notExportedCount: number;
   counterexampleCount: number;
-  screenCount: number;
-  coveredScreenCount: number;
+  viewCount: number;
+  coveredViewCount: number;
   branchSideCount: number;
   coveredBranchSideCount: number;
   warningCount: number;
@@ -82,11 +82,11 @@ export const createEmptyVerdict = (
   status: analysis.exportName ? "verified" : "not-exported",
   error: null,
   mountFailure: null,
-  isTruncated: model.exploration.isTruncated,
+  isTruncated: model.stateSpace.isTruncated,
   observationCount: 0,
   renderErrorCount: 0,
-  screenCount: model.exploration.reachableScreens.length,
-  coveredScreens: [],
+  viewCount: model.stateSpace.reachableViews.length,
+  coveredViews: [],
   checkedTransitionCount: 0,
   branchSideCount: 0,
   coveredBranchSideCount: 0,

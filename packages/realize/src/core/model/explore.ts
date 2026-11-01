@@ -1,9 +1,9 @@
-import { evaluateChoice, evaluateCondition } from "./conditions";
-import type { Action, Condition, Exploration, Lane, Screen, ScreenEdge, TraceStep } from "./types";
+import { evaluateNextValue, evaluatePredicate } from "./predicates";
+import type { Action, Predicate, StateSpace, Variable, View, ViewEdge, TraceStep } from "./types";
 
 const MAX_STATES = 20_000;
 
-const MAX_LANES = 64;
+const MAX_VARIABLES = 64;
 
 const MAX_SUCCESSORS = 400_000;
 
@@ -11,41 +11,41 @@ const MAX_TRANSITION_STEPS = 3;
 
 const MAX_TRANSITION_SUCCESSORS = 50_000;
 
-const NO_SCREEN = "nothing";
+const NO_VIEW = "nothing";
 
 interface Visit {
-  cells: string[];
+  state: string[];
   parent: string | null;
   action: string | null;
 }
 
 export interface ExploredModel {
-  exploration: Exploration;
-  findWitness: (condition: Condition) => TraceStep[] | null;
+  stateSpace: StateSpace;
+  findTrace: (predicate: Predicate) => TraceStep[] | null;
   isActionEffective: (action: Action) => boolean;
   findTransition: (
-    from: Condition,
-    to: Condition,
+    from: Predicate,
+    to: Predicate,
     canTake: (action: Action, taken: Action[]) => boolean,
   ) => boolean | null;
 }
 
 const forEachProduct = (
   options: string[][],
-  visit: (cells: string[]) => void,
+  visit: (state: string[]) => void,
   limit: number,
 ): boolean => {
   let count = 0;
-  const walk = (index: number, cells: string[]): boolean => {
+  const walk = (index: number, state: string[]): boolean => {
     if (index === options.length) {
       count++;
-      visit([...cells]);
+      visit([...state]);
       return count < limit;
     }
-    for (const cell of options[index]) {
-      cells.push(cell);
-      const isUnderLimit = walk(index + 1, cells);
-      cells.pop();
+    for (const value of options[index]) {
+      state.push(value);
+      const isUnderLimit = walk(index + 1, state);
+      state.pop();
       if (!isUnderLimit) return false;
     }
     return true;
@@ -54,52 +54,51 @@ const forEachProduct = (
 };
 
 export const exploreModel = (
-  lanes: Lane[],
+  variables: Variable[],
   actions: Action[],
-  screens: Screen[],
+  views: View[],
 ): ExploredModel => {
-  const laneIndexes = new Map(lanes.map((lane, index) => [lane.name, index]));
-  const observedIndexes = lanes.flatMap((lane, index) =>
-    lane.source === "pending" ? [] : [index],
+  const variableIndexes = new Map(variables.map((variable, index) => [variable.name, index]));
+  const observedIndexes = variables.flatMap((variable, index) =>
+    variable.source === "pending" ? [] : [index],
   );
   const visits = new Map<string, Visit>();
   const queue: string[] = [];
   const effectiveActions = new Set<string>();
-  const edges = new Map<string, ScreenEdge>();
+  const edges = new Map<string, ViewEdge>();
   let isTruncated = false;
 
-  const cellGetter =
-    (cells: string[]) =>
-    (lane: string): string | undefined => {
-      const index = laneIndexes.get(lane);
-      return index === undefined ? undefined : cells[index];
+  const valueGetter =
+    (state: string[]) =>
+    (variable: string): string | undefined => {
+      const index = variableIndexes.get(variable);
+      return index === undefined ? undefined : state[index];
     };
 
-  const getScreen = (cells: string[]): string => {
-    const cellOf = cellGetter(cells);
+  const getView = (state: string[]): string => {
+    const valueOf = valueGetter(state);
     return (
-      screens.find((screen) => evaluateCondition(screen.condition, cellOf) === true)?.label ??
-      NO_SCREEN
+      views.find((view) => evaluatePredicate(view.predicate, valueOf) === true)?.label ?? NO_VIEW
     );
   };
 
   const forEachSuccessor = (
-    cells: string[],
+    state: string[],
     action: Action,
     visit: (next: string[]) => void,
   ): void => {
-    const cellOf = cellGetter(cells);
-    if (evaluateCondition(action.guard, cellOf) !== true) return;
-    const writeIndexes = action.writes.map(({ lane }) => laneIndexes.get(lane) ?? -1);
-    const options = action.writes.map(({ choice }, writeIndex) =>
-      evaluateChoice(choice, cells[writeIndexes[writeIndex]], cellOf),
+    const valueOf = valueGetter(state);
+    if (evaluatePredicate(action.guard, valueOf) !== true) return;
+    const writeIndexes = action.writes.map(({ variable }) => variableIndexes.get(variable) ?? -1);
+    const options = action.writes.map(({ next }, writeIndex) =>
+      evaluateNextValue(next, state[writeIndexes[writeIndex]], valueOf),
     );
     forEachProduct(
       options,
       (written) => {
-        const next = [...cells];
-        written.forEach((cell, writeIndex) => {
-          next[writeIndexes[writeIndex]] = cell;
+        const next = [...state];
+        written.forEach((value, writeIndex) => {
+          next[writeIndexes[writeIndex]] = value;
         });
         visit(next);
       },
@@ -107,24 +106,24 @@ export const exploreModel = (
     );
   };
 
-  const enqueue = (cells: string[], parent: string | null, action: string | null): string => {
-    const key = cells.join("\0");
+  const enqueue = (state: string[], parent: string | null, action: string | null): string => {
+    const key = state.join("\0");
     if (visits.has(key)) return key;
     if (visits.size >= MAX_STATES) {
       isTruncated = true;
       return key;
     }
-    visits.set(key, { cells, parent, action });
+    visits.set(key, { state, parent, action });
     queue.push(key);
     return key;
   };
 
-  const isTooWide = lanes.length > MAX_LANES;
+  const isTooWide = variables.length > MAX_VARIABLES;
   const isComplete =
     !isTooWide &&
     forEachProduct(
-      lanes.map((lane) => lane.initial),
-      (cells) => enqueue(cells, null, null),
+      variables.map((variable) => variable.initial),
+      (state) => enqueue(state, null, null),
       MAX_STATES,
     );
   if (!isComplete) isTruncated = true;
@@ -134,23 +133,25 @@ export const exploreModel = (
     const key = queue[index];
     const visit = visits.get(key);
     if (!visit) continue;
-    const fromScreen = getScreen(visit.cells);
+    const fromView = getView(visit.state);
     for (const action of actions) {
-      forEachSuccessor(visit.cells, action, (next) => {
+      forEachSuccessor(visit.state, action, (next) => {
         successorCount++;
         enqueue(next, key, action.name);
         const isChanged =
           action.isVisible ||
-          observedIndexes.some((laneIndex) => next[laneIndex] !== visit.cells[laneIndex]);
+          observedIndexes.some(
+            (variableIndex) => next[variableIndex] !== visit.state[variableIndex],
+          );
         if (!isChanged) return;
         effectiveActions.add(action.name);
-        const toScreen = getScreen(next);
-        if (action.phase === "input" && toScreen === fromScreen) return;
-        const edgeKey = `${fromScreen}\0${action.label}\0${toScreen}`;
+        const toView = getView(next);
+        if (action.phase === "input" && toView === fromView) return;
+        const edgeKey = `${fromView}\0${action.label}\0${toView}`;
         if (!edges.has(edgeKey))
           edges.set(edgeKey, {
-            from: fromScreen,
-            to: toScreen,
+            from: fromView,
+            to: toView,
             action: action.label,
             actionName: action.name,
             handlerId: action.handlerId,
@@ -162,16 +163,14 @@ export const exploreModel = (
   }
 
   if (successorCount >= MAX_SUCCESSORS) isTruncated = true;
-  const initialScreens = [
+  const initialViews = [
     ...new Set(
       [...visits.values()]
         .filter((visit) => visit.parent === null)
-        .map((visit) => getScreen(visit.cells)),
+        .map((visit) => getView(visit.state)),
     ),
   ];
-  const reachableScreens = [
-    ...new Set([...visits.values()].map((visit) => getScreen(visit.cells))),
-  ];
+  const reachableViews = [...new Set([...visits.values()].map((visit) => getView(visit.state)))];
 
   const toTrace = (key: string): TraceStep[] => {
     const steps: TraceStep[] = [];
@@ -180,45 +179,47 @@ export const exploreModel = (
       if (!visit) break;
       steps.push({
         action: visit.action,
-        cells: Object.fromEntries(lanes.map((lane, index) => [lane.name, visit.cells[index]])),
-        screen: getScreen(visit.cells),
+        state: Object.fromEntries(
+          variables.map((variable, index) => [variable.name, visit.state[index]]),
+        ),
+        view: getView(visit.state),
       });
       current = visit.parent;
     }
     return steps.reverse();
   };
 
-  const findWitness = (condition: Condition): TraceStep[] | null => {
+  const findTrace = (predicate: Predicate): TraceStep[] | null => {
     for (const [key, visit] of visits)
-      if (evaluateCondition(condition, cellGetter(visit.cells)) === true) return toTrace(key);
+      if (evaluatePredicate(predicate, valueGetter(visit.state)) === true) return toTrace(key);
     return null;
   };
 
   const findTransition = (
-    from: Condition,
-    to: Condition,
+    from: Predicate,
+    to: Predicate,
     canTake: (action: Action, taken: Action[]) => boolean,
   ): boolean | null => {
     if (isTruncated) return null;
     let budget = MAX_TRANSITION_SUCCESSORS;
     for (const visit of visits.values()) {
-      if (evaluateCondition(from, cellGetter(visit.cells)) !== true) continue;
-      let frontier = [{ cells: visit.cells, taken: [] as Action[] }];
+      if (evaluatePredicate(from, valueGetter(visit.state)) !== true) continue;
+      let frontier = [{ state: visit.state, taken: [] as Action[] }];
       const seen = new Set<string>();
       for (let step = 0; step < MAX_TRANSITION_STEPS && frontier.length > 0; step++) {
         const nextFrontier: typeof frontier = [];
         let isFound = false;
-        for (const { cells, taken } of frontier)
+        for (const { state, taken } of frontier)
           for (const action of actions) {
             if (!canTake(action, taken)) continue;
-            forEachSuccessor(cells, action, (next) => {
+            forEachSuccessor(state, action, (next) => {
               budget--;
-              if (evaluateCondition(to, cellGetter(next)) === true) isFound = true;
+              if (evaluatePredicate(to, valueGetter(next)) === true) isFound = true;
               const nextTaken = [...taken, action];
               const key = [next.join("\0"), ...nextTaken.map(({ name }) => name).sort()].join("\n");
               if (seen.has(key)) return;
               seen.add(key);
-              nextFrontier.push({ cells: next, taken: nextTaken });
+              nextFrontier.push({ state: next, taken: nextTaken });
             });
           }
         if (isFound) return true;
@@ -230,19 +231,19 @@ export const exploreModel = (
   };
 
   return {
-    exploration: {
+    stateSpace: {
       stateCount: visits.size,
       isTruncated,
-      initialScreens,
-      reachableScreens,
+      initialViews,
+      reachableViews,
       edges: [...edges.values()],
     },
-    findWitness,
+    findTrace,
     isActionEffective: (action) => effectiveActions.has(action.name),
     findTransition,
   };
 };
 
-export const getScreenLabel = (screens: Screen[], cells: Record<string, string>): string =>
-  screens.find((screen) => evaluateCondition(screen.condition, (lane) => cells[lane]) === true)
-    ?.label ?? NO_SCREEN;
+export const getViewLabel = (views: View[], state: Record<string, string>): string =>
+  views.find((view) => evaluatePredicate(view.predicate, (variable) => state[variable]) === true)
+    ?.label ?? NO_VIEW;

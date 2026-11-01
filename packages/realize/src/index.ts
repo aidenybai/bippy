@@ -19,4 +19,4 @@ export type {
   Handler,
   HandlerTrigger,
 } from "./core/types";
-export type { ComponentModel, Lane, Action, Screen, Finding } from "./core/model/types";
+export type { ComponentModel, Variable, Action, View, Finding } from "./core/model/types";

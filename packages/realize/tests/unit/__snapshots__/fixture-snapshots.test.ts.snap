@@ -2,14 +2,14 @@
 
 exports[`fixture analysis > App keeps its TLA+ module 1`] = `
 "---- MODULE App ----
-\\* isLoading: isLoading (input), 2 cells
+\\* isLoading: isLoading (input), 2 values
 VARIABLES isLoading
 
 vars == <<isLoading>>
 
-screen == CASE isLoading = "true" -> "Loading"
-            [] isLoading = "false" -> "Button"
-            [] OTHER -> "nothing"
+view == CASE isLoading = "true" -> "Loading"
+          [] isLoading = "false" -> "Button"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isLoading \\in {"false", "true"}
@@ -68,8 +68,8 @@ exports[`fixture analysis > Box keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "button"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -113,8 +113,8 @@ exports[`fixture analysis > Button keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "button"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -151,14 +151,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Card keeps its TLA+ module 1`] = `
 "---- MODULE Card ----
-\\* note: note (input), 3 cells
+\\* note: note (input), 3 values
 VARIABLES note
 
 vars == <<note>>
 
-screen == CASE note = "other string" -> "div > p"
-            [] note /= "other string" -> "div"
-            [] OTHER -> "nothing"
+view == CASE note = "other string" -> "div > p"
+          [] note /= "other string" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ note \\in {"undefined", "empty", "other string"}
@@ -206,14 +206,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > CardEditor keeps its TLA+ module 1`] = `
 "---- MODULE CardEditor ----
-\\* options_shape: options.shape (state), 2 cells
+\\* options_shape: options.shape (state), 2 values
 VARIABLES options_shape
 
 vars == <<options_shape>>
 
-screen == CASE options_shape = "other string" -> "button"
-            [] options_shape = "undefined" -> "button > \\"auto\\""
-            [] OTHER -> "nothing"
+view == CASE options_shape = "other string" -> "button"
+          [] options_shape = "undefined" -> "button > \\"auto\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ options_shape = "undefined"
@@ -266,14 +266,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > CardGrid keeps its TLA+ module 1`] = `
 "---- MODULE CardGrid ----
-\\* options_shape: options.shape (input), 2 cells
+\\* options_shape: options.shape (input), 2 values
 VARIABLES options_shape
 
 vars == <<options_shape>>
 
-screen == CASE options_shape = "other string" -> "p"
-            [] options_shape = "undefined" -> "p > \\"auto\\""
-            [] OTHER -> "nothing"
+view == CASE options_shape = "other string" -> "p"
+          [] options_shape = "undefined" -> "p > \\"auto\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ options_shape \\in {"undefined", "other string"}
@@ -323,14 +323,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > ClickStats keeps its TLA+ module 1`] = `
 "---- MODULE ClickStats ----
-\\* stats_clicks: stats.clicks (state), 3 cells
+\\* stats_clicks: stats.clicks (state), 3 values
 VARIABLES stats_clicks
 
 vars == <<stats_clicks>>
 
-screen == CASE stats_clicks = ">0" -> "button > \\"Clicked\\""
-            [] stats_clicks /= ">0" -> "button > \\"Not clicked\\""
-            [] OTHER -> "nothing"
+view == CASE stats_clicks = ">0" -> "button > \\"Clicked\\""
+          [] stats_clicks /= ">0" -> "button > \\"Not clicked\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ stats_clicks = "0"
@@ -373,16 +373,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Coalesced keeps its TLA+ module 1`] = `
 "---- MODULE Coalesced ----
-\\* checked: checked (state), 2 cells
-\\* flags: flags (input), 2 cells
-\\* test_flags_some_function_null: flags?.some(function) != null (test), 2 cells
+\\* checked: checked (state), 2 values
+\\* flags: flags (input), 2 values
+\\* test_flags_some_function_null: flags?.some(function) != null (test), 2 values
 VARIABLES checked, flags, test_flags_some_function_null
 
 vars == <<checked, flags, test_flags_some_function_null>>
 
-screen == CASE checked = "true" -> "p > \\"on\\""
-            [] checked = "false" -> "p > \\"off\\""
-            [] OTHER -> "nothing"
+view == CASE checked = "true" -> "p > \\"on\\""
+          [] checked = "false" -> "p > \\"off\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ checked \\in {"false", "true"}
@@ -451,14 +451,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > CommandInput keeps its TLA+ module 1`] = `
 "---- MODULE CommandInput ----
-\\* command: command (state), 2 cells
+\\* command: command (state), 2 values
 VARIABLES command
 
 vars == <<command>>
 
-screen == CASE command = "help" -> "div > p \\"Type a command\\""
-            [] command = "other string" -> "div"
-            [] OTHER -> "nothing"
+view == CASE command = "help" -> "div > p \\"Type a command\\""
+          [] command = "other string" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ command \\in {"help", "other string"}
@@ -512,15 +512,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > Composer keeps its TLA+ module 1`] = `
 "---- MODULE Composer ----
-\\* isSent: isSent (state), 2 cells
-\\* draft: draft (state), 2 cells
+\\* isSent: isSent (state), 2 values
+\\* draft: draft (state), 2 values
 VARIABLES isSent, draft
 
 vars == <<isSent, draft>>
 
-screen == CASE isSent = "true" -> "p \\"Sent\\""
-            [] isSent = "false" -> "div"
-            [] OTHER -> "nothing"
+view == CASE isSent = "true" -> "p \\"Sent\\""
+          [] isSent = "false" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isSent = "false"
@@ -585,14 +585,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Countdown keeps its TLA+ module 1`] = `
 "---- MODULE Countdown ----
-\\* steps: steps (input), 3 cells
+\\* steps: steps (input), 3 values
 VARIABLES steps
 
 vars == <<steps>>
 
-screen == CASE steps = "0" -> "p > \\"Done\\""
-            [] steps /= "0" -> "p > \\"Counted\\""
-            [] OTHER -> "nothing"
+view == CASE steps = "0" -> "p > \\"Done\\""
+          [] steps /= "0" -> "p > \\"Counted\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ steps \\in {"<0", "0", ">0"}
@@ -642,19 +642,19 @@ stateDiagram-v2
 
 exports[`fixture analysis > CountedList keeps its TLA+ module 1`] = `
 "---- MODULE CountedList ----
-\\* items_length: items.length (input), 2 cells
-\\* count: count (input), 3 cells
+\\* items_length: items.length (input), 2 values
+\\* count: count (input), 3 values
 VARIABLES items_length, count
 
 vars == <<items_length, count>>
 
-screen == CASE items_length = ">0" /\\ count = ">0" -> "div > ul > p \\"Has items\\" > b"
-            [] items_length = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
-            [] items_length = ">0" /\\ count = "<0" -> "div > ul > p \\"Has items\\""
-            [] items_length = "0" /\\ count = ">0" -> "div > p \\"Empty\\" > b"
-            [] items_length = "0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
-            [] items_length = "0" /\\ count = "<0" -> "div > p \\"Empty\\""
-            [] OTHER -> "nothing"
+view == CASE items_length = ">0" /\\ count = ">0" -> "div > ul > p \\"Has items\\" > b"
+          [] items_length = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
+          [] items_length = ">0" /\\ count = "<0" -> "div > ul > p \\"Has items\\""
+          [] items_length = "0" /\\ count = ">0" -> "div > p \\"Empty\\" > b"
+          [] items_length = "0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
+          [] items_length = "0" /\\ count = "<0" -> "div > p \\"Empty\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ items_length \\in {"0", ">0"}
@@ -752,14 +752,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > CountedLoop keeps its TLA+ module 1`] = `
 "---- MODULE CountedLoop ----
-\\* isDone: isDone (state), 2 cells
+\\* isDone: isDone (state), 2 values
 VARIABLES isDone
 
 vars == <<isDone>>
 
-screen == CASE isDone = "true" -> "button > \\"Done\\""
-            [] isDone = "false" -> "button > \\"Start\\""
-            [] OTHER -> "nothing"
+view == CASE isDone = "true" -> "button > \\"Done\\""
+          [] isDone = "false" -> "button > \\"Start\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isDone = "false"
@@ -810,19 +810,19 @@ stateDiagram-v2
 
 exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
 "---- MODULE Dashboard ----
-\\* status: status (input), 3 cells
-\\* user: user (input), 2 cells
-\\* items_length: items.length (state), 2 cells
-\\* pending_t1: t1 pending (pending), 2 cells
+\\* status: status (input), 3 values
+\\* user: user (input), 2 values
+\\* items_length: items.length (state), 2 values
+\\* pending_t1: t1 pending (pending), 2 values
 VARIABLES status, user, items_length, pending_t1
 
 vars == <<status, user, items_length, pending_t1>>
 
-screen == CASE status = "loading" -> "Spinner"
-            [] status /= "loading" /\\ user = "null" -> "SignIn"
-            [] status /= "loading" /\\ user = "User" /\\ items_length = ">0" -> "main > List"
-            [] status /= "loading" /\\ user = "User" /\\ items_length = "0" -> "main > Empty"
-            [] OTHER -> "nothing"
+view == CASE status = "loading" -> "Spinner"
+          [] status /= "loading" /\\ user = "null" -> "SignIn"
+          [] status /= "loading" /\\ user = "User" /\\ items_length = ">0" -> "main > List"
+          [] status /= "loading" /\\ user = "User" /\\ items_length = "0" -> "main > Empty"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status \\in {"error", "idle", "loading"}
@@ -936,19 +936,19 @@ stateDiagram-v2
   S4 --> S3: parent changes status
   S4 --> S1: parent changes user
   S3 --> S4: parent changes status
-  %% ⚠ When after first render fails, nothing on screen changes (L21)"
+  %% ⚠ When after first render fails, the render stays the same (L21)"
 `;
 
 exports[`fixture analysis > Deck keeps its TLA+ module 1`] = `
 "---- MODULE Deck ----
-\\* cards_length: cards.length (state), 2 cells
+\\* cards_length: cards.length (state), 2 values
 VARIABLES cards_length
 
 vars == <<cards_length>>
 
-screen == CASE cards_length = "0" -> "div > p \\"Empty\\""
-            [] cards_length = ">0" -> "div > p \\"Cards\\""
-            [] OTHER -> "nothing"
+view == CASE cards_length = "0" -> "div > p \\"Empty\\""
+          [] cards_length = ">0" -> "div > p \\"Cards\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ cards_length = "0"
@@ -1007,17 +1007,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > Dialog keeps its TLA+ module 1`] = `
 "---- MODULE Dialog ----
-\\* isOpen: isOpen (state), 2 cells
-\\* icon: icon (input), 11 cells
-\\* test_icon_undefined: icon === undefined (test), 2 cells
+\\* isOpen: isOpen (state), 2 values
+\\* icon: icon (input), 11 values
+\\* test_icon_undefined: icon === undefined (test), 2 values
 VARIABLES isOpen, icon, test_icon_undefined
 
 vars == <<isOpen, icon, test_icon_undefined>>
 
-screen == CASE isOpen = "false" -> "nothing"
-            [] isOpen = "true" /\\ test_icon_undefined = "true" -> "div > span \\"×\\""
-            [] isOpen = "true" /\\ test_icon_undefined = "false" -> "div"
-            [] OTHER -> "nothing"
+view == CASE isOpen = "false" -> "nothing"
+          [] isOpen = "true" /\\ test_icon_undefined = "true" -> "div > span \\"×\\""
+          [] isOpen = "true" /\\ test_icon_undefined = "false" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isOpen = "true"
@@ -1094,15 +1094,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > EarlyReturn keeps its TLA+ module 1`] = `
 "---- MODULE EarlyReturn ----
-\\* picked: picked (state), 5 cells
+\\* picked: picked (state), 5 values
 VARIABLES picked
 
 vars == <<picked>>
 
-screen == CASE picked = "0" -> "button > \\"Pick\\""
-            [] picked = "3" -> "button > \\"Third\\""
-            [] picked \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
-            [] OTHER -> "nothing"
+view == CASE picked = "0" -> "button > \\"Pick\\""
+          [] picked = "3" -> "button > \\"Third\\""
+          [] picked \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ picked = "0"
@@ -1158,16 +1158,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > EditButton keeps its TLA+ module 1`] = `
 "---- MODULE EditButton ----
-\\* role: role (input), 2 cells
-\\* isEditing: isEditing (state), 2 cells
+\\* role: role (input), 2 values
+\\* isEditing: isEditing (state), 2 values
 VARIABLES role, isEditing
 
 vars == <<role, isEditing>>
 
-screen == CASE role = "viewer" -> "p \\"Read only\\""
-            [] role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
-            [] role = "admin" /\\ isEditing = "false" -> "button \\"Edit\\""
-            [] OTHER -> "nothing"
+view == CASE role = "viewer" -> "p \\"Read only\\""
+          [] role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
+          [] role = "admin" /\\ isEditing = "false" -> "button \\"Edit\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ role \\in {"admin", "viewer"}
@@ -1246,8 +1246,8 @@ exports[`fixture analysis > Empty keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "p \\"No items\\""
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "p \\"No items\\""
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1285,8 +1285,8 @@ exports[`fixture analysis > EmptyObjectCast keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "p"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "p"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1324,8 +1324,8 @@ exports[`fixture analysis > FabRow keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "p"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "p"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1360,20 +1360,20 @@ stateDiagram-v2
 
 exports[`fixture analysis > FeatureBadge keeps its TLA+ module 1`] = `
 "---- MODULE FeatureBadge ----
-\\* isEnabled_search: isEnabled("search") (input), 2 cells
-\\* isEnabled_sync: isEnabled("sync") (input), 2 cells
-\\* isEnabled_share: isEnabled("share") (input), 2 cells
-\\* isEnabled_sync_2: isEnabled("sync") (input), 2 cells
-\\* isEnabled_offline: isEnabled("offline") (input), 2 cells
+\\* isEnabled_search: isEnabled("search") (input), 2 values
+\\* isEnabled_sync: isEnabled("sync") (input), 2 values
+\\* isEnabled_share: isEnabled("share") (input), 2 values
+\\* isEnabled_sync_2: isEnabled("sync") (input), 2 values
+\\* isEnabled_offline: isEnabled("offline") (input), 2 values
 VARIABLES isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline
 
 vars == <<isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline>>
 
-screen == CASE (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features on\\" > \\"Full sync\\""
-            [] (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features on\\""
-            [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features off\\" > \\"Full sync\\""
-            [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features off\\""
-            [] OTHER -> "nothing"
+view == CASE (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features on\\" > \\"Full sync\\""
+          [] (isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features on\\""
+          [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true" -> "p > \\"Features off\\" > \\"Full sync\\""
+          [] ~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true") \\/ (~(isEnabled_search = "true" \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~(isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") -> "p > \\"Features off\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isEnabled_search \\in {"false", "true"}
@@ -1466,15 +1466,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > Feed keeps its TLA+ module 1`] = `
 "---- MODULE Feed ----
-\\* test_pages_map_null: pages?.map(…) != null (test), 2 cells
-\\* test_pages_map_length: pages.map(…).length (test), 2 cells
+\\* test_pages_map_null: pages?.map(…) != null (test), 2 values
+\\* test_pages_map_length: pages.map(…).length (test), 2 values
 VARIABLES test_pages_map_null, test_pages_map_length
 
 vars == <<test_pages_map_null, test_pages_map_length>>
 
-screen == CASE ~(test_pages_map_null = "true" /\\ test_pages_map_length = "true") -> "p \\"Nothing yet\\""
-            [] test_pages_map_null = "true" /\\ test_pages_map_length = "true" -> "p \\"items\\""
-            [] OTHER -> "nothing"
+view == CASE ~(test_pages_map_null = "true" /\\ test_pages_map_length = "true") -> "p \\"Nothing yet\\""
+          [] test_pages_map_null = "true" /\\ test_pages_map_length = "true" -> "p \\"items\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ test_pages_map_null \\in {"false", "true"}
@@ -1534,18 +1534,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
 "---- MODULE FileRow ----
-\\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 cells
-\\* opened: opened (state), 3 cells
-\\* test_opened_1: opened + 1 (test), 2 cells
+\\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 values
+\\* opened: opened (state), 3 values
+\\* test_opened_1: opened + 1 (test), 2 values
 VARIABLES path_endsWith_ts, opened, test_opened_1
 
 vars == <<path_endsWith_ts, opened, test_opened_1>>
 
-screen == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
-            [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
-            [] path_endsWith_ts = "false" /\\ opened = ">0" -> "button > span \\"File\\" > b"
-            [] path_endsWith_ts = "false" /\\ opened /= ">0" -> "button > span \\"File\\""
-            [] OTHER -> "nothing"
+view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
+          [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
+          [] path_endsWith_ts = "false" /\\ opened = ">0" -> "button > span \\"File\\" > b"
+          [] path_endsWith_ts = "false" /\\ opened /= ">0" -> "button > span \\"File\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ path_endsWith_ts \\in {"false", "true"}
@@ -1624,8 +1624,8 @@ exports[`fixture analysis > FilterLabel keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "div"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1677,14 +1677,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > FirstMatch keeps its TLA+ module 1`] = `
 "---- MODULE FirstMatch ----
-\\* found: found (input), 2 cells
+\\* found: found (input), 2 values
 VARIABLES found
 
 vars == <<found>>
 
-screen == CASE found = "null" -> "p \\"No match\\""
-            [] found = "other string" -> "p \\"Found\\""
-            [] OTHER -> "nothing"
+view == CASE found = "null" -> "p \\"No match\\""
+          [] found = "other string" -> "p \\"Found\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ found \\in {"null", "other string"}
@@ -1736,14 +1736,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > FoundOfState keeps its TLA+ module 1`] = `
 "---- MODULE FoundOfState ----
-\\* found: found (input), 2 cells
+\\* found: found (input), 2 values
 VARIABLES found
 
 vars == <<found>>
 
-screen == CASE found = "null" -> "div > i \\"none\\""
-            [] found = "any number" -> "div > b"
-            [] OTHER -> "nothing"
+view == CASE found = "null" -> "div > i \\"none\\""
+          [] found = "any number" -> "div > b"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ found \\in {"null", "any number"}
@@ -1806,8 +1806,8 @@ exports[`fixture analysis > FromLength keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "ul"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "ul"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1849,8 +1849,8 @@ exports[`fixture analysis > Gallery keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "div"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -1889,14 +1889,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Greeting keeps its TLA+ module 1`] = `
 "---- MODULE Greeting ----
-\\* auth_user: auth.user (input), 2 cells
+\\* auth_user: auth.user (input), 2 values
 VARIABLES auth_user
 
 vars == <<auth_user>>
 
-screen == CASE auth_user = "User" -> "div > p"
-            [] auth_user = "undefined" -> "div > p \\"Signed out\\""
-            [] OTHER -> "nothing"
+view == CASE auth_user = "User" -> "div > p"
+          [] auth_user = "undefined" -> "div > p \\"Signed out\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ auth_user \\in {"undefined", "User"}
@@ -1946,13 +1946,13 @@ stateDiagram-v2
 
 exports[`fixture analysis > GuardedCast keeps its TLA+ module 1`] = `
 "---- MODULE GuardedCast ----
-\\* next: next (input), 3 cells
+\\* next: next (input), 3 values
 VARIABLES next
 
 vars == <<next>>
 
-screen == CASE TRUE -> "button"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ next \\in {"null", "empty", "other string"}
@@ -1999,13 +1999,13 @@ stateDiagram-v2
 
 exports[`fixture analysis > GuardedWrite keeps its TLA+ module 1`] = `
 "---- MODULE GuardedWrite ----
-\\* next: next (input), 3 cells
+\\* next: next (input), 3 values
 VARIABLES next
 
 vars == <<next>>
 
-screen == CASE TRUE -> "button"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ next \\in {"undefined", "idle", "saving"}
@@ -2052,14 +2052,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > HiddenHandler keeps its TLA+ module 1`] = `
 "---- MODULE HiddenHandler ----
-\\* kind: kind (input), 3 cells
+\\* kind: kind (input), 3 values
 VARIABLES kind
 
 vars == <<kind>>
 
-screen == CASE kind = "c" -> "p \\"c\\""
-            [] kind /= "c" -> "button"
-            [] OTHER -> "nothing"
+view == CASE kind = "c" -> "p \\"c\\""
+          [] kind /= "c" -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ kind \\in {"a", "b", "c"}
@@ -2115,14 +2115,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > HintField keeps its TLA+ module 1`] = `
 "---- MODULE HintField ----
-\\* hint: hint (input), 3 cells
+\\* hint: hint (input), 3 values
 VARIABLES hint
 
 vars == <<hint>>
 
-screen == CASE hint /= "other string" -> "label > p \\"Add a hint\\" > small \\"No hint yet\\""
-            [] hint = "other string" -> "label > small"
-            [] OTHER -> "nothing"
+view == CASE hint /= "other string" -> "label > p \\"Add a hint\\" > small \\"No hint yet\\""
+          [] hint = "other string" -> "label > small"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ hint \\in {"undefined", "empty", "other string"}
@@ -2179,8 +2179,8 @@ exports[`fixture analysis > Inbox keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "section"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "section"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2217,16 +2217,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > KindSwitch keeps its TLA+ module 1`] = `
 "---- MODULE KindSwitch ----
-\\* kind: kind (state), 3 cells
+\\* kind: kind (state), 3 values
 VARIABLES kind
 
 vars == <<kind>>
 
-screen == CASE (kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab") -> "div > FabRow > p \\"Unreachable\\""
-            [] (kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > FabRow"
-            [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" -> "div > p \\"Chip\\" > p \\"Unreachable\\""
-            [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > p \\"Chip\\""
-            [] OTHER -> "nothing"
+view == CASE (kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab") -> "div > FabRow > p \\"Unreachable\\""
+          [] (kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > FabRow"
+          [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" -> "div > p \\"Chip\\" > p \\"Unreachable\\""
+          [] ~(kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > p \\"Chip\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ kind = "chip"
@@ -2244,7 +2244,7 @@ Next == t1 \\/ t2
 Spec == Init /\\ [][Next]_vars
 
 \\* kind as "extendedFab" | "fab"
-Claim1 == ~(kind = "fab" \\/ kind = "extendedFab") \\/ kind = "extendedFab" \\/ kind = "fab"
+Assertion1 == ~(kind = "fab" \\/ kind = "extendedFab") \\/ kind = "extendedFab" \\/ kind = "fab"
 ===="
 `;
 
@@ -2298,8 +2298,8 @@ exports[`fixture analysis > Latest keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "button"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "button"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2343,8 +2343,8 @@ exports[`fixture analysis > List keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "ul"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "ul"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2386,8 +2386,8 @@ exports[`fixture analysis > ListSummary keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "p \\"some\\""
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "p \\"some\\""
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2425,8 +2425,8 @@ exports[`fixture analysis > Loader keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "div"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2481,8 +2481,8 @@ exports[`fixture analysis > Loading keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "p \\"Loading…\\""
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "p \\"Loading…\\""
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -2517,15 +2517,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > LongLoop keeps its TLA+ module 1`] = `
 "---- MODULE LongLoop ----
-\\* isFull: isFull (state), 2 cells
-\\* total: total (input), 3 cells
+\\* isFull: isFull (state), 2 values
+\\* total: total (input), 3 values
 VARIABLES isFull, total
 
 vars == <<isFull, total>>
 
-screen == CASE isFull = "true" -> "button > \\"Full\\""
-            [] isFull = "false" -> "button > \\"Fill\\""
-            [] OTHER -> "nothing"
+view == CASE isFull = "true" -> "button > \\"Full\\""
+          [] isFull = "false" -> "button > \\"Fill\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isFull = "false"
@@ -2586,18 +2586,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > LoopList keeps its TLA+ module 1`] = `
 "---- MODULE LoopList ----
-\\* hasLong: hasLong (input), 2 cells
-\\* isSelected: isSelected (state), 2 cells
-\\* item: item (input), 2 cells
+\\* hasLong: hasLong (input), 2 values
+\\* isSelected: isSelected (state), 2 values
+\\* item: item (input), 2 values
 VARIABLES hasLong, isSelected, item
 
 vars == <<hasLong, isSelected, item>>
 
-screen == CASE hasLong = "true" /\\ isSelected = "true" -> "div > p \\"Long\\" > \\"Selected\\""
-            [] hasLong = "true" /\\ isSelected = "false" -> "div > p \\"Long\\" > \\"Select\\""
-            [] hasLong = "false" /\\ isSelected = "true" -> "div > \\"Selected\\""
-            [] hasLong = "false" /\\ isSelected = "false" -> "div > \\"Select\\""
-            [] OTHER -> "nothing"
+view == CASE hasLong = "true" /\\ isSelected = "true" -> "div > p \\"Long\\" > \\"Selected\\""
+          [] hasLong = "true" /\\ isSelected = "false" -> "div > p \\"Long\\" > \\"Select\\""
+          [] hasLong = "false" /\\ isSelected = "true" -> "div > \\"Selected\\""
+          [] hasLong = "false" /\\ isSelected = "false" -> "div > \\"Select\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ hasLong \\in {"false", "true"}
@@ -2686,18 +2686,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
 "---- MODULE NameForm ----
-\\* isPending: isPending (input), 2 cells
-\\* name: name (state), 2 cells
-\\* test_typeof_data_get_name_string: typeof data.get("name") === "string" (test), 2 cells
-\\* test_typeof_data_get_name: typeof data.get("name") (test), 2 cells
+\\* isPending: isPending (input), 2 values
+\\* name: name (state), 2 values
+\\* test_typeof_data_get_name_string: typeof data.get("name") === "string" (test), 2 values
+\\* test_typeof_data_get_name: typeof data.get("name") (test), 2 values
 VARIABLES isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name
 
 vars == <<isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name>>
 
-screen == CASE isPending = "true" -> "form > p \\"Saving…\\""
-            [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
-            [] isPending = "false" /\\ name = "other string" -> "form > p"
-            [] OTHER -> "nothing"
+view == CASE isPending = "true" -> "form > p \\"Saving…\\""
+          [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
+          [] isPending = "false" /\\ name = "other string" -> "form > p"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isPending \\in {"false", "true"}
@@ -2787,16 +2787,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > NavLinks keeps its TLA+ module 1`] = `
 "---- MODULE NavLinks ----
-\\* pathname: pathname (input), 4 cells
+\\* pathname: pathname (input), 4 values
 VARIABLES pathname
 
 vars == <<pathname>>
 
-screen == CASE pathname = "/" -> "nav > b \\"Home\\" > a \\"Blog\\" > a \\"About\\""
-            [] pathname = "/blog" -> "nav > a \\"Home\\" > b \\"Blog\\" > a \\"About\\""
-            [] pathname = "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > b \\"About\\""
-            [] pathname = "other string" -> "nav > a \\"Home\\" > a \\"Blog\\" > a \\"About\\""
-            [] OTHER -> "nothing"
+view == CASE pathname = "/" -> "nav > b \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+          [] pathname = "/blog" -> "nav > a \\"Home\\" > b \\"Blog\\" > a \\"About\\""
+          [] pathname = "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > b \\"About\\""
+          [] pathname = "other string" -> "nav > a \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ pathname \\in {"/", "/about", "/blog", "other string"}
@@ -2872,16 +2872,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > OpaqueCallback keeps its TLA+ module 1`] = `
 "---- MODULE OpaqueCallback ----
-\\* user: user (input), 2 cells
-\\* user_name: user.name (input), 3 cells
+\\* user: user (input), 2 values
+\\* user_name: user.name (input), 3 values
 VARIABLES user, user_name
 
 vars == <<user, user_name>>
 
-screen == CASE user = "User" /\\ user_name = "other string" -> "div > i \\"named\\""
-            [] ~(user = "User" /\\ user_name = "other string") /\\ user = "User" -> "div"
-            [] ~(user = "User" /\\ user_name = "other string") /\\ user = "null" -> "div (2)"
-            [] OTHER -> "nothing"
+view == CASE user = "User" /\\ user_name = "other string" -> "div > i \\"named\\""
+          [] ~(user = "User" /\\ user_name = "other string") /\\ user = "User" -> "div"
+          [] ~(user = "User" /\\ user_name = "other string") /\\ user = "null" -> "div (2)"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ user \\in {"null", "User"}
@@ -2947,14 +2947,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > OptionRow keeps its TLA+ module 1`] = `
 "---- MODULE OptionRow ----
-\\* options_index_icon: options[index].icon (derived), 3 cells
+\\* options_index_icon: options[index].icon (derived), 3 values
 VARIABLES options_index_icon
 
 vars == <<options_index_icon>>
 
-screen == CASE options_index_icon = "other string" -> "li > i"
-            [] options_index_icon /= "other string" -> "li"
-            [] OTHER -> "nothing"
+view == CASE options_index_icon = "other string" -> "li > i"
+          [] options_index_icon /= "other string" -> "li"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ options_index_icon \\in {"undefined", "empty", "other string"}
@@ -3001,8 +3001,8 @@ exports[`fixture analysis > Page keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "Toggle"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "Toggle"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -3037,17 +3037,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > Panels keeps its TLA+ module 1`] = `
 "---- MODULE Panels ----
-\\* isOpen: isOpen (state), 2 cells
-\\* isDark: isDark (state), 2 cells
+\\* isOpen: isOpen (state), 2 values
+\\* isDark: isDark (state), 2 values
 VARIABLES isOpen, isDark
 
 vars == <<isOpen, isDark>>
 
-screen == CASE isOpen = "true" /\\ isDark = "true" -> "div > p \\"More details\\" > span \\"Dark\\""
-            [] isOpen = "true" /\\ isDark = "false" -> "div > p \\"More details\\" > span \\"Light\\""
-            [] isOpen = "false" /\\ isDark = "true" -> "div > span \\"Dark\\""
-            [] isOpen = "false" /\\ isDark = "false" -> "div > span \\"Light\\""
-            [] OTHER -> "nothing"
+view == CASE isOpen = "true" /\\ isDark = "true" -> "div > p \\"More details\\" > span \\"Dark\\""
+          [] isOpen = "true" /\\ isDark = "false" -> "div > p \\"More details\\" > span \\"Light\\""
+          [] isOpen = "false" /\\ isDark = "true" -> "div > span \\"Dark\\""
+          [] isOpen = "false" /\\ isDark = "false" -> "div > span \\"Light\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isOpen = "false"
@@ -3124,17 +3124,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > Picker keeps its TLA+ module 1`] = `
 "---- MODULE Picker ----
-\\* data: data (input), 2 cells
-\\* selected: selected (state), 3 cells
+\\* data: data (input), 2 values
+\\* selected: selected (state), 3 values
 VARIABLES data, selected
 
 vars == <<data, selected>>
 
-screen == CASE data = "{ rows: Row[]; }" /\\ selected = "other string" -> "ul > list > p"
-            [] data = "{ rows: Row[]; }" /\\ selected /= "other string" -> "ul > list"
-            [] data = "null" /\\ selected = "other string" -> "ul > p"
-            [] data = "null" /\\ selected /= "other string" -> "ul"
-            [] OTHER -> "nothing"
+view == CASE data = "{ rows: Row[]; }" /\\ selected = "other string" -> "ul > list > p"
+          [] data = "{ rows: Row[]; }" /\\ selected /= "other string" -> "ul > list"
+          [] data = "null" /\\ selected = "other string" -> "ul > p"
+          [] data = "null" /\\ selected /= "other string" -> "ul"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ data \\in {"null", "{ rows: Row[]; }"}
@@ -3209,15 +3209,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > PlanForm keeps its TLA+ module 1`] = `
 "---- MODULE PlanForm ----
-\\* watch_plan: watch("plan") (derived), 2 cells
-\\* pending_t1: t1 pending (pending), 2 cells
+\\* watch_plan: watch("plan") (derived), 2 values
+\\* pending_t1: t1 pending (pending), 2 values
 VARIABLES watch_plan, pending_t1
 
 vars == <<watch_plan, pending_t1>>
 
-screen == CASE watch_plan = "pro" -> "form > p \\"Billed monthly\\""
-            [] watch_plan = "free" -> "form > p \\"No charge\\""
-            [] OTHER -> "nothing"
+view == CASE watch_plan = "pro" -> "form > p \\"Billed monthly\\""
+          [] watch_plan = "free" -> "form > p \\"No charge\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ watch_plan \\in {"free", "pro"}
@@ -3289,27 +3289,27 @@ stateDiagram-v2
   S1 --> S2: #lt;select#gt; {...} resolves
   S2 --> S1: #lt;select#gt; {...} resolves
   S2 --> S2: #lt;select#gt; {...} resolves
-  %% ⚠ When <select> {...} fails, nothing on screen changes (L12)"
+  %% ⚠ When <select> {...} fails, the render stays the same (L12)"
 `;
 
 exports[`fixture analysis > PriceTag keeps its TLA+ module 1`] = `
 "---- MODULE PriceTag ----
-\\* price: price (input), 3 cells
-\\* test_typeof_price_string: typeof price === "string" (test), 2 cells
-\\* test_typeof_price_number: typeof price === "number" (test), 2 cells
+\\* price: price (input), 3 values
+\\* test_typeof_price_string: typeof price === "string" (test), 2 values
+\\* test_typeof_price_number: typeof price === "number" (test), 2 values
 VARIABLES price, test_typeof_price_string, test_typeof_price_number
 
 vars == <<price, test_typeof_price_string, test_typeof_price_number>>
 
-screen == CASE test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > b > i > s \\"Free\\""
-            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > b > i"
-            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > b > s \\"Free\\""
-            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p > b"
-            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > i > s \\"Free\\""
-            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > i"
-            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > s \\"Free\\""
-            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p"
-            [] OTHER -> "nothing"
+view == CASE test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > b > i > s \\"Free\\""
+          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > b > i"
+          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > b > s \\"Free\\""
+          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p > b"
+          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > i > s \\"Free\\""
+          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > i"
+          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > s \\"Free\\""
+          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ price \\in {"null", "other string", "any number"}
@@ -3414,16 +3414,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
 "---- MODULE Profile ----
-\\* status: status (state), 2 cells
-\\* user_name: user.name (input), 2 cells
-\\* step: step (state), 3 cells
+\\* status: status (state), 2 values
+\\* user_name: user.name (input), 2 values
+\\* step: step (state), 3 values
 VARIABLES status, user_name, step
 
 vars == <<status, user_name, step>>
 
-screen == CASE status = "saving" -> "p \\"Saving\\""
-            [] status = "idle" -> "div"
-            [] OTHER -> "nothing"
+view == CASE status = "saving" -> "p \\"Saving\\""
+          [] status = "idle" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status = "idle"
@@ -3458,10 +3458,10 @@ Next == t1 \\/ t2 \\/ t3 \\/ change_user_name
 Spec == Init /\\ [][Next]_vars
 
 \\* step as "a" | "b"
-Claim1 == status = "saving" \\/ step = "a" \\/ step = "b"
+Assertion1 == status = "saving" \\/ step = "a" \\/ step = "b"
 
 \\* "done" as "idle" | "saving"
-Claim2 == status = "saving"
+Assertion2 == status = "saving"
 ===="
 `;
 
@@ -3518,18 +3518,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > ProfileCard keeps its TLA+ module 1`] = `
 "---- MODULE ProfileCard ----
-\\* query_isPending: query.isPending (input), 2 cells
-\\* query_isError: query.isError (input), 2 cells
-\\* query_data_isAdmin: query.data.isAdmin (input), 2 cells
+\\* query_isPending: query.isPending (input), 2 values
+\\* query_isError: query.isError (input), 2 values
+\\* query_data_isAdmin: query.data.isAdmin (input), 2 values
 VARIABLES query_isPending, query_isError, query_data_isAdmin
 
 vars == <<query_isPending, query_isError, query_data_isAdmin>>
 
-screen == CASE query_isPending = "true" -> "p \\"Loading\\""
-            [] query_isPending = "false" /\\ query_isError = "true" -> "p \\"Error:\\""
-            [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "true" -> "div > span \\"Admin\\""
-            [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "false" -> "div"
-            [] OTHER -> "nothing"
+view == CASE query_isPending = "true" -> "p \\"Loading\\""
+          [] query_isPending = "false" /\\ query_isError = "true" -> "p \\"Error:\\""
+          [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "true" -> "div > span \\"Admin\\""
+          [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "false" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ query_isPending \\in {"false", "true"}
@@ -3620,22 +3620,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > ProfileStatus keeps its TLA+ module 1`] = `
 "---- MODULE ProfileStatus ----
-\\* useQuery_isPending: useQuery().isPending (input), 2 cells
-\\* useQuery_isError: useQuery().isError (input), 2 cells
-\\* useQuery_data: useQuery().data (input), 2 cells
+\\* useQuery_isPending: useQuery().isPending (input), 2 values
+\\* useQuery_isError: useQuery().isError (input), 2 values
+\\* useQuery_data: useQuery().data (input), 2 values
 VARIABLES useQuery_isPending, useQuery_isError, useQuery_data
 
 vars == <<useQuery_isPending, useQuery_isError, useQuery_data>>
 
-screen == CASE useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p \\"Error\\" > p"
-            [] useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\" > p \\"Error\\""
-            [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p"
-            [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\""
-            [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Error\\" > p"
-            [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Error\\""
-            [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p"
-            [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div"
-            [] OTHER -> "nothing"
+view == CASE useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p \\"Error\\" > p"
+          [] useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\" > p \\"Error\\""
+          [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p"
+          [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\""
+          [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Error\\" > p"
+          [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Error\\""
+          [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p"
+          [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ useQuery_isPending \\in {"false", "true"}
@@ -3740,15 +3740,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > PublishResult keeps its TLA+ module 1`] = `
 "---- MODULE PublishResult ----
-\\* success: success (state), 2 cells
-\\* isReady: isReady (input), 2 cells
+\\* success: success (state), 2 values
+\\* isReady: isReady (input), 2 values
 VARIABLES success, isReady
 
 vars == <<success, isReady>>
 
-screen == CASE success = "Success" -> "div > p"
-            [] success = "null" -> "div"
-            [] OTHER -> "nothing"
+view == CASE success = "Success" -> "div > p"
+          [] success = "null" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ success = "null"
@@ -3773,7 +3773,7 @@ Next == t1 \\/ t2 \\/ change_isReady
 Spec == Init /\\ [][Next]_vars
 
 \\* success!
-Claim1 == success = "null" \\/ success = "Success"
+Assertion1 == success = "null" \\/ success = "Success"
 ===="
 `;
 
@@ -3819,16 +3819,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > ResourceDetails keeps its TLA+ module 1`] = `
 "---- MODULE ResourceDetails ----
-\\* user: user (input), 2 cells
-\\* renderExtra: renderExtra (input), 2 cells
+\\* user: user (input), 2 values
+\\* renderExtra: renderExtra (input), 2 values
 VARIABLES user, renderExtra
 
 vars == <<user, renderExtra>>
 
-screen == CASE user = "null" /\\ renderExtra = "(user: User) => string" -> "p \\"Loading\\""
-            [] user = "null" /\\ renderExtra = "undefined" -> "p \\"Loading\\" (2)"
-            [] user = "User" -> "p"
-            [] OTHER -> "nothing"
+view == CASE user = "null" /\\ renderExtra = "(user: User) => string" -> "p \\"Loading\\""
+          [] user = "null" /\\ renderExtra = "undefined" -> "p \\"Loading\\" (2)"
+          [] user = "User" -> "p"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ user \\in {"null", "User"}
@@ -3900,16 +3900,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > RetryForm keeps its TLA+ module 1`] = `
 "---- MODULE RetryForm ----
-\\* error: error (state), 3 cells
-\\* pending_t1: t1 pending (pending), 2 cells
-\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+\\* error: error (state), 3 values
+\\* pending_t1: t1 pending (pending), 2 values
+\\* test_Unknown_throws: Unknown(throws) (test), 2 values
 VARIABLES error, pending_t1, test_Unknown_throws
 
 vars == <<error, pending_t1, test_Unknown_throws>>
 
-screen == CASE error = "other string" -> "form > p"
-            [] error /= "other string" -> "form"
-            [] OTHER -> "nothing"
+view == CASE error = "other string" -> "form > p"
+          [] error /= "other string" -> "form"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ error = "null"
@@ -3982,19 +3982,19 @@ stateDiagram-v2
   S1 --> S1: "Save", "Save" resolves
   S1 --> S2: "Save" resolves
   S2 --> S1: "Save"
-  %% ⚠ When "Save" fails, nothing on screen changes (L9)"
+  %% ⚠ When "Save" fails, the render stays the same (L9)"
 `;
 
 exports[`fixture analysis > RoleBadge keeps its TLA+ module 1`] = `
 "---- MODULE RoleBadge ----
-\\* role: role (input), 3 cells
+\\* role: role (input), 3 values
 VARIABLES role
 
 vars == <<role>>
 
-screen == CASE role = "admin" -> "strong \\"Admin\\""
-            [] role /= "admin" -> "span \\"Member\\""
-            [] OTHER -> "nothing"
+view == CASE role = "admin" -> "strong \\"Admin\\""
+          [] role /= "admin" -> "span \\"Member\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ role \\in {"null", "admin", "other string"}
@@ -4042,16 +4042,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > SaveForm keeps its TLA+ module 1`] = `
 "---- MODULE SaveForm ----
-\\* loading: loading (state), 2 cells
-\\* pending_t1: t1 pending (pending), 2 cells
-\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+\\* loading: loading (state), 2 values
+\\* pending_t1: t1 pending (pending), 2 values
+\\* test_Unknown_throws: Unknown(throws) (test), 2 values
 VARIABLES loading, pending_t1, test_Unknown_throws
 
 vars == <<loading, pending_t1, test_Unknown_throws>>
 
-screen == CASE loading = "true" -> "form > p \\"Saving…\\""
-            [] loading = "false" -> "form > button \\"Save\\""
-            [] OTHER -> "nothing"
+view == CASE loading = "true" -> "form > p \\"Saving…\\""
+          [] loading = "false" -> "form > button \\"Save\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ loading = "false"
@@ -4126,22 +4126,22 @@ stateDiagram-v2
   S1 --> S2: submit, "Save"
   S2 --> S1: submit, "Save" resolves
   S2 --> S2: submit, "Save"
-  %% ⚠ When submit, "Save" fails, nothing on screen changes (L9)"
+  %% ⚠ When submit, "Save" fails, the render stays the same (L9)"
 `;
 
 exports[`fixture analysis > SearchList keeps its TLA+ module 1`] = `
 "---- MODULE SearchList ----
-\\* items_length: items.length (input), 2 cells
-\\* items_filter_function_length: items.filter(function).length (derived), 2 cells
+\\* items_length: items.length (input), 2 values
+\\* items_filter_function_length: items.filter(function).length (derived), 2 values
 VARIABLES items_length, items_filter_function_length
 
 vars == <<items_length, items_filter_function_length>>
 
-screen == CASE items_length = "0" /\\ items_filter_function_length = ">0" -> "div > p \\"No items\\" > ul"
-            [] items_length = "0" /\\ items_filter_function_length = "0" -> "div > p \\"No items\\""
-            [] items_length = ">0" /\\ items_filter_function_length = ">0" -> "div > ul"
-            [] items_length = ">0" /\\ items_filter_function_length = "0" -> "div"
-            [] OTHER -> "nothing"
+view == CASE items_length = "0" /\\ items_filter_function_length = ">0" -> "div > p \\"No items\\" > ul"
+          [] items_length = "0" /\\ items_filter_function_length = "0" -> "div > p \\"No items\\""
+          [] items_length = ">0" /\\ items_filter_function_length = ">0" -> "div > ul"
+          [] items_length = ">0" /\\ items_filter_function_length = "0" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ items_length \\in {"0", ">0"}
@@ -4227,15 +4227,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > SearchPanel keeps its TLA+ module 1`] = `
 "---- MODULE SearchPanel ----
-\\* isFocused: isFocused (state), 2 cells
-\\* test_Unknown_call_enoughChars: Unknown(call).enoughChars (test), 2 cells
+\\* isFocused: isFocused (state), 2 values
+\\* test_Unknown_call_enoughChars: Unknown(call).enoughChars (test), 2 values
 VARIABLES isFocused, test_Unknown_call_enoughChars
 
 vars == <<isFocused, test_Unknown_call_enoughChars>>
 
-screen == CASE isFocused = "true" /\\ test_Unknown_call_enoughChars = "true" -> "div > ul"
-            [] ~(isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") -> "div"
-            [] OTHER -> "nothing"
+view == CASE isFocused = "true" /\\ test_Unknown_call_enoughChars = "true" -> "div > ul"
+          [] ~(isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isFocused = "false"
@@ -4304,14 +4304,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Seen keeps its TLA+ module 1`] = `
 "---- MODULE Seen ----
-\\* shown: shown (state), 2 cells
+\\* shown: shown (state), 2 values
 VARIABLES shown
 
 vars == <<shown>>
 
-screen == CASE shown = "true" -> "button > \\"shown\\""
-            [] shown = "false" -> "button > \\"show\\""
-            [] OTHER -> "nothing"
+view == CASE shown = "true" -> "button > \\"shown\\""
+          [] shown = "false" -> "button > \\"show\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ shown = "false"
@@ -4362,14 +4362,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > ShareButton keeps its TLA+ module 1`] = `
 "---- MODULE ShareButton ----
-\\* dialog_isOpen: dialog.isOpen (state), 2 cells
+\\* dialog_isOpen: dialog.isOpen (state), 2 values
 VARIABLES dialog_isOpen
 
 vars == <<dialog_isOpen>>
 
-screen == CASE dialog_isOpen = "false" -> "button \\"Share\\""
-            [] dialog_isOpen = "true" -> "p"
-            [] OTHER -> "nothing"
+view == CASE dialog_isOpen = "false" -> "button \\"Share\\""
+          [] dialog_isOpen = "true" -> "p"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ dialog_isOpen = "false"
@@ -4421,8 +4421,8 @@ exports[`fixture analysis > SignIn keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "a \\"Sign in\\""
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "a \\"Sign in\\""
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -4435,18 +4435,18 @@ Spec == Init /\\ [][Next]_vars
 
 exports[`fixture analysis > SignIn keeps its TLA+ module 2`] = `
 "---- MODULE SignIn ----
-\\* status: status (state), 2 cells
-\\* pending_t1: t1 pending (pending), 2 cells
-\\* test_Unknown_wrapped_call: Unknown(wrapped-call) (test), 2 cells
-\\* test_values_email: values.email (test), 2 cells
-\\* pending_t2: t2 pending (pending), 2 cells
+\\* status: status (state), 2 values
+\\* pending_t1: t1 pending (pending), 2 values
+\\* test_Unknown_wrapped_call: Unknown(wrapped-call) (test), 2 values
+\\* test_values_email: values.email (test), 2 values
+\\* pending_t2: t2 pending (pending), 2 values
 VARIABLES status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2
 
 vars == <<status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2>>
 
-screen == CASE status = "sent" -> "p \\"Check your inbox\\""
-            [] status = "editing" -> "form"
-            [] OTHER -> "nothing"
+view == CASE status = "sent" -> "p \\"Check your inbox\\""
+          [] status = "editing" -> "form"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status = "editing"
@@ -4570,25 +4570,25 @@ stateDiagram-v2
   [*] --> S1
   S1 --> S1: "Send"
   S1 --> S2: "Send"
-  %% ⚠ "Send" resolves never changes anything on screen
-  %% ⚠ When "Send" fails, nothing on screen changes
-  %% ⚠ <input> {...} never changes anything on screen (L17)
-  %% ⚠ <input> {...} resolves never changes anything on screen (L17)
-  %% ⚠ When <input> {...} fails, nothing on screen changes (L17)"
+  %% ⚠ "Send" resolves never changes the render
+  %% ⚠ When "Send" fails, the render stays the same
+  %% ⚠ <input> {...} never changes the render (L17)
+  %% ⚠ <input> {...} resolves never changes the render (L17)
+  %% ⚠ When <input> {...} fails, the render stays the same (L17)"
 `;
 
 exports[`fixture analysis > SizeLabel keeps its TLA+ module 1`] = `
 "---- MODULE SizeLabel ----
-\\* test_size_sizes_small: size === sizes.small (test), 2 cells
-\\* test_size_sizes_large: size === sizes.large (test), 2 cells
+\\* test_size_sizes_small: size === sizes.small (test), 2 values
+\\* test_size_sizes_large: size === sizes.large (test), 2 values
 VARIABLES test_size_sizes_small, test_size_sizes_large
 
 vars == <<test_size_sizes_small, test_size_sizes_large>>
 
-screen == CASE test_size_sizes_small = "true" -> "p \\"Small\\""
-            [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "true" -> "p \\"Large\\""
-            [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "false" -> "nothing"
-            [] OTHER -> "nothing"
+view == CASE test_size_sizes_small = "true" -> "p \\"Small\\""
+          [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "true" -> "p \\"Large\\""
+          [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "false" -> "nothing"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ test_size_sizes_small \\in {"false", "true"}
@@ -4612,14 +4612,14 @@ Spec == Init /\\ [][Next]_vars
 
 exports[`fixture analysis > SizeLabel keeps its TLA+ module 2`] = `
 "---- MODULE SizeLabel ----
-\\* size: size (input), 2 cells
+\\* size: size (input), 2 values
 VARIABLES size
 
 vars == <<size>>
 
-screen == CASE size = "sm" -> "p \\"Small\\""
-            [] size = "lg" -> "p \\"Large\\""
-            [] OTHER -> "nothing"
+view == CASE size = "sm" -> "p \\"Small\\""
+          [] size = "lg" -> "p \\"Large\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ size \\in {"lg", "sm"}
@@ -4710,15 +4710,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > SkippedSteps keeps its TLA+ module 1`] = `
 "---- MODULE SkippedSteps ----
-\\* steps: steps (state), 5 cells
+\\* steps: steps (state), 5 values
 VARIABLES steps
 
 vars == <<steps>>
 
-screen == CASE steps = "0" -> "button > \\"None\\""
-            [] steps = "3" -> "button > \\"Three\\""
-            [] steps \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
-            [] OTHER -> "nothing"
+view == CASE steps = "0" -> "button > \\"None\\""
+          [] steps = "3" -> "button > \\"Three\\""
+          [] steps \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ steps = "0"
@@ -4774,14 +4774,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Slot keeps its TLA+ module 1`] = `
 "---- MODULE Slot ----
-\\* test_typeof_render_function: typeof render === "function" (test), 2 cells
+\\* test_typeof_render_function: typeof render === "function" (test), 2 values
 VARIABLES test_typeof_render_function
 
 vars == <<test_typeof_render_function>>
 
-screen == CASE test_typeof_render_function = "true" -> "div"
-            [] test_typeof_render_function = "false" -> "div (2)"
-            [] OTHER -> "nothing"
+view == CASE test_typeof_render_function = "true" -> "div"
+          [] test_typeof_render_function = "false" -> "div (2)"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ test_typeof_render_function \\in {"false", "true"}
@@ -4834,8 +4834,8 @@ exports[`fixture analysis > SortedList keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "ul"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "ul"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -4877,8 +4877,8 @@ exports[`fixture analysis > Spinner keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "div"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -4916,8 +4916,8 @@ exports[`fixture analysis > SpreadArray keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "ul"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "ul"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -4956,16 +4956,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > StatusBadge keeps its TLA+ module 1`] = `
 "---- MODULE StatusBadge ----
-\\* status: status (input), 4 cells
+\\* status: status (input), 4 values
 VARIABLES status
 
 vars == <<status>>
 
-screen == CASE status = "error" -> "p \\"Failed\\""
-            [] status = "loading" -> "p \\"Loading…\\""
-            [] status = "done" -> "p > \\"Done\\""
-            [] status = "idle" -> "p > \\"Idle\\""
-            [] OTHER -> "nothing"
+view == CASE status = "error" -> "p \\"Failed\\""
+          [] status = "loading" -> "p \\"Loading…\\""
+          [] status = "done" -> "p > \\"Done\\""
+          [] status = "idle" -> "p > \\"Idle\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status \\in {"done", "error", "idle", "loading"}
@@ -5041,14 +5041,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > StatusBanner keeps its TLA+ module 1`] = `
 "---- MODULE StatusBanner ----
-\\* status: status (state), 2 cells
+\\* status: status (state), 2 values
 VARIABLES status
 
 vars == <<status>>
 
-screen == CASE status = "error" -> "p \\"Error\\""
-            [] status = "ok" -> "p \\"Fine\\""
-            [] OTHER -> "nothing"
+view == CASE status = "error" -> "p \\"Error\\""
+          [] status = "ok" -> "p \\"Fine\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status = "ok"
@@ -5089,15 +5089,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > StatusView keeps its TLA+ module 1`] = `
 "---- MODULE StatusView ----
-\\* status: status (state), 3 cells
+\\* status: status (state), 3 values
 VARIABLES status
 
 vars == <<status>>
 
-screen == CASE status = "idle" -> "div > button \\"Start\\""
-            [] status = "loading" -> "div > button \\"Finish\\""
-            [] status = "done" -> "div > p \\"Done\\""
-            [] OTHER -> "nothing"
+view == CASE status = "idle" -> "div > button \\"Start\\""
+          [] status = "loading" -> "div > button \\"Finish\\""
+          [] status = "done" -> "div > p \\"Done\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ status = "idle"
@@ -5161,17 +5161,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > StepView keeps its TLA+ module 1`] = `
 "---- MODULE StepView ----
-\\* step: step (input), 2 cells
-\\* user: user (input), 2 cells
+\\* step: step (input), 2 values
+\\* user: user (input), 2 values
 VARIABLES step, user
 
 vars == <<step, user>>
 
-screen == CASE step = "panel" /\\ user = "User" -> "div > aside \\"panel\\" > b"
-            [] step = "panel" /\\ user = "null" -> "div > aside \\"panel\\" > i \\"anonymous\\""
-            [] step = "list" /\\ user = "User" -> "div > ul > b"
-            [] step = "list" /\\ user = "null" -> "div > ul > i \\"anonymous\\""
-            [] OTHER -> "nothing"
+view == CASE step = "panel" /\\ user = "User" -> "div > aside \\"panel\\" > b"
+          [] step = "panel" /\\ user = "null" -> "div > aside \\"panel\\" > i \\"anonymous\\""
+          [] step = "list" /\\ user = "User" -> "div > ul > b"
+          [] step = "list" /\\ user = "null" -> "div > ul > i \\"anonymous\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ step \\in {"list", "panel"}
@@ -5245,16 +5245,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Subscribe keeps its TLA+ module 1`] = `
 "---- MODULE Subscribe ----
-\\* useForm_formState_errors_email: useForm().formState.errors.email (input), 2 cells
-\\* pending_t1: t1 pending (pending), 2 cells
-\\* pending_t2: t2 pending (pending), 2 cells
+\\* useForm_formState_errors_email: useForm().formState.errors.email (input), 2 values
+\\* pending_t1: t1 pending (pending), 2 values
+\\* pending_t2: t2 pending (pending), 2 values
 VARIABLES useForm_formState_errors_email, pending_t1, pending_t2
 
 vars == <<useForm_formState_errors_email, pending_t1, pending_t2>>
 
-screen == CASE useForm_formState_errors_email = "{ message?: string | undefined; }" -> "form > p"
-            [] useForm_formState_errors_email = "undefined" -> "form"
-            [] OTHER -> "nothing"
+view == CASE useForm_formState_errors_email = "{ message?: string | undefined; }" -> "form > p"
+          [] useForm_formState_errors_email = "undefined" -> "form"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ useForm_formState_errors_email \\in {"undefined", "{ message?: string | undefined; }"}
@@ -5349,8 +5349,8 @@ stateDiagram-v2
   S1 --> S2: useForm().formState.errors.email changes
   S2 --> S2: "Subscribe", "Subscribe" resolves, #lt;input#gt; {...} resolves
   S2 --> S1: useForm().formState.errors.email changes
-  %% ⚠ When "Subscribe" fails, nothing on screen changes
-  %% ⚠ When <input> {...} fails, nothing on screen changes (L28)"
+  %% ⚠ When "Subscribe" fails, the render stays the same
+  %% ⚠ When <input> {...} fails, the render stays the same (L28)"
 `;
 
 exports[`fixture analysis > Switch keeps its TLA+ module 1`] = `
@@ -5358,8 +5358,8 @@ exports[`fixture analysis > Switch keeps its TLA+ module 1`] = `
 
 vars == <<>>
 
-screen == CASE TRUE -> "input"
-            [] OTHER -> "nothing"
+view == CASE TRUE -> "input"
+          [] OTHER -> "nothing"
 
 Init ==
   TRUE
@@ -5396,14 +5396,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > TagEditor keeps its TLA+ module 1`] = `
 "---- MODULE TagEditor ----
-\\* tags_length: tags.length (state), 2 cells
+\\* tags_length: tags.length (state), 2 values
 VARIABLES tags_length
 
 vars == <<tags_length>>
 
-screen == CASE tags_length = "0" -> "div > p \\"No tags\\""
-            [] tags_length = ">0" -> "div > p \\"Some tags\\""
-            [] OTHER -> "nothing"
+view == CASE tags_length = "0" -> "div > p \\"No tags\\""
+          [] tags_length = ">0" -> "div > p \\"Some tags\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ tags_length = "0"
@@ -5458,14 +5458,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > TagList keeps its TLA+ module 1`] = `
 "---- MODULE TagList ----
-\\* tags_length: tags.length (state), 2 cells
+\\* tags_length: tags.length (state), 2 values
 VARIABLES tags_length
 
 vars == <<tags_length>>
 
-screen == CASE tags_length = "0" -> "div > p \\"No tags\\""
-            [] tags_length = ">0" -> "div > ul"
-            [] OTHER -> "nothing"
+view == CASE tags_length = "0" -> "div > p \\"No tags\\""
+          [] tags_length = ">0" -> "div > ul"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ tags_length = "0"
@@ -5526,14 +5526,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > TitleCard keeps its TLA+ module 1`] = `
 "---- MODULE TitleCard ----
-\\* title: title (input), 3 cells
+\\* title: title (input), 3 values
 VARIABLES title
 
 vars == <<title>>
 
-screen == CASE title = "empty" -> "p \\"Untitled\\""
-            [] title /= "empty" -> "h1"
-            [] OTHER -> "nothing"
+view == CASE title = "empty" -> "p \\"Untitled\\""
+          [] title /= "empty" -> "h1"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ title \\in {"null", "empty", "other string"}
@@ -5581,20 +5581,20 @@ stateDiagram-v2
 
 exports[`fixture analysis > TodoApp keeps its TLA+ module 1`] = `
 "---- MODULE TodoApp ----
-\\* todos_length: todos.length (state), 2 cells
-\\* todo_isDone: todo.isDone (input), 2 cells
-\\* isEditing: isEditing (state), 2 cells
-\\* draft: draft (state), 2 cells
-\\* draft_trim: draft.trim() (derived), 2 cells
+\\* todos_length: todos.length (state), 2 values
+\\* todo_isDone: todo.isDone (input), 2 values
+\\* isEditing: isEditing (state), 2 values
+\\* draft: draft (state), 2 values
+\\* draft_trim: draft.trim() (derived), 2 values
 VARIABLES todos_length, todo_isDone, isEditing, draft, draft_trim
 
 vars == <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
 
-screen == CASE todos_length = "0" /\\ isEditing = "true" -> "section > p \\"Nothing to do\\" > button \\"Save\\""
-            [] todos_length = "0" /\\ isEditing = "false" -> "section > p \\"Nothing to do\\" > button \\"Edit\\""
-            [] todos_length = ">0" /\\ isEditing = "true" -> "section > button \\"Save\\""
-            [] todos_length = ">0" /\\ isEditing = "false" -> "section > button \\"Edit\\""
-            [] OTHER -> "nothing"
+view == CASE todos_length = "0" /\\ isEditing = "true" -> "section > p \\"Nothing to do\\" > button \\"Save\\""
+          [] todos_length = "0" /\\ isEditing = "false" -> "section > p \\"Nothing to do\\" > button \\"Edit\\""
+          [] todos_length = ">0" /\\ isEditing = "true" -> "section > button \\"Save\\""
+          [] todos_length = ">0" /\\ isEditing = "false" -> "section > button \\"Edit\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ todos_length = "0"
@@ -5748,14 +5748,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > Toggle keeps its TLA+ module 1`] = `
 "---- MODULE Toggle ----
-\\* isOpen: isOpen (state), 2 cells
+\\* isOpen: isOpen (state), 2 values
 VARIABLES isOpen
 
 vars == <<isOpen>>
 
-screen == CASE isOpen = "true" -> "div > p \\"Details\\""
-            [] isOpen = "false" -> "div"
-            [] OTHER -> "nothing"
+view == CASE isOpen = "true" -> "div > p \\"Details\\""
+          [] isOpen = "false" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isOpen = "false"
@@ -5806,15 +5806,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > ToneBadge keeps its TLA+ module 1`] = `
 "---- MODULE ToneBadge ----
-\\* tone: tone (input), 4 cells
+\\* tone: tone (input), 4 values
 VARIABLES tone
 
 vars == <<tone>>
 
-screen == CASE tone = "info" -> "span > b \\"Info\\""
-            [] tone = "warning" -> "span > i \\"Warning\\""
-            [] tone \\in {"undefined", "other string"} -> "span"
-            [] OTHER -> "nothing"
+view == CASE tone = "info" -> "span > b \\"Info\\""
+          [] tone = "warning" -> "span > i \\"Warning\\""
+          [] tone \\in {"undefined", "other string"} -> "span"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ tone \\in {"undefined", "info", "warning", "other string"}
@@ -5872,18 +5872,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
 "---- MODULE ToneCounter ----
-\\* tone: tone (input), 3 cells
-\\* count: count (state), 3 cells
-\\* test_count_1: count + 1 (test), 2 cells
+\\* tone: tone (input), 3 values
+\\* count: count (state), 3 values
+\\* test_count_1: count + 1 (test), 2 values
 VARIABLES tone, count, test_count_1
 
 vars == <<tone, count, test_count_1>>
 
-screen == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
-            [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
-            [] tone /= "info" /\\ count = ">0" -> "div > i > \\"Other again\\""
-            [] tone /= "info" /\\ count /= ">0" -> "div > i > \\"Other\\""
-            [] OTHER -> "nothing"
+view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
+          [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
+          [] tone /= "info" /\\ count = ">0" -> "div > i > \\"Other again\\""
+          [] tone /= "info" /\\ count /= ">0" -> "div > i > \\"Other\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ tone \\in {"undefined", "info", "other string"}
@@ -5972,14 +5972,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > ToneLabel keeps its TLA+ module 1`] = `
 "---- MODULE ToneLabel ----
-\\* test__tone_undefined_calm_tone_loud: (tone === undefined ? "calm" : tone) === "loud" (test), 2 cells
+\\* test__tone_undefined_calm_tone_loud: (tone === undefined ? "calm" : tone) === "loud" (test), 2 values
 VARIABLES test__tone_undefined_calm_tone_loud
 
 vars == <<test__tone_undefined_calm_tone_loud>>
 
-screen == CASE test__tone_undefined_calm_tone_loud = "true" -> "strong \\"Loud\\""
-            [] test__tone_undefined_calm_tone_loud = "false" -> "span \\"Calm\\""
-            [] OTHER -> "nothing"
+view == CASE test__tone_undefined_calm_tone_loud = "true" -> "strong \\"Loud\\""
+          [] test__tone_undefined_calm_tone_loud = "false" -> "span \\"Calm\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ test__tone_undefined_calm_tone_loud \\in {"false", "true"}
@@ -6027,31 +6027,31 @@ stateDiagram-v2
 
 exports[`fixture analysis > Toolbar keeps its TLA+ module 1`] = `
 "---- MODULE Toolbar ----
-\\* role: role (input), 2 cells
-\\* status_isSaving: status.isSaving (input), 2 cells
-\\* status_error: status.error (input), 3 cells
-\\* isHelpOpen: isHelpOpen (state), 2 cells
+\\* role: role (input), 2 values
+\\* status_isSaving: status.isSaving (input), 2 values
+\\* status_error: status.error (input), 3 values
+\\* isHelpOpen: isHelpOpen (state), 2 values
 VARIABLES role, status_isSaving, status_error, isHelpOpen
 
 vars == <<role, status_isSaving, status_error, isHelpOpen>>
 
-screen == CASE role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
-            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\""
-            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p > p \\"Press E to edit\\""
-            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > p"
-            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p \\"Press E to edit\\""
-            [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\""
-            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\" > p"
-            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\""
-            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > p"
-            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p \\"Press E to edit\\""
-            [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\""
-            [] OTHER -> "nothing"
+view == CASE role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+          [] role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
+          [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+          [] role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\""
+          [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p > p \\"Press E to edit\\""
+          [] role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > p"
+          [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p \\"Press E to edit\\""
+          [] role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\""
+          [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+          [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\" > p"
+          [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+          [] role = "viewer" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\""
+          [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p > p \\"Press E to edit\\""
+          [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > p"
+          [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p \\"Press E to edit\\""
+          [] role = "viewer" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ role \\in {"admin", "viewer"}
@@ -6225,16 +6225,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
 "---- MODULE UploadForm ----
-\\* error: error (state), 3 cells
-\\* pending_t1: t1 pending (pending), 2 cells
-\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+\\* error: error (state), 3 values
+\\* pending_t1: t1 pending (pending), 2 values
+\\* test_Unknown_throws: Unknown(throws) (test), 2 values
 VARIABLES error, pending_t1, test_Unknown_throws
 
 vars == <<error, pending_t1, test_Unknown_throws>>
 
-screen == CASE error = "other string" -> "div > p"
-            [] error /= "other string" -> "div"
-            [] OTHER -> "nothing"
+view == CASE error = "other string" -> "div > p"
+          [] error /= "other string" -> "div"
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ error = "null"
@@ -6308,19 +6308,19 @@ stateDiagram-v2
   S1 --> S1: "Upload", "Upload" resolves
   S1 --> S2: "Upload" resolves
   S2 --> S2: "Upload", "Upload" resolves
-  %% ⚠ When "Upload" fails, nothing on screen changes (L28)"
+  %% ⚠ When "Upload" fails, the render stays the same (L28)"
 `;
 
 exports[`fixture analysis > WarningFilter keeps its TLA+ module 1`] = `
 "---- MODULE WarningFilter ----
-\\* isChecked: isChecked (state), 2 cells
+\\* isChecked: isChecked (state), 2 values
 VARIABLES isChecked
 
 vars == <<isChecked>>
 
-screen == CASE isChecked = "true" -> "div > p \\"Warnings only\\""
-            [] isChecked = "false" -> "div > p \\"All events\\""
-            [] OTHER -> "nothing"
+view == CASE isChecked = "true" -> "div > p \\"Warnings only\\""
+          [] isChecked = "false" -> "div > p \\"All events\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ isChecked = "false"
@@ -6375,18 +6375,18 @@ stateDiagram-v2
 
 exports[`fixture analysis > Wizard keeps its TLA+ module 1`] = `
 "---- MODULE Wizard ----
-\\* state_step: state.step (state), 3 cells
-\\* state_hasError: state.hasError (state), 2 cells
+\\* state_step: state.step (state), 3 values
+\\* state_hasError: state.hasError (state), 2 values
 VARIABLES state_step, state_hasError
 
 vars == <<state_step, state_hasError>>
 
-screen == CASE state_step = "done" -> "p \\"Thanks!\\""
-            [] state_step = "details" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input"
-            [] state_step = "payment" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\""
-            [] state_step = "details" /\\ state_hasError = "false" -> "form > input"
-            [] state_step = "payment" /\\ state_hasError = "false" -> "form > input > button \\"Back\\""
-            [] OTHER -> "nothing"
+view == CASE state_step = "done" -> "p \\"Thanks!\\""
+          [] state_step = "details" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input"
+          [] state_step = "payment" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\""
+          [] state_step = "details" /\\ state_hasError = "false" -> "form > input"
+          [] state_step = "payment" /\\ state_hasError = "false" -> "form > input > button \\"Back\\""
+          [] OTHER -> "nothing"
 
 Init ==
   /\\ state_step = "details"

@@ -1,5 +1,5 @@
 import type { AbstractValue, Domain, PrimitiveValue } from "../types";
-import type { Abstract, Cell } from "./types";
+import type { Abstract, Value } from "./types";
 
 export interface PlaceTests {
   literals: PrimitiveValue[];
@@ -40,7 +40,7 @@ export const formatAbstract = (value: Abstract): string => {
 
 const exact = (value: PrimitiveValue): Abstract => ({ kind: "Exact", value });
 
-const createNumberCells = (literals: PrimitiveValue[], bounds: NumberBounds): Abstract[] => {
+const createNumberValues = (literals: PrimitiveValue[], bounds: NumberBounds): Abstract[] => {
   const points = [
     ...new Set(
       literals.filter(
@@ -49,7 +49,7 @@ const createNumberCells = (literals: PrimitiveValue[], bounds: NumberBounds): Ab
       ),
     ),
   ].sort((left, right) => left - right);
-  const cells: Abstract[] = [];
+  const values: Abstract[] = [];
   let lower = bounds.min;
   let isLowerIncluded = Number.isFinite(bounds.min);
   for (const point of points) {
@@ -57,28 +57,28 @@ const createNumberCells = (literals: PrimitiveValue[], bounds: NumberBounds): Ab
       lower === point ||
       (bounds.isInteger && (isLowerIncluded ? point - lower < 1 : point - lower <= 1));
     if (!isEmptyGap)
-      cells.push({
+      values.push({
         kind: "Range",
         min: lower,
         max: point,
         isMinIncluded: isLowerIncluded,
         isMaxIncluded: false,
       });
-    cells.push(exact(point));
+    values.push(exact(point));
     lower = point;
     isLowerIncluded = false;
   }
-  cells.push({
+  values.push({
     kind: "Range",
     min: lower,
     max: Infinity,
     isMinIncluded: isLowerIncluded,
     isMaxIncluded: false,
   });
-  return cells;
+  return values;
 };
 
-const createStringCells = (literals: PrimitiveValue[]): Abstract[] => {
+const createStringValues = (literals: PrimitiveValue[]): Abstract[] => {
   const strings = [
     ...new Set(literals.filter((literal): literal is string => typeof literal === "string")),
   ].sort();
@@ -88,19 +88,19 @@ const createStringCells = (literals: PrimitiveValue[]): Abstract[] => {
 const withTruthinessLiterals = (tests: PlaceTests, falsy: PrimitiveValue): PrimitiveValue[] =>
   tests.isTruthinessTested ? [...tests.literals, falsy] : tests.literals;
 
-const createPrimitiveCells = (
+const createPrimitiveValues = (
   primitive: "string" | "number" | "bigint" | "boolean",
   tests: PlaceTests,
   isLength: boolean,
 ): Abstract[] => {
   switch (primitive) {
     case "number":
-      return createNumberCells(withTruthinessLiterals(tests, 0), {
+      return createNumberValues(withTruthinessLiterals(tests, 0), {
         min: isLength ? 0 : -Infinity,
         isInteger: isLength,
       });
     case "string":
-      return createStringCells(withTruthinessLiterals(tests, ""));
+      return createStringValues(withTruthinessLiterals(tests, ""));
     case "boolean":
       return [exact(false), exact(true)];
     case "bigint":
@@ -108,13 +108,13 @@ const createPrimitiveCells = (
   }
 };
 
-const createCaseCells = (value: AbstractValue, tests: PlaceTests): Abstract[] => {
+const createCaseValues = (value: AbstractValue, tests: PlaceTests): Abstract[] => {
   switch (value.kind) {
     case "Literal":
       return [exact(value.value)];
     case "Type":
       return value.primitive
-        ? createPrimitiveCells(value.primitive, tests, false)
+        ? createPrimitiveValues(value.primitive, tests, false)
         : [{ kind: "Object", typeText: value.text }];
     case "Collection":
       return [{ kind: "Object", typeText: value.collection }];
@@ -126,48 +126,50 @@ const getPrimitiveName = (typeText: string): "string" | "number" | "boolean" | n
   return null;
 };
 
-const createUnknownCells = (tests: PlaceTests): Abstract[] => {
+const createUnknownValues = (tests: PlaceTests): Abstract[] => {
   const literals = [...new Set(tests.literals)];
   if (literals.length === 0)
     return tests.isTruthinessTested ? [{ kind: "Truthy" }, { kind: "Falsy" }] : [{ kind: "Any" }];
   return [...literals.map(exact), { kind: "Other", type: "any", excluded: literals }];
 };
 
-const createAbstractCells = (
-  domain: Domain | null,
+const createAbstractValues = (
+  typeDomain: Domain | null,
   tests: PlaceTests,
   isLength: boolean,
 ): Abstract[] => {
-  if (isLength) return createPrimitiveCells("number", tests, true);
-  if (!domain) return createUnknownCells(tests);
-  switch (domain.kind) {
+  if (isLength) return createPrimitiveValues("number", tests, true);
+  if (!typeDomain) return createUnknownValues(tests);
+  switch (typeDomain.kind) {
     case "Cases":
-      return domain.cases.flatMap((value) => createCaseCells(value, tests));
+      return typeDomain.cases.flatMap((value) => createCaseValues(value, tests));
     case "Opaque": {
-      const primitive = getPrimitiveName(domain.typeText);
+      const primitive = getPrimitiveName(typeDomain.typeText);
       return primitive
-        ? createPrimitiveCells(primitive, tests, false)
-        : [{ kind: "Object", typeText: domain.typeText }];
+        ? createPrimitiveValues(primitive, tests, false)
+        : [{ kind: "Object", typeText: typeDomain.typeText }];
     }
     case "Unknown":
-      return createUnknownCells(tests);
+      return createUnknownValues(tests);
   }
 };
 
-export const createCells = (
-  domain: Domain | null,
+export const createDomain = (
+  typeDomain: Domain | null,
   tests: PlaceTests,
   isLength: boolean,
-): Cell[] => {
+): Value[] => {
   const usedLabels = new Set<string>();
-  const cells: Cell[] = [];
-  for (const value of createAbstractCells(domain, tests, isLength)) {
-    const baseLabel = formatAbstract(value);
-    if (usedLabels.has(baseLabel) && value.kind === "Exact") continue;
+  const values: Value[] = [];
+  for (const abstract of createAbstractValues(typeDomain, tests, isLength)) {
+    const baseLabel = formatAbstract(abstract);
+    if (usedLabels.has(baseLabel) && abstract.kind === "Exact") continue;
     let label = baseLabel;
     for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} ${suffix}`;
     usedLabels.add(label);
-    cells.push({ label, value });
+    values.push({ label, abstract });
   }
-  return cells;
+  return values;
 };
+
+export const getValueLabels = (values: Value[]): string[] => values.map((value) => value.label);

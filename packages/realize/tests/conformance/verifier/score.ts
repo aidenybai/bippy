@@ -1,14 +1,15 @@
 import { isEffectHandler } from "../../../src/core/handlers/handler-predicates";
+import { getValueLabels } from "../../../src/core/model/domains";
 import { containsValue } from "../../../src/core/model/abstract";
-import { and, inCells, or } from "../../../src/core/model/conditions";
+import { and, inValues, or } from "../../../src/core/model/predicates";
 import { exploreModel } from "../../../src/core/model/explore";
 import type { ExploredModel } from "../../../src/core/model/explore";
 import type {
   Action,
   ComponentModel,
-  Condition,
-  Lane,
-  Screen,
+  Predicate,
+  Variable,
+  View,
 } from "../../../src/core/model/types";
 import type { ComponentAnalysis, Handler } from "../../../src/core/types";
 import { formatLine } from "../../../src/core/values/format";
@@ -58,32 +59,32 @@ const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
     : trigger.kind === "Effect" && trigger.hookKind === "Custom";
 
 interface Side {
-  condition: Condition;
+  predicate: Predicate;
   description: string;
   isReachable: boolean | null;
 }
 
-interface StateLane {
-  lane: Lane;
+interface StateVariable {
+  variable: Variable;
   hookIndex: number;
 }
 
 interface Misfit {
-  lane: string;
+  variable: string;
   value: string;
-  cells: string[];
+  domain: string[];
 }
 
 export interface Coverage {
   model: ComponentModel;
   explored: ExploredModel;
   sides: Map<string, Side>;
-  stateLanes: StateLane[];
-  lanesByName: Map<string, Lane>;
+  stateVariables: StateVariable[];
+  variablesByName: Map<string, Variable>;
 }
 
 export interface Observed {
-  condition: Condition;
+  predicate: Predicate;
   sides: string[];
   values: string[];
   misfits: Misfit[];
@@ -96,34 +97,38 @@ const combineReachability = (left: boolean | null, right: boolean | null): boole
 
 const collectSides = (model: ComponentModel): Map<string, Side> => {
   const sides = new Map<string, Side>();
-  for (const arm of model.arms) {
-    if (arm.loc === GeneratedSource) continue;
-    const key = getSideKey(getProbeId(arm.file, arm.loc), arm.isTrueSide);
-    const existing = sides.get(key);
-    sides.set(key, {
-      condition: existing ? or([existing.condition, arm.condition]) : arm.condition,
-      description: `${arm.test} is ${arm.isTrueSide ? "true" : "false"} ${formatLine(arm.loc)}`,
-      isReachable: existing
-        ? combineReachability(existing.isReachable, arm.isReachable)
-        : arm.isReachable,
-    });
+  for (const branch of model.branches) {
+    if (branch.loc === GeneratedSource) continue;
+    const probeId = getProbeId(branch.file, branch.loc);
+    for (const isTrueSide of [true, false]) {
+      const edge = isTrueSide ? branch.consequent : branch.alternate;
+      const key = getSideKey(probeId, isTrueSide);
+      const existing = sides.get(key);
+      sides.set(key, {
+        predicate: existing ? or([existing.predicate, edge.predicate]) : edge.predicate,
+        description: `${branch.test} is ${isTrueSide ? "true" : "false"} ${formatLine(branch.loc)}`,
+        isReachable: existing
+          ? combineReachability(existing.isReachable, edge.isReachable)
+          : edge.isReachable,
+      });
+    }
   }
   return sides;
 };
 
-const collectStateLanes = (
+const collectStateVariables = (
   analysis: ComponentAnalysis,
   model: ComponentModel,
   observations: Observation[],
-): StateLane[] => {
+): StateVariable[] => {
   const stateBindings = getStateBindings(analysis, observations) ?? [];
   const mutatedOwners = new Set(observations.flatMap(({ after }) => after.mutatedOwners));
-  return model.lanes.flatMap((lane) => {
-    if (lane.source !== "state") return [];
-    const hookIndex = stateBindings.findIndex((binding) => binding.id === lane.bindingId);
+  return model.variables.flatMap((variable) => {
+    if (variable.source !== "state") return [];
+    const hookIndex = stateBindings.findIndex((binding) => binding.id === variable.bindingId);
     return hookIndex === -1 || mutatedOwners.has(getStateOwner(hookIndex))
       ? []
-      : [{ lane, hookIndex }];
+      : [{ variable, hookIndex }];
   });
 };
 
@@ -133,10 +138,10 @@ export const createCoverage = (
   observations: Observation[],
 ): Coverage => ({
   model,
-  explored: exploreModel(model.lanes, model.actions, model.screens),
+  explored: exploreModel(model.variables, model.actions, model.views),
   sides: collectSides(model),
-  stateLanes: collectStateLanes(analysis, model, observations),
-  lanesByName: new Map(model.lanes.map((lane) => [lane.name, lane])),
+  stateVariables: collectStateVariables(analysis, model, observations),
+  variablesByName: new Map(model.variables.map((variable) => [variable.name, variable])),
 });
 
 const getObservedSideKeys = (coverage: Coverage, capture: Capture): string[] => {
@@ -157,23 +162,23 @@ export const observe = (coverage: Coverage, capture: Capture): Observed => {
   const sideKeys = getObservedSideKeys(coverage, capture);
   const values: string[] = [];
   const misfits: Misfit[] = [];
-  const valueConditions: Condition[] = [];
-  for (const { lane, hookIndex } of coverage.stateLanes) {
-    const value = readPath(capture.hookStates[hookIndex], lane.path);
+  const valuePredicates: Predicate[] = [];
+  for (const { variable, hookIndex } of coverage.stateVariables) {
+    const value = readPath(capture.hookStates[hookIndex], variable.path);
     if (OPAQUE_VALUES.has(value)) continue;
-    const allCells = lane.cells.map((cell) => cell.label);
-    const cells = lane.cells
-      .filter((cell) => containsValue(cell.value, value))
-      .map((cell) => cell.label);
-    values.push(`${lane.label} = ${formatRuntimeValue(value)}`);
-    if (cells.length === 0)
-      misfits.push({ lane: lane.label, value: formatRuntimeValue(value), cells: allCells });
-    else valueConditions.push(inCells(lane.name, cells, allCells));
+    const domain = getValueLabels(variable.domain);
+    const containingValues = getValueLabels(
+      variable.domain.filter((candidate) => containsValue(candidate.abstract, value)),
+    );
+    values.push(`${variable.label} = ${formatRuntimeValue(value)}`);
+    if (containingValues.length === 0)
+      misfits.push({ variable: variable.label, value: formatRuntimeValue(value), domain });
+    else valuePredicates.push(inValues(variable.name, containingValues, domain));
   }
   return {
-    condition: and([
-      ...sideKeys.flatMap((key) => coverage.sides.get(key)?.condition ?? []),
-      ...valueConditions,
+    predicate: and([
+      ...sideKeys.flatMap((key) => coverage.sides.get(key)?.predicate ?? []),
+      ...valuePredicates,
     ]),
     sides: sideKeys.flatMap((key) => coverage.sides.get(key)?.description ?? []),
     values,
@@ -181,11 +186,13 @@ export const observe = (coverage: Coverage, capture: Capture): Observed => {
   };
 };
 
-export const isShowingScreen = (coverage: Coverage, observed: Observed, screen: Screen): boolean =>
-  coverage.explored.findWitness(and([observed.condition, screen.condition])) !== null;
+export const isShowingView = (coverage: Coverage, observed: Observed, view: View): boolean =>
+  coverage.explored.findTrace(and([observed.predicate, view.predicate])) !== null;
 
 const isPropInput = (coverage: Coverage, action: Action): boolean =>
-  action.writes.some(({ lane }) => coverage.lanesByName.get(lane)?.bindingKind === "prop");
+  action.writes.some(
+    ({ variable }) => coverage.variablesByName.get(variable)?.bindingKind === "prop",
+  );
 
 const createActionFilter =
   (coverage: Coverage, handlerIds: Set<string>, backgroundIds: Set<string>) =>
@@ -202,7 +209,7 @@ class ComponentScore {
   readonly #verdict: ComponentVerdict;
   readonly #handlerIdsByProbeId: Map<string, string[]>;
   readonly #backgroundIds: Set<string>;
-  readonly #coveredScreens = new Set<string>();
+  readonly #coveredViews = new Set<string>();
   readonly #seenKeys = new Set<string>();
 
   constructor(analysis: ComponentAnalysis, coverage: Coverage, verdict: ComponentVerdict) {
@@ -216,8 +223,8 @@ class ComponentScore {
     );
   }
 
-  get coveredScreens(): string[] {
-    return [...this.#coveredScreens].sort();
+  get coveredViews(): string[] {
+    return [...this.#coveredViews].sort();
   }
 
   #isFirstSeen(key: string): boolean {
@@ -232,14 +239,11 @@ class ComponentScore {
         this.#verdict.valueCounterexamples.push({ path: observation.path, ...misfit });
     if (observed.misfits.length > 0) return;
     const { model, explored } = this.#coverage;
-    const witness = explored.findWitness(observed.condition);
+    const witness = explored.findTrace(observed.predicate);
     if (witness) {
-      for (const screen of model.screens)
-        if (
-          !this.#coveredScreens.has(screen.label) &&
-          isShowingScreen(this.#coverage, observed, screen)
-        )
-          this.#coveredScreens.add(screen.label);
+      for (const view of model.views)
+        if (!this.#coveredViews.has(view.label) && isShowingView(this.#coverage, observed, view))
+          this.#coveredViews.add(view.label);
       return;
     }
     if (this.#isFirstSeen(JSON.stringify(["render", observed.sides, observed.values])))
@@ -264,8 +268,8 @@ class ComponentScore {
     if (beforeObserved.misfits.length > 0 || after.misfits.length > 0) return;
     this.#verdict.checkedTransitionCount++;
     const isCovered = this.#coverage.explored.findTransition(
-      beforeObserved.condition,
-      after.condition,
+      beforeObserved.predicate,
+      after.predicate,
       createActionFilter(this.#coverage, handlerIds, this.#backgroundIds),
     );
     if (isCovered !== false) return;
@@ -311,7 +315,7 @@ export const scoreComponent = (
     score.scoreRender(observation, observed);
     score.scoreTransition(observation, observed);
   }
-  verdict.coveredScreens = score.coveredScreens;
+  verdict.coveredViews = score.coveredViews;
   verdict.branchSideCount = probeIds.size * 2;
   verdict.coveredBranchSideCount = coveredSides.size;
   verdict.reachedUnreachableSides = [...coveredSides].flatMap((key) => {

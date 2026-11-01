@@ -4,11 +4,11 @@ import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent, ComponentAnalysis, Sample } from "../../../src/core/types";
-import type { Screen } from "../../../src/core/model/types";
+import type { View } from "../../../src/core/model/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
-import { createCoverage, isShowingScreen, observe, scoreComponent } from "./score";
+import { createCoverage, isShowingView, observe, scoreComponent } from "./score";
 import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
@@ -57,11 +57,11 @@ interface FixtureContext {
   initialCapture: Capture;
 }
 
-const getConditionLabel = (screen: Screen): string =>
-  screen.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+const getBranchLabel = (view: View): string =>
+  view.path.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
 
-const isLabelled = (screen: Screen, label: string): boolean =>
-  screen.label === label || getConditionLabel(screen) === label;
+const isLabelled = (view: View, label: string): boolean =>
+  view.label === label || getBranchLabel(view) === label;
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
@@ -98,17 +98,17 @@ const findClickAction = async (
   );
 };
 
-const expectShowingScreen = (session: Session, capture: Capture, label: string): void => {
+const expectShowingView = (session: Session, capture: Capture, label: string): void => {
   const { analysis, model } = session.component;
-  const labelledScreens = model.screens.filter((screen) => isLabelled(screen, label));
+  const labelledViews = model.views.filter((view) => isLabelled(view, label));
   expect(
-    labelledScreens.length,
-    `${analysis.name} has no screen labelled "${label}". Its screens are:\n${model.screens.map((screen) => screen.label).join("\n")}`,
+    labelledViews.length,
+    `${analysis.name} has no view labelled "${label}". Its views are:\n${model.views.map((view) => view.label).join("\n")}`,
   ).toBeGreaterThan(0);
   const coverage = createCoverage(analysis, model, session.observations);
   const observed = observe(coverage, capture);
   expect(
-    labelledScreens.some((screen) => isShowingScreen(coverage, observed, screen)),
+    labelledViews.some((view) => isShowingView(coverage, observed, view)),
     `${analysis.name} isn't showing "${label}"`,
   ).toBe(true);
 };
@@ -135,7 +135,7 @@ const createComponentFixture = ({
       current = await page.evaluate(() => window.__verify.observe());
       session.observations.push({ props, path, action: null, before: null, after: current });
     },
-    expectState: (label) => expectShowingScreen(session, current, label),
+    expectState: (label) => expectShowingView(session, current, label),
   };
 };
 

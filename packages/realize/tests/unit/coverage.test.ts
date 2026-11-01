@@ -12,9 +12,9 @@ describe("conformance coverage", () => {
   const nextProbeId = getHandlerProbeId(wizard, '() => dispatch({ type: "next" })');
 
   const getSideProbeId = (test: string): string => {
-    const arm = wizard.model.arms.find((candidate) => candidate.test === test);
-    if (!arm || arm.loc === GeneratedSource) throw new Error(`No arm tests ${test}`);
-    return getProbeId(arm.file, arm.loc);
+    const branch = wizard.model.branches.find((candidate) => candidate.test === test);
+    if (!branch || branch.loc === GeneratedSource) throw new Error(`No branch tests ${test}`);
+    return getProbeId(branch.file, branch.loc);
   };
 
   const capture = (
@@ -86,7 +86,7 @@ describe("conformance coverage", () => {
     const verdict = score([mount(details), click(details, payment)]);
     expect(formatCounterexamples(verdict)).toEqual([]);
     expect(verdict.checkedTransitionCount).toBe(1);
-    expect(verdict.coveredScreens.length).toBeGreaterThan(0);
+    expect(verdict.coveredViews.length).toBeGreaterThan(0);
   });
 
   it("reports a branch side the model calls unreachable", () => {
@@ -98,10 +98,10 @@ describe("conformance coverage", () => {
     expect(score([mount(failed)]).reachedUnreachableSides).toEqual(["state.hasError is true L26"]);
   });
 
-  it("reports a state value outside every cell", () => {
+  it("reports a state value outside its domain", () => {
     const verdict = score([mount(capture("review", {}))]);
     expect(formatCounterexamples(verdict)).toEqual([
-      'state.step = "review" fits no cell of details | done | payment',
+      'state.step = "review" is outside the domain details | done | payment',
     ]);
   });
 
