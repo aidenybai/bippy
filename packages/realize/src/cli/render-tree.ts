@@ -16,7 +16,7 @@ import { isUnchangedField } from "../core/values/is-unchanged-field";
 import { isEffectHandler } from "../core/handlers/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "../core/labels/source-text";
-import { getEffectTriggerLabel } from "../core/labels/trigger-labels";
+import { getTriggerLabel } from "../core/labels/trigger-labels";
 import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
 
 export const DEFAULT_RENDER_DEPTH = 12;
@@ -198,11 +198,7 @@ export const formatRenderTree = (
   const rootId = addNode(chart, analysis.name, "element");
   buildNode(analysis.render, chart, rootId, 0);
   for (const handler of analysis.handlers.filter(isEffectHandler))
-    addEventNode(
-      chart,
-      rootId,
-      `${getEffectTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`,
-    );
+    addEventNode(chart, rootId, `${getTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`);
   const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   const location = `${relative(options.rootDirectory, analysis.file)}${lineSuffix}`;
   return [

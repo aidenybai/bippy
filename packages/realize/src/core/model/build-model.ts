@@ -8,7 +8,7 @@ import { COMPARISONS } from "./abstract";
 import { compileHandlerActions, compileInputActions } from "./actions";
 import { and, collectPredicateVariables, not, or } from "./predicates";
 import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
-import { exploreModel, type ExploredModel } from "./explore";
+import { exploreModel, type StateGraph } from "./explore";
 import { STATE_KINDS, createVariableTable, type VariableTable } from "./variables";
 import { collectViews } from "./views";
 import type {
@@ -146,20 +146,20 @@ const isStateOnly = (invariant: Invariant, variables: Variable[]): boolean => {
   const sources = new Map(variables.map((variable) => [variable.name, variable.source]));
   return [...collectPredicateVariables(invariant.predicate, new Set())].every((variable) => {
     const source = sources.get(variable);
-    return source === "state" || source === "pending";
+    return source === "state" || source === "control";
   });
 };
 
 const describeUnreachableEdge = (branch: Branch, edge: BranchEdge): string =>
-  `${branch.test} is never ${edge === branch.consequent ? "true" : "false"} here`;
+  `${branch.label} is never ${edge === branch.consequent ? "true" : "false"} here`;
 
 const describeStutteringAction = (action: Action): string =>
-  action.phase === "rejects"
+  action.phase === "rejected"
     ? `When ${action.label.replace(/ rejects$/, "")} fails, the render stays the same`
     : `${action.label} never changes the render`;
 
 const collectFindings = (
-  explored: ExploredModel,
+  explored: StateGraph,
   branches: Branch[],
   handlerActions: Action[],
   invariants: Invariant[],
@@ -167,11 +167,11 @@ const collectFindings = (
 ): Finding[] => {
   const isEffective = (action: Action): boolean =>
     explored.isActionEffective(action) ||
-    (action.phase === "run" &&
+    (action.phase === "call" &&
       handlerActions.some(
         (settle) =>
           settle.handlerId === action.handlerId &&
-          settle.phase !== "run" &&
+          settle.phase !== "call" &&
           explored.isActionEffective(settle),
       ));
   return [

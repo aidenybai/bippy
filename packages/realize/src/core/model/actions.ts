@@ -1,47 +1,29 @@
-import type { Handler, HandlerTrigger, StateUpdate, SymbolicValue } from "../types";
+import type { Handler, StateUpdate, SymbolicValue } from "../types";
+import { getTriggerLabel } from "../labels/trigger-labels";
 import { getValueLabels } from "./domains";
 import { UNCHANGED, TRUE, and, ifThenElse, inValues } from "./predicates";
 import { compileNextValue } from "./evaluate";
 import type { VariableTable } from "./variables";
 import type { Action, ActionPhase, NextValue, Predicate, Variable } from "./types";
 
-type Outcome = "resolved" | "rejected";
+type Settlement = "fulfilled" | "rejected";
 
 const IDLE = "idle";
 const PENDING = "pending";
 
-const getSettledOutcome = (guard: SymbolicValue): Outcome | null => {
+const getSettledOutcome = (guard: SymbolicValue): Settlement | null => {
   if (guard.kind === "Unknown" && guard.origin?.kind === "Settled") return guard.origin.outcome;
   if (guard.kind === "UnaryExpression" && guard.operator === "!") {
     const inner = getSettledOutcome(guard.value);
-    if (inner === "resolved") return "rejected";
-    if (inner === "rejected") return "resolved";
+    if (inner === "fulfilled") return "rejected";
+    if (inner === "rejected") return "fulfilled";
   }
   return null;
 };
 
 const getUpdatePhase = (update: StateUpdate): ActionPhase => {
-  if (!update.isAsync) return "run";
-  const outcome = update.guards.map(getSettledOutcome).find((candidate) => candidate !== null);
-  return outcome === "rejected" ? "rejects" : "resolves";
-};
-
-const formatTrigger = (trigger: HandlerTrigger): string => {
-  switch (trigger.kind) {
-    case "Event":
-      return `${trigger.tag} ${trigger.event}`;
-    case "Effect":
-      return trigger.hookKind;
-    case "Render":
-      return "render";
-  }
-};
-
-const PHASE_SUFFIX: Record<ActionPhase, string> = {
-  run: "",
-  resolves: " resolves",
-  rejects: " rejects",
-  input: "",
+  if (!update.isAsync) return "call";
+  return update.guards.map(getSettledOutcome).find((outcome) => outcome !== null) ?? "fulfilled";
 };
 
 const compileUpdateGuard = (table: VariableTable, update: StateUpdate): Predicate =>
@@ -80,7 +62,7 @@ const getBindingIds = (updates: StateUpdate[]): number[] => [
 const createPendingVariable = (handler: Handler): Variable => ({
   name: `pending_${handler.id}`,
   label: `${handler.id} pending`,
-  source: "pending",
+  source: "control",
   bindingKind: null,
   bindingId: null,
   inputBindingIds: [],
@@ -107,46 +89,46 @@ export const compileHandlerActions = (
   triggerLabel: string | undefined,
 ): Action[] => {
   if (handler.updates.length === 0) return [];
-  const label = triggerLabel ?? formatTrigger(handler.trigger);
+  const label = triggerLabel ?? getTriggerLabel(handler);
   const updatesByPhase = (phase: ActionPhase): StateUpdate[] =>
     handler.updates.filter((update) => getUpdatePhase(update) === phase);
-  const isVisible = (updates: StateUpdate[]): boolean =>
+  const hasRenderedWrite = (updates: StateUpdate[]): boolean =>
     updates.some((update) => displayedBindingIds.has(update.binding.id));
   const hasAsync = handler.updates.some((update) => update.isAsync);
   const pendingVariable = hasAsync ? createPendingVariable(handler) : null;
   if (pendingVariable) table.addVariable(pendingVariable);
   const guard = and(handler.guards.map((handlerGuard) => table.compile(handlerGuard)));
-  const runUpdates = updatesByPhase("run");
-  const run: Action = {
+  const callUpdates = updatesByPhase("call");
+  const call: Action = {
     name: handler.id,
     label,
     handlerId: handler.id,
-    phase: "run",
+    phase: "call",
     guard: pendingVariable ? and([guard, isPending(pendingVariable, IDLE)]) : guard,
     writes: [
-      ...compileWrites(table, runUpdates),
+      ...compileWrites(table, callUpdates),
       ...(pendingVariable ? [setPending(pendingVariable, PENDING)] : []),
     ],
-    writtenBindingIds: getBindingIds(runUpdates),
-    isVisible: isVisible(runUpdates),
+    writtenBindingIds: getBindingIds(callUpdates),
+    hasRenderedWrite: hasRenderedWrite(callUpdates),
     loc: handler.loc,
   };
-  if (!pendingVariable) return [run];
-  const settle = (phase: "resolves" | "rejects"): Action => {
+  if (!pendingVariable) return [call];
+  const settle = (phase: Settlement): Action => {
     const updates = updatesByPhase(phase);
     return {
       name: `${handler.id}_${phase}`,
-      label: `${label}${PHASE_SUFFIX[phase]}`,
+      label: `${label} ${phase === "fulfilled" ? "resolves" : "rejects"}`,
       handlerId: handler.id,
       phase,
       guard: isPending(pendingVariable, PENDING),
       writes: [...compileWrites(table, updates), setPending(pendingVariable, IDLE)],
       writtenBindingIds: getBindingIds(updates),
-      isVisible: isVisible(updates),
+      hasRenderedWrite: hasRenderedWrite(updates),
       loc: handler.loc,
     };
   };
-  return [run, settle("resolves"), settle("rejects")];
+  return [call, settle("fulfilled"), settle("rejected")];
 };
 
 const describeInput = (variable: Variable): string => {
@@ -164,7 +146,7 @@ export const compileInputActions = (variables: Variable[]): Action[] =>
   variables
     .filter(
       (variable) =>
-        (variable.source === "input" || variable.source === "test") && variable.domain.length > 1,
+        (variable.source === "input" || variable.source === "opaque") && variable.domain.length > 1,
     )
     .map((variable) => ({
       name: `change_${variable.name}`,
@@ -179,6 +161,6 @@ export const compileInputActions = (variables: Variable[]): Action[] =>
         },
       ],
       writtenBindingIds: variable.bindingId === null ? [] : [variable.bindingId],
-      isVisible: false,
+      hasRenderedWrite: false,
       loc: null,
     }));

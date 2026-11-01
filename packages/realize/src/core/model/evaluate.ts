@@ -139,7 +139,7 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
       if (value.operator === "-") return evaluate(evaluator, value.value, []).map(negate);
       return [ANY];
     case "Unknown":
-      return value.origin?.kind === "Settled" && value.origin.outcome === "resolved"
+      return value.origin?.kind === "Settled" && value.origin.outcome === "fulfilled"
         ? evaluate(evaluator, value.origin.promise, path)
         : [ANY];
     case "JsxExpression":

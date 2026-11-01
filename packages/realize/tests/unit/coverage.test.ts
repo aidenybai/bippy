@@ -12,7 +12,7 @@ describe("conformance coverage", () => {
   const nextCounterId = getHandlerCounterId(wizard, '() => dispatch({ type: "next" })');
 
   const getTestBranchId = (test: string): string => {
-    const branch = wizard.model.branches.find((candidate) => candidate.test === test);
+    const branch = wizard.model.branches.find((candidate) => candidate.label === test);
     if (!branch || branch.loc === GeneratedSource) throw new Error(`No branch tests ${test}`);
     return getBranchId(branch.file, branch.loc);
   };

@@ -3,7 +3,7 @@ import { getValueLabels } from "../core/model/domains";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { AnalyzedComponent } from "../core/types";
 import { formatLine } from "../core/values/format";
-import type { ViewEdge } from "../core/model/types";
+import type { ViewTransition } from "../core/model/types";
 import { unescapeQuotedLiterals } from "../core/labels/text";
 
 interface MermaidOptions {
@@ -23,7 +23,7 @@ const escapeText = (text: string): string =>
 const indent = (line: string): string => `${INDENT}${line}`;
 
 const groupEdges = (
-  edges: ViewEdge[],
+  edges: ViewTransition[],
 ): Map<string, { from: string; to: string; labels: string[] }> => {
   const groups = new Map<string, { from: string; to: string; labels: string[] }>();
   for (const edge of edges) {

@@ -3,7 +3,7 @@ import { getValueLabels } from "../../../src/core/model/domains";
 import { containsValue } from "../../../src/core/model/abstract";
 import { and, inValues, or } from "../../../src/core/model/predicates";
 import { exploreModel } from "../../../src/core/model/explore";
-import type { ExploredModel } from "../../../src/core/model/explore";
+import type { StateGraph } from "../../../src/core/model/explore";
 import type {
   Action,
   ComponentModel,
@@ -82,7 +82,7 @@ interface DomainViolation {
 
 interface ModelIndex {
   model: ComponentModel;
-  explored: ExploredModel;
+  explored: StateGraph;
   edges: Map<string, Edge>;
   stateVariables: StateVariable[];
   variablesByName: Map<string, Variable>;
@@ -111,7 +111,7 @@ const collectEdges = (model: ComponentModel): Map<string, Edge> => {
       const existing = edges.get(key);
       edges.set(key, {
         predicate: existing ? or([existing.predicate, edge.predicate]) : edge.predicate,
-        description: `${branch.test} is ${isConsequent ? "true" : "false"} ${formatLine(branch.loc)}`,
+        description: `${branch.label} is ${isConsequent ? "true" : "false"} ${formatLine(branch.loc)}`,
         isReachable: existing
           ? combineReachability(existing.isReachable, edge.isReachable)
           : edge.isReachable,
@@ -203,7 +203,7 @@ const createActionFilter =
   (modelIndex: ModelIndex, handlerIds: Set<string>, backgroundIds: Set<string>) =>
   (action: Action, taken: Action[]): boolean => {
     if (action.phase === "input") return !isPropInput(modelIndex, action);
-    if (action.phase === "resolves" || action.phase === "rejects") return true;
+    if (action.phase === "fulfilled" || action.phase === "rejected") return true;
     if (action.handlerId === null) return false;
     if (backgroundIds.has(action.handlerId)) return true;
     return handlerIds.has(action.handlerId) && !taken.includes(action);

@@ -181,7 +181,7 @@ export type UnknownOrigin =
   | { kind: "Name"; name: string }
   | { kind: "Member"; object: SymbolicValue; property: string }
   | { kind: "Call"; callee: SymbolicValue; argumentValues: SymbolicValue[] }
-  | { kind: "Settled"; promise: SymbolicValue; outcome: "resolved" | "rejected" }
+  | { kind: "Settled"; promise: SymbolicValue; outcome: "fulfilled" | "rejected" }
   | { kind: "Value"; value: SymbolicValue };
 
 export type ConditionalValue = Extract<SymbolicValue, { kind: "Conditional" }>;

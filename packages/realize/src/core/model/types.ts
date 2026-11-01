@@ -20,7 +20,7 @@ export interface Value {
   abstract: Abstract;
 }
 
-export type VariableSource = "state" | "input" | "derived" | "test" | "pending";
+export type VariableSource = "state" | "input" | "derived" | "opaque" | "control";
 
 export interface Variable {
   name: string;
@@ -47,7 +47,7 @@ export type NextValue =
   | { kind: "Unchanged" }
   | { kind: "If"; predicate: Predicate; consequent: NextValue; alternate: NextValue };
 
-export type ActionPhase = "run" | "resolves" | "rejects" | "input";
+export type ActionPhase = "call" | "fulfilled" | "rejected" | "input";
 
 export interface Action {
   name: string;
@@ -57,7 +57,7 @@ export interface Action {
   guard: Predicate;
   writes: Array<{ variable: string; next: NextValue }>;
   writtenBindingIds: number[];
-  isVisible: boolean;
+  hasRenderedWrite: boolean;
   loc: SourceLocation | null;
 }
 
@@ -65,7 +65,7 @@ export interface View {
   name: string;
   label: string;
   predicate: Predicate;
-  path: string[];
+  conditions: string[];
 }
 
 export interface BranchEdge {
@@ -74,7 +74,7 @@ export interface BranchEdge {
 }
 
 export interface Branch {
-  test: string;
+  label: string;
   loc: SourceLocation;
   file: string;
   consequent: BranchEdge;
@@ -87,7 +87,7 @@ export interface TraceStep {
   view: string;
 }
 
-export interface ViewEdge {
+export interface ViewTransition {
   from: string;
   to: string;
   action: string;
@@ -102,7 +102,7 @@ export interface StateSpace {
   isTruncated: boolean;
   initialViews: string[];
   reachableViews: string[];
-  edges: ViewEdge[];
+  edges: ViewTransition[];
 }
 
 export interface Invariant {

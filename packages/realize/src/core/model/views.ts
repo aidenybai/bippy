@@ -9,13 +9,13 @@ import type { Branch, Predicate, View } from "./types";
 
 const MAX_VIEWS = 64;
 
-interface Variant {
+interface RenderPath {
   predicate: Predicate;
-  path: string[];
+  conditions: string[];
   parts: string[];
 }
 
-const SINGLE: Variant[] = [{ predicate: TRUE, path: [], parts: [] }];
+const SINGLE: RenderPath[] = [{ predicate: TRUE, conditions: [], parts: [] }];
 
 const getDirectText = (children: SymbolicValue[]): string =>
   children
@@ -54,16 +54,16 @@ const describeRoot = (value: SymbolicValue): string | null => {
   }
 };
 
-const multiply = (left: Variant[], right: Variant[]): Variant[] =>
-  left.flatMap((leftVariant) =>
-    right.flatMap((rightVariant) => {
-      const predicate = and([leftVariant.predicate, rightVariant.predicate]);
+const multiply = (left: RenderPath[], right: RenderPath[]): RenderPath[] =>
+  left.flatMap((leftPath) =>
+    right.flatMap((rightPath) => {
+      const predicate = and([leftPath.predicate, rightPath.predicate]);
       if (predicate.kind === "False") return [];
       return [
         {
           predicate,
-          path: [...leftVariant.path, ...rightVariant.path],
-          parts: [...leftVariant.parts, ...rightVariant.parts],
+          conditions: [...leftPath.conditions, ...rightPath.conditions],
+          parts: [...leftPath.parts, ...rightPath.parts],
         },
       ];
     }),
@@ -83,7 +83,7 @@ export const collectViews = (
     pathCondition: Predicate,
   ): void => {
     branches.push({
-      test: formatSymbolicValue(getTestExpression(node)),
+      label: formatSymbolicValue(getTestExpression(node)),
       loc: node.branch.loc,
       file: node.branch.file || file,
       consequent: { predicate: and([pathCondition, test]), isReachable: null },
@@ -95,17 +95,17 @@ export const collectViews = (
     successor: SymbolicValue,
     test: Predicate,
     text: string,
-    variants: Variant[],
-  ): Variant[] => {
+    renderPaths: RenderPath[],
+  ): RenderPath[] => {
     const part = describeRoot(successor);
-    return variants.flatMap((variant) => {
-      const predicate = and([test, variant.predicate]);
+    return renderPaths.flatMap((renderPath) => {
+      const predicate = and([test, renderPath.predicate]);
       if (predicate.kind === "False") return [];
       return [
         {
           predicate,
-          path: [text, ...variant.path],
-          parts: part ? [part, ...variant.parts] : variant.parts,
+          conditions: [text, ...renderPath.conditions],
+          parts: part ? [part, ...renderPath.parts] : renderPath.parts,
         },
       ];
     });
@@ -115,15 +115,19 @@ export const collectViews = (
     children: SymbolicValue[],
     pathCondition: Predicate,
     isSplitting: boolean,
-  ): Variant[] =>
-    children.reduce<Variant[]>((variants, child) => {
-      const childVariants = walk(child, pathCondition, isSplitting);
-      return variants.length * childVariants.length > MAX_VIEWS
-        ? variants
-        : multiply(variants, childVariants);
+  ): RenderPath[] =>
+    children.reduce<RenderPath[]>((renderPaths, child) => {
+      const childPaths = walk(child, pathCondition, isSplitting);
+      return renderPaths.length * childPaths.length > MAX_VIEWS
+        ? renderPaths
+        : multiply(renderPaths, childPaths);
     }, SINGLE);
 
-  const walk = (node: SymbolicValue, pathCondition: Predicate, isSplitting: boolean): Variant[] => {
+  const walk = (
+    node: SymbolicValue,
+    pathCondition: Predicate,
+    isSplitting: boolean,
+  ): RenderPath[] => {
     if (visited.has(node)) return SINGLE;
     visited.add(node);
     switch (node.kind) {
@@ -157,11 +161,13 @@ export const collectViews = (
   };
 
   const rootPart = describeRoot(render);
-  const variants = walk(render, TRUE, true).slice(0, MAX_VIEWS);
+  const renderPaths = walk(render, TRUE, true).slice(0, MAX_VIEWS);
   const usedLabels = new Set<string>();
-  const views = variants.map((variant, index): View => {
+  const views = renderPaths.map((renderPath, index): View => {
     const parts =
-      rootPart && render.kind !== "Conditional" ? [rootPart, ...variant.parts] : variant.parts;
+      rootPart && render.kind !== "Conditional"
+        ? [rootPart, ...renderPath.parts]
+        : renderPath.parts;
     const baseLabel = parts.join(" > ") || "nothing";
     let label = baseLabel;
     for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} (${suffix})`;
@@ -169,8 +175,8 @@ export const collectViews = (
     return {
       name: `S${index + 1}`,
       label,
-      predicate: variant.predicate,
-      path: variant.path,
+      predicate: renderPath.predicate,
+      conditions: renderPath.conditions,
     };
   });
   return { views, branches };

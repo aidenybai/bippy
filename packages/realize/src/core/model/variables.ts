@@ -205,9 +205,9 @@ export const createVariableTable = (
     const existing = opaqueVariables.get(label);
     if (existing) return existing;
     const variable: Variable = {
-      name: createName(`test_${label}`),
+      name: createName(`opaque_${label}`),
       label,
-      source: "test",
+      source: "opaque",
       bindingKind: null,
       bindingId: null,
       inputBindingIds: [],

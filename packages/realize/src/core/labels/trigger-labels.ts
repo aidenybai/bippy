@@ -1,5 +1,5 @@
 import type {
-  AnalyzedComponent,
+  ComponentAnalysis,
   Handler,
   JsxContainerValue,
   JsxExpressionValue,
@@ -90,8 +90,8 @@ const describeDependencies = (dependencies: string): string => {
   return `${shown} or ${names.length - MAX_NAMED_DEPENDENCIES} more change`;
 };
 
-export const getEffectTriggerLabel = (handler: Handler): string => {
-  const { trigger } = handler;
+export const getTriggerLabel = (handler: Handler): string => {
+  const trigger = handler.trigger;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
   if (trigger.kind === "Render") return "during render";
   if (trigger.hookKind === "Custom") return "hook callback";
@@ -112,10 +112,9 @@ const joinTriggerLabels = (labels: string[]): string =>
     : `${labels.slice(0, MAX_SHARED_LABELS).join(", ")} +${labels.length - MAX_SHARED_LABELS} more`;
 
 export const collectTriggerLabels = (
-  component: Pick<AnalyzedComponent, "analysis">,
+  analysis: ComponentAnalysis,
   sourceReader: SourceReader,
 ): Map<string, string> => {
-  const { analysis } = component;
   const eventLabelsByHandler = new Map<string, Set<string>>();
   forEachJsxElement(analysis.render, (element) => {
     for (const prop of element.props) {
@@ -134,6 +133,6 @@ export const collectTriggerLabels = (
     ]),
   );
   for (const handler of analysis.handlers.filter(isEffectHandler))
-    triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
+    triggerLabelsByHandler.set(handler.id, getTriggerLabel(handler));
   return triggerLabelsByHandler;
 };

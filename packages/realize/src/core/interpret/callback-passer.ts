@@ -36,8 +36,12 @@ export class CallbackPasser {
         : methodName === "catch"
           ? [isRejected]
           : [];
-    const outcomesByArgument: Array<"resolved" | "rejected"> =
-      methodName === "then" ? ["resolved", "rejected"] : methodName === "catch" ? ["rejected"] : [];
+    const outcomesByArgument: Array<"fulfilled" | "rejected"> =
+      methodName === "then"
+        ? ["fulfilled", "rejected"]
+        : methodName === "catch"
+          ? ["rejected"]
+          : [];
     argumentValues.forEach((argument, argumentIndex) => {
       const guard = guardsByArgument[argumentIndex];
       const outcome = outcomesByArgument[argumentIndex];

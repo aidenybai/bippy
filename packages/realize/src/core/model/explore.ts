@@ -1,5 +1,13 @@
 import { evaluateNextValue, evaluatePredicate } from "./predicates";
-import type { Action, Predicate, StateSpace, Variable, View, ViewEdge, TraceStep } from "./types";
+import type {
+  Action,
+  Predicate,
+  StateSpace,
+  Variable,
+  View,
+  ViewTransition,
+  TraceStep,
+} from "./types";
 
 const MAX_STATES = 20_000;
 
@@ -21,7 +29,7 @@ interface Visit {
   action: string | null;
 }
 
-export interface ExploredModel {
+export interface StateGraph {
   stateSpace: StateSpace;
   findTrace: (predicate: Predicate) => TraceStep[] | null;
   isActionEffective: (action: Action) => boolean;
@@ -59,15 +67,15 @@ export const exploreModel = (
   variables: Variable[],
   actions: Action[],
   views: View[],
-): ExploredModel => {
+): StateGraph => {
   const variableIndexes = new Map(variables.map((variable, index) => [variable.name, index]));
   const observedIndexes = variables.flatMap((variable, index) =>
-    variable.source === "pending" ? [] : [index],
+    variable.source === "control" ? [] : [index],
   );
   const visits = new Map<string, Visit>();
   const queue: string[] = [];
   const effectiveActions = new Set<string>();
-  const edges = new Map<string, ViewEdge>();
+  const edges = new Map<string, ViewTransition>();
   let isTruncated = false;
 
   const valueGetter =
@@ -142,7 +150,7 @@ export const exploreModel = (
         successorCount++;
         enqueue(next, key, action.name);
         const isChanged =
-          action.isVisible ||
+          action.hasRenderedWrite ||
           observedIndexes.some(
             (variableIndex) => next[variableIndex] !== visit.state[variableIndex],
           );
@@ -158,7 +166,7 @@ export const exploreModel = (
             action: action.label,
             actionName: action.name,
             handlerId: action.handlerId,
-            isAsync: action.phase === "resolves" || action.phase === "rejects",
+            isAsync: action.phase === "fulfilled" || action.phase === "rejected",
             isInput: action.phase === "input",
           });
       });

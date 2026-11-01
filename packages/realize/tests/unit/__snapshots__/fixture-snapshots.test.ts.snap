@@ -375,10 +375,10 @@ exports[`fixture analysis > Coalesced keeps its TLA+ module 1`] = `
 "---- MODULE Coalesced ----
 \\* checked: checked (state), 2 values
 \\* flags: flags (input), 2 values
-\\* test_flags_some_function_null: flags?.some(function) != null (test), 2 values
-VARIABLES checked, flags, test_flags_some_function_null
+\\* opaque_flags_some_function_null: flags?.some(function) != null (opaque), 2 values
+VARIABLES checked, flags, opaque_flags_some_function_null
 
-vars == <<checked, flags, test_flags_some_function_null>>
+vars == <<checked, flags, opaque_flags_some_function_null>>
 
 view == CASE checked = "true" -> "p > \\"on\\""
           [] checked = "false" -> "p > \\"off\\""
@@ -387,24 +387,24 @@ view == CASE checked = "true" -> "p > \\"on\\""
 Init ==
   /\\ checked \\in {"false", "true"}
   /\\ flags \\in {"undefined", "{ ok: boolean; }[]"}
-  /\\ test_flags_some_function_null \\in {"false", "true"}
+  /\\ opaque_flags_some_function_null \\in {"false", "true"}
 
 \\* after serverChecked changes
 t1 ==
-  /\\ checked' \\in (IF test_flags_some_function_null = "false" THEN {"false"} ELSE {"false", "true"})
-  /\\ UNCHANGED <<flags, test_flags_some_function_null>>
+  /\\ checked' \\in (IF opaque_flags_some_function_null = "false" THEN {"false"} ELSE {"false", "true"})
+  /\\ UNCHANGED <<flags, opaque_flags_some_function_null>>
 
 \\* parent changes flags
 change_flags ==
   /\\ flags' \\in {"undefined", "{ ok: boolean; }[]"}
-  /\\ UNCHANGED <<checked, test_flags_some_function_null>>
+  /\\ UNCHANGED <<checked, opaque_flags_some_function_null>>
 
 \\* flags?.some(function) != null changes
-change_test_flags_some_function_null ==
-  /\\ test_flags_some_function_null' \\in {"false", "true"}
+change_opaque_flags_some_function_null ==
+  /\\ opaque_flags_some_function_null' \\in {"false", "true"}
   /\\ UNCHANGED <<checked, flags>>
 
-Next == t1 \\/ change_flags \\/ change_test_flags_some_function_null
+Next == t1 \\/ change_flags \\/ change_opaque_flags_some_function_null
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -438,7 +438,7 @@ stateDiagram-v2
   %% 8 states
   %% checked = checked (state): false | true
   %% flags = flags (input): undefined | { ok: boolean; }[]
-  %% test_flags_some_function_null = flags?.some(function) != null (test): false | true
+  %% opaque_flags_some_function_null = flags?.some(function) != null (opaque): false | true
   S1: p #gt; "off"
   S2: p #gt; "on"
   [*] --> S1
@@ -813,7 +813,7 @@ exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
 \\* status: status (input), 3 values
 \\* user: user (input), 2 values
 \\* items_length: items.length (state), 2 values
-\\* pending_t1: t1 pending (pending), 2 values
+\\* pending_t1: t1 pending (control), 2 values
 VARIABLES status, user, items_length, pending_t1
 
 vars == <<status, user, items_length, pending_t1>>
@@ -837,14 +837,14 @@ t1 ==
   /\\ UNCHANGED <<status, user, items_length>>
 
 \\* after first render resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
   /\\ items_length' = ">0"
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<status, user>>
 
 \\* after first render rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<status, user, items_length>>
@@ -864,7 +864,7 @@ change_user ==
   /\\ user' \\in {"null", "User"}
   /\\ UNCHANGED <<status, items_length, pending_t1>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ change_status \\/ change_user
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ t2 \\/ change_status \\/ change_user
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -913,7 +913,7 @@ stateDiagram-v2
   %% status = status (input): error | idle | loading
   %% user = user (input): null | User
   %% items_length = items.length (state): 0 | >0
-  %% pending_t1 = t1 pending (pending): idle | pending
+  %% pending_t1 = t1 pending (control): idle | pending
   S1: SignIn
   S2: main #gt; Empty
   S3: Spinner
@@ -1009,38 +1009,38 @@ exports[`fixture analysis > Dialog keeps its TLA+ module 1`] = `
 "---- MODULE Dialog ----
 \\* isOpen: isOpen (state), 2 values
 \\* icon: icon (input), 11 values
-\\* test_icon_undefined: icon === undefined (test), 2 values
-VARIABLES isOpen, icon, test_icon_undefined
+\\* opaque_icon_undefined: icon === undefined (opaque), 2 values
+VARIABLES isOpen, icon, opaque_icon_undefined
 
-vars == <<isOpen, icon, test_icon_undefined>>
+vars == <<isOpen, icon, opaque_icon_undefined>>
 
 view == CASE isOpen = "false" -> "nothing"
-          [] isOpen = "true" /\\ test_icon_undefined = "true" -> "div > span \\"×\\""
-          [] isOpen = "true" /\\ test_icon_undefined = "false" -> "div"
+          [] isOpen = "true" /\\ opaque_icon_undefined = "true" -> "div > span \\"×\\""
+          [] isOpen = "true" /\\ opaque_icon_undefined = "false" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
   /\\ isOpen = "true"
   /\\ icon \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
-  /\\ test_icon_undefined \\in {"false", "true"}
+  /\\ opaque_icon_undefined \\in {"false", "true"}
 
 \\* setIsOpen(false)
 t1 ==
   /\\ isOpen = "true"
   /\\ isOpen' = "false"
-  /\\ UNCHANGED <<icon, test_icon_undefined>>
+  /\\ UNCHANGED <<icon, opaque_icon_undefined>>
 
 \\* parent changes icon
 change_icon ==
   /\\ icon' \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
-  /\\ UNCHANGED <<isOpen, test_icon_undefined>>
+  /\\ UNCHANGED <<isOpen, opaque_icon_undefined>>
 
 \\* icon === undefined changes
-change_test_icon_undefined ==
-  /\\ test_icon_undefined' \\in {"false", "true"}
+change_opaque_icon_undefined ==
+  /\\ opaque_icon_undefined' \\in {"false", "true"}
   /\\ UNCHANGED <<isOpen, icon>>
 
-Next == t1 \\/ change_icon \\/ change_test_icon_undefined
+Next == t1 \\/ change_icon \\/ change_opaque_icon_undefined
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1080,7 +1080,7 @@ stateDiagram-v2
   %% 44 states
   %% isOpen = isOpen (state): false | true
   %% icon = icon (input): null | other string | any number | other | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<unknown, string | JSXElementConstructor<any>> | ReactPortal | undefined
-  %% test_icon_undefined = icon === undefined (test): false | true
+  %% opaque_icon_undefined = icon === undefined (opaque): false | true
   S1: div
   S2: div #gt; span "×"
   S3: nothing
@@ -1466,31 +1466,31 @@ stateDiagram-v2
 
 exports[`fixture analysis > Feed keeps its TLA+ module 1`] = `
 "---- MODULE Feed ----
-\\* test_pages_map_null: pages?.map(…) != null (test), 2 values
-\\* test_pages_map_length: pages.map(…).length (test), 2 values
-VARIABLES test_pages_map_null, test_pages_map_length
+\\* opaque_pages_map_null: pages?.map(…) != null (opaque), 2 values
+\\* opaque_pages_map_length: pages.map(…).length (opaque), 2 values
+VARIABLES opaque_pages_map_null, opaque_pages_map_length
 
-vars == <<test_pages_map_null, test_pages_map_length>>
+vars == <<opaque_pages_map_null, opaque_pages_map_length>>
 
-view == CASE ~(test_pages_map_null = "true" /\\ test_pages_map_length = "true") -> "p \\"Nothing yet\\""
-          [] test_pages_map_null = "true" /\\ test_pages_map_length = "true" -> "p \\"items\\""
+view == CASE ~(opaque_pages_map_null = "true" /\\ opaque_pages_map_length = "true") -> "p \\"Nothing yet\\""
+          [] opaque_pages_map_null = "true" /\\ opaque_pages_map_length = "true" -> "p \\"items\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ test_pages_map_null \\in {"false", "true"}
-  /\\ test_pages_map_length \\in {"false", "true"}
+  /\\ opaque_pages_map_null \\in {"false", "true"}
+  /\\ opaque_pages_map_length \\in {"false", "true"}
 
 \\* pages?.map(…) != null changes
-change_test_pages_map_null ==
-  /\\ test_pages_map_null' \\in {"false", "true"}
-  /\\ UNCHANGED <<test_pages_map_length>>
+change_opaque_pages_map_null ==
+  /\\ opaque_pages_map_null' \\in {"false", "true"}
+  /\\ UNCHANGED <<opaque_pages_map_length>>
 
 \\* pages.map(…).length changes
-change_test_pages_map_length ==
-  /\\ test_pages_map_length' \\in {"false", "true"}
-  /\\ UNCHANGED <<test_pages_map_null>>
+change_opaque_pages_map_length ==
+  /\\ opaque_pages_map_length' \\in {"false", "true"}
+  /\\ UNCHANGED <<opaque_pages_map_null>>
 
-Next == change_test_pages_map_null \\/ change_test_pages_map_length
+Next == change_opaque_pages_map_null \\/ change_opaque_pages_map_length
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1522,8 +1522,8 @@ title: Feed src/chains.tsx:17
 stateDiagram-v2
   direction LR
   %% 4 states
-  %% test_pages_map_null = pages?.map(…) != null (test): false | true
-  %% test_pages_map_length = pages.map(…).length (test): false | true
+  %% opaque_pages_map_null = pages?.map(…) != null (opaque): false | true
+  %% opaque_pages_map_length = pages.map(…).length (opaque): false | true
   S1: p "Nothing yet"
   S2: p "items"
   [*] --> S1
@@ -1536,10 +1536,10 @@ exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
 "---- MODULE FileRow ----
 \\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 values
 \\* opened: opened (state), 3 values
-\\* test_opened_1: opened + 1 (test), 2 values
-VARIABLES path_endsWith_ts, opened, test_opened_1
+\\* opaque_opened_1: opened + 1 (opaque), 2 values
+VARIABLES path_endsWith_ts, opened, opaque_opened_1
 
-vars == <<path_endsWith_ts, opened, test_opened_1>>
+vars == <<path_endsWith_ts, opened, opaque_opened_1>>
 
 view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
           [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
@@ -1550,19 +1550,19 @@ view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS
 Init ==
   /\\ path_endsWith_ts \\in {"false", "true"}
   /\\ opened = "0"
-  /\\ test_opened_1 \\in {"false", "true"}
+  /\\ opaque_opened_1 \\in {"false", "true"}
 
 \\* setOpened(opened + 1)
 t1 ==
   /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
-  /\\ UNCHANGED <<path_endsWith_ts, test_opened_1>>
+  /\\ UNCHANGED <<path_endsWith_ts, opaque_opened_1>>
 
 \\* opened + 1 changes
-change_test_opened_1 ==
-  /\\ test_opened_1' \\in {"false", "true"}
+change_opaque_opened_1 ==
+  /\\ opaque_opened_1' \\in {"false", "true"}
   /\\ UNCHANGED <<path_endsWith_ts, opened>>
 
-Next == t1 \\/ change_test_opened_1
+Next == t1 \\/ change_opaque_opened_1
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1606,7 +1606,7 @@ stateDiagram-v2
   %% 8 states
   %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
   %% opened = opened (state): <0 | 0 | >0
-  %% test_opened_1 = opened + 1 (test): false | true
+  %% opaque_opened_1 = opened + 1 (opaque): false | true
   S1: button #gt; span "File"
   S2: button #gt; span "TS"
   S3: button #gt; span "File" #gt; b
@@ -2688,11 +2688,11 @@ exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
 "---- MODULE NameForm ----
 \\* isPending: isPending (input), 2 values
 \\* name: name (state), 2 values
-\\* test_typeof_data_get_name_string: typeof data.get("name") === "string" (test), 2 values
-\\* test_typeof_data_get_name: typeof data.get("name") (test), 2 values
-VARIABLES isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name
+\\* opaque_typeof_data_get_name_string: typeof data.get("name") === "string" (opaque), 2 values
+\\* opaque_typeof_data_get_name: typeof data.get("name") (opaque), 2 values
+VARIABLES isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name
 
-vars == <<isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+vars == <<isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
 
 view == CASE isPending = "true" -> "form > p \\"Saving…\\""
           [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
@@ -2702,30 +2702,30 @@ view == CASE isPending = "true" -> "form > p \\"Saving…\\""
 Init ==
   /\\ isPending \\in {"false", "true"}
   /\\ name = "empty"
-  /\\ test_typeof_data_get_name_string \\in {"false", "true"}
-  /\\ test_typeof_data_get_name \\in {"false", "true"}
+  /\\ opaque_typeof_data_get_name_string \\in {"false", "true"}
+  /\\ opaque_typeof_data_get_name \\in {"false", "true"}
 
 \\* "Save"
 t1 ==
-  /\\ name' \\in (IF name = "empty" /\\ test_typeof_data_get_name_string = "false" THEN {"empty"} ELSE (IF (name = "empty" /\\ test_typeof_data_get_name_string = "true") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true") THEN {"empty", "other string"} ELSE {"other string"}))
-  /\\ UNCHANGED <<isPending, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+  /\\ name' \\in (IF name = "empty" /\\ opaque_typeof_data_get_name_string = "false" THEN {"empty"} ELSE (IF (name = "empty" /\\ opaque_typeof_data_get_name_string = "true") \\/ (name = "other string" /\\ opaque_typeof_data_get_name_string = "true") THEN {"empty", "other string"} ELSE {"other string"}))
+  /\\ UNCHANGED <<isPending, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
 
 \\* isPending changes
 change_isPending ==
   /\\ isPending' \\in {"false", "true"}
-  /\\ UNCHANGED <<name, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+  /\\ UNCHANGED <<name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
 
 \\* typeof data.get("name") === "string" changes
-change_test_typeof_data_get_name_string ==
-  /\\ test_typeof_data_get_name_string' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, test_typeof_data_get_name>>
+change_opaque_typeof_data_get_name_string ==
+  /\\ opaque_typeof_data_get_name_string' \\in {"false", "true"}
+  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name>>
 
 \\* typeof data.get("name") changes
-change_test_typeof_data_get_name ==
-  /\\ test_typeof_data_get_name' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, test_typeof_data_get_name_string>>
+change_opaque_typeof_data_get_name ==
+  /\\ opaque_typeof_data_get_name' \\in {"false", "true"}
+  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name_string>>
 
-Next == t1 \\/ change_isPending \\/ change_test_typeof_data_get_name_string \\/ change_test_typeof_data_get_name
+Next == t1 \\/ change_isPending \\/ change_opaque_typeof_data_get_name_string \\/ change_opaque_typeof_data_get_name
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2767,8 +2767,8 @@ stateDiagram-v2
   %% 16 states
   %% isPending = isPending (input): false | true
   %% name = name (state): empty | other string
-  %% test_typeof_data_get_name_string = typeof data.get("name") === "string" (test): false | true
-  %% test_typeof_data_get_name = typeof data.get("name") (test): false | true
+  %% opaque_typeof_data_get_name_string = typeof data.get("name") === "string" (opaque): false | true
+  %% opaque_typeof_data_get_name = typeof data.get("name") (opaque): false | true
   S1: form #gt; p #gt; "No name yet"
   S2: form #gt; p "Saving…"
   S3: form #gt; p
@@ -3210,7 +3210,7 @@ stateDiagram-v2
 exports[`fixture analysis > PlanForm keeps its TLA+ module 1`] = `
 "---- MODULE PlanForm ----
 \\* watch_plan: watch("plan") (derived), 2 values
-\\* pending_t1: t1 pending (pending), 2 values
+\\* pending_t1: t1 pending (control), 2 values
 VARIABLES watch_plan, pending_t1
 
 vars == <<watch_plan, pending_t1>>
@@ -3230,18 +3230,18 @@ t1 ==
   /\\ UNCHANGED <<watch_plan>>
 
 \\* <select> {...} resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
   /\\ watch_plan' \\in {"free", "pro"}
 
 \\* <select> {...} rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<watch_plan>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -3280,7 +3280,7 @@ stateDiagram-v2
   direction LR
   %% 4 states
   %% watch_plan = watch("plan") (derived): free | pro
-  %% pending_t1 = t1 pending (pending): idle | pending
+  %% pending_t1 = t1 pending (control): idle | pending
   S1: form #gt; p "No charge"
   S2: form #gt; p "Billed monthly"
   [*] --> S1
@@ -3295,43 +3295,43 @@ stateDiagram-v2
 exports[`fixture analysis > PriceTag keeps its TLA+ module 1`] = `
 "---- MODULE PriceTag ----
 \\* price: price (input), 3 values
-\\* test_typeof_price_string: typeof price === "string" (test), 2 values
-\\* test_typeof_price_number: typeof price === "number" (test), 2 values
-VARIABLES price, test_typeof_price_string, test_typeof_price_number
+\\* opaque_typeof_price_string: typeof price === "string" (opaque), 2 values
+\\* opaque_typeof_price_number: typeof price === "number" (opaque), 2 values
+VARIABLES price, opaque_typeof_price_string, opaque_typeof_price_number
 
-vars == <<price, test_typeof_price_string, test_typeof_price_number>>
+vars == <<price, opaque_typeof_price_string, opaque_typeof_price_number>>
 
-view == CASE test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > b > i > s \\"Free\\""
-          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > b > i"
-          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > b > s \\"Free\\""
-          [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p > b"
-          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > i > s \\"Free\\""
-          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > i"
-          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > s \\"Free\\""
-          [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p"
+view == CASE opaque_typeof_price_string = "true" /\\ opaque_typeof_price_number = "true" /\\ price = "null" -> "p > b > i > s \\"Free\\""
+          [] opaque_typeof_price_string = "true" /\\ opaque_typeof_price_number = "true" /\\ price /= "null" -> "p > b > i"
+          [] opaque_typeof_price_string = "true" /\\ opaque_typeof_price_number = "false" /\\ price = "null" -> "p > b > s \\"Free\\""
+          [] opaque_typeof_price_string = "true" /\\ opaque_typeof_price_number = "false" /\\ price /= "null" -> "p > b"
+          [] opaque_typeof_price_string = "false" /\\ opaque_typeof_price_number = "true" /\\ price = "null" -> "p > i > s \\"Free\\""
+          [] opaque_typeof_price_string = "false" /\\ opaque_typeof_price_number = "true" /\\ price /= "null" -> "p > i"
+          [] opaque_typeof_price_string = "false" /\\ opaque_typeof_price_number = "false" /\\ price = "null" -> "p > s \\"Free\\""
+          [] opaque_typeof_price_string = "false" /\\ opaque_typeof_price_number = "false" /\\ price /= "null" -> "p"
           [] OTHER -> "nothing"
 
 Init ==
   /\\ price \\in {"null", "other string", "any number"}
-  /\\ test_typeof_price_string \\in {"false", "true"}
-  /\\ test_typeof_price_number \\in {"false", "true"}
+  /\\ opaque_typeof_price_string \\in {"false", "true"}
+  /\\ opaque_typeof_price_number \\in {"false", "true"}
 
 \\* parent changes price
 change_price ==
   /\\ price' \\in {"null", "other string", "any number"}
-  /\\ UNCHANGED <<test_typeof_price_string, test_typeof_price_number>>
+  /\\ UNCHANGED <<opaque_typeof_price_string, opaque_typeof_price_number>>
 
 \\* typeof price === "string" changes
-change_test_typeof_price_string ==
-  /\\ test_typeof_price_string' \\in {"false", "true"}
-  /\\ UNCHANGED <<price, test_typeof_price_number>>
+change_opaque_typeof_price_string ==
+  /\\ opaque_typeof_price_string' \\in {"false", "true"}
+  /\\ UNCHANGED <<price, opaque_typeof_price_number>>
 
 \\* typeof price === "number" changes
-change_test_typeof_price_number ==
-  /\\ test_typeof_price_number' \\in {"false", "true"}
-  /\\ UNCHANGED <<price, test_typeof_price_string>>
+change_opaque_typeof_price_number ==
+  /\\ opaque_typeof_price_number' \\in {"false", "true"}
+  /\\ UNCHANGED <<price, opaque_typeof_price_string>>
 
-Next == change_price \\/ change_test_typeof_price_string \\/ change_test_typeof_price_number
+Next == change_price \\/ change_opaque_typeof_price_string \\/ change_opaque_typeof_price_number
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -3368,8 +3368,8 @@ stateDiagram-v2
   direction LR
   %% 12 states
   %% price = price (input): null | other string | any number
-  %% test_typeof_price_string = typeof price === "string" (test): false | true
-  %% test_typeof_price_number = typeof price === "number" (test): false | true
+  %% opaque_typeof_price_string = typeof price === "string" (opaque): false | true
+  %% opaque_typeof_price_number = typeof price === "number" (opaque): false | true
   S1: p #gt; s "Free"
   S2: p #gt; i #gt; s "Free"
   S3: p #gt; b #gt; s "Free"
@@ -3901,11 +3901,11 @@ stateDiagram-v2
 exports[`fixture analysis > RetryForm keeps its TLA+ module 1`] = `
 "---- MODULE RetryForm ----
 \\* error: error (state), 3 values
-\\* pending_t1: t1 pending (pending), 2 values
-\\* test_Unknown_throws: Unknown(throws) (test), 2 values
-VARIABLES error, pending_t1, test_Unknown_throws
+\\* pending_t1: t1 pending (control), 2 values
+\\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
+VARIABLES error, pending_t1, opaque_Unknown_throws
 
-vars == <<error, pending_t1, test_Unknown_throws>>
+vars == <<error, pending_t1, opaque_Unknown_throws>>
 
 view == CASE error = "other string" -> "form > p"
           [] error /= "other string" -> "form"
@@ -3914,34 +3914,34 @@ view == CASE error = "other string" -> "form > p"
 Init ==
   /\\ error = "null"
   /\\ pending_t1 = "idle"
-  /\\ test_Unknown_throws \\in {"false", "true"}
+  /\\ opaque_Unknown_throws \\in {"false", "true"}
 
 \\* "Save"
 t1 ==
   /\\ pending_t1 = "idle"
   /\\ error' = "null"
   /\\ pending_t1' = "pending"
-  /\\ UNCHANGED <<test_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* "Save" resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error})
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<test_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* "Save" rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<error, test_Unknown_throws>>
+  /\\ UNCHANGED <<error, opaque_Unknown_throws>>
 
 \\* Unknown(throws) changes
-change_test_Unknown_throws ==
-  /\\ test_Unknown_throws' \\in {"false", "true"}
+change_opaque_Unknown_throws ==
+  /\\ opaque_Unknown_throws' \\in {"false", "true"}
   /\\ UNCHANGED <<error, pending_t1>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ change_opaque_Unknown_throws
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -3974,8 +3974,8 @@ stateDiagram-v2
   direction LR
   %% 6 states
   %% error = error (state): null | empty | other string
-  %% pending_t1 = t1 pending (pending): idle | pending
-  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  %% pending_t1 = t1 pending (control): idle | pending
+  %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
   S1: form
   S2: form #gt; p
   [*] --> S1
@@ -4043,11 +4043,11 @@ stateDiagram-v2
 exports[`fixture analysis > SaveForm keeps its TLA+ module 1`] = `
 "---- MODULE SaveForm ----
 \\* loading: loading (state), 2 values
-\\* pending_t1: t1 pending (pending), 2 values
-\\* test_Unknown_throws: Unknown(throws) (test), 2 values
-VARIABLES loading, pending_t1, test_Unknown_throws
+\\* pending_t1: t1 pending (control), 2 values
+\\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
+VARIABLES loading, pending_t1, opaque_Unknown_throws
 
-vars == <<loading, pending_t1, test_Unknown_throws>>
+vars == <<loading, pending_t1, opaque_Unknown_throws>>
 
 view == CASE loading = "true" -> "form > p \\"Saving…\\""
           [] loading = "false" -> "form > button \\"Save\\""
@@ -4056,34 +4056,34 @@ view == CASE loading = "true" -> "form > p \\"Saving…\\""
 Init ==
   /\\ loading = "false"
   /\\ pending_t1 = "idle"
-  /\\ test_Unknown_throws \\in {"false", "true"}
+  /\\ opaque_Unknown_throws \\in {"false", "true"}
 
 \\* submit, "Save"
 t1 ==
   /\\ pending_t1 = "idle"
   /\\ loading' = "true"
   /\\ pending_t1' = "pending"
-  /\\ UNCHANGED <<test_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* submit, "Save" resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ loading' \\in (IF test_Unknown_throws = "false" THEN {"false"} ELSE (IF test_Unknown_throws = "true" THEN {"false"} ELSE {loading}))
+  /\\ loading' \\in (IF opaque_Unknown_throws = "false" THEN {"false"} ELSE (IF opaque_Unknown_throws = "true" THEN {"false"} ELSE {loading}))
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<test_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* submit, "Save" rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<loading, test_Unknown_throws>>
+  /\\ UNCHANGED <<loading, opaque_Unknown_throws>>
 
 \\* Unknown(throws) changes
-change_test_Unknown_throws ==
-  /\\ test_Unknown_throws' \\in {"false", "true"}
+change_opaque_Unknown_throws ==
+  /\\ opaque_Unknown_throws' \\in {"false", "true"}
   /\\ UNCHANGED <<loading, pending_t1>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ change_opaque_Unknown_throws
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4118,8 +4118,8 @@ stateDiagram-v2
   direction LR
   %% 6 states
   %% loading = loading (state): false | true
-  %% pending_t1 = t1 pending (pending): idle | pending
-  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  %% pending_t1 = t1 pending (control): idle | pending
+  %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
   S1: form #gt; button "Save"
   S2: form #gt; p "Saving…"
   [*] --> S1
@@ -4228,34 +4228,34 @@ stateDiagram-v2
 exports[`fixture analysis > SearchPanel keeps its TLA+ module 1`] = `
 "---- MODULE SearchPanel ----
 \\* isFocused: isFocused (state), 2 values
-\\* test_Unknown_call_enoughChars: Unknown(call).enoughChars (test), 2 values
-VARIABLES isFocused, test_Unknown_call_enoughChars
+\\* opaque_Unknown_call_enoughChars: Unknown(call).enoughChars (opaque), 2 values
+VARIABLES isFocused, opaque_Unknown_call_enoughChars
 
-vars == <<isFocused, test_Unknown_call_enoughChars>>
+vars == <<isFocused, opaque_Unknown_call_enoughChars>>
 
-view == CASE isFocused = "true" /\\ test_Unknown_call_enoughChars = "true" -> "div > ul"
-          [] ~(isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") -> "div"
+view == CASE isFocused = "true" /\\ opaque_Unknown_call_enoughChars = "true" -> "div > ul"
+          [] ~(isFocused = "true" /\\ opaque_Unknown_call_enoughChars = "true") -> "div"
           [] OTHER -> "nothing"
 
 Init ==
   /\\ isFocused = "false"
-  /\\ test_Unknown_call_enoughChars \\in {"false", "true"}
+  /\\ opaque_Unknown_call_enoughChars \\in {"false", "true"}
 
 \\* setIsFocused(true)
 t1 ==
   /\\ isFocused' = "true"
-  /\\ UNCHANGED <<test_Unknown_call_enoughChars>>
+  /\\ UNCHANGED <<opaque_Unknown_call_enoughChars>>
 
 \\* setCount(count + 1)
 t2 ==
-  /\\ UNCHANGED <<isFocused, test_Unknown_call_enoughChars>>
+  /\\ UNCHANGED <<isFocused, opaque_Unknown_call_enoughChars>>
 
 \\* Unknown(call).enoughChars changes
-change_test_Unknown_call_enoughChars ==
-  /\\ test_Unknown_call_enoughChars' \\in {"false", "true"}
+change_opaque_Unknown_call_enoughChars ==
+  /\\ opaque_Unknown_call_enoughChars' \\in {"false", "true"}
   /\\ UNCHANGED <<isFocused>>
 
-Next == t1 \\/ t2 \\/ change_test_Unknown_call_enoughChars
+Next == t1 \\/ t2 \\/ change_opaque_Unknown_call_enoughChars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4292,7 +4292,7 @@ stateDiagram-v2
   direction LR
   %% 4 states
   %% isFocused = isFocused (state): false | true
-  %% test_Unknown_call_enoughChars = Unknown(call).enoughChars (test): false | true
+  %% opaque_Unknown_call_enoughChars = Unknown(call).enoughChars (opaque): false | true
   S1: div
   S2: div #gt; ul
   [*] --> S1
@@ -4436,13 +4436,13 @@ Spec == Init /\\ [][Next]_vars
 exports[`fixture analysis > SignIn keeps its TLA+ module 2`] = `
 "---- MODULE SignIn ----
 \\* status: status (state), 2 values
-\\* pending_t1: t1 pending (pending), 2 values
-\\* test_Unknown_wrapped_call: Unknown(wrapped-call) (test), 2 values
-\\* test_values_email: values.email (test), 2 values
-\\* pending_t2: t2 pending (pending), 2 values
-VARIABLES status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2
+\\* pending_t1: t1 pending (control), 2 values
+\\* opaque_Unknown_wrapped_call: Unknown(wrapped-call) (opaque), 2 values
+\\* opaque_values_email: values.email (opaque), 2 values
+\\* pending_t2: t2 pending (control), 2 values
+VARIABLES status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email, pending_t2
 
-vars == <<status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+vars == <<status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
 view == CASE status = "sent" -> "p \\"Check your inbox\\""
           [] status = "editing" -> "form"
@@ -4451,58 +4451,58 @@ view == CASE status = "sent" -> "p \\"Check your inbox\\""
 Init ==
   /\\ status = "editing"
   /\\ pending_t1 = "idle"
-  /\\ test_Unknown_wrapped_call \\in {"false", "true"}
-  /\\ test_values_email \\in {"false", "true"}
+  /\\ opaque_Unknown_wrapped_call \\in {"false", "true"}
+  /\\ opaque_values_email \\in {"false", "true"}
   /\\ pending_t2 = "idle"
 
 \\* "Send"
 t1 ==
   /\\ status = "editing" /\\ pending_t1 = "idle"
-  /\\ status' \\in (IF test_Unknown_wrapped_call = "true" /\\ test_values_email = "true" THEN {"sent"} ELSE {status})
+  /\\ status' \\in (IF opaque_Unknown_wrapped_call = "true" /\\ opaque_values_email = "true" THEN {"sent"} ELSE {status})
   /\\ pending_t1' = "pending"
-  /\\ UNCHANGED <<test_Unknown_wrapped_call, test_values_email, pending_t2>>
+  /\\ UNCHANGED <<opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
 \\* "Send" resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<status, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+  /\\ UNCHANGED <<status, opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
 \\* "Send" rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<status, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+  /\\ UNCHANGED <<status, opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
 \\* <input> {...}
 t2 ==
   /\\ status = "editing" /\\ pending_t2 = "idle"
   /\\ pending_t2' = "pending"
-  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+  /\\ UNCHANGED <<status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email>>
 
 \\* <input> {...} resolves
-t2_resolves ==
+t2_fulfilled ==
   /\\ pending_t2 = "pending"
   /\\ pending_t2' = "idle"
-  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+  /\\ UNCHANGED <<status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email>>
 
 \\* <input> {...} rejects
-t2_rejects ==
+t2_rejected ==
   /\\ pending_t2 = "pending"
   /\\ pending_t2' = "idle"
-  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+  /\\ UNCHANGED <<status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email>>
 
 \\* Unknown(wrapped-call) changes
-change_test_Unknown_wrapped_call ==
-  /\\ test_Unknown_wrapped_call' \\in {"false", "true"}
-  /\\ UNCHANGED <<status, pending_t1, test_values_email, pending_t2>>
+change_opaque_Unknown_wrapped_call ==
+  /\\ opaque_Unknown_wrapped_call' \\in {"false", "true"}
+  /\\ UNCHANGED <<status, pending_t1, opaque_values_email, pending_t2>>
 
 \\* values.email changes
-change_test_values_email ==
-  /\\ test_values_email' \\in {"false", "true"}
-  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, pending_t2>>
+change_opaque_values_email ==
+  /\\ opaque_values_email' \\in {"false", "true"}
+  /\\ UNCHANGED <<status, pending_t1, opaque_Unknown_wrapped_call, pending_t2>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ t2_resolves \\/ t2_rejects \\/ change_test_Unknown_wrapped_call \\/ change_test_values_email
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ t2 \\/ t2_fulfilled \\/ t2_rejected \\/ change_opaque_Unknown_wrapped_call \\/ change_opaque_values_email
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4561,10 +4561,10 @@ stateDiagram-v2
   direction LR
   %% 32 states
   %% status = status (state): editing | sent
-  %% pending_t1 = t1 pending (pending): idle | pending
-  %% test_Unknown_wrapped_call = Unknown(wrapped-call) (test): false | true
-  %% test_values_email = values.email (test): false | true
-  %% pending_t2 = t2 pending (pending): idle | pending
+  %% pending_t1 = t1 pending (control): idle | pending
+  %% opaque_Unknown_wrapped_call = Unknown(wrapped-call) (opaque): false | true
+  %% opaque_values_email = values.email (opaque): false | true
+  %% pending_t2 = t2 pending (control): idle | pending
   S1: form
   S2: p "Check your inbox"
   [*] --> S1
@@ -4579,32 +4579,32 @@ stateDiagram-v2
 
 exports[`fixture analysis > SizeLabel keeps its TLA+ module 1`] = `
 "---- MODULE SizeLabel ----
-\\* test_size_sizes_small: size === sizes.small (test), 2 values
-\\* test_size_sizes_large: size === sizes.large (test), 2 values
-VARIABLES test_size_sizes_small, test_size_sizes_large
+\\* opaque_size_sizes_small: size === sizes.small (opaque), 2 values
+\\* opaque_size_sizes_large: size === sizes.large (opaque), 2 values
+VARIABLES opaque_size_sizes_small, opaque_size_sizes_large
 
-vars == <<test_size_sizes_small, test_size_sizes_large>>
+vars == <<opaque_size_sizes_small, opaque_size_sizes_large>>
 
-view == CASE test_size_sizes_small = "true" -> "p \\"Small\\""
-          [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "true" -> "p \\"Large\\""
-          [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "false" -> "nothing"
+view == CASE opaque_size_sizes_small = "true" -> "p \\"Small\\""
+          [] opaque_size_sizes_small = "false" /\\ opaque_size_sizes_large = "true" -> "p \\"Large\\""
+          [] opaque_size_sizes_small = "false" /\\ opaque_size_sizes_large = "false" -> "nothing"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ test_size_sizes_small \\in {"false", "true"}
-  /\\ test_size_sizes_large \\in {"false", "true"}
+  /\\ opaque_size_sizes_small \\in {"false", "true"}
+  /\\ opaque_size_sizes_large \\in {"false", "true"}
 
 \\* size === sizes.small changes
-change_test_size_sizes_small ==
-  /\\ test_size_sizes_small' \\in {"false", "true"}
-  /\\ UNCHANGED <<test_size_sizes_large>>
+change_opaque_size_sizes_small ==
+  /\\ opaque_size_sizes_small' \\in {"false", "true"}
+  /\\ UNCHANGED <<opaque_size_sizes_large>>
 
 \\* size === sizes.large changes
-change_test_size_sizes_large ==
-  /\\ test_size_sizes_large' \\in {"false", "true"}
-  /\\ UNCHANGED <<test_size_sizes_small>>
+change_opaque_size_sizes_large ==
+  /\\ opaque_size_sizes_large' \\in {"false", "true"}
+  /\\ UNCHANGED <<opaque_size_sizes_small>>
 
-Next == change_test_size_sizes_small \\/ change_test_size_sizes_large
+Next == change_opaque_size_sizes_small \\/ change_opaque_size_sizes_large
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4675,8 +4675,8 @@ title: SizeLabel src/expression-defaults.tsx:29
 stateDiagram-v2
   direction LR
   %% 4 states
-  %% test_size_sizes_small = size === sizes.small (test): false | true
-  %% test_size_sizes_large = size === sizes.large (test): false | true
+  %% opaque_size_sizes_small = size === sizes.small (opaque): false | true
+  %% opaque_size_sizes_large = size === sizes.large (opaque): false | true
   S1: nothing
   S2: p "Large"
   S3: p "Small"
@@ -4774,23 +4774,23 @@ stateDiagram-v2
 
 exports[`fixture analysis > Slot keeps its TLA+ module 1`] = `
 "---- MODULE Slot ----
-\\* test_typeof_render_function: typeof render === "function" (test), 2 values
-VARIABLES test_typeof_render_function
+\\* opaque_typeof_render_function: typeof render === "function" (opaque), 2 values
+VARIABLES opaque_typeof_render_function
 
-vars == <<test_typeof_render_function>>
+vars == <<opaque_typeof_render_function>>
 
-view == CASE test_typeof_render_function = "true" -> "div"
-          [] test_typeof_render_function = "false" -> "div (2)"
+view == CASE opaque_typeof_render_function = "true" -> "div"
+          [] opaque_typeof_render_function = "false" -> "div (2)"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ test_typeof_render_function \\in {"false", "true"}
+  /\\ opaque_typeof_render_function \\in {"false", "true"}
 
 \\* typeof render === "function" changes
-change_test_typeof_render_function ==
-  /\\ test_typeof_render_function' \\in {"false", "true"}
+change_opaque_typeof_render_function ==
+  /\\ opaque_typeof_render_function' \\in {"false", "true"}
 
-Next == change_test_typeof_render_function
+Next == change_opaque_typeof_render_function
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4820,7 +4820,7 @@ title: Slot src/typeof-checks.tsx:11
 stateDiagram-v2
   direction LR
   %% 2 states
-  %% test_typeof_render_function = typeof render === "function" (test): false | true
+  %% opaque_typeof_render_function = typeof render === "function" (opaque): false | true
   S1: div (2)
   S2: div
   [*] --> S1
@@ -5246,8 +5246,8 @@ stateDiagram-v2
 exports[`fixture analysis > Subscribe keeps its TLA+ module 1`] = `
 "---- MODULE Subscribe ----
 \\* useForm_formState_errors_email: useForm().formState.errors.email (input), 2 values
-\\* pending_t1: t1 pending (pending), 2 values
-\\* pending_t2: t2 pending (pending), 2 values
+\\* pending_t1: t1 pending (control), 2 values
+\\* pending_t2: t2 pending (control), 2 values
 VARIABLES useForm_formState_errors_email, pending_t1, pending_t2
 
 vars == <<useForm_formState_errors_email, pending_t1, pending_t2>>
@@ -5268,13 +5268,13 @@ t1 ==
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
 
 \\* "Subscribe" resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
 
 \\* "Subscribe" rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
@@ -5286,13 +5286,13 @@ t2 ==
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
 
 \\* <input> {...} resolves
-t2_resolves ==
+t2_fulfilled ==
   /\\ pending_t2 = "pending"
   /\\ pending_t2' = "idle"
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
 
 \\* <input> {...} rejects
-t2_rejects ==
+t2_rejected ==
   /\\ pending_t2 = "pending"
   /\\ pending_t2' = "idle"
   /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
@@ -5302,7 +5302,7 @@ change_useForm_formState_errors_email ==
   /\\ useForm_formState_errors_email' \\in {"undefined", "{ message?: string | undefined; }"}
   /\\ UNCHANGED <<pending_t1, pending_t2>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ t2_resolves \\/ t2_rejects \\/ change_useForm_formState_errors_email
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ t2 \\/ t2_fulfilled \\/ t2_rejected \\/ change_useForm_formState_errors_email
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -5339,8 +5339,8 @@ stateDiagram-v2
   direction LR
   %% 8 states
   %% useForm_formState_errors_email = useForm().formState.errors.email (input): undefined | { message?: string | undefined; }
-  %% pending_t1 = t1 pending (pending): idle | pending
-  %% pending_t2 = t2 pending (pending): idle | pending
+  %% pending_t1 = t1 pending (control): idle | pending
+  %% pending_t2 = t2 pending (control): idle | pending
   S1: form
   S2: form #gt; p
   [*] --> S1
@@ -5874,10 +5874,10 @@ exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
 "---- MODULE ToneCounter ----
 \\* tone: tone (input), 3 values
 \\* count: count (state), 3 values
-\\* test_count_1: count + 1 (test), 2 values
-VARIABLES tone, count, test_count_1
+\\* opaque_count_1: count + 1 (opaque), 2 values
+VARIABLES tone, count, opaque_count_1
 
-vars == <<tone, count, test_count_1>>
+vars == <<tone, count, opaque_count_1>>
 
 view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
           [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
@@ -5888,24 +5888,24 @@ view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
 Init ==
   /\\ tone \\in {"undefined", "info", "other string"}
   /\\ count = "0"
-  /\\ test_count_1 \\in {"false", "true"}
+  /\\ opaque_count_1 \\in {"false", "true"}
 
 \\* setCount(count + 1)
 t1 ==
   /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
-  /\\ UNCHANGED <<tone, test_count_1>>
+  /\\ UNCHANGED <<tone, opaque_count_1>>
 
 \\* parent changes tone
 change_tone ==
   /\\ tone' \\in {"undefined", "info", "other string"}
-  /\\ UNCHANGED <<count, test_count_1>>
+  /\\ UNCHANGED <<count, opaque_count_1>>
 
 \\* count + 1 changes
-change_test_count_1 ==
-  /\\ test_count_1' \\in {"false", "true"}
+change_opaque_count_1 ==
+  /\\ opaque_count_1' \\in {"false", "true"}
   /\\ UNCHANGED <<tone, count>>
 
-Next == t1 \\/ change_tone \\/ change_test_count_1
+Next == t1 \\/ change_tone \\/ change_opaque_count_1
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -5953,7 +5953,7 @@ stateDiagram-v2
   %% 12 states
   %% tone = tone (input): undefined | info | other string
   %% count = count (state): <0 | 0 | >0
-  %% test_count_1 = count + 1 (test): false | true
+  %% opaque_count_1 = count + 1 (opaque): false | true
   S1: div #gt; i #gt; "Other"
   S2: div #gt; b #gt; "Info"
   S3: div #gt; i #gt; "Other again"
@@ -5972,23 +5972,23 @@ stateDiagram-v2
 
 exports[`fixture analysis > ToneLabel keeps its TLA+ module 1`] = `
 "---- MODULE ToneLabel ----
-\\* test__tone_undefined_calm_tone_loud: (tone === undefined ? "calm" : tone) === "loud" (test), 2 values
-VARIABLES test__tone_undefined_calm_tone_loud
+\\* opaque__tone_undefined_calm_tone_loud: (tone === undefined ? "calm" : tone) === "loud" (opaque), 2 values
+VARIABLES opaque__tone_undefined_calm_tone_loud
 
-vars == <<test__tone_undefined_calm_tone_loud>>
+vars == <<opaque__tone_undefined_calm_tone_loud>>
 
-view == CASE test__tone_undefined_calm_tone_loud = "true" -> "strong \\"Loud\\""
-          [] test__tone_undefined_calm_tone_loud = "false" -> "span \\"Calm\\""
+view == CASE opaque__tone_undefined_calm_tone_loud = "true" -> "strong \\"Loud\\""
+          [] opaque__tone_undefined_calm_tone_loud = "false" -> "span \\"Calm\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ test__tone_undefined_calm_tone_loud \\in {"false", "true"}
+  /\\ opaque__tone_undefined_calm_tone_loud \\in {"false", "true"}
 
 \\* (tone === undefined ? "calm" : tone) === "loud" changes
-change_test__tone_undefined_calm_tone_loud ==
-  /\\ test__tone_undefined_calm_tone_loud' \\in {"false", "true"}
+change_opaque__tone_undefined_calm_tone_loud ==
+  /\\ opaque__tone_undefined_calm_tone_loud' \\in {"false", "true"}
 
-Next == change_test__tone_undefined_calm_tone_loud
+Next == change_opaque__tone_undefined_calm_tone_loud
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -6016,7 +6016,7 @@ title: ToneLabel src/literal-constants.tsx:21
 stateDiagram-v2
   direction LR
   %% 2 states
-  %% test__tone_undefined_calm_tone_loud = (tone === undefined ? "calm" : tone) === "loud" (test): false | true
+  %% opaque__tone_undefined_calm_tone_loud = (tone === undefined ? "calm" : tone) === "loud" (opaque): false | true
   S1: span "Calm"
   S2: strong "Loud"
   [*] --> S1
@@ -6226,11 +6226,11 @@ stateDiagram-v2
 exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
 "---- MODULE UploadForm ----
 \\* error: error (state), 3 values
-\\* pending_t1: t1 pending (pending), 2 values
-\\* test_Unknown_throws: Unknown(throws) (test), 2 values
-VARIABLES error, pending_t1, test_Unknown_throws
+\\* pending_t1: t1 pending (control), 2 values
+\\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
+VARIABLES error, pending_t1, opaque_Unknown_throws
 
-vars == <<error, pending_t1, test_Unknown_throws>>
+vars == <<error, pending_t1, opaque_Unknown_throws>>
 
 view == CASE error = "other string" -> "div > p"
           [] error /= "other string" -> "div"
@@ -6239,33 +6239,33 @@ view == CASE error = "other string" -> "div > p"
 Init ==
   /\\ error = "null"
   /\\ pending_t1 = "idle"
-  /\\ test_Unknown_throws \\in {"false", "true"}
+  /\\ opaque_Unknown_throws \\in {"false", "true"}
 
 \\* "Upload"
 t1 ==
   /\\ pending_t1 = "idle"
   /\\ pending_t1' = "pending"
-  /\\ UNCHANGED <<error, test_Unknown_throws>>
+  /\\ UNCHANGED <<error, opaque_Unknown_throws>>
 
 \\* "Upload" resolves
-t1_resolves ==
+t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error})
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<test_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* "Upload" rejects
-t1_rejects ==
+t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<error, test_Unknown_throws>>
+  /\\ UNCHANGED <<error, opaque_Unknown_throws>>
 
 \\* Unknown(throws) changes
-change_test_Unknown_throws ==
-  /\\ test_Unknown_throws' \\in {"false", "true"}
+change_opaque_Unknown_throws ==
+  /\\ opaque_Unknown_throws' \\in {"false", "true"}
   /\\ UNCHANGED <<error, pending_t1>>
 
-Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ change_opaque_Unknown_throws
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -6300,8 +6300,8 @@ stateDiagram-v2
   direction LR
   %% 8 states
   %% error = error (state): null | empty | other string
-  %% pending_t1 = t1 pending (pending): idle | pending
-  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  %% pending_t1 = t1 pending (control): idle | pending
+  %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
   S1: div
   S2: div #gt; p
   [*] --> S1

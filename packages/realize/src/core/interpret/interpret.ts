@@ -2513,7 +2513,7 @@ export class Interpreter {
         return createUnknown("async", value.loc, {
           kind: "Settled",
           promise: this.read(value.value),
-          outcome: "resolved",
+          outcome: "fulfilled",
         });
       case "NewExpression": {
         const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));

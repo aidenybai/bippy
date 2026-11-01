@@ -209,7 +209,7 @@ const formatOrigin = (origin: UnknownOrigin): string => {
     case "Call":
       return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatSymbolicValue).join(", ")})`;
     case "Settled":
-      return origin.outcome === "resolved"
+      return origin.outcome === "fulfilled"
         ? `await ${formatWithPrecedence(origin.promise, ATOMIC_PRECEDENCE)}`
         : `${formatSymbolicValue(origin.promise)} rejects`;
     case "Value":

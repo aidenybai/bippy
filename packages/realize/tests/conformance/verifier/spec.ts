@@ -58,7 +58,7 @@ interface FixtureContext {
 }
 
 const getBranchLabel = (view: View): string =>
-  view.path.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
+  view.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
 
 const isLabelled = (view: View, label: string): boolean =>
   view.label === label || getBranchLabel(view) === label;

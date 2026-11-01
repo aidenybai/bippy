@@ -337,7 +337,7 @@ export const reportProject = (
     model: tracer.span(
       "model",
       analysis.name,
-      () => buildComponentModel(analysis, collectTriggerLabels({ analysis }, sourceReader)),
+      () => buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
       { file: analysis.file },
     ),
   }));
