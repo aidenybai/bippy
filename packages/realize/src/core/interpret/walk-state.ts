@@ -9,7 +9,7 @@ export interface WalkState {
 
 export const ROOT_WALK_STATE: WalkState = { guards: [], renderGuards: [], isAsync: false };
 
-export const getClaimGuards = (walkState: WalkState): SymbolicValue[] => [
+export const getAssertionGuards = (walkState: WalkState): SymbolicValue[] => [
   ...walkState.renderGuards,
   ...walkState.guards,
 ];

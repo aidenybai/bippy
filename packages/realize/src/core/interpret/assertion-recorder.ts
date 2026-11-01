@@ -2,15 +2,15 @@ import { describeCases, withNullishCases } from "../type-checker/domains";
 import { formatSymbolicValue } from "../values/format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, foldBinary, hasUnknownPart } from "../values/symbolic-values";
-import type { Claim, Domain, SourceLocation, SymbolicValue } from "../types";
+import type { Assertion, Domain, SourceLocation, SymbolicValue } from "../types";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
 import { isNullishCase } from "../interpret/is-nullish-case";
-import { getClaimGuards, type WalkState } from "./walk-state";
+import { getAssertionGuards, type WalkState } from "./walk-state";
 
-const CLAIM_FUNCTIONS = new Set(["invariant", "assert", "console.assert"]);
+const ASSERTION_FUNCTIONS = new Set(["invariant", "assert", "console.assert"]);
 
 const describeCondition = (value: SymbolicValue): string => {
   if (value.kind !== "Conditional") return formatSymbolicValue(value);
@@ -36,11 +36,11 @@ const describeDomain = (domain: Domain): string | null => {
 const createNotNullishTest = (subject: SymbolicValue): SymbolicValue =>
   foldBinary("!=", subject, { kind: "Primitive", value: null });
 
-const createNonNullClaim = (
+const createNonNullAssertion = (
   subject: SymbolicValue,
   loc: SourceLocation,
   guards: SymbolicValue[],
-): Claim => ({
+): Assertion => ({
   kind: "non-null",
   subject,
   check: { kind: "Condition", test: createNotNullishTest(subject) },
@@ -49,19 +49,19 @@ const createNonNullClaim = (
   loc,
 });
 
-const createCastClaim = (
+const createCastAssertion = (
   subject: SymbolicValue,
   source: Domain,
   target: Domain,
   loc: SourceLocation,
   guards: SymbolicValue[],
-): Claim | null => {
+): Assertion | null => {
   const targetText = describeDomain(target);
   if (targetText === null) return null;
   const description = `${formatSymbolicValue(subject)} as ${targetText}`;
   if (target.kind === "Cases" && target.cases.every((value) => value.kind === "Literal"))
     return {
-      kind: "cast",
+      kind: "type",
       subject,
       check: { kind: "Membership", cases: target.cases },
       guards,
@@ -70,7 +70,7 @@ const createCastClaim = (
     };
   if (hasNullishCase(source) && !hasNullishCase(target))
     return {
-      kind: "cast",
+      kind: "type",
       subject,
       check: { kind: "Condition", test: createNotNullishTest(subject) },
       guards,
@@ -80,16 +80,16 @@ const createCastClaim = (
   return null;
 };
 
-export class ClaimRecorder {
+export class AssertionRecorder {
   readonly #interpreter: Interpreter;
-  readonly #claims: Claim[] = [];
+  readonly #assertions: Assertion[] = [];
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
   }
 
-  get claims(): Claim[] {
-    return this.#claims;
+  get assertions(): Assertion[] {
+    return this.#assertions;
   }
 
   evaluateTypeCast(
@@ -102,18 +102,18 @@ export class ClaimRecorder {
     const declaredSourceDomain = resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
       if (hasNullishCase(declaredSourceDomain))
-        this.record(createNonNullClaim(castValue, typeCast.loc, getClaimGuards(walkState)));
+        this.record(createNonNullAssertion(castValue, typeCast.loc, getAssertionGuards(walkState)));
       return castValue;
     }
     const targetDomain = resolver.getDomain(typeCast.loc);
-    const claim = createCastClaim(
+    const assertion = createCastAssertion(
       castValue,
       declaredSourceDomain,
       targetDomain,
       typeCast.loc,
-      getClaimGuards(walkState),
+      getAssertionGuards(walkState),
     );
-    if (claim) this.record(this.#widenForNonStrictNulls(claim));
+    if (assertion) this.record(this.#widenForNonStrictNulls(assertion));
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
     const isNarrowingCast =
       castValue.kind !== "Primitive" &&
@@ -129,31 +129,34 @@ export class ClaimRecorder {
     walkState: WalkState,
   ): void {
     const [test] = argumentValues;
-    if (name === null || !CLAIM_FUNCTIONS.has(name) || test === undefined) return;
+    if (name === null || !ASSERTION_FUNCTIONS.has(name) || test === undefined) return;
     this.record({
-      kind: "invariant",
+      kind: "call",
       subject: test,
       check: { kind: "Condition", test },
-      guards: getClaimGuards(walkState),
+      guards: getAssertionGuards(walkState),
       description: `${name}(${describeCondition(test)})`,
       loc,
     });
   }
 
-  record(claim: Claim): void {
-    if (claim.kind !== "invariant" && !this.#isCheckable(claim.subject)) return;
+  record(assertion: Assertion): void {
+    if (assertion.kind !== "call" && !this.#isCheckable(assertion.subject)) return;
     const handlerEffects = this.#interpreter.handlerEffects;
     if (handlerEffects) {
-      handlerEffects.addClaim(claim);
+      handlerEffects.addAssertion(assertion);
       return;
     }
-    this.#claims.push(claim);
+    this.#assertions.push(assertion);
   }
 
-  #widenForNonStrictNulls(claim: Claim): Claim {
-    if (this.#interpreter.resolver.isStrictNullChecks || claim.check.kind !== "Membership")
-      return claim;
-    return { ...claim, check: { kind: "Membership", cases: withNullishCases(claim.check.cases) } };
+  #widenForNonStrictNulls(assertion: Assertion): Assertion {
+    if (this.#interpreter.resolver.isStrictNullChecks || assertion.check.kind !== "Membership")
+      return assertion;
+    return {
+      ...assertion,
+      check: { kind: "Membership", cases: withNullishCases(assertion.check.cases) },
+    };
   }
 
   #isCheckable(value: SymbolicValue): boolean {

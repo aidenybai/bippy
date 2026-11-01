@@ -1,5 +1,5 @@
 import { check, formatValue, type TraceStep as TlaTraceStep } from "tla-ts";
-import { formatTla, type Invariant } from "./tla";
+import { formatTla, type InvariantDefinition } from "./tla";
 import type { ComponentModel, TraceStep } from "./types";
 
 export type InvariantResult =
@@ -30,7 +30,7 @@ const toTraceStep = (
 export const checkInvariant = async (
   name: string,
   model: ComponentModel,
-  invariant: Invariant,
+  invariant: InvariantDefinition,
   viewOf: (state: Record<string, string>) => string,
 ): Promise<InvariantResult> => {
   const result = await check({

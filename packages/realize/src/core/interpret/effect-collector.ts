@@ -1,6 +1,6 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
-import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "../types";
+import type { Binding, Assertion, StateUpdate, SymbolicValue, WarningKind } from "../types";
 import { isStateBinding } from "../values/is-state-binding";
 import { isWholeBinding } from "../interpret/is-whole-binding";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
@@ -12,7 +12,7 @@ export interface CollectedEffects {
   updates: StateUpdate[];
   delegates: string[];
   pendingMutations: Binding[];
-  claims: Claim[];
+  assertions: Assertion[];
 }
 
 interface UpdateCondition {
@@ -66,7 +66,7 @@ interface WarnCallback {
 export class EffectCollector {
   readonly #updates: StateUpdate[] = [];
   readonly #delegates: string[] = [];
-  readonly #claims: Claim[] = [];
+  readonly #assertions: Assertion[] = [];
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #sameReferenceSets = new Set<number>();
@@ -132,8 +132,8 @@ export class EffectCollector {
     this.#delegates.push(delegateName);
   }
 
-  addClaim(claim: Claim): void {
-    this.#claims.push(claim);
+  addAssertion(assertion: Assertion): void {
+    this.#assertions.push(assertion);
   }
 
   forgetMutatedBindings(value: SymbolicValue): SymbolicValue {
@@ -238,7 +238,7 @@ export class EffectCollector {
       updates: this.#updates,
       delegates: this.#delegates,
       pendingMutations,
-      claims: this.#claims,
+      assertions: this.#assertions,
     };
   }
 

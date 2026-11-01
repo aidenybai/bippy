@@ -248,7 +248,7 @@ export interface Handler {
   trigger: HandlerTrigger;
   updates: StateUpdate[];
   delegates: string[];
-  claims: Claim[];
+  assertions: Assertion[];
   guards: SymbolicValue[];
   loc: SourceLocation;
 }
@@ -310,21 +310,21 @@ export interface ComponentAnalysis {
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];
-  claims: Claim[];
+  assertions: Assertion[];
   bailouts: Bailout[];
   warnings: Warning[];
 }
 
-type ClaimKind = "cast" | "non-null" | "invariant";
+type AssertionKind = "type" | "non-null" | "call";
 
-type ClaimCheck =
+type AssertionCheck =
   | { kind: "Membership"; cases: AbstractValue[] }
   | { kind: "Condition"; test: SymbolicValue };
 
-export interface Claim {
-  kind: ClaimKind;
+export interface Assertion {
+  kind: AssertionKind;
   subject: SymbolicValue;
-  check: ClaimCheck;
+  check: AssertionCheck;
   guards: SymbolicValue[];
   description: string;
   loc: SourceLocation;

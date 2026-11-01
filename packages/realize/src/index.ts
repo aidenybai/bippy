@@ -2,14 +2,14 @@ export { analyzeProject } from "./core/project/analyze-project";
 export { serializeProjectAnalysis } from "./core/project/serialize";
 export { buildComponentModel } from "./core/model/build-model";
 export { formatTla } from "./core/model/tla";
-export { checkInvariant } from "./core/model/check-invariants";
+export { checkInvariant } from "./core/model/check-invariant";
 export { formatSymbolicValue } from "./core/values/format";
 export type {
   AbstractValue,
   AnalyzedComponent,
   Bailout,
   Binding,
-  Claim,
+  Assertion,
   ComponentAnalysis,
   BranchSite,
   Domain,

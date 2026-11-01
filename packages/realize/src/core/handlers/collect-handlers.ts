@@ -302,14 +302,14 @@ const getHandlerContentKey = (handler: Handler): string =>
       getValueKeys(update.guards),
       update.isAsync,
     ]),
-    handler.claims.map((claim) => [
-      claim.kind,
-      getValueKey(claim.subject),
-      claim.check.kind === "Membership" ? claim.check.cases : null,
-      claim.check.kind === "Condition" ? getValueKey(claim.check.test) : null,
-      getValueKeys(claim.guards),
-      claim.description,
-      getLocationKey(claim.loc),
+    handler.assertions.map((assertion) => [
+      assertion.kind,
+      getValueKey(assertion.subject),
+      assertion.check.kind === "Membership" ? assertion.check.cases : null,
+      assertion.check.kind === "Condition" ? getValueKey(assertion.check.test) : null,
+      getValueKeys(assertion.guards),
+      assertion.description,
+      getLocationKey(assertion.loc),
     ]),
   ]);
 
@@ -396,18 +396,18 @@ class HandlerCollector {
 
   addCollectedHandler(
     trigger: HandlerTrigger,
-    { updates, delegates, pendingMutations, claims }: CollectedEffects,
+    { updates, delegates, pendingMutations, assertions }: CollectedEffects,
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
   ): string | null {
     for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
-    if (updates.length === 0 && delegates.length === 0 && claims.length === 0) return null;
+    if (updates.length === 0 && delegates.length === 0 && assertions.length === 0) return null;
     const handler: Handler = {
       id: `t${this.handlers.length + 1}`,
       trigger,
       updates,
       delegates,
-      claims,
+      assertions,
       guards,
       loc,
     };
@@ -1445,14 +1445,14 @@ const collectHandlersOnce = (
   if (suspenseUpdates.length > 0)
     collector.addCollectedHandler(
       { kind: "Effect", hookKind: "Custom", dependencies: null },
-      { updates: suspenseUpdates, delegates: [], pendingMutations: [], claims: [] },
+      { updates: suspenseUpdates, delegates: [], pendingMutations: [], assertions: [] },
       GeneratedSource,
     );
   const commitUpdates = getCommitUpdates(collector.handlers);
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
       { kind: "Effect", hookKind: "useEffect", dependencies: null },
-      { updates: commitUpdates, delegates: [], pendingMutations: [], claims: [] },
+      { updates: commitUpdates, delegates: [], pendingMutations: [], assertions: [] },
       GeneratedSource,
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);

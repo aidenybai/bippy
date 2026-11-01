@@ -12,7 +12,7 @@ import type { ProjectLoaders } from "../interpret/interpret";
 import type {
   Bailout,
   Binding,
-  Claim,
+  Assertion,
   ComponentAnalysis,
   Handler,
   ContextSetterFields,
@@ -89,7 +89,7 @@ export const createEmptyAnalysis = (
   render,
   handlers: [],
   renders: [],
-  claims: [],
+  assertions: [],
   bailouts: [],
   warnings: [],
 });
@@ -119,7 +119,7 @@ const createClassAnalysis = (
 const getReadBindingIds = (
   render: SymbolicValue,
   handlers: Handler[],
-  claims: Claim[],
+  assertions: Assertion[],
   bindings: Binding[],
 ): Set<number> => {
   const readIds = new Set<number>();
@@ -130,8 +130,8 @@ const getReadBindingIds = (
   visit(render);
   for (const handler of handlers)
     for (const update of handler.updates) [update.value, ...update.guards].forEach(visit);
-  for (const claim of [...claims, ...handlers.flatMap((handler) => handler.claims)])
-    [claim.subject, ...claim.guards].forEach(visit);
+  for (const assertion of [...assertions, ...handlers.flatMap((handler) => handler.assertions)])
+    [assertion.subject, ...assertion.guards].forEach(visit);
   for (const binding of bindings)
     for (const place of binding.inputPlaces) readIds.add(place.bindingId);
   return readIds;
@@ -166,7 +166,12 @@ export const analyzeComponent = (
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
   const { bindings, placeDomains } = interpreter.bindingTable;
-  const readIds = getReadBindingIds(render, handlers, interpreter.claimRecorder.claims, bindings);
+  const readIds = getReadBindingIds(
+    render,
+    handlers,
+    interpreter.assertionRecorder.assertions,
+    bindings,
+  );
   return {
     ...identity,
     loc: hir.loc,
@@ -182,7 +187,7 @@ export const analyzeComponent = (
     render,
     handlers,
     renders: [...interpreter.renderedComponents],
-    claims: interpreter.claimRecorder.claims,
+    assertions: interpreter.assertionRecorder.assertions,
     bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings, readIds)],
     warnings: interpreter.diagnostics.warnings,
   };

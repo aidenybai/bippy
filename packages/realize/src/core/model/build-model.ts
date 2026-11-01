@@ -1,4 +1,4 @@
-import type { Claim, ComponentAnalysis, SymbolicValue } from "../types";
+import type { Assertion, ComponentAnalysis, SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
 import { forEachRenderNode } from "../render/for-each-render-node";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
@@ -17,12 +17,12 @@ import type {
   BranchEdge,
   ComponentModel,
   Finding,
-  Property,
+  Invariant,
   Variable,
 } from "./types";
 
-interface ScopedClaim {
-  claim: Claim;
+interface ScopedAssertion {
+  assertion: Assertion;
   guards: SymbolicValue[];
   tests: SymbolicValue[];
 }
@@ -33,16 +33,16 @@ const collectValueTests = (value: SymbolicValue, tests: SymbolicValue[]): void =
     if (node.kind === "BinaryExpression" && COMPARISONS.has(node.operator)) tests.push(node);
   });
 
-const getClaimTests = (claim: Claim): SymbolicValue[] =>
-  claim.check.kind === "Condition"
-    ? [claim.check.test]
-    : claim.check.cases.flatMap((value) =>
+const getAssertionTests = (assertion: Assertion): SymbolicValue[] =>
+  assertion.check.kind === "Condition"
+    ? [assertion.check.test]
+    : assertion.check.cases.flatMap((value) =>
         value.kind === "Literal"
-          ? [foldBinary("===", claim.subject, { kind: "Primitive", value: value.value })]
+          ? [foldBinary("===", assertion.subject, { kind: "Primitive", value: value.value })]
           : [],
       );
 
-const readsOnlyState = ({ guards, tests }: ScopedClaim): boolean => {
+const readsOnlyState = ({ guards, tests }: ScopedAssertion): boolean => {
   let isStateOnly = true;
   for (const value of [...guards, ...tests])
     forEachSymbolicValue(value, (node) => {
@@ -51,23 +51,26 @@ const readsOnlyState = ({ guards, tests }: ScopedClaim): boolean => {
   return isStateOnly;
 };
 
-const collectClaims = (analysis: ComponentAnalysis): ScopedClaim[] =>
+const collectAssertions = (analysis: ComponentAnalysis): ScopedAssertion[] =>
   [
-    ...analysis.claims.map((claim) => ({
-      claim,
-      guards: claim.guards,
-      tests: getClaimTests(claim),
+    ...analysis.assertions.map((assertion) => ({
+      assertion,
+      guards: assertion.guards,
+      tests: getAssertionTests(assertion),
     })),
     ...analysis.handlers.flatMap((handler) =>
-      handler.claims.map((claim) => ({
-        claim,
-        guards: [...handler.guards, ...claim.guards],
-        tests: getClaimTests(claim),
+      handler.assertions.map((assertion) => ({
+        assertion,
+        guards: [...handler.guards, ...assertion.guards],
+        tests: getAssertionTests(assertion),
       })),
     ),
   ].filter(readsOnlyState);
 
-const collectTests = (analysis: ComponentAnalysis, claims: ScopedClaim[]): SymbolicValue[] => {
+const collectTests = (
+  analysis: ComponentAnalysis,
+  assertions: ScopedAssertion[],
+): SymbolicValue[] => {
   const tests: SymbolicValue[] = [];
   forEachRenderNode(analysis.render, (node) => {
     if (node.kind === "Conditional") tests.push(getTestExpression(node));
@@ -79,7 +82,7 @@ const collectTests = (analysis: ComponentAnalysis, claims: ScopedClaim[]): Symbo
       collectValueTests(update.value, tests);
     }
   }
-  for (const claim of claims) tests.push(...claim.guards, ...claim.tests);
+  for (const assertion of assertions) tests.push(...assertion.guards, ...assertion.tests);
   return tests;
 };
 
@@ -128,20 +131,20 @@ const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action
   };
 };
 
-const compileProperty = (
+const compileInvariant = (
   table: VariableTable,
-  { claim, guards, tests }: ScopedClaim,
+  { assertion, guards, tests }: ScopedAssertion,
   index: number,
-): Property => ({
+): Invariant => ({
   name: `Assertion${index + 1}`,
-  label: claim.description,
+  label: assertion.description,
   predicate: or([not(and(guards.map(table.compile))), or(tests.map(table.compile))]),
-  loc: claim.loc,
+  loc: assertion.loc,
 });
 
-const isStateOnly = (property: Property, variables: Variable[]): boolean => {
+const isStateOnly = (invariant: Invariant, variables: Variable[]): boolean => {
   const sources = new Map(variables.map((variable) => [variable.name, variable.source]));
-  return [...collectPredicateVariables(property.predicate, new Set())].every((variable) => {
+  return [...collectPredicateVariables(invariant.predicate, new Set())].every((variable) => {
     const source = sources.get(variable);
     return source === "state" || source === "pending";
   });
@@ -159,7 +162,7 @@ const collectFindings = (
   explored: ExploredModel,
   branches: Branch[],
   handlerActions: Action[],
-  properties: Property[],
+  invariants: Invariant[],
   variables: Variable[],
 ): Finding[] => {
   const isEffective = (action: Action): boolean =>
@@ -190,16 +193,16 @@ const collectFindings = (
         loc: action.loc,
         trace: explored.findTrace(action.guard),
       })),
-    ...properties
-      .filter((property) => isStateOnly(property, variables))
-      .flatMap((property): Finding[] => {
-        const trace = explored.findTrace(not(property.predicate));
+    ...invariants
+      .filter((invariant) => isStateOnly(invariant, variables))
+      .flatMap((invariant): Finding[] => {
+        const trace = explored.findTrace(not(invariant.predicate));
         return trace
           ? [
               {
                 kind: "violated-assertion",
-                message: `${property.label} can fail`,
-                loc: property.loc,
+                message: `${invariant.label} can fail`,
+                loc: invariant.loc,
                 trace,
               },
             ]
@@ -212,10 +215,12 @@ export const buildComponentModel = (
   analysis: ComponentAnalysis,
   triggerLabels: ReadonlyMap<string, string> = new Map(),
 ): ComponentModel => {
-  const claims = collectClaims(analysis);
-  const table = createVariableTable(analysis, collectTests(analysis, claims));
+  const assertions = collectAssertions(analysis);
+  const table = createVariableTable(analysis, collectTests(analysis, assertions));
   const { views, branches } = collectViews(table, analysis.render, analysis.file);
-  const properties = claims.map((claim, index) => compileProperty(table, claim, index));
+  const invariants = assertions.map((assertion, index) =>
+    compileInvariant(table, assertion, index),
+  );
   const displayedBindingIds = collectDisplayedBindingIds(analysis);
   const compiledHandlerActions = analysis.handlers.flatMap((handler) =>
     compileHandlerActions(table, handler, displayedBindingIds, triggerLabels.get(handler.id)),
@@ -242,14 +247,14 @@ export const buildComponentModel = (
     for (const edge of [branch.consequent, branch.alternate])
       edge.isReachable = isComplete ? explored.findTrace(edge.predicate) !== null : null;
   const findings = isComplete
-    ? collectFindings(explored, branches, handlerActions, properties, table.variables)
+    ? collectFindings(explored, branches, handlerActions, invariants, table.variables)
     : [];
   return {
     variables: table.variables,
     actions,
     views,
     branches,
-    properties,
+    invariants,
     stateSpace: explored.stateSpace,
     findings,
   };

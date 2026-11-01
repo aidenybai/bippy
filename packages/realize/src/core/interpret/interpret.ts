@@ -22,7 +22,7 @@ import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
 import { CallbackPasser } from "./callback-passer";
-import { ClaimRecorder } from "./claim-recorder";
+import { AssertionRecorder } from "./assertion-recorder";
 import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MemoStaleness } from "./memo-staleness";
@@ -468,7 +468,7 @@ export class Interpreter {
   readonly walker = new ControlFlowWalker(this);
   readonly mutations = new MutationTracker(this);
   readonly destructurer = new Destructurer(this);
-  readonly claimRecorder = new ClaimRecorder(this);
+  readonly assertionRecorder = new AssertionRecorder(this);
   readonly callbacks = new CallbackPasser(this);
   cells = new Cells();
   readonly memoStaleness = new MemoStaleness(this);
@@ -1283,7 +1283,7 @@ export class Interpreter {
     if (modeled) return modeled;
     this.#recordWholeProps(callSite);
     const target = this.#getCallTarget(callSite);
-    this.claimRecorder.recordInvariant(
+    this.assertionRecorder.recordInvariant(
       getCalleeName(callSite, target),
       callSite.argumentValues,
       callSite.loc,
@@ -2482,7 +2482,7 @@ export class Interpreter {
       case "UnaryExpression":
         return foldUnary(value.operator, this.read(value.value));
       case "TypeCastExpression":
-        return this.claimRecorder.evaluateTypeCast(value, walkState);
+        return this.assertionRecorder.evaluateTypeCast(value, walkState);
       case "ObjectExpression":
         return this.#evaluateObjectLiteral(value);
       case "ArrayExpression":

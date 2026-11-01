@@ -5,10 +5,10 @@ import { analyzeProject } from "../core/project/analyze-project";
 import { ConfigError } from "../core/project/config-error";
 import { serializeProjectAnalysis } from "../core/project/serialize";
 import { createTracer, NO_TRACER } from "../core/project/tracer";
-import { checkInvariant, type InvariantResult } from "../core/model/check-invariants";
+import { checkInvariant, type InvariantResult } from "../core/model/check-invariant";
 import { getViewLabel } from "../core/model/explore";
 import { formatTla } from "../core/model/tla";
-import type { Invariant } from "../core/model/tla";
+import type { InvariantDefinition } from "../core/model/tla";
 import type { TraceStep } from "../core/model/types";
 import { formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
@@ -27,7 +27,7 @@ interface AnalyzeCliOptions {
 
 const INVARIANT_PATTERN = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/s;
 
-const parseInvariant = (text: string): Invariant => {
+const parseInvariant = (text: string): InvariantDefinition => {
   const match = INVARIANT_PATTERN.exec(text);
   if (!match) throw new ConfigError(`Write an invariant as "Name: expression", not ${text}`);
   return { name: match[1], expression: match[2] };
@@ -82,7 +82,7 @@ const formatInvariantResult = (component: AnalyzedComponent, result: InvariantRe
 
 const checkInvariants = async (
   components: AnalyzedComponent[],
-  invariants: Invariant[],
+  invariants: InvariantDefinition[],
 ): Promise<string> => {
   const lines: string[] = [];
   for (const component of components)

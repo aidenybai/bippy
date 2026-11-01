@@ -1,6 +1,6 @@
 import type { Action, NextValue, ComponentModel, Predicate, Variable } from "./types";
 
-export interface Invariant {
+export interface InvariantDefinition {
   name: string;
   expression: string;
 }
@@ -92,7 +92,7 @@ const toModuleName = (name: string): string =>
 export const formatTla = (
   name: string,
   model: ComponentModel,
-  invariants: Invariant[] = [],
+  definitions: InvariantDefinition[] = [],
 ): string => {
   const { variables, actions } = model;
   const names = variables.map((variable) => variable.name);
@@ -117,12 +117,12 @@ export const formatTla = (
     `Next == ${actions.length > 0 ? actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",
-    ...model.properties.flatMap((property) => [
+    ...model.invariants.flatMap((invariant) => [
       "",
-      `\\* ${property.label.replace(/\s+/g, " ")}`,
-      `${property.name} == ${formatPredicate(property.predicate)}`,
+      `\\* ${invariant.label.replace(/\s+/g, " ")}`,
+      `${invariant.name} == ${formatPredicate(invariant.predicate)}`,
     ]),
-    ...invariants.flatMap((invariant) => ["", `${invariant.name} == ${invariant.expression}`]),
+    ...definitions.flatMap((definition) => ["", `${definition.name} == ${definition.expression}`]),
     "====",
   ];
   return lines.join("\n");

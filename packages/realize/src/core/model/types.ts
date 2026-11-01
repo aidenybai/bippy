@@ -105,7 +105,7 @@ export interface StateSpace {
   edges: ViewEdge[];
 }
 
-export interface Property {
+export interface Invariant {
   name: string;
   label: string;
   predicate: Predicate;
@@ -126,7 +126,7 @@ export interface ComponentModel {
   actions: Action[];
   views: View[];
   branches: Branch[];
-  properties: Property[];
+  invariants: Invariant[];
   stateSpace: StateSpace;
   findings: Finding[];
 }
