@@ -7,13 +7,13 @@ import {
   formatSymbolicValue,
 } from "../../src/core/values/format";
 import { getTestExpression } from "../../src/core/values/get-test-expression";
-import { forEachRenderNode } from "../../src/core/states/for-each-render-node";
-import { forEachJsxElement } from "../../src/core/states/for-each-jsx-element";
-import { isRenderingNothing } from "../../src/core/states/is-rendering-nothing";
-import { collectTriggerLabels } from "../../src/cli/trigger-labels";
+import { forEachRenderNode } from "../../src/core/render/for-each-render-node";
+import { forEachJsxElement } from "../../src/core/render/for-each-jsx-element";
+import { isRenderingNothing } from "../../src/core/render/is-rendering-nothing";
+import { collectTriggerLabels } from "../../src/core/labels/trigger-labels";
 import { simplifyConditions } from "../../src/cli/simplify-conditions";
 import { describeState } from "../../src/cli/describe-state";
-import { createSourceReader } from "../../src/cli/source-text";
+import { createSourceReader } from "../../src/core/labels/source-text";
 import type {
   Binding,
   ConditionalValue,

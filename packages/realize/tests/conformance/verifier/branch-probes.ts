@@ -1,6 +1,6 @@
 import type { ComponentAnalysis } from "../../../src/core/types";
 import { appendToGroup } from "../../../src/core/shared/append-to-group";
-import { forEachRenderNode } from "../../../src/core/states/for-each-render-node";
+import { forEachRenderNode } from "../../../src/core/render/for-each-render-node";
 import { getLocationKey } from "../../../src/core/shared/get-location-key";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import { collectHandlerProbes } from "./handler-probes";

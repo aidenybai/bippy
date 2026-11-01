@@ -43,7 +43,6 @@ import type {
   Branch,
   ContextSetterFields,
   DerivedCall,
-  FirstRenderValue,
   DerivedString,
   DispatchValue,
   Domain,
@@ -53,7 +52,6 @@ import type {
   JsxProp,
   JsxSpreadProp,
   LengthLimit,
-  NumberRange,
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
@@ -72,7 +70,6 @@ import { PlaceMap } from "../values/place-map";
 import { ALL_HELD_PROPS } from "./get-prop-holds";
 import type { HeldProps } from "./get-prop-holds";
 import { getBindingPlace } from "../values/get-binding-place";
-import { getClampRange } from "./get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./derived-calls";
 import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
@@ -1289,30 +1286,6 @@ export class Interpreter {
     return hasUnknownPart(returned) ? null : returned;
   }
 
-  #getFirstRenderHelperResult(
-    helper: ProjectHook | null,
-    callSite: CallSite,
-    walkState: WalkState,
-  ): FirstRenderValue | null {
-    if (!helper || this.#handlerEffects) return null;
-    const inputIds: number[] = [];
-    const argumentValues: SymbolicValue[] = [];
-    for (const argument of callSite.argumentValues) {
-      const initial =
-        argument.kind === "Binding" &&
-        argument.path.length === 0 &&
-        isStateBinding(argument.binding)
-          ? argument.binding.initial
-          : null;
-      if (argument.kind !== "Primitive" && initial?.kind !== "Primitive") return null;
-      argumentValues.push(argument.kind === "Primitive" ? argument : (initial ?? argument));
-      if (argument.kind === "Binding") inputIds.push(argument.binding.id);
-    }
-    if (inputIds.length === 0) return null;
-    const value = this.#getPureHelperResult(helper, { ...callSite, argumentValues }, walkState);
-    return value?.kind === "Primitive" ? { value, inputIds } : null;
-  }
-
   #findProjectDeclaration(calleePlace: Place, load: ProjectHookLoader): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
     return declarationKey ? load(declarationKey) : null;
@@ -1513,10 +1486,7 @@ export class Interpreter {
       !addsCallResult(initial, callSite.argumentValues)
     )
       return initial;
-    const result = this.#createCallResult(callSite, {
-      initial,
-      firstRender: this.#getFirstRenderHelperResult(helper, callSite, walkState),
-    });
+    const result = this.#createCallResult(callSite, { initial });
     const callbacks = getPassedCallbacks(argumentValues);
     const isExternalWrapper = callee.kind === "Binding" && isExternalSource(callee.binding);
     const wrapped = isExternalWrapper ? [callee, ...callbacks] : callbacks;
@@ -1844,14 +1814,10 @@ export class Interpreter {
     callSite: CallSite,
     {
       derived = null,
-      range = null,
       initial = null,
-      firstRender = null,
     }: {
       derived?: DerivedString | DerivedCall | null;
-      range?: NumberRange | null;
       initial?: SymbolicValue | null;
-      firstRender?: FirstRenderValue | null;
     } = {},
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
@@ -1872,7 +1838,6 @@ export class Interpreter {
     if (
       !lengthLimit &&
       !derived &&
-      !range &&
       !initial &&
       inputPlaces.size === 0 &&
       !hasFiniteResult
@@ -1887,7 +1852,7 @@ export class Interpreter {
     }
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     if (initial) this.collectInputPlaces(initial, inputPlaces);
-    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !derived && !range)
+    if (initial?.kind === "Primitive" && inputPlaces.size === 0 && !derived)
       return initial;
     const sourceValues = [
       callSite.callee,
@@ -1918,10 +1883,8 @@ export class Interpreter {
           this.#getRepeatableCallKey(callSite) ??
           (isLongName ? this.#getLongCallKey(callSite) : undefined),
         derived,
-        range,
         initial,
         ...(domain && { domain }),
-        ...(firstRender && { firstRender }),
       },
     );
     this.#sourcesByBinding.set(
@@ -2285,13 +2248,10 @@ export class Interpreter {
         : null;
     if (membership) return membership;
     const isMath = receiver.kind === "Global" && receiver.name === "Math";
-    const range = isMath ? getClampRange(methodName, argumentValues) : null;
     const derived = isMath
       ? getMathCall(methodName, argumentValues)
       : getLiteralArrayCall(receiver, methodName, argumentValues);
-    if (range || derived) return this.#createCallResult(callSite, { range, derived });
-    const firstRead = this.#getFirstLiteralRead(receiver, methodName, argumentValues);
-    if (firstRead) return this.#createCallResult(callSite, { firstRender: firstRead });
+    if (derived) return this.#createCallResult(callSite, { derived });
     const getFirstValue = () =>
       this.iteration.getFirstValue(
         methodName,
@@ -2310,19 +2270,6 @@ export class Interpreter {
       this.#evaluateDerivedMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
     );
-  }
-
-  #getFirstLiteralRead(
-    receiver: SymbolicValue,
-    methodName: string,
-    argumentValues: SymbolicValue[],
-  ): FirstRenderValue | null {
-    const [target, ...rest] = argumentValues;
-    const isWholeState =
-      target?.kind === "Binding" && target.path.length === 0 && isStateBinding(target.binding);
-    const initial = isWholeState ? target.binding.initial : null;
-    const value = initial ? getLiteralRead(receiver, methodName, [initial, ...rest]) : null;
-    return value && target?.kind === "Binding" ? { value, inputIds: [target.binding.id] } : null;
   }
 
   #readBindingObject(

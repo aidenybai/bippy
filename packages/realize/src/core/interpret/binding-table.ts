@@ -2,7 +2,6 @@ import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import type {
-  AbstractValue,
   Binding,
   BindingKind,
   BindingValue,
@@ -23,10 +22,8 @@ export interface BindingOptions extends Partial<
     | "inputPlaces"
     | "lengthLimit"
     | "derived"
-    | "range"
     | "domain"
     | "alias"
-    | "firstRender"
   >
 > {
   identityKey?: string;
@@ -38,7 +35,6 @@ export class BindingTable {
   readonly #bindingsByProp = new Map<string, Binding>();
   readonly #resolversByBinding = new Map<number, SourceFileResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
-  readonly unionMemberValues = new PlaceMap<AbstractValue[][]>();
 
   get bindings(): Binding[] {
     return [...this.#bindingsByKey.values()];
@@ -74,9 +70,7 @@ export class BindingTable {
       inputPlaces: options.inputPlaces ?? [],
       lengthLimit: options.lengthLimit ?? null,
       derived: options.derived ?? null,
-      range: options.range ?? null,
       alias: options.alias ?? null,
-      ...(options.firstRender && { firstRender: options.firstRender }),
     };
     this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);
@@ -133,7 +127,6 @@ export class BindingTable {
       this.placeDomains.set(place, readDomain);
       return;
     }
-    this.unionMemberValues.set(place, unionMemberValues);
     this.placeDomains.set(place, {
       ...readDomain,
       cases: dedupeAbstractValues([...readDomain.cases, ...unionMemberValues.flat()]),

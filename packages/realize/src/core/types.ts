@@ -75,20 +75,7 @@ export interface Binding {
   inputPlaces: BindingPlace[];
   lengthLimit: LengthLimit | null;
   derived: DerivedString | DerivedCall | null;
-  range: NumberRange | null;
   alias: SymbolicValue | null;
-  firstRender?: FirstRenderValue;
-}
-
-export interface FirstRenderValue {
-  value: SymbolicValue;
-  inputIds: number[];
-}
-
-export interface NumberRange {
-  min: number | null;
-  max: number | null;
-  inner: SymbolicValue | null;
 }
 
 export interface DerivedString {
@@ -358,7 +345,6 @@ export interface ComponentAnalysis {
   untypedContextBindingIds: Map<string, number>;
   readContextKeys: string[];
   placeDomains: PlaceMap<Domain>;
-  unionMemberValues: PlaceMap<AbstractValue[][]>;
   render: SymbolicValue;
   localRenders: SymbolicValue[];
   handlers: Handler[];

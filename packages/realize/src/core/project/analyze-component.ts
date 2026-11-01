@@ -91,7 +91,6 @@ export const createEmptyAnalysis = (
   untypedContextBindingIds: new Map(),
   readContextKeys: [],
   placeDomains: new PlaceMap(),
-  unionMemberValues: new PlaceMap(),
   render,
   localRenders: [],
   handlers: [],
@@ -172,7 +171,7 @@ export const analyzeComponent = (
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
-  const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
+  const { bindings, placeDomains } = interpreter.bindingTable;
   const readIds = getReadBindingIds(render, handlers, interpreter.claimRecorder.claims, bindings);
   return {
     ...identity,
@@ -187,7 +186,6 @@ export const analyzeComponent = (
     untypedContextBindingIds: interpreter.externalSources.untypedContextBindingIds,
     readContextKeys: [...interpreter.externalSources.readContextKeys],
     placeDomains,
-    unionMemberValues,
     render,
     localRenders: interpreter.localRenders,
     handlers,
