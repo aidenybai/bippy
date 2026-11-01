@@ -26,7 +26,6 @@ import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MemoStaleness } from "./memo-staleness";
 import { MutationTracker } from "./mutation-tracker";
-import { PatternMatcher } from "./pattern-matcher";
 import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_PATH_STATE, getAsyncPathState } from "./path-state";
 import type { PathState } from "./path-state";
@@ -490,7 +489,6 @@ export class Interpreter {
   cells = new Cells();
   readonly memoStaleness = new MemoStaleness(this);
   readonly iteration = new ArrayIteration(this);
-  readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
   readonly externalSources: ExternalSources;
   readonly storeReads = new StoreReads(this);
@@ -1296,7 +1294,6 @@ export class Interpreter {
     const element = this.#evaluateElementCall(callSite);
     if (element) return element;
     const modeled =
-      this.patterns.start(callSite.callee, callSite.argumentValues, callSite.loc) ??
       coerceBooleanCall(callSite.callee, callSite.argumentValues) ??
       this.iteration.evaluateArrayFrom(
         callSite.callee,
@@ -2102,12 +2099,6 @@ export class Interpreter {
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
-    const matched = this.patterns.continue(receiver, methodName, argumentValues, {
-      loc: methodCall.loc,
-      instructionId,
-      pathState,
-    });
-    if (matched) return matched;
     const storeResult = this.storeReads.evaluateStoreMethod(
       methodCall,
       receiver,
