@@ -64,7 +64,7 @@ import type {
 } from "../types";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { flattenArrayChildren } from "./flatten-array-children";
-import { forEachJsxElement } from "../states/for-each-jsx-element";
+import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { EVENT_ARGUMENT } from "../handlers/handler-predicates";
 import { isHandlerProp } from "../handlers/dom-events";
@@ -74,7 +74,7 @@ import type { HeldProps } from "./get-prop-holds";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getClampRange } from "./get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./derived-calls";
-import { isPureFunction } from "../solver/pure-functions";
+import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
 import { getMemoRanges } from "./get-memo-ranges";
 import { getLocationKey } from "../shared/get-location-key";
@@ -82,12 +82,12 @@ import { isSameValueZero } from "./is-same-value-zero";
 import { getPropertyKeyForms } from "./get-property-key-forms";
 import { getDomainPrimitive } from "../type-checker/domains";
 import { isRefOnlyRead } from "./is-ref-only-read";
-import { applyStringMethod, isStringMethod } from "../solver/string-methods";
+import { applyStringMethod, isStringMethod } from "../interpret/string-methods";
 import {
   applyCollectionMethod,
   getCollectionSize,
   isCollectionRead,
-} from "../solver/literal-receivers";
+} from "../interpret/literal-receivers";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
 import { isStateBinding } from "../values/is-state-binding";

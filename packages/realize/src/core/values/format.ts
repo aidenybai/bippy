@@ -10,7 +10,7 @@ import type {
   SymbolicValue,
   UnknownOrigin,
 } from "../types";
-import { getNegatedOperator } from "../solver/get-negated-operator";
+import { getNegatedOperator } from "../values/get-negated-operator";
 import { getValueKey } from "./get-value-key";
 import { isTreeLargerThan } from "./is-tree-larger-than";
 

@@ -12,12 +12,12 @@ describe("tracing an analysis", () => {
     const spans = tracer.events.filter((event) => event.ph === "X");
     const categories = new Set(spans.map((event) => event.cat));
     expect([...categories]).toEqual(
-      expect.arrayContaining(["typescript", "compile", "interpret", "link", "enumerate"]),
+      expect.arrayContaining(["typescript", "compile", "interpret", "model"]),
     );
-    const enumerated = spans
-      .filter((event) => event.cat === "enumerate")
+    const modeled = spans
+      .filter((event) => event.cat === "model")
       .map((event) => event.name);
-    expect(enumerated).toEqual(
+    expect(modeled).toEqual(
       expect.arrayContaining(project.components.map((component) => component.analysis.name)),
     );
     expect(tracer.events.filter((event) => event.ph === "C")).toHaveLength(spans.length);

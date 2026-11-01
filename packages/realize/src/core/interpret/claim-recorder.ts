@@ -7,7 +7,7 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { isNullishCase } from "../solver/is-nullish-case";
+import { isNullishCase } from "../interpret/is-nullish-case";
 import { getClaimGuards, type WalkState } from "./walk-state";
 
 const CLAIM_FUNCTIONS = new Set(["invariant", "assert", "console.assert"]);

@@ -1,6 +1,6 @@
 import { dedupeAbstractValues } from "../values/abstract-values";
 import type { DerivedCall, Domain, PrimitiveValue, SymbolicValue } from "../types";
-import { applyPureFunctionToCases, isPureFunction } from "../solver/pure-functions";
+import { applyPureFunctionToCases, isPureFunction } from "../interpret/pure-functions";
 
 export const getMathCall = (
   methodName: string,

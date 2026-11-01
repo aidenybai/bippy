@@ -1,5 +1,34 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`fixture analysis > App keeps its TLA+ module 1`] = `
+"---- MODULE App ----
+\\* isLoading: isLoading (input), 2 cells
+VARIABLES isLoading
+
+vars == <<isLoading>>
+
+screen == CASE isLoading = "true" -> "Loading"
+            [] isLoading = "false" -> "Button"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isLoading \\in {"false", "true"}
+
+\\* setCount(count + 1)
+t1 ==
+  /\\ isLoading = "false"
+  /\\ UNCHANGED <<isLoading>>
+
+\\* parent changes isLoading
+change_isLoading ==
+  /\\ isLoading' \\in {"false", "true"}
+
+Next == t1 \\/ change_isLoading
+
+Spec == Init /\\ [][Next]_vars
+===="
+`;
+
 exports[`fixture analysis > App keeps its render tree and handlers 1`] = `
 "---
 title: App src/counter.tsx:9
@@ -17,16 +46,41 @@ flowchart TD
   n4 -.-> n5"
 `;
 
-exports[`fixture analysis > App keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > App keeps its state chart and findings 1`] = `
 "---
 title: App src/counter.tsx:9
 ---
 stateDiagram-v2
   direction LR
-  S1: isLoading · #lt;Loading#gt;
-  S2: !isLoading · #lt;Button#gt; {count}
+  %% 2 states
+  %% isLoading = isLoading (input): false | true
+  S1: Button
+  S2: Loading
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S1: setCount(count + 1)
+  S1 --> S2: parent changes isLoading
+  S2 --> S1: parent changes isLoading"
+`;
+
+exports[`fixture analysis > Box keeps its TLA+ module 1`] = `
+"---- MODULE Box ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+\\* bump
+t1 ==
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
@@ -42,17 +96,33 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > Box keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Box keeps its state chart and findings 1`] = `
 "---
 title: Box src/ref-props.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {count}
+  %% 1 states
+  S1: button
   [*] --> S1
-  state "warnings" as warnings {
-    warnings1: prop-mutation L24 mutates prop box
-  }"
+  S1 --> S1: bump"
+`;
+
+exports[`fixture analysis > Button keeps its TLA+ module 1`] = `
+"---- MODULE Button ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Button keeps its render tree and handlers 1`] = `
@@ -68,14 +138,39 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > Button keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Button keeps its state chart and findings 1`] = `
 "---
 title: Button src/counter.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {children}
+  %% 1 states
+  S1: button
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Card keeps its TLA+ module 1`] = `
+"---- MODULE Card ----
+\\* note: note (input), 3 cells
+VARIABLES note
+
+vars == <<note>>
+
+screen == CASE note = "other string" -> "div > p"
+            [] note /= "other string" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ note \\in {"undefined", "empty", "other string"}
+
+\\* parent changes note
+change_note ==
+  /\\ note' \\in {"undefined", "empty", "other string"}
+
+Next == change_note
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Card keeps its render tree and handlers 1`] = `
@@ -93,16 +188,44 @@ flowchart TD
   n3 -->|✓| n4"
 `;
 
-exports[`fixture analysis > Card keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Card keeps its state chart and findings 1`] = `
 "---
 title: Card src/chains.tsx:13
 ---
 stateDiagram-v2
   direction LR
-  S1: note · #lt;div#gt; #lt;p#gt; {note}
-  S2: !note · #lt;div#gt;
+  %% 3 states
+  %% note = note (input): undefined | empty | other string
+  S1: div
+  S2: div #gt; p
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: parent changes note
+  S2 --> S1: parent changes note"
+`;
+
+exports[`fixture analysis > CardEditor keeps its TLA+ module 1`] = `
+"---- MODULE CardEditor ----
+\\* options_shape: options.shape (state), 2 cells
+VARIABLES options_shape
+
+vars == <<options_shape>>
+
+screen == CASE options_shape = "other string" -> "button"
+            [] options_shape = "undefined" -> "button > \\"auto\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ options_shape = "undefined"
+
+\\* fillDefaults(options, 120)
+t1 ==
+  /\\ options_shape' \\in {"undefined", "other string"}
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > CardEditor keeps its render tree and handlers 1`] = `
@@ -124,20 +247,45 @@ flowchart TD
   n4 -->|✗| n6"
 `;
 
-exports[`fixture analysis > CardEditor keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > CardEditor keeps its state chart and findings 1`] = `
 "---
 title: CardEditor src/mutating-helpers.tsx:14
 ---
 stateDiagram-v2
   direction LR
-  S1: options.shape != null · #lt;button#gt; {options.shape}
-  S2: options.shape == null · #lt;button#gt; {"auto"}
-  [*] --> S2
+  %% 2 states
+  %% options_shape = options.shape (state): undefined | other string
+  S1: button #gt; "auto"
+  S2: button
+  [*] --> S1
+  S1 --> S1: fillDefaults(options, 120)
   S1 --> S2: fillDefaults(options, 120)
   S2 --> S1: fillDefaults(options, 120)
-  state "warnings" as warnings {
-    warnings1: state-mutation L16 mutates options without setting it, so the change shows only on the next render
-  }"
+  S2 --> S2: fillDefaults(options, 120)"
+`;
+
+exports[`fixture analysis > CardGrid keeps its TLA+ module 1`] = `
+"---- MODULE CardGrid ----
+\\* options_shape: options.shape (input), 2 cells
+VARIABLES options_shape
+
+vars == <<options_shape>>
+
+screen == CASE options_shape = "other string" -> "p"
+            [] options_shape = "undefined" -> "p > \\"auto\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ options_shape \\in {"undefined", "other string"}
+
+\\* parent changes options.shape
+change_options_shape ==
+  /\\ options_shape' \\in {"undefined", "other string"}
+
+Next == change_options_shape
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > CardGrid keeps its render tree and handlers 1`] = `
@@ -157,19 +305,40 @@ flowchart TD
   n3 -->|✗| n5"
 `;
 
-exports[`fixture analysis > CardGrid keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > CardGrid keeps its state chart and findings 1`] = `
 "---
 title: CardGrid src/mutating-helpers.tsx:9
 ---
 stateDiagram-v2
   direction LR
-  S1: options.shape != null · #lt;p#gt; {options.shape}
-  S2: options.shape == null · #lt;p#gt; {"auto"}
+  %% 2 states
+  %% options_shape = options.shape (input): undefined | other string
+  S1: p #gt; "auto"
+  S2: p
   [*] --> S1
   [*] --> S2
-  state "warnings" as warnings {
-    warnings1: prop-mutation L10 mutates prop options
-  }"
+  S1 --> S2: parent changes options.shape
+  S2 --> S1: parent changes options.shape"
+`;
+
+exports[`fixture analysis > ClickStats keeps its TLA+ module 1`] = `
+"---- MODULE ClickStats ----
+\\* stats_clicks: stats.clicks (state), 3 cells
+VARIABLES stats_clicks
+
+vars == <<stats_clicks>>
+
+screen == CASE stats_clicks = ">0" -> "button > \\"Clicked\\""
+            [] stats_clicks /= ">0" -> "button > \\"Not clicked\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ stats_clicks = "0"
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ClickStats keeps its render tree and handlers 1`] = `
@@ -189,20 +358,56 @@ flowchart TD
   n3 -->|✗| n5"
 `;
 
-exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ClickStats keeps its state chart and findings 1`] = `
 "---
 title: ClickStats src/mutation.tsx:41
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {"Not clicked"}
+  %% 1 states
+  %% stats_clicks = stats.clicks (state): <0 | 0 | >0
+  S1: button #gt; "Not clicked"
   [*] --> S1
-  state "unreachable branches" as unreachable {
-    unreachable1: never stats.clicks #gt; 0 L49
-  }
-  state "warnings" as warnings {
-    warnings1: state-mutation L46 mutates stats without setting it, so the change shows only on the next render
-  }"
+  %% ⚠ stats.clicks > 0 is never true here (L49)"
+`;
+
+exports[`fixture analysis > Coalesced keeps its TLA+ module 1`] = `
+"---- MODULE Coalesced ----
+\\* checked: checked (state), 2 cells
+\\* flags: flags (input), 2 cells
+\\* test_flags_some_function_null: flags?.some(function) != null (test), 2 cells
+VARIABLES checked, flags, test_flags_some_function_null
+
+vars == <<checked, flags, test_flags_some_function_null>>
+
+screen == CASE checked = "true" -> "p > \\"on\\""
+            [] checked = "false" -> "p > \\"off\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ checked \\in {"false", "true"}
+  /\\ flags \\in {"undefined", "{ ok: boolean; }[]"}
+  /\\ test_flags_some_function_null \\in {"false", "true"}
+
+\\* after serverChecked changes
+t1 ==
+  /\\ checked' \\in (IF (flags = "undefined" /\\ test_flags_some_function_null = "false") \\/ (flags = "{ ok: boolean; }[]" /\\ test_flags_some_function_null = "false") THEN {"false"} ELSE {"false", "true"})
+  /\\ UNCHANGED <<flags, test_flags_some_function_null>>
+
+\\* parent changes flags
+change_flags ==
+  /\\ flags' \\in {"undefined", "{ ok: boolean; }[]"}
+  /\\ UNCHANGED <<checked, test_flags_some_function_null>>
+
+\\* flags?.some(function) != null changes
+change_test_flags_some_function_null ==
+  /\\ test_flags_some_function_null' \\in {"false", "true"}
+  /\\ UNCHANGED <<checked, flags>>
+
+Next == t1 \\/ change_flags \\/ change_test_flags_some_function_null
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Coalesced keeps its render tree and handlers 1`] = `
@@ -224,21 +429,48 @@ flowchart TD
   n1 -.-> n6"
 `;
 
-exports[`fixture analysis > Coalesced keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Coalesced keeps its state chart and findings 1`] = `
 "---
 title: Coalesced src/claims.tsx:49
 ---
 stateDiagram-v2
   direction LR
-  S1: checked · #lt;p#gt; {"on"}
-  S2: !checked · #lt;p#gt; {"off"}
+  %% 8 states
+  %% checked = checked (state): false | true
+  %% flags = flags (input): undefined | { ok: boolean; }[]
+  %% test_flags_some_function_null = flags?.some(function) != null (test): false | true
+  S1: p #gt; "off"
+  S2: p #gt; "on"
   [*] --> S1
   [*] --> S2
+  S1 --> S1: after serverChecked changes
   S1 --> S2: after serverChecked changes
   S2 --> S1: after serverChecked changes
-  state "claims" as claims {
-    claims1: holds checked stays within false | true L51
-  }"
+  S2 --> S2: after serverChecked changes"
+`;
+
+exports[`fixture analysis > CommandInput keeps its TLA+ module 1`] = `
+"---- MODULE CommandInput ----
+\\* command: command (state), 2 cells
+VARIABLES command
+
+vars == <<command>>
+
+screen == CASE command = "help" -> "div > p \\"Type a command\\""
+            [] command = "other string" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ command \\in {"help", "other string"}
+
+\\* setCommand(event.target.value)
+t1 ==
+  /\\ command' \\in {"help", "other string"}
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > CommandInput keeps its render tree and handlers 1`] = `
@@ -260,18 +492,56 @@ flowchart TD
   n5 -->|✓| n6"
 `;
 
-exports[`fixture analysis > CommandInput keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > CommandInput keeps its state chart and findings 1`] = `
 "---
 title: CommandInput src/compared-strings.tsx:16
 ---
 stateDiagram-v2
   direction LR
-  S1: command === "help" · #lt;div#gt; #lt;input#gt; #lt;p#gt; "Type a command"
-  S2: command !== "help" · #lt;div#gt; #lt;input#gt;
+  %% 2 states
+  %% command = command (state): help | other string
+  S1: div #gt; p "Type a command"
+  S2: div
   [*] --> S1
   [*] --> S2
+  S1 --> S1: setCommand(event.target.value)
   S1 --> S2: setCommand(event.target.value)
-  S2 --> S1: setCommand(event.target.value)"
+  S2 --> S1: setCommand(event.target.value)
+  S2 --> S2: setCommand(event.target.value)"
+`;
+
+exports[`fixture analysis > Composer keeps its TLA+ module 1`] = `
+"---- MODULE Composer ----
+\\* isSent: isSent (state), 2 cells
+\\* draft: draft (state), 2 cells
+VARIABLES isSent, draft
+
+vars == <<isSent, draft>>
+
+screen == CASE isSent = "true" -> "p \\"Sent\\""
+            [] isSent = "false" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isSent = "false"
+  /\\ draft = "empty"
+
+\\* setDraft(event.target.value)
+t1 ==
+  /\\ isSent = "false"
+  /\\ draft' \\in {"empty", "other string"}
+  /\\ UNCHANGED <<isSent>>
+
+\\* "Send"
+t2 ==
+  /\\ isSent = "false"
+  /\\ isSent' \\in (IF draft = "other string" THEN {"true"} ELSE {isSent})
+  /\\ UNCHANGED <<draft>>
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
@@ -297,19 +567,44 @@ flowchart TD
   n7 -.-> n8"
 `;
 
-exports[`fixture analysis > Composer keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Composer keeps its state chart and findings 1`] = `
 "---
 title: Composer src/guards.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: isSent · #lt;p#gt; "Sent"
-  S2: !isSent · #lt;div#gt; #lt;input#gt; #lt;button#gt; "Send"
-  [*] --> S2
-  S2 --> S1: "Send"
-  state "claims" as claims {
-    claims1: holds isSent stays within false | true L5
-  }"
+  %% 3 states
+  %% isSent = isSent (state): false | true
+  %% draft = draft (state): empty | other string
+  S1: div
+  S2: p "Sent"
+  [*] --> S1
+  S1 --> S1: setDraft(event.target.value), "Send"
+  S1 --> S2: "Send""
+`;
+
+exports[`fixture analysis > Countdown keeps its TLA+ module 1`] = `
+"---- MODULE Countdown ----
+\\* steps: steps (input), 3 cells
+VARIABLES steps
+
+vars == <<steps>>
+
+screen == CASE steps = "0" -> "p > \\"Done\\""
+            [] steps /= "0" -> "p > \\"Counted\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ steps \\in {"<0", "0", ">0"}
+
+\\* steps changes
+change_steps ==
+  /\\ steps' \\in {"<0", "0", ">0"}
+
+Next == change_steps
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Countdown keeps its render tree and handlers 1`] = `
@@ -329,16 +624,66 @@ flowchart TD
   n3 -->|✗| n5"
 `;
 
-exports[`fixture analysis > Countdown keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Countdown keeps its state chart and findings 1`] = `
 "---
 title: Countdown src/loops.tsx:39
 ---
 stateDiagram-v2
   direction LR
-  S1: steps === 0 · #lt;p#gt; {"Done"}
-  S2: steps !== 0 · #lt;p#gt; {"Counted"}
+  %% 3 states
+  %% steps = steps (input): <0 | 0 | >0
+  S1: p #gt; "Counted"
+  S2: p #gt; "Done"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: steps changes
+  S2 --> S1: steps changes"
+`;
+
+exports[`fixture analysis > CountedList keeps its TLA+ module 1`] = `
+"---- MODULE CountedList ----
+\\* items_length: items.length (input), 2 cells
+\\* count: count (input), 3 cells
+VARIABLES items_length, count
+
+vars == <<items_length, count>>
+
+screen == CASE items_length = ">0" /\\ items_length = ">0" /\\ count = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > b > i \\"None\\""
+            [] items_length = ">0" /\\ items_length = ">0" /\\ count = ">0" /\\ count /= "0" -> "div > ul > p \\"Has items\\" > b"
+            [] items_length = ">0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
+            [] items_length = ">0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count /= "0" -> "div > ul > p \\"Has items\\""
+            [] items_length = ">0" /\\ items_length = "0" /\\ count = ">0" /\\ count = "0" -> "div > ul > p \\"Empty\\" > b > i \\"None\\""
+            [] items_length = ">0" /\\ items_length = "0" /\\ count = ">0" /\\ count /= "0" -> "div > ul > p \\"Empty\\" > b"
+            [] items_length = ">0" /\\ items_length = "0" /\\ count /= ">0" /\\ count = "0" -> "div > ul > p \\"Empty\\" > i \\"None\\""
+            [] items_length = ">0" /\\ items_length = "0" /\\ count /= ">0" /\\ count /= "0" -> "div > ul > p \\"Empty\\""
+            [] items_length = "0" /\\ items_length = ">0" /\\ count = ">0" /\\ count = "0" -> "div > p \\"Has items\\" > b > i \\"None\\""
+            [] items_length = "0" /\\ items_length = ">0" /\\ count = ">0" /\\ count /= "0" -> "div > p \\"Has items\\" > b"
+            [] items_length = "0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count = "0" -> "div > p \\"Has items\\" > i \\"None\\""
+            [] items_length = "0" /\\ items_length = ">0" /\\ count /= ">0" /\\ count /= "0" -> "div > p \\"Has items\\""
+            [] items_length = "0" /\\ items_length = "0" /\\ count = ">0" /\\ count = "0" -> "div > p \\"Empty\\" > b > i \\"None\\""
+            [] items_length = "0" /\\ items_length = "0" /\\ count = ">0" /\\ count /= "0" -> "div > p \\"Empty\\" > b"
+            [] items_length = "0" /\\ items_length = "0" /\\ count /= ">0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
+            [] items_length = "0" /\\ items_length = "0" /\\ count /= ">0" /\\ count /= "0" -> "div > p \\"Empty\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ items_length \\in {"0", ">0"}
+  /\\ count \\in {"<0", "0", ">0"}
+
+\\* parent changes items.length
+change_items_length ==
+  /\\ items_length' \\in {"0", ">0"}
+  /\\ UNCHANGED <<count>>
+
+\\* parent changes count
+change_count ==
+  /\\ count' \\in {"<0", "0", ">0"}
+  /\\ UNCHANGED <<items_length>>
+
+Next == change_items_length \\/ change_count
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > CountedList keeps its render tree and handlers 1`] = `
@@ -374,27 +719,69 @@ flowchart TD
   n12 -->|✓| n13"
 `;
 
-exports[`fixture analysis > CountedList keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > CountedList keeps its state chart and findings 1`] = `
 "---
 title: CountedList src/counted-lists.tsx:1
 ---
 stateDiagram-v2
   direction LR
-  state "CountedList" as regions {
-    %% items.length
-    S1: items.length #gt; 0 · #lt;ul#gt; ↻ items #lt;p#gt; "Has items"
-    S2: items.length #lt;= 0 · #lt;p#gt; "Empty"
-    [*] --> S1
-    [*] --> S2
-    --
-    %% count
-    S3: count #gt; 0 · #lt;b#gt; {count}
-    S4: !(count #gt; 0) ∧ !count · #lt;i#gt; "None"
-    S5: !(count #gt; 0) ∧ count · ∅
-    [*] --> S3
-    [*] --> S4
-    [*] --> S5
-  }"
+  %% 6 states
+  %% items_length = items.length (input): 0 | >0
+  %% count = count (input): <0 | 0 | >0
+  S1: div #gt; p "Empty"
+  S2: div #gt; p "Empty" #gt; i "None"
+  S3: div #gt; p "Empty" #gt; b
+  S4: div #gt; ul #gt; p "Has items"
+  S5: div #gt; ul #gt; p "Has items" #gt; i "None"
+  S6: div #gt; ul #gt; p "Has items" #gt; b
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
+  [*] --> S5
+  [*] --> S6
+  S1 --> S4: parent changes items.length
+  S1 --> S2: parent changes count
+  S1 --> S3: parent changes count
+  S2 --> S5: parent changes items.length
+  S2 --> S1: parent changes count
+  S2 --> S3: parent changes count
+  S3 --> S6: parent changes items.length
+  S3 --> S1: parent changes count
+  S3 --> S2: parent changes count
+  S4 --> S1: parent changes items.length
+  S4 --> S5: parent changes count
+  S4 --> S6: parent changes count
+  S5 --> S2: parent changes items.length
+  S5 --> S4: parent changes count
+  S5 --> S6: parent changes count
+  S6 --> S3: parent changes items.length
+  S6 --> S4: parent changes count
+  S6 --> S5: parent changes count"
+`;
+
+exports[`fixture analysis > CountedLoop keeps its TLA+ module 1`] = `
+"---- MODULE CountedLoop ----
+\\* isDone: isDone (state), 2 cells
+VARIABLES isDone
+
+vars == <<isDone>>
+
+screen == CASE isDone = "true" -> "button > \\"Done\\""
+            [] isDone = "false" -> "button > \\"Start\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isDone = "false"
+
+\\* finish
+t1 ==
+  /\\ isDone' = "true"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > CountedLoop keeps its render tree and handlers 1`] = `
@@ -416,19 +803,81 @@ flowchart TD
   n4 -->|✗| n6"
 `;
 
-exports[`fixture analysis > CountedLoop keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > CountedLoop keeps its state chart and findings 1`] = `
 "---
 title: CountedLoop src/loops.tsx:49
 ---
 stateDiagram-v2
   direction LR
-  S1: isDone · #lt;button#gt; {"Done"}
-  S2: !isDone · #lt;button#gt; {"Start"}
-  [*] --> S2
-  S2 --> S1: finish
-  state "claims" as claims {
-    claims1: holds isDone stays within false | true L50
-  }"
+  %% 2 states
+  %% isDone = isDone (state): false | true
+  S1: button #gt; "Start"
+  S2: button #gt; "Done"
+  [*] --> S1
+  S1 --> S2: finish
+  S2 --> S2: finish"
+`;
+
+exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
+"---- MODULE Dashboard ----
+\\* status: status (input), 3 cells
+\\* user: user (input), 2 cells
+\\* items_length: items.length (state), 2 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+VARIABLES status, user, items_length, pending_t1
+
+vars == <<status, user, items_length, pending_t1>>
+
+screen == CASE status = "loading" -> "Spinner"
+            [] status /= "loading" /\\ user = "null" -> "SignIn"
+            [] status /= "loading" /\\ user = "User" /\\ items_length = ">0" -> "main > List"
+            [] status /= "loading" /\\ user = "User" /\\ items_length = "0" -> "main > Empty"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status \\in {"error", "idle", "loading"}
+  /\\ user \\in {"null", "User"}
+  /\\ items_length = "0"
+  /\\ pending_t1 = "idle"
+
+\\* after first render
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<status, user, items_length>>
+
+\\* after first render resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ items_length' = ">0"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<status, user>>
+
+\\* after first render rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<status, user, items_length>>
+
+\\* setCount(count + 1)
+t2 ==
+  /\\ status /= "loading" /\\ user = "User"
+  /\\ UNCHANGED <<status, user, items_length, pending_t1>>
+
+\\* parent changes status
+change_status ==
+  /\\ status' \\in {"error", "idle", "loading"}
+  /\\ UNCHANGED <<user, items_length, pending_t1>>
+
+\\* parent changes user
+change_user ==
+  /\\ user' \\in {"null", "User"}
+  /\\ UNCHANGED <<status, items_length, pending_t1>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ change_status \\/ change_user
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
@@ -464,21 +913,64 @@ flowchart TD
   n1 -.-> n13"
 `;
 
-exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Dashboard keeps its state chart and findings 1`] = `
 "---
 title: Dashboard src/dashboard.tsx:12
 ---
 stateDiagram-v2
   direction LR
-  S1: status === "loading" · #lt;Spinner#gt;
-  S2: status !== "loading" ∧ !user · #lt;SignIn#gt;
-  S3: status !== "loading" ∧ user ∧ items.length #gt; 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;List#gt; #lt;button#gt; {count}
-  S4: status !== "loading" ∧ user ∧ items.length #lt;= 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;Empty#gt; #lt;button#gt; {count}
+  %% 24 states
+  %% status = status (input): error | idle | loading
+  %% user = user (input): null | User
+  %% items_length = items.length (state): 0 | >0
+  %% pending_t1 = t1 pending (pending): idle | pending
+  S1: SignIn
+  S2: main #gt; Empty
+  S3: Spinner
+  S4: main #gt; List
   [*] --> S1
   [*] --> S2
-  [*] --> S4
-  S3 --> S4: after first render (async)
-  S4 --> S3: after first render (async)"
+  [*] --> S3
+  S1 --> S3: parent changes status
+  S1 --> S2: parent changes user
+  S2 --> S2: setCount(count + 1)
+  S2 --> S3: parent changes status
+  S2 --> S1: parent changes user
+  S3 --> S1: parent changes status
+  S3 --> S2: parent changes status
+  S1 --> S1: after first render resolves
+  S2 --> S4: after first render resolves
+  S3 --> S3: after first render resolves
+  S1 --> S4: parent changes user
+  S4 --> S4: setCount(count + 1), after first render resolves
+  S4 --> S3: parent changes status
+  S4 --> S1: parent changes user
+  S3 --> S4: parent changes status
+  %% ⚠ When after first render fails, nothing on screen changes (L21)"
+`;
+
+exports[`fixture analysis > Deck keeps its TLA+ module 1`] = `
+"---- MODULE Deck ----
+\\* cards_length: cards.length (state), 2 cells
+VARIABLES cards_length
+
+vars == <<cards_length>>
+
+screen == CASE cards_length = "0" -> "div > p \\"Empty\\""
+            [] cards_length = ">0" -> "div > p \\"Cards\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ cards_length = "0"
+
+\\* "Shuffle"
+t1 ==
+  /\\ cards_length' \\in {"0", ">0"}
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Deck keeps its render tree and handlers 1`] = `
@@ -506,17 +998,62 @@ flowchart TD
   n6 --> n9"
 `;
 
-exports[`fixture analysis > Deck keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Deck keeps its state chart and findings 1`] = `
 "---
 title: Deck src/possible-mutation.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: cards.length === 0 · #lt;div#gt; #lt;p#gt; "Empty" #lt;button#gt; "Shuffle " {count}
-  S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
+  %% 2 states
+  %% cards_length = cards.length (state): 0 | >0
+  S1: div #gt; p "Empty"
+  S2: div #gt; p "Cards"
   [*] --> S1
+  S1 --> S1: "Shuffle"
   S1 --> S2: "Shuffle"
-  S2 --> S1: "Shuffle""
+  S2 --> S1: "Shuffle"
+  S2 --> S2: "Shuffle""
+`;
+
+exports[`fixture analysis > Dialog keeps its TLA+ module 1`] = `
+"---- MODULE Dialog ----
+\\* isOpen: isOpen (state), 2 cells
+\\* icon: icon (input), 11 cells
+\\* test_icon_undefined: icon === undefined (test), 2 cells
+VARIABLES isOpen, icon, test_icon_undefined
+
+vars == <<isOpen, icon, test_icon_undefined>>
+
+screen == CASE isOpen = "false" -> "nothing"
+            [] isOpen = "true" /\\ test_icon_undefined = "true" -> "div > span \\"×\\""
+            [] isOpen = "true" /\\ test_icon_undefined = "false" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isOpen = "true"
+  /\\ icon \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
+  /\\ test_icon_undefined \\in {"false", "true"}
+
+\\* setIsOpen(false)
+t1 ==
+  /\\ isOpen = "true"
+  /\\ isOpen' = "false"
+  /\\ UNCHANGED <<icon, test_icon_undefined>>
+
+\\* parent changes icon
+change_icon ==
+  /\\ icon' \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
+  /\\ UNCHANGED <<isOpen, test_icon_undefined>>
+
+\\* icon === undefined changes
+change_test_icon_undefined ==
+  /\\ test_icon_undefined' \\in {"false", "true"}
+  /\\ UNCHANGED <<isOpen, icon>>
+
+Next == t1 \\/ change_icon \\/ change_test_icon_undefined
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Dialog keeps its render tree and handlers 1`] = `
@@ -544,22 +1081,50 @@ flowchart TD
   n7 -->|✗| n9"
 `;
 
-exports[`fixture analysis > Dialog keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Dialog keeps its state chart and findings 1`] = `
 "---
 title: Dialog src/expression-defaults.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  S1: !isOpen · ∅
-  S2: isOpen ∧ icon === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
-  S3: isOpen ∧ icon !== undefined · #lt;div#gt; #lt;button#gt; {icon}
+  %% 44 states
+  %% isOpen = isOpen (state): false | true
+  %% icon = icon (input): null | other string | any number | other | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<unknown, string | JSXElementConstructor<any>> | ReactPortal | undefined
+  %% test_icon_undefined = icon === undefined (test): false | true
+  S1: div
+  S2: div #gt; span "×"
+  S3: nothing
+  [*] --> S1
   [*] --> S2
-  [*] --> S3
-  S2 --> S1: setIsOpen(false)
-  S3 --> S1: setIsOpen(false)
-  state "claims" as claims {
-    claims1: holds isOpen stays within false | true L18
-  }"
+  S1 --> S3: setIsOpen(false)
+  S1 --> S2: icon === undefined changes
+  S2 --> S3: setIsOpen(false)
+  S2 --> S1: icon === undefined changes"
+`;
+
+exports[`fixture analysis > EarlyReturn keeps its TLA+ module 1`] = `
+"---- MODULE EarlyReturn ----
+\\* picked: picked (state), 5 cells
+VARIABLES picked
+
+vars == <<picked>>
+
+screen == CASE picked = "0" -> "button > \\"Pick\\""
+            [] picked /= "0" /\\ picked = "3" -> "button > \\"Third\\""
+            [] picked /= "0" /\\ picked /= "3" -> "button > \\"Other\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ picked = "0"
+
+\\* setPicked(findFirstSquare())
+t1 ==
+  /\\ picked' = "3"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > EarlyReturn keeps its render tree and handlers 1`] = `
@@ -585,19 +1150,60 @@ flowchart TD
   n6 -->|✗| n8"
 `;
 
-exports[`fixture analysis > EarlyReturn keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > EarlyReturn keeps its state chart and findings 1`] = `
 "---
 title: EarlyReturn src/loops.tsx:82
 ---
 stateDiagram-v2
   direction LR
-  S1: picked === 0 · #lt;button#gt; {"Pick"}
-  S2: picked !== 0 · #lt;button#gt; {"Third"}
+  %% 2 states
+  %% picked = picked (state): <0 | 0 | (0, 3) | 3 | >3
+  S1: button #gt; "Pick"
+  S2: button #gt; "Third"
   [*] --> S1
   S1 --> S2: setPicked(findFirstSquare())
-  state "unreachable branches" as unreachable {
-    unreachable1: never picked !== 3 L90
-  }"
+  S2 --> S2: setPicked(findFirstSquare())
+  %% ⚠ picked === 3 is never false here (L90)"
+`;
+
+exports[`fixture analysis > EditButton keeps its TLA+ module 1`] = `
+"---- MODULE EditButton ----
+\\* role: role (input), 2 cells
+\\* isEditing: isEditing (state), 2 cells
+VARIABLES role, isEditing
+
+vars == <<role, isEditing>>
+
+screen == CASE ~(role = "admin" /\\ role = "admin") -> "p \\"Read only\\""
+            [] role = "admin" /\\ role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
+            [] role = "admin" /\\ role = "admin" /\\ isEditing = "false" -> "button \\"Edit\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ role \\in {"admin", "viewer"}
+  /\\ isEditing = "false"
+
+\\* "Save"
+t1 ==
+  /\\ role = "admin" /\\ role = "admin" /\\ isEditing = "true"
+  /\\ isEditing' = "false"
+  /\\ UNCHANGED <<role>>
+
+\\* "Edit"
+t2 ==
+  /\\ role = "admin" /\\ role = "admin" /\\ isEditing = "false"
+  /\\ isEditing' = "true"
+  /\\ UNCHANGED <<role>>
+
+\\* parent changes role
+change_role ==
+  /\\ role' \\in {"admin", "viewer"}
+  /\\ UNCHANGED <<isEditing>>
+
+Next == t1 \\/ t2 \\/ change_role
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > EditButton keeps its render tree and handlers 1`] = `
@@ -623,22 +1229,43 @@ flowchart TD
   n7 -.-> n8"
 `;
 
-exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > EditButton keeps its state chart and findings 1`] = `
 "---
 title: EditButton src/access.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: !(role === "admin" || false) · #lt;p#gt; "Read only"
-  S2: role === "admin" || false ∧ isEditing · #lt;button#gt; "Save"
-  S3: role === "admin" || false ∧ !isEditing · #lt;button#gt; "Edit"
+  %% 4 states
+  %% role = role (input): admin | viewer
+  %% isEditing = isEditing (state): false | true
+  S1: button "Edit"
+  S2: p "Read only"
+  S3: button "Save"
   [*] --> S1
-  [*] --> S3
-  S2 --> S3: "Save"
-  S3 --> S2: "Edit"
-  state "claims" as claims {
-    claims1: holds isEditing stays within false | true L6
-  }"
+  [*] --> S2
+  S1 --> S3: "Edit"
+  S1 --> S2: parent changes role
+  S2 --> S1: parent changes role
+  S3 --> S1: "Save"
+  S3 --> S2: parent changes role
+  S2 --> S3: parent changes role"
+`;
+
+exports[`fixture analysis > Empty keeps its TLA+ module 1`] = `
+"---- MODULE Empty ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "p \\"No items\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
@@ -652,14 +1279,32 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Empty keeps its state chart and findings 1`] = `
 "---
 title: Empty src/dashboard.tsx:43
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; "No items"
+  %% 1 states
+  S1: p "No items"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > EmptyObjectCast keeps its TLA+ module 1`] = `
+"---- MODULE EmptyObjectCast ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "p"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > EmptyObjectCast keeps its render tree and handlers 1`] = `
@@ -673,17 +1318,32 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > EmptyObjectCast keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > EmptyObjectCast keeps its state chart and findings 1`] = `
 "---
 title: EmptyObjectCast src/claims.tsx:58
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; ⚠ raw
-  [*] --> S1
-  state "claims" as claims {
-    claims1: unproven raw as "a" | "b" L58 · raw = undefined | {}
-  }"
+  %% 1 states
+  S1: p
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > FabRow keeps its TLA+ module 1`] = `
+"---- MODULE FabRow ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "p"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FabRow keeps its render tree and handlers 1`] = `
@@ -697,14 +1357,70 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > FabRow keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FabRow keeps its state chart and findings 1`] = `
 "---
 title: FabRow src/or-conditions.tsx:6
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; {value}
+  %% 1 states
+  S1: p
   [*] --> S1"
+`;
+
+exports[`fixture analysis > FeatureBadge keeps its TLA+ module 1`] = `
+"---- MODULE FeatureBadge ----
+\\* isEnabled_search: isEnabled("search") (input), 2 cells
+\\* isEnabled_sync: isEnabled("sync") (input), 2 cells
+\\* isEnabled_share: isEnabled("share") (input), 2 cells
+\\* isEnabled_sync_2: isEnabled("sync") (input), 2 cells
+\\* isEnabled_offline: isEnabled("offline") (input), 2 cells
+VARIABLES isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline
+
+vars == <<isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline>>
+
+screen == CASE ((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features on\\" > \\"Full sync\\""
+            [] ((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features on\\""
+            [] ~((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features off\\" > \\"Full sync\\""
+            [] ~((((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ ((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true"))) \\/ (~((isEnabled_search = "true" /\\ isEnabled_search = "true") \\/ (isEnabled_search = "false" /\\ isEnabled_sync = "true")) /\\ isEnabled_share = "true")) /\\ ~((isEnabled_sync_2 = "true" /\\ isEnabled_offline = "true") \\/ (isEnabled_sync_2 = "false" /\\ isEnabled_sync_2 = "true")) -> "p > \\"Features off\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isEnabled_search \\in {"false", "true"}
+  /\\ isEnabled_sync \\in {"false", "true"}
+  /\\ isEnabled_share \\in {"false", "true"}
+  /\\ isEnabled_sync_2 \\in {"false", "true"}
+  /\\ isEnabled_offline \\in {"false", "true"}
+
+\\* isEnabled("search") changes
+change_isEnabled_search ==
+  /\\ isEnabled_search' \\in {"false", "true"}
+  /\\ UNCHANGED <<isEnabled_sync, isEnabled_share, isEnabled_sync_2, isEnabled_offline>>
+
+\\* isEnabled("sync") changes
+change_isEnabled_sync ==
+  /\\ isEnabled_sync' \\in {"false", "true"}
+  /\\ UNCHANGED <<isEnabled_search, isEnabled_share, isEnabled_sync_2, isEnabled_offline>>
+
+\\* isEnabled("share") changes
+change_isEnabled_share ==
+  /\\ isEnabled_share' \\in {"false", "true"}
+  /\\ UNCHANGED <<isEnabled_search, isEnabled_sync, isEnabled_sync_2, isEnabled_offline>>
+
+\\* isEnabled("sync") changes
+change_isEnabled_sync_2 ==
+  /\\ isEnabled_sync_2' \\in {"false", "true"}
+  /\\ UNCHANGED <<isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_offline>>
+
+\\* isEnabled("offline") changes
+change_isEnabled_offline ==
+  /\\ isEnabled_offline' \\in {"false", "true"}
+  /\\ UNCHANGED <<isEnabled_search, isEnabled_sync, isEnabled_share, isEnabled_sync_2>>
+
+Next == change_isEnabled_search \\/ change_isEnabled_sync \\/ change_isEnabled_share \\/ change_isEnabled_sync_2 \\/ change_isEnabled_offline
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FeatureBadge keeps its render tree and handlers 1`] = `
@@ -728,25 +1444,66 @@ flowchart TD
   n6 -->|✓| n7"
 `;
 
-exports[`fixture analysis > FeatureBadge keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FeatureBadge keeps its state chart and findings 1`] = `
 "---
 title: FeatureBadge src/logical-chains.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  state "FeatureBadge" as regions {
-    %% isEnabled("search"), isEnabled("sync"), isEnabled("share")
-    S1: isEnabled("search") || isEnabled("sync") || isEnabled("share") · {"Features on"}
-    S2: !(isEnabled("search") || isEnabled("sync") || isEnabled("share")) · {"Features off"}
-    [*] --> S1
-    [*] --> S2
-    --
-    %% isEnabled("sync"), isEnabled("offline")
-    S3: isEnabled("sync") && isEnabled("offline") · {"Full sync"}
-    S4: !(isEnabled("sync") && isEnabled("offline")) · ∅
-    [*] --> S3
-    [*] --> S4
-  }"
+  %% 32 states
+  %% isEnabled_search = isEnabled("search") (input): false | true
+  %% isEnabled_sync = isEnabled("sync") (input): false | true
+  %% isEnabled_share = isEnabled("share") (input): false | true
+  %% isEnabled_sync_2 = isEnabled("sync") (input): false | true
+  %% isEnabled_offline = isEnabled("offline") (input): false | true
+  S1: p #gt; "Features off"
+  S2: p #gt; "Features off" #gt; "Full sync"
+  S3: p #gt; "Features on"
+  S4: p #gt; "Features on" #gt; "Full sync"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
+  S1 --> S3: isEnabled("search") changes, isEnabled("sync") changes, isEnabled("share") changes
+  S1 --> S2: isEnabled("sync") changes, isEnabled("offline") changes
+  S2 --> S4: isEnabled("search") changes, isEnabled("sync") changes, isEnabled("share") changes
+  S2 --> S1: isEnabled("sync") changes, isEnabled("offline") changes
+  S3 --> S1: isEnabled("share") changes, isEnabled("sync") changes, isEnabled("search") changes
+  S3 --> S4: isEnabled("sync") changes, isEnabled("offline") changes
+  S4 --> S2: isEnabled("share") changes, isEnabled("sync") changes, isEnabled("search") changes
+  S4 --> S3: isEnabled("sync") changes, isEnabled("offline") changes"
+`;
+
+exports[`fixture analysis > Feed keeps its TLA+ module 1`] = `
+"---- MODULE Feed ----
+\\* test_pages_map_null: pages?.map(…) != null (test), 2 cells
+\\* test_pages_map_length: pages.map(…).length (test), 2 cells
+VARIABLES test_pages_map_null, test_pages_map_length
+
+vars == <<test_pages_map_null, test_pages_map_length>>
+
+screen == CASE ~(test_pages_map_null = "true" /\\ test_pages_map_length = "true") -> "p \\"Nothing yet\\""
+            [] test_pages_map_null = "true" /\\ test_pages_map_length = "true" -> "p \\"items\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ test_pages_map_null \\in {"false", "true"}
+  /\\ test_pages_map_length \\in {"false", "true"}
+
+\\* pages?.map(…) != null changes
+change_test_pages_map_null ==
+  /\\ test_pages_map_null' \\in {"false", "true"}
+  /\\ UNCHANGED <<test_pages_map_length>>
+
+\\* pages.map(…).length changes
+change_test_pages_map_length ==
+  /\\ test_pages_map_length' \\in {"false", "true"}
+  /\\ UNCHANGED <<test_pages_map_null>>
+
+Next == change_test_pages_map_null \\/ change_test_pages_map_length
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
@@ -768,16 +1525,57 @@ flowchart TD
   n4 --> n6"
 `;
 
-exports[`fixture analysis > Feed keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Feed keeps its state chart and findings 1`] = `
 "---
 title: Feed src/chains.tsx:17
 ---
 stateDiagram-v2
   direction LR
-  S1: !pages?.map(…)?.length · #lt;p#gt; "Nothing yet"
-  S2: pages?.map(…)?.length · #lt;p#gt; ⚠ items.length " items"
+  %% 4 states
+  %% test_pages_map_null = pages?.map(…) != null (test): false | true
+  %% test_pages_map_length = pages.map(…).length (test): false | true
+  S1: p "Nothing yet"
+  S2: p "items"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: pages?.map(…) != null changes, pages.map(…).length changes
+  S2 --> S1: pages?.map(…) != null changes, pages.map(…).length changes"
+`;
+
+exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
+"---- MODULE FileRow ----
+\\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 cells
+\\* opened: opened (state), 3 cells
+\\* test_opened_1: opened + 1 (test), 2 cells
+VARIABLES path_endsWith_ts, opened, test_opened_1
+
+vars == <<path_endsWith_ts, opened, test_opened_1>>
+
+screen == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
+            [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
+            [] path_endsWith_ts = "false" /\\ opened = ">0" -> "button > span \\"File\\" > b"
+            [] path_endsWith_ts = "false" /\\ opened /= ">0" -> "button > span \\"File\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ path_endsWith_ts \\in {"false", "true"}
+  /\\ opened = "0"
+  /\\ test_opened_1 \\in {"false", "true"}
+
+\\* setOpened(opened + 1)
+t1 ==
+  /\\ opened' \\in (IF (opened = "<0" /\\ test_opened_1 = "false") \\/ (opened = "<0" /\\ test_opened_1 = "true") THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ UNCHANGED <<path_endsWith_ts, test_opened_1>>
+
+\\* opened + 1 changes
+change_test_opened_1 ==
+  /\\ test_opened_1' \\in {"false", "true"}
+  /\\ UNCHANGED <<path_endsWith_ts, opened>>
+
+Next == t1 \\/ change_test_opened_1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
@@ -809,25 +1607,49 @@ flowchart TD
   n10 -->|✓| n11"
 `;
 
-exports[`fixture analysis > FileRow keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FileRow keeps its state chart and findings 1`] = `
 "---
 title: FileRow src/helpers.tsx:6
 ---
 stateDiagram-v2
   direction LR
-  state "FileRow" as regions {
-    %% path.endsWith(".ts")
-    S1: path.endsWith(".ts") · #lt;span#gt; "TS"
-    S2: !path.endsWith(".ts") · #lt;span#gt; "File"
-    [*] --> S1
-    [*] --> S2
-    --
-    %% opened
-    S3: opened #gt; 0 · #lt;b#gt; {opened}
-    S4: opened #lt;= 0 · ∅
-    [*] --> S4
-    S4 --> S3: setOpened(opened + 1)
-  }"
+  %% 8 states
+  %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
+  %% opened = opened (state): <0 | 0 | >0
+  %% test_opened_1 = opened + 1 (test): false | true
+  S1: button #gt; span "File"
+  S2: button #gt; span "TS"
+  S3: button #gt; span "File" #gt; b
+  S4: button #gt; span "TS" #gt; b
+  [*] --> S1
+  [*] --> S2
+  S1 --> S3: setOpened(opened + 1)
+  S2 --> S4: setOpened(opened + 1)
+  S3 --> S3: setOpened(opened + 1)
+  S4 --> S4: setOpened(opened + 1)"
+`;
+
+exports[`fixture analysis > FilterLabel keeps its TLA+ module 1`] = `
+"---- MODULE FilterLabel ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+\\* "Active"
+t1 ==
+
+\\* "Done"
+t2 ==
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
@@ -851,17 +1673,40 @@ flowchart TD
   n6 -.-> n7"
 `;
 
-exports[`fixture analysis > FilterLabel keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FilterLabel keeps its state chart and findings 1`] = `
 "---
 title: FilterLabel src/literals.tsx:6
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;div#gt; #lt;p#gt; {filter} #lt;button#gt; "Active" #lt;button#gt; "Done"
+  %% 1 states
+  S1: div
   [*] --> S1
-  state "claims" as claims {
-    claims1: holds filter stays within "active" | "all" | "done" L7
-  }"
+  S1 --> S1: "Active", "Done""
+`;
+
+exports[`fixture analysis > FirstMatch keeps its TLA+ module 1`] = `
+"---- MODULE FirstMatch ----
+\\* found: found (input), 2 cells
+VARIABLES found
+
+vars == <<found>>
+
+screen == CASE found = "null" -> "p \\"No match\\""
+            [] found = "other string" -> "p \\"Found\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ found \\in {"null", "other string"}
+
+\\* found changes
+change_found ==
+  /\\ found' \\in {"null", "other string"}
+
+Next == change_found
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FirstMatch keeps its render tree and handlers 1`] = `
@@ -883,16 +1728,48 @@ flowchart TD
   n4 --> n6"
 `;
 
-exports[`fixture analysis > FirstMatch keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FirstMatch keeps its state chart and findings 1`] = `
 "---
 title: FirstMatch src/loops.tsx:27
 ---
 stateDiagram-v2
   direction LR
-  S1: found === null · #lt;p#gt; "No match"
-  S2: found !== null · #lt;p#gt; "Found " {found}
+  %% 2 states
+  %% found = found (input): null | other string
+  S1: p "No match"
+  S2: p "Found"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: found changes
+  S2 --> S1: found changes"
+`;
+
+exports[`fixture analysis > FoundOfState keeps its TLA+ module 1`] = `
+"---- MODULE FoundOfState ----
+\\* found: found (input), 2 cells
+VARIABLES found
+
+vars == <<found>>
+
+screen == CASE found = "null" -> "div > i \\"none\\""
+            [] found = "any number" -> "div > b"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ found \\in {"null", "any number"}
+
+\\* "score"
+t1 ==
+  /\\ UNCHANGED <<found>>
+
+\\* found changes
+change_found ==
+  /\\ found' \\in {"null", "any number"}
+
+Next == t1 \\/ change_found
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FoundOfState keeps its render tree and handlers 1`] = `
@@ -916,18 +1793,39 @@ flowchart TD
   n5 -->|✗| n7"
 `;
 
-exports[`fixture analysis > FoundOfState keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FoundOfState keeps its state chart and findings 1`] = `
 "---
 title: FoundOfState src/loops.tsx:109
 ---
 stateDiagram-v2
   direction LR
-  S1: found === null · #lt;div#gt; #lt;button#gt; "score" #lt;i#gt; "none"
-  S2: found !== null · #lt;div#gt; #lt;button#gt; "score" #lt;b#gt; {found}
+  %% 2 states
+  %% found = found (input): null | any number
+  S1: div #gt; i "none"
+  S2: div #gt; b
   [*] --> S1
   [*] --> S2
-  S1 --> S2: "score"
-  S2 --> S1: "score""
+  S1 --> S1: "score"
+  S1 --> S2: found changes
+  S2 --> S2: "score"
+  S2 --> S1: found changes"
+`;
+
+exports[`fixture analysis > FromLength keeps its TLA+ module 1`] = `
+"---- MODULE FromLength ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > FromLength keeps its render tree and handlers 1`] = `
@@ -945,14 +1843,32 @@ flowchart TD
   n3 --> n4"
 `;
 
-exports[`fixture analysis > FromLength keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > FromLength keeps its state chart and findings 1`] = `
 "---
 title: FromLength src/rows-from-length.tsx:1
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;ul#gt; ↻ { length#58; count }
+  %% 1 states
+  S1: ul
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Gallery keeps its TLA+ module 1`] = `
+"---- MODULE Gallery ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Gallery keeps its render tree and handlers 1`] = `
@@ -970,14 +1886,39 @@ flowchart TD
   n2 --> n4"
 `;
 
-exports[`fixture analysis > Gallery keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Gallery keeps its state chart and findings 1`] = `
 "---
 title: Gallery src/linked.tsx:31
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;StatusBadge#gt;
+  %% 1 states
+  S1: div
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Greeting keeps its TLA+ module 1`] = `
+"---- MODULE Greeting ----
+\\* auth_user: auth.user (input), 2 cells
+VARIABLES auth_user
+
+vars == <<auth_user>>
+
+screen == CASE auth_user = "User" -> "div > p"
+            [] auth_user = "undefined" -> "div > p \\"Signed out\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ auth_user \\in {"undefined", "User"}
+
+\\* auth.user changes
+change_auth_user ==
+  /\\ auth_user' \\in {"undefined", "User"}
+
+Next == change_auth_user
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Greeting keeps its render tree and handlers 1`] = `
@@ -997,16 +1938,47 @@ flowchart TD
   n3 -->|✗| n5"
 `;
 
-exports[`fixture analysis > Greeting keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Greeting keeps its state chart and findings 1`] = `
 "---
 title: Greeting src/option-defaults.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: auth.user · #lt;div#gt; #lt;p#gt; {auth.user.name}
-  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out"
+  %% 2 states
+  %% auth_user = auth.user (input): undefined | User
+  S1: div #gt; p "Signed out"
+  S2: div #gt; p
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: auth.user changes
+  S2 --> S1: auth.user changes"
+`;
+
+exports[`fixture analysis > GuardedCast keeps its TLA+ module 1`] = `
+"---- MODULE GuardedCast ----
+\\* next: next (input), 3 cells
+VARIABLES next
+
+vars == <<next>>
+
+screen == CASE TRUE -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ next \\in {"null", "empty", "other string"}
+
+\\* apply
+t1 ==
+  /\\ UNCHANGED <<next>>
+
+\\* parent changes next
+change_next ==
+  /\\ next' \\in {"null", "empty", "other string"}
+
+Next == t1 \\/ change_next
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
@@ -1022,18 +1994,44 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > GuardedCast keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > GuardedCast keeps its state chart and findings 1`] = `
 "---
 title: GuardedCast src/claims.tsx:26
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {status}
+  %% 3 states
+  %% next = next (input): null | empty | other string
+  S1: button
   [*] --> S1
-  state "claims" as claims {
-    claims1: unproven next as "idle" | "saving" L30 in S1 · next = string
-    claims2: unproven status stays within "idle" | "saving" L27 in S1 · set through a cast
-  }"
+  S1 --> S1: apply"
+`;
+
+exports[`fixture analysis > GuardedWrite keeps its TLA+ module 1`] = `
+"---- MODULE GuardedWrite ----
+\\* next: next (input), 3 cells
+VARIABLES next
+
+vars == <<next>>
+
+screen == CASE TRUE -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ next \\in {"undefined", "idle", "saving"}
+
+\\* apply
+t1 ==
+  /\\ UNCHANGED <<next>>
+
+\\* parent changes next
+change_next ==
+  /\\ next' \\in {"undefined", "idle", "saving"}
+
+Next == t1 \\/ change_next
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > GuardedWrite keeps its render tree and handlers 1`] = `
@@ -1049,17 +2047,46 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > GuardedWrite keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > GuardedWrite keeps its state chart and findings 1`] = `
 "---
 title: GuardedWrite src/claims.tsx:41
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {status}
+  %% 3 states
+  %% next = next (input): undefined | idle | saving
+  S1: button
   [*] --> S1
-  state "claims" as claims {
-    claims1: holds status stays within "idle" | "saving" L42
-  }"
+  S1 --> S1: apply"
+`;
+
+exports[`fixture analysis > HiddenHandler keeps its TLA+ module 1`] = `
+"---- MODULE HiddenHandler ----
+\\* kind: kind (input), 3 cells
+VARIABLES kind
+
+vars == <<kind>>
+
+screen == CASE kind = "c" -> "p \\"c\\""
+            [] kind /= "c" -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ kind \\in {"a", "b", "c"}
+
+\\* setPicked(kind as "a" | "b")
+t1 ==
+  /\\ kind /= "c"
+  /\\ UNCHANGED <<kind>>
+
+\\* parent changes kind
+change_kind ==
+  /\\ kind' \\in {"a", "b", "c"}
+
+Next == t1 \\/ change_kind
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > HiddenHandler keeps its render tree and handlers 1`] = `
@@ -1079,20 +2106,47 @@ flowchart TD
   n4 -.-> n5"
 `;
 
-exports[`fixture analysis > HiddenHandler keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > HiddenHandler keeps its state chart and findings 1`] = `
 "---
 title: HiddenHandler src/claims.tsx:35
 ---
 stateDiagram-v2
   direction LR
-  S1: kind === "c" · #lt;p#gt; "c"
-  S2: kind !== "c" · #lt;button#gt; {picked}
+  %% 3 states
+  %% kind = kind (input): a | b | c
+  S1: button
+  S2: p "c"
   [*] --> S1
   [*] --> S2
-  state "claims" as claims {
-    claims1: holds kind as "a" | "b" L38
-    claims2: holds picked stays within "a" | "b" L36
-  }"
+  S1 --> S1: setPicked(kind as "a" | "b")
+  S1 --> S2: parent changes kind
+  S2 --> S1: parent changes kind"
+`;
+
+exports[`fixture analysis > HintField keeps its TLA+ module 1`] = `
+"---- MODULE HintField ----
+\\* hint: hint (input), 3 cells
+VARIABLES hint
+
+vars == <<hint>>
+
+screen == CASE hint /= "other string" /\\ hint = "other string" -> "label > p \\"Add a hint\\" > small"
+            [] hint /= "other string" /\\ hint /= "other string" -> "label > p \\"Add a hint\\" > small \\"No hint yet\\""
+            [] hint = "other string" /\\ hint = "other string" -> "label > small"
+            [] hint = "other string" /\\ hint /= "other string" -> "label > small \\"No hint yet\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ hint \\in {"undefined", "empty", "other string"}
+
+\\* parent changes hint
+change_hint ==
+  /\\ hint' \\in {"undefined", "empty", "other string"}
+
+Next == change_hint
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > HintField keeps its render tree and handlers 1`] = `
@@ -1116,16 +2170,37 @@ flowchart TD
   n5 -->|✗| n7"
 `;
 
-exports[`fixture analysis > HintField keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > HintField keeps its state chart and findings 1`] = `
 "---
 title: HintField src/narrowed-strings.tsx:1
 ---
 stateDiagram-v2
   direction LR
-  S1: !hint · #lt;label#gt; #lt;p#gt; "Add a hint" #lt;small#gt; "No hint yet"
-  S2: hint · #lt;label#gt; #lt;small#gt; {hint}
+  %% 3 states
+  %% hint = hint (input): undefined | empty | other string
+  S1: label #gt; p "Add a hint" #gt; small "No hint yet"
+  S2: label #gt; small
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: parent changes hint
+  S2 --> S1: parent changes hint"
+`;
+
+exports[`fixture analysis > Inbox keeps its TLA+ module 1`] = `
+"---- MODULE Inbox ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "section"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
@@ -1141,14 +2216,45 @@ flowchart TD
   n2 --> n3"
 `;
 
-exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Inbox keeps its state chart and findings 1`] = `
 "---
 title: Inbox src/literals.tsx:17
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;section#gt; #lt;em#gt; "Empty"
+  %% 1 states
+  S1: section
   [*] --> S1"
+`;
+
+exports[`fixture analysis > KindSwitch keeps its TLA+ module 1`] = `
+"---- MODULE KindSwitch ----
+\\* kind: kind (state), 3 cells
+VARIABLES kind
+
+vars == <<kind>>
+
+screen == CASE ((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > FabRow > p \\"Unreachable\\""
+            [] ((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ~((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > FabRow"
+            [] ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > p \\"Chip\\" > p \\"Unreachable\\""
+            [] ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab")) /\\ ~((kind /= "chip" /\\ ~((kind = "fab" /\\ kind = "fab") \\/ (kind /= "fab" /\\ kind = "extendedFab"))) \\/ (kind = "chip" /\\ kind /= "chip")) -> "div > p \\"Chip\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ kind = "chip"
+
+\\* "FAB"
+t1 ==
+  /\\ kind' = "fab"
+
+\\* "Extended"
+t2 ==
+  /\\ kind' = "extendedFab"
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > KindSwitch keeps its render tree and handlers 1`] = `
@@ -1180,24 +2286,40 @@ flowchart TD
   n10 -->|✓| n11"
 `;
 
-exports[`fixture analysis > KindSwitch keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > KindSwitch keeps its state chart and findings 1`] = `
 "---
 title: KindSwitch src/or-conditions.tsx:8
 ---
 stateDiagram-v2
   direction LR
-  S1: kind === "fab" || kind === "extendedFab" · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;FabRow#gt;
-  S2: !(kind === "fab" || kind === "extendedFab") · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;p#gt; "Chip"
-  [*] --> S2
-  S2 --> S1: "FAB"
-  S2 --> S1: "Extended"
-  state "claims" as claims {
-    claims1: holds kind as "extendedFab" | "fab" L15
-    claims2: holds kind stays within "chip" | "extendedFab" | "fab" L9
-  }
-  state "unreachable branches" as unreachable {
-    unreachable1: never kind !== "chip" && !(kind === "fab" || kind === "extendedFab") L16
-  }"
+  %% 3 states
+  %% kind = kind (state): chip | extendedFab | fab
+  S1: div #gt; p "Chip"
+  S2: div #gt; FabRow
+  [*] --> S1
+  S1 --> S2: "FAB", "Extended"
+  S2 --> S2: "FAB", "Extended"
+  %% ⚠ kind !== "chip" && !(kind === "fab" || kind === "extendedFab") is never true here (L16)"
+`;
+
+exports[`fixture analysis > Latest keeps its TLA+ module 1`] = `
+"---- MODULE Latest ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "button"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+\\* bump
+t1 ==
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Latest keeps its render tree and handlers 1`] = `
@@ -1213,14 +2335,33 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > Latest keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Latest keeps its state chart and findings 1`] = `
 "---
 title: Latest src/ref-props.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;button#gt; {count}
-  [*] --> S1"
+  %% 1 states
+  S1: button
+  [*] --> S1
+  S1 --> S1: bump"
+`;
+
+exports[`fixture analysis > List keeps its TLA+ module 1`] = `
+"---- MODULE List ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > List keeps its render tree and handlers 1`] = `
@@ -1238,14 +2379,32 @@ flowchart TD
   n3 --> n4"
 `;
 
-exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > List keeps its state chart and findings 1`] = `
 "---
 title: List src/dashboard.tsx:47
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;ul#gt; ↻ items
+  %% 1 states
+  S1: ul
   [*] --> S1"
+`;
+
+exports[`fixture analysis > ListSummary keeps its TLA+ module 1`] = `
+"---- MODULE ListSummary ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "p \\"some\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ListSummary keeps its render tree and handlers 1`] = `
@@ -1259,14 +2418,38 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > ListSummary keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ListSummary keeps its state chart and findings 1`] = `
 "---
 title: ListSummary src/option-defaults.tsx:26
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; {"some"}
+  %% 1 states
+  S1: p "some"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Loader keeps its TLA+ module 1`] = `
+"---- MODULE Loader ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+\\* "Start"
+t1 ==
+
+\\* "Finish"
+t2 ==
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Loader keeps its render tree and handlers 1`] = `
@@ -1290,17 +2473,33 @@ flowchart TD
   n6 -.-> n7"
 `;
 
-exports[`fixture analysis > Loader keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Loader keeps its state chart and findings 1`] = `
 "---
 title: Loader src/linked.tsx:15
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;button#gt; "Start" #lt;button#gt; "Finish"
+  %% 1 states
+  S1: div
   [*] --> S1
-  state "claims" as claims {
-    claims1: holds status stays within "done" | "idle" | "loading" L16
-  }"
+  S1 --> S1: "Start", "Finish""
+`;
+
+exports[`fixture analysis > Loading keeps its TLA+ module 1`] = `
+"---- MODULE Loading ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "p \\"Loading…\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
@@ -1314,14 +2513,47 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > Loading keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Loading keeps its state chart and findings 1`] = `
 "---
 title: Loading src/counter.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; "Loading…"
+  %% 1 states
+  S1: p "Loading…"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > LongLoop keeps its TLA+ module 1`] = `
+"---- MODULE LongLoop ----
+\\* isFull: isFull (state), 2 cells
+\\* total: total (input), 3 cells
+VARIABLES isFull, total
+
+vars == <<isFull, total>>
+
+screen == CASE isFull = "true" -> "button > \\"Full\\""
+            [] isFull = "false" -> "button > \\"Fill\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isFull = "false"
+  /\\ total \\in {"<100", "100", ">100"}
+
+\\* fill
+t1 ==
+  /\\ isFull' \\in (IF total /= "100" THEN {"false"} ELSE {"true"})
+  /\\ UNCHANGED <<total>>
+
+\\* total changes
+change_total ==
+  /\\ total' \\in {"<100", "100", ">100"}
+  /\\ UNCHANGED <<isFull>>
+
+Next == t1 \\/ change_total
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > LongLoop keeps its render tree and handlers 1`] = `
@@ -1343,20 +2575,63 @@ flowchart TD
   n4 -->|✗| n6"
 `;
 
-exports[`fixture analysis > LongLoop keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > LongLoop keeps its state chart and findings 1`] = `
 "---
 title: LongLoop src/loops.tsx:95
 ---
 stateDiagram-v2
   direction LR
-  S1: isFull · #lt;button#gt; {"Full"}
-  S2: !isFull · #lt;button#gt; {"Fill"}
-  [*] --> S2
+  %% 6 states
+  %% isFull = isFull (state): false | true
+  %% total = total (input): <100 | 100 | >100
+  S1: button #gt; "Fill"
+  S2: button #gt; "Full"
+  [*] --> S1
+  S1 --> S1: fill
   S1 --> S2: fill
-  S2 --> S1: fill
-  state "claims" as claims {
-    claims1: holds isFull stays within false | true L96
-  }"
+  S2 --> S2: fill
+  S2 --> S1: fill"
+`;
+
+exports[`fixture analysis > LoopList keeps its TLA+ module 1`] = `
+"---- MODULE LoopList ----
+\\* hasLong: hasLong (input), 2 cells
+\\* isSelected: isSelected (state), 2 cells
+\\* item: item (input), 2 cells
+VARIABLES hasLong, isSelected, item
+
+vars == <<hasLong, isSelected, item>>
+
+screen == CASE hasLong = "true" /\\ isSelected = "true" -> "div > p \\"Long\\" > \\"Selected\\""
+            [] hasLong = "true" /\\ isSelected = "false" -> "div > p \\"Long\\" > \\"Select\\""
+            [] hasLong = "false" /\\ isSelected = "true" -> "div > \\"Selected\\""
+            [] hasLong = "false" /\\ isSelected = "false" -> "div > \\"Select\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ hasLong \\in {"false", "true"}
+  /\\ isSelected = "false"
+  /\\ item \\in {"empty", "other string"}
+
+\\* selectAll
+t1 ==
+  /\\ isSelected' \\in (IF item = "other string" /\\ item = "other string" THEN {"true"} ELSE {isSelected})
+  /\\ UNCHANGED <<hasLong, item>>
+
+\\* hasLong changes
+change_hasLong ==
+  /\\ hasLong' \\in {"false", "true"}
+  /\\ UNCHANGED <<isSelected, item>>
+
+\\* item changes
+change_item ==
+  /\\ item' \\in {"empty", "other string"}
+  /\\ UNCHANGED <<hasLong, isSelected>>
+
+Next == t1 \\/ change_hasLong \\/ change_item
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > LoopList keeps its render tree and handlers 1`] = `
@@ -1390,28 +2665,79 @@ flowchart TD
   n10 -->|✗| n12"
 `;
 
-exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > LoopList keeps its state chart and findings 1`] = `
 "---
 title: LoopList src/loops.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  state "LoopList" as regions {
-    %% hasLong
-    S1: hasLong · #lt;p#gt; "Long"
-    S2: !hasLong · ∅
-    [*] --> S1
-    [*] --> S2
-    --
-    %% isSelected
-    S3: isSelected · {"Selected"}
-    S4: !isSelected · {"Select"}
-    [*] --> S4
-    S4 --> S3: selectAll
-  }
-  state "claims" as claims {
-    claims1: holds isSelected stays within false | true L4
-  }"
+  %% 8 states
+  %% hasLong = hasLong (input): false | true
+  %% isSelected = isSelected (state): false | true
+  %% item = item (input): empty | other string
+  S1: div #gt; "Select"
+  S2: div #gt; p "Long" #gt; "Select"
+  S3: div #gt; "Selected"
+  S4: div #gt; p "Long" #gt; "Selected"
+  [*] --> S1
+  [*] --> S2
+  S1 --> S1: selectAll
+  S1 --> S2: hasLong changes
+  S1 --> S3: selectAll
+  S2 --> S2: selectAll
+  S2 --> S1: hasLong changes
+  S2 --> S4: selectAll
+  S3 --> S3: selectAll
+  S3 --> S4: hasLong changes
+  S4 --> S4: selectAll
+  S4 --> S3: hasLong changes"
+`;
+
+exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
+"---- MODULE NameForm ----
+\\* isPending: isPending (input), 2 cells
+\\* name: name (state), 2 cells
+\\* test_typeof_data_get_name_string: typeof data.get("name") === "string" (test), 2 cells
+\\* test_typeof_data_get_name: typeof data.get("name") (test), 2 cells
+VARIABLES isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name
+
+vars == <<isPending, name, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+
+screen == CASE isPending = "true" -> "form > p \\"Saving…\\""
+            [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
+            [] isPending = "false" /\\ name = "other string" -> "form > p"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isPending \\in {"false", "true"}
+  /\\ name = "empty"
+  /\\ test_typeof_data_get_name_string \\in {"false", "true"}
+  /\\ test_typeof_data_get_name \\in {"false", "true"}
+
+\\* "Save"
+t1 ==
+  /\\ name' \\in (IF (name = "empty" /\\ test_typeof_data_get_name_string = "false" /\\ test_typeof_data_get_name = "false") \\/ (name = "empty" /\\ test_typeof_data_get_name_string = "false" /\\ test_typeof_data_get_name = "true") THEN {"empty"} ELSE (IF (name = "empty" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "false") \\/ (name = "empty" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "true") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "false") \\/ (name = "other string" /\\ test_typeof_data_get_name_string = "true" /\\ test_typeof_data_get_name = "true") THEN {"empty", "other string"} ELSE {"other string"}))
+  /\\ UNCHANGED <<isPending, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+
+\\* isPending changes
+change_isPending ==
+  /\\ isPending' \\in {"false", "true"}
+  /\\ UNCHANGED <<name, test_typeof_data_get_name_string, test_typeof_data_get_name>>
+
+\\* typeof data.get("name") === "string" changes
+change_test_typeof_data_get_name_string ==
+  /\\ test_typeof_data_get_name_string' \\in {"false", "true"}
+  /\\ UNCHANGED <<isPending, name, test_typeof_data_get_name>>
+
+\\* typeof data.get("name") changes
+change_test_typeof_data_get_name ==
+  /\\ test_typeof_data_get_name' \\in {"false", "true"}
+  /\\ UNCHANGED <<isPending, name, test_typeof_data_get_name_string>>
+
+Next == t1 \\/ change_isPending \\/ change_test_typeof_data_get_name_string \\/ change_test_typeof_data_get_name
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > NameForm keeps its render tree and handlers 1`] = `
@@ -1441,19 +2767,61 @@ flowchart TD
   n2 --> n10"
 `;
 
-exports[`fixture analysis > NameForm keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > NameForm keeps its state chart and findings 1`] = `
 "---
 title: NameForm src/form-actions.tsx:29
 ---
 stateDiagram-v2
   direction LR
-  S1: isPending · #lt;form#gt; #lt;p#gt; "Saving…" #lt;button#gt; "Save"
-  S2: !isPending ∧ name === "" · #lt;form#gt; #lt;p#gt; {"No name yet"} #lt;button#gt; "Save"
-  S3: !isPending ∧ name !== "" · #lt;form#gt; #lt;p#gt; {name} #lt;button#gt; "Save"
+  %% 16 states
+  %% isPending = isPending (input): false | true
+  %% name = name (state): empty | other string
+  %% test_typeof_data_get_name_string = typeof data.get("name") === "string" (test): false | true
+  %% test_typeof_data_get_name = typeof data.get("name") (test): false | true
+  S1: form #gt; p #gt; "No name yet"
+  S2: form #gt; p "Saving…"
+  S3: form #gt; p
   [*] --> S1
   [*] --> S2
-  S2 --> S3: "Save"
-  S3 --> S2: "Save""
+  S1 --> S1: "Save"
+  S1 --> S2: isPending changes
+  S1 --> S3: "Save"
+  S2 --> S2: "Save"
+  S2 --> S1: isPending changes
+  S3 --> S1: "Save"
+  S3 --> S3: "Save"
+  S3 --> S2: isPending changes
+  S2 --> S3: isPending changes"
+`;
+
+exports[`fixture analysis > NavLinks keeps its TLA+ module 1`] = `
+"---- MODULE NavLinks ----
+\\* pathname: pathname (input), 4 cells
+VARIABLES pathname
+
+vars == <<pathname>>
+
+screen == CASE pathname = "/" /\\ pathname = "/blog" /\\ pathname = "/about" -> "nav > b \\"Home\\" > b \\"Blog\\" > b \\"About\\""
+            [] pathname = "/" /\\ pathname = "/blog" /\\ pathname /= "/about" -> "nav > b \\"Home\\" > b \\"Blog\\" > a \\"About\\""
+            [] pathname = "/" /\\ pathname /= "/blog" /\\ pathname = "/about" -> "nav > b \\"Home\\" > a \\"Blog\\" > b \\"About\\""
+            [] pathname = "/" /\\ pathname /= "/blog" /\\ pathname /= "/about" -> "nav > b \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+            [] pathname /= "/" /\\ pathname = "/blog" /\\ pathname = "/about" -> "nav > a \\"Home\\" > b \\"Blog\\" > b \\"About\\""
+            [] pathname /= "/" /\\ pathname = "/blog" /\\ pathname /= "/about" -> "nav > a \\"Home\\" > b \\"Blog\\" > a \\"About\\""
+            [] pathname /= "/" /\\ pathname /= "/blog" /\\ pathname = "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > b \\"About\\""
+            [] pathname /= "/" /\\ pathname /= "/blog" /\\ pathname /= "/about" -> "nav > a \\"Home\\" > a \\"Blog\\" > a \\"About\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ pathname \\in {"/", "/about", "/blog", "other string"}
+
+\\* pathname changes
+change_pathname ==
+  /\\ pathname' \\in {"/", "/about", "/blog", "other string"}
+
+Next == change_pathname
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > NavLinks keeps its render tree and handlers 1`] = `
@@ -1485,20 +2853,67 @@ flowchart TD
   n9 -->|✗| n11"
 `;
 
-exports[`fixture analysis > NavLinks keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > NavLinks keeps its state chart and findings 1`] = `
 "---
 title: NavLinks src/compared-strings.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: pathname === "/" · #lt;nav#gt; #lt;b#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
-  S2: pathname === "/blog" · #lt;nav#gt; #lt;a#gt; "Home" #lt;b#gt; "Blog" #lt;a#gt; "About"
-  S3: pathname === "/about" · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;b#gt; "About"
-  S4: pathname ∉ {"/", "/blog", "/about"} · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
+  %% 4 states
+  %% pathname = pathname (input): / | /about | /blog | other string
+  S1: nav #gt; b "Home" #gt; a "Blog" #gt; a "About"
+  S2: nav #gt; a "Home" #gt; a "Blog" #gt; b "About"
+  S3: nav #gt; a "Home" #gt; b "Blog" #gt; a "About"
+  S4: nav #gt; a "Home" #gt; a "Blog" #gt; a "About"
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  [*] --> S4"
+  [*] --> S4
+  S1 --> S2: pathname changes
+  S1 --> S3: pathname changes
+  S1 --> S4: pathname changes
+  S2 --> S1: pathname changes
+  S2 --> S3: pathname changes
+  S2 --> S4: pathname changes
+  S3 --> S1: pathname changes
+  S3 --> S2: pathname changes
+  S3 --> S4: pathname changes
+  S4 --> S1: pathname changes
+  S4 --> S2: pathname changes
+  S4 --> S3: pathname changes"
+`;
+
+exports[`fixture analysis > OpaqueCallback keeps its TLA+ module 1`] = `
+"---- MODULE OpaqueCallback ----
+\\* user: user (input), 2 cells
+\\* user_name: user.name (input), 3 cells
+VARIABLES user, user_name
+
+vars == <<user, user_name>>
+
+screen == CASE user = "User" /\\ user_name = "other string" -> "div > i \\"named\\""
+            [] ~(user = "User" /\\ user_name = "other string") /\\ user = "User" -> "div"
+            [] ~(user = "User" /\\ user_name = "other string") /\\ user = "null" -> "div (2)"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ user \\in {"null", "User"}
+  /\\ user_name \\in {"undefined", "empty", "other string"}
+
+\\* parent changes user
+change_user ==
+  /\\ user' \\in {"null", "User"}
+  /\\ UNCHANGED <<user_name>>
+
+\\* parent changes user.name
+change_user_name ==
+  /\\ user_name' \\in {"undefined", "empty", "other string"}
+  /\\ UNCHANGED <<user>>
+
+Next == change_user \\/ change_user_name
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
@@ -1520,24 +2935,47 @@ flowchart TD
   n1 -.-> n6"
 `;
 
-exports[`fixture analysis > OpaqueCallback keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > OpaqueCallback keeps its state chart and findings 1`] = `
 "---
 title: OpaqueCallback src/claims.tsx:60
 ---
 stateDiagram-v2
   direction LR
-  S1: user?.name · #lt;div#gt; #lt;i#gt; "named" ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
-  S2: !(user?.name) ∧ user != null · #lt;div#gt; {user.name} ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
-  S3: !(user?.name) ∧ user == null · #lt;div#gt; ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  %% 6 states
+  %% user = user (input): null | User
+  %% user_name = user.name (input): undefined | empty | other string
+  S1: div (2)
+  S2: div
+  S3: div #gt; i "named"
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  state "claims" as claims {
-    claims1: unproven user! L64 · user = null
-  }
-  state "bailouts" as bailouts {
-    bailouts1: unknown-call L63 call returns JSX the analysis can't see into
-  }"
+  S1 --> S2: parent changes user
+  S1 --> S3: parent changes user
+  S2 --> S1: parent changes user
+  S2 --> S3: parent changes user.name
+  S3 --> S1: parent changes user
+  S3 --> S2: parent changes user.name"
+`;
+
+exports[`fixture analysis > OptionRow keeps its TLA+ module 1`] = `
+"---- MODULE OptionRow ----
+\\* options_index_icon: options[index].icon (derived), 3 cells
+VARIABLES options_index_icon
+
+vars == <<options_index_icon>>
+
+screen == CASE options_index_icon = "other string" -> "li > i"
+            [] options_index_icon /= "other string" -> "li"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ options_index_icon \\in {"undefined", "empty", "other string"}
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > OptionRow keeps its render tree and handlers 1`] = `
@@ -1557,16 +2995,35 @@ flowchart TD
   n2 --> n5"
 `;
 
-exports[`fixture analysis > OptionRow keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > OptionRow keeps its state chart and findings 1`] = `
 "---
 title: OptionRow src/claims.tsx:82
 ---
 stateDiagram-v2
   direction LR
-  S1: options[index].icon · #lt;li#gt; #lt;i#gt; {options[index].icon} {options[index].label}
-  S2: !options[index].icon · #lt;li#gt; {options[index].label}
+  %% 3 states
+  %% options_index_icon = options[index].icon (derived): undefined | empty | other string
+  S1: li
+  S2: li #gt; i
   [*] --> S1
   [*] --> S2"
+`;
+
+exports[`fixture analysis > Page keeps its TLA+ module 1`] = `
+"---- MODULE Page ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "Toggle"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
@@ -1580,14 +3037,49 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Page keeps its state chart and findings 1`] = `
 "---
 title: Page src/plain.jsx:13
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;Toggle#gt;
+  %% 1 states
+  S1: Toggle
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Panels keeps its TLA+ module 1`] = `
+"---- MODULE Panels ----
+\\* isOpen: isOpen (state), 2 cells
+\\* isDark: isDark (state), 2 cells
+VARIABLES isOpen, isDark
+
+vars == <<isOpen, isDark>>
+
+screen == CASE isOpen = "true" /\\ isDark = "true" -> "div > p \\"More details\\" > span \\"Dark\\""
+            [] isOpen = "true" /\\ isDark = "false" -> "div > p \\"More details\\" > span \\"Light\\""
+            [] isOpen = "false" /\\ isDark = "true" -> "div > span \\"Dark\\""
+            [] isOpen = "false" /\\ isDark = "false" -> "div > span \\"Light\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isOpen = "false"
+  /\\ isDark = "false"
+
+\\* "Details"
+t1 ==
+  /\\ isOpen' \\in (IF isOpen = "false" THEN {"true"} ELSE {"false"})
+  /\\ UNCHANGED <<isDark>>
+
+\\* "Theme"
+t2 ==
+  /\\ isDark' \\in (IF isDark = "false" THEN {"true"} ELSE {"false"})
+  /\\ UNCHANGED <<isOpen>>
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Panels keeps its render tree and handlers 1`] = `
@@ -1619,31 +3111,63 @@ flowchart TD
   n9 -->|✗| n11"
 `;
 
-exports[`fixture analysis > Panels keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Panels keeps its state chart and findings 1`] = `
 "---
 title: Panels src/chains.tsx:23
 ---
 stateDiagram-v2
   direction LR
-  state "Panels" as regions {
-    %% isOpen
-    S1: isOpen · #lt;p#gt; "More details"
-    S2: !isOpen · ∅
-    [*] --> S2
-    S1 --> S2: "Details"
-    S2 --> S1: "Details"
-    --
-    %% isDark
-    S3: isDark · #lt;span#gt; "Dark"
-    S4: !isDark · #lt;span#gt; "Light"
-    [*] --> S4
-    S3 --> S4: "Theme"
-    S4 --> S3: "Theme"
-  }
-  state "claims" as claims {
-    claims1: holds isOpen stays within false | true L24
-    claims2: holds isDark stays within false | true L25
-  }"
+  %% 4 states
+  %% isOpen = isOpen (state): false | true
+  %% isDark = isDark (state): false | true
+  S1: div #gt; span "Light"
+  S2: div #gt; p "More details" #gt; span "Light"
+  S3: div #gt; span "Dark"
+  S4: div #gt; p "More details" #gt; span "Dark"
+  [*] --> S1
+  S1 --> S2: "Details"
+  S1 --> S3: "Theme"
+  S2 --> S1: "Details"
+  S2 --> S4: "Theme"
+  S3 --> S4: "Details"
+  S3 --> S1: "Theme"
+  S4 --> S3: "Details"
+  S4 --> S2: "Theme""
+`;
+
+exports[`fixture analysis > Picker keeps its TLA+ module 1`] = `
+"---- MODULE Picker ----
+\\* data: data (input), 2 cells
+\\* selected: selected (state), 3 cells
+VARIABLES data, selected
+
+vars == <<data, selected>>
+
+screen == CASE data = "{ rows: Row[]; }" /\\ selected = "other string" -> "ul > list > p"
+            [] data = "{ rows: Row[]; }" /\\ selected /= "other string" -> "ul > list"
+            [] data = "null" /\\ selected = "other string" -> "ul > p"
+            [] data = "null" /\\ selected /= "other string" -> "ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ data \\in {"null", "{ rows: Row[]; }"}
+  /\\ selected = "null"
+
+\\* setSelected(row.id)
+t1 ==
+  /\\ data = "{ rows: Row[]; }"
+  /\\ selected' \\in {"null", "empty", "other string"}
+  /\\ UNCHANGED <<data>>
+
+\\* parent changes data
+change_data ==
+  /\\ data' \\in {"null", "{ rows: Row[]; }"}
+  /\\ UNCHANGED <<selected>>
+
+Next == t1 \\/ change_data
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Picker keeps its render tree and handlers 1`] = `
@@ -1671,29 +3195,69 @@ flowchart TD
   n8 -->|✓| n9"
 `;
 
-exports[`fixture analysis > Picker keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Picker keeps its state chart and findings 1`] = `
 "---
 title: Picker src/mapped-rows.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  state "Picker" as regions {
-    %% data
-    S1: data != null · ↻ data.rows
-    S2: data == null · ∅
-    [*] --> S1
-    [*] --> S2
-    --
-    %% selected
-    S3: selected · #lt;p#gt; {selected}
-    S4: !selected · {selected}
-    [*] --> S4
-    S3 --> S4: setSelected(row.id)
-    S4 --> S3: setSelected(row.id)
-  }
-  state "claims" as claims {
-    claims1: holds selected stays within null | string L8
-  }"
+  %% 6 states
+  %% data = data (input): null | { rows: Row[]; }
+  %% selected = selected (state): null | empty | other string
+  S1: ul
+  S2: ul #gt; list
+  S3: ul #gt; list #gt; p
+  S4: ul #gt; p
+  [*] --> S1
+  [*] --> S2
+  S1 --> S2: parent changes data
+  S2 --> S2: setSelected(row.id)
+  S2 --> S3: setSelected(row.id)
+  S2 --> S1: parent changes data
+  S3 --> S2: setSelected(row.id)
+  S3 --> S3: setSelected(row.id)
+  S3 --> S4: parent changes data
+  S4 --> S3: parent changes data"
+`;
+
+exports[`fixture analysis > PlanForm keeps its TLA+ module 1`] = `
+"---- MODULE PlanForm ----
+\\* watch_plan: watch("plan") (derived), 2 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+VARIABLES watch_plan, pending_t1
+
+vars == <<watch_plan, pending_t1>>
+
+screen == CASE watch_plan = "pro" -> "form > p \\"Billed monthly\\""
+            [] watch_plan = "free" -> "form > p \\"No charge\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ watch_plan \\in {"free", "pro"}
+  /\\ pending_t1 = "idle"
+
+\\* <select> {...}
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<watch_plan>>
+
+\\* <select> {...} resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ watch_plan' \\in {"free", "pro"}
+
+\\* <select> {...} rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<watch_plan>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > PlanForm keeps its render tree and handlers 1`] = `
@@ -1721,18 +3285,69 @@ flowchart TD
   n7 -->|✗| n9"
 `;
 
-exports[`fixture analysis > PlanForm keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > PlanForm keeps its state chart and findings 1`] = `
 "---
 title: PlanForm src/watched-form.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  S1: watch("plan") === "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "Billed monthly"
-  S2: watch("plan") !== "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "No charge"
+  %% 4 states
+  %% watch_plan = watch("plan") (derived): free | pro
+  %% pending_t1 = t1 pending (pending): idle | pending
+  S1: form #gt; p "No charge"
+  S2: form #gt; p "Billed monthly"
   [*] --> S1
   [*] --> S2
-  S1 --> S2: #lt;select#gt; {...} (async)
-  S2 --> S1: #lt;select#gt; {...} (async)"
+  S1 --> S1: #lt;select#gt; {...} resolves
+  S1 --> S2: #lt;select#gt; {...} resolves
+  S2 --> S1: #lt;select#gt; {...} resolves
+  S2 --> S2: #lt;select#gt; {...} resolves
+  %% ⚠ When <select> {...} fails, nothing on screen changes (L12)"
+`;
+
+exports[`fixture analysis > PriceTag keeps its TLA+ module 1`] = `
+"---- MODULE PriceTag ----
+\\* price: price (input), 3 cells
+\\* test_typeof_price_string: typeof price === "string" (test), 2 cells
+\\* test_typeof_price_number: typeof price === "number" (test), 2 cells
+VARIABLES price, test_typeof_price_string, test_typeof_price_number
+
+vars == <<price, test_typeof_price_string, test_typeof_price_number>>
+
+screen == CASE test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > b > i > s \\"Free\\""
+            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > b > i"
+            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > b > s \\"Free\\""
+            [] test_typeof_price_string = "true" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p > b"
+            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price = "null" -> "p > i > s \\"Free\\""
+            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "true" /\\ price /= "null" -> "p > i"
+            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price = "null" -> "p > s \\"Free\\""
+            [] test_typeof_price_string = "false" /\\ test_typeof_price_number = "false" /\\ price /= "null" -> "p"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ price \\in {"null", "other string", "any number"}
+  /\\ test_typeof_price_string \\in {"false", "true"}
+  /\\ test_typeof_price_number \\in {"false", "true"}
+
+\\* parent changes price
+change_price ==
+  /\\ price' \\in {"null", "other string", "any number"}
+  /\\ UNCHANGED <<test_typeof_price_string, test_typeof_price_number>>
+
+\\* typeof price === "string" changes
+change_test_typeof_price_string ==
+  /\\ test_typeof_price_string' \\in {"false", "true"}
+  /\\ UNCHANGED <<price, test_typeof_price_number>>
+
+\\* typeof price === "number" changes
+change_test_typeof_price_number ==
+  /\\ test_typeof_price_number' \\in {"false", "true"}
+  /\\ UNCHANGED <<price, test_typeof_price_string>>
+
+Next == change_price \\/ change_test_typeof_price_string \\/ change_test_typeof_price_number
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > PriceTag keeps its render tree and handlers 1`] = `
@@ -1758,18 +3373,100 @@ flowchart TD
   n7 -->|✓| n8"
 `;
 
-exports[`fixture analysis > PriceTag keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > PriceTag keeps its state chart and findings 1`] = `
 "---
 title: PriceTag src/typeof-checks.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: typeof price === "string" · #lt;p#gt; #lt;b#gt; {price}
-  S2: typeof price === "number" · #lt;p#gt; #lt;i#gt; ⚠ price.toFixed(2)
-  S3: typeof price ∉ {"string", "number"} · #lt;p#gt; #lt;s#gt; "Free"
+  %% 12 states
+  %% price = price (input): null | other string | any number
+  %% test_typeof_price_string = typeof price === "string" (test): false | true
+  %% test_typeof_price_number = typeof price === "number" (test): false | true
+  S1: p #gt; s "Free"
+  S2: p #gt; i #gt; s "Free"
+  S3: p #gt; b #gt; s "Free"
+  S4: p #gt; b #gt; i #gt; s "Free"
+  S5: p
+  S6: p #gt; i
+  S7: p #gt; b
+  S8: p #gt; b #gt; i
   [*] --> S1
   [*] --> S2
-  [*] --> S3"
+  [*] --> S3
+  [*] --> S4
+  [*] --> S5
+  [*] --> S6
+  [*] --> S7
+  [*] --> S8
+  S1 --> S5: parent changes price
+  S1 --> S3: typeof price === "string" changes
+  S1 --> S2: typeof price === "number" changes
+  S2 --> S6: parent changes price
+  S2 --> S4: typeof price === "string" changes
+  S2 --> S1: typeof price === "number" changes
+  S3 --> S7: parent changes price
+  S3 --> S1: typeof price === "string" changes
+  S3 --> S4: typeof price === "number" changes
+  S4 --> S8: parent changes price
+  S4 --> S2: typeof price === "string" changes
+  S4 --> S3: typeof price === "number" changes
+  S5 --> S1: parent changes price
+  S5 --> S7: typeof price === "string" changes
+  S5 --> S6: typeof price === "number" changes
+  S6 --> S2: parent changes price
+  S6 --> S8: typeof price === "string" changes
+  S6 --> S5: typeof price === "number" changes
+  S7 --> S3: parent changes price
+  S7 --> S5: typeof price === "string" changes
+  S7 --> S8: typeof price === "number" changes
+  S8 --> S4: parent changes price
+  S8 --> S6: typeof price === "string" changes
+  S8 --> S7: typeof price === "number" changes"
+`;
+
+exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
+"---- MODULE Profile ----
+\\* status: status (state), 2 cells
+\\* user_name: user.name (input), 2 cells
+VARIABLES status, user_name
+
+vars == <<status, user_name>>
+
+screen == CASE status = "saving" -> "p \\"Saving\\""
+            [] status = "idle" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status = "idle"
+  /\\ user_name \\in {"empty", "other string"}
+
+\\* "Save"
+t1 ==
+  /\\ status = "idle"
+  /\\ status' \\in (IF user_name = "empty" THEN {"idle"} ELSE {"saving"})
+  /\\ UNCHANGED <<user_name>>
+
+\\* "Next"
+t2 ==
+  /\\ status = "idle"
+  /\\ UNCHANGED <<status, user_name>>
+
+\\* "Finish"
+t3 ==
+  /\\ status = "idle"
+  /\\ status' \\in {"idle", "saving"}
+  /\\ UNCHANGED <<user_name>>
+
+\\* parent changes user.name
+change_user_name ==
+  /\\ user_name' \\in {"empty", "other string"}
+  /\\ UNCHANGED <<status>>
+
+Next == t1 \\/ t2 \\/ t3 \\/ change_user_name
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
@@ -1805,25 +3502,61 @@ flowchart TD
   n12 -.-> n13"
 `;
 
-exports[`fixture analysis > Profile keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Profile keeps its state chart and findings 1`] = `
 "---
 title: Profile src/claims.tsx:11
 ---
 stateDiagram-v2
   direction LR
-  S1: status === "saving" · #lt;p#gt; "Saving " {user.name}
-  S2: status !== "saving" · #lt;div#gt; #lt;p#gt; {step} #lt;button#gt; "Save" #lt;button#gt; "Next" #lt;button#gt; "Finish"
-  [*] --> S2
-  S2 --> S1: "Save"
-  state "claims" as claims {
-    claims1: unproven invariant(mode === "view" || user !== null) L14 · mode = "edit", user = null
-    claims2: unproven user as User L15 in S1 after "Save" · user = null
-    claims3: holds step as "a" | "b" L18
-    claims4: unproven user! L19 in S2 · user = null
-    claims5: broken "done" as "idle" | "saving" L21 in S2 · "done" = "done"
-    claims6: broken status stays within "idle" | "saving" L12 in S2 · set to "done"
-    claims7: holds step stays within "a" | "b" | "c" L13
-  }"
+  %% 4 states
+  %% status = status (state): idle | saving
+  %% user_name = user.name (input): empty | other string
+  S1: div
+  S2: p "Saving"
+  [*] --> S1
+  S1 --> S1: "Save", "Next", "Finish"
+  S1 --> S2: "Finish", "Save""
+`;
+
+exports[`fixture analysis > ProfileCard keeps its TLA+ module 1`] = `
+"---- MODULE ProfileCard ----
+\\* query_isPending: query.isPending (input), 2 cells
+\\* query_isError: query.isError (input), 2 cells
+\\* query_data_isAdmin: query.data.isAdmin (input), 2 cells
+VARIABLES query_isPending, query_isError, query_data_isAdmin
+
+vars == <<query_isPending, query_isError, query_data_isAdmin>>
+
+screen == CASE query_isPending = "true" -> "p \\"Loading\\""
+            [] query_isPending = "false" /\\ query_isError = "true" -> "p \\"Error:\\""
+            [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "true" -> "div > span \\"Admin\\""
+            [] query_isPending = "false" /\\ query_isError = "false" /\\ query_data_isAdmin = "false" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ query_isPending \\in {"false", "true"}
+  /\\ query_isError \\in {"false", "true"}
+  /\\ query_data_isAdmin \\in {"false", "true"}
+
+\\* query.isPending changes
+change_query_isPending ==
+  /\\ query_isPending' \\in {"false", "true"}
+  /\\ UNCHANGED <<query_isError, query_data_isAdmin>>
+
+\\* query.isError changes
+change_query_isError ==
+  /\\ query_isError' \\in {"false", "true"}
+  /\\ UNCHANGED <<query_isPending, query_data_isAdmin>>
+
+\\* query.data.isAdmin changes
+change_query_data_isAdmin ==
+  /\\ query_data_isAdmin' \\in {"false", "true"}
+  /\\ UNCHANGED <<query_isPending, query_isError>>
+
+Next == change_query_isPending \\/ change_query_isError \\/ change_query_data_isAdmin
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ProfileCard keeps its render tree and handlers 1`] = `
@@ -1855,20 +3588,81 @@ flowchart TD
   n10 -->|✓| n11"
 `;
 
-exports[`fixture analysis > ProfileCard keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ProfileCard keeps its state chart and findings 1`] = `
 "---
 title: ProfileCard src/query.tsx:10
 ---
 stateDiagram-v2
   direction LR
-  S1: query.isPending · #lt;p#gt; "Loading"
-  S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error#58; " {query.error.message}
-  S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
-  S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}
+  %% 8 states
+  %% query_isPending = query.isPending (input): false | true
+  %% query_isError = query.isError (input): false | true
+  %% query_data_isAdmin = query.data.isAdmin (input): false | true
+  S1: div
+  S2: div #gt; span "Admin"
+  S3: p "Error#58;"
+  S4: p "Loading"
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  [*] --> S4"
+  [*] --> S4
+  S1 --> S4: query.isPending changes
+  S1 --> S3: query.isError changes
+  S1 --> S2: query.data.isAdmin changes
+  S2 --> S4: query.isPending changes
+  S2 --> S3: query.isError changes
+  S2 --> S1: query.data.isAdmin changes
+  S3 --> S4: query.isPending changes
+  S3 --> S1: query.isError changes
+  S3 --> S2: query.isError changes
+  S4 --> S1: query.isPending changes
+  S4 --> S2: query.isPending changes
+  S4 --> S3: query.isPending changes"
+`;
+
+exports[`fixture analysis > ProfileStatus keeps its TLA+ module 1`] = `
+"---- MODULE ProfileStatus ----
+\\* useQuery_isPending: useQuery().isPending (input), 2 cells
+\\* useQuery_isError: useQuery().isError (input), 2 cells
+\\* useQuery_data: useQuery().data (input), 2 cells
+VARIABLES useQuery_isPending, useQuery_isError, useQuery_data
+
+vars == <<useQuery_isPending, useQuery_isError, useQuery_data>>
+
+screen == CASE useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p \\"Error\\" > p"
+            [] useQuery_isPending = "true" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\" > p \\"Error\\""
+            [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Loading\\" > p"
+            [] useQuery_isPending = "true" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div > p \\"Loading\\""
+            [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p \\"Error\\" > p"
+            [] useQuery_isPending = "false" /\\ useQuery_isError = "true" /\\ useQuery_data = "undefined" -> "div > p \\"Error\\""
+            [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "NoInfer<Profile>" -> "div > p"
+            [] useQuery_isPending = "false" /\\ useQuery_isError = "false" /\\ useQuery_data = "undefined" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ useQuery_isPending \\in {"false", "true"}
+  /\\ useQuery_isError \\in {"false", "true"}
+  /\\ useQuery_data \\in {"undefined", "NoInfer<Profile>"}
+
+\\* useQuery().isPending changes
+change_useQuery_isPending ==
+  /\\ useQuery_isPending' \\in {"false", "true"}
+  /\\ UNCHANGED <<useQuery_isError, useQuery_data>>
+
+\\* useQuery().isError changes
+change_useQuery_isError ==
+  /\\ useQuery_isError' \\in {"false", "true"}
+  /\\ UNCHANGED <<useQuery_isPending, useQuery_data>>
+
+\\* useQuery().data changes
+change_useQuery_data ==
+  /\\ useQuery_data' \\in {"undefined", "NoInfer<Profile>"}
+  /\\ UNCHANGED <<useQuery_isPending, useQuery_isError>>
+
+Next == change_useQuery_isPending \\/ change_useQuery_isError \\/ change_useQuery_data
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ProfileStatus keeps its render tree and handlers 1`] = `
@@ -1894,20 +3688,92 @@ flowchart TD
   n7 -->|✓| n8"
 `;
 
-exports[`fixture analysis > ProfileStatus keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ProfileStatus keeps its state chart and findings 1`] = `
 "---
 title: ProfileStatus src/query.tsx:22
 ---
 stateDiagram-v2
   direction LR
-  S1: useQuery().isPending · #lt;div#gt; #lt;p#gt; "Loading"
-  S2: !useQuery().isPending ∧ useQuery().isError ∧ useQuery().data · #lt;div#gt; #lt;p#gt; "Error" #lt;p#gt; {useQuery().data.name}
-  S3: !useQuery().isPending ∧ useQuery().isError ∧ !useQuery().data · #lt;div#gt; #lt;p#gt; "Error"
-  S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}
+  %% 8 states
+  %% useQuery_isPending = useQuery().isPending (input): false | true
+  %% useQuery_isError = useQuery().isError (input): false | true
+  %% useQuery_data = useQuery().data (input): undefined | NoInfer<Profile>
+  S1: div
+  S2: div #gt; p
+  S3: div #gt; p "Error"
+  S4: div #gt; p "Error" #gt; p
+  S5: div #gt; p "Loading"
+  S6: div #gt; p "Loading" #gt; p
+  S7: div #gt; p "Loading" #gt; p "Error"
+  S8: div #gt; p "Loading" #gt; p "Error" #gt; p
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  [*] --> S4"
+  [*] --> S4
+  [*] --> S5
+  [*] --> S6
+  [*] --> S7
+  [*] --> S8
+  S1 --> S5: useQuery().isPending changes
+  S1 --> S3: useQuery().isError changes
+  S1 --> S2: useQuery().data changes
+  S2 --> S6: useQuery().isPending changes
+  S2 --> S4: useQuery().isError changes
+  S2 --> S1: useQuery().data changes
+  S3 --> S7: useQuery().isPending changes
+  S3 --> S1: useQuery().isError changes
+  S3 --> S4: useQuery().data changes
+  S4 --> S8: useQuery().isPending changes
+  S4 --> S2: useQuery().isError changes
+  S4 --> S3: useQuery().data changes
+  S5 --> S1: useQuery().isPending changes
+  S5 --> S7: useQuery().isError changes
+  S5 --> S6: useQuery().data changes
+  S6 --> S2: useQuery().isPending changes
+  S6 --> S8: useQuery().isError changes
+  S6 --> S5: useQuery().data changes
+  S7 --> S3: useQuery().isPending changes
+  S7 --> S5: useQuery().isError changes
+  S7 --> S8: useQuery().data changes
+  S8 --> S4: useQuery().isPending changes
+  S8 --> S6: useQuery().isError changes
+  S8 --> S7: useQuery().data changes"
+`;
+
+exports[`fixture analysis > PublishResult keeps its TLA+ module 1`] = `
+"---- MODULE PublishResult ----
+\\* success: success (state), 2 cells
+\\* isReady: isReady (input), 2 cells
+VARIABLES success, isReady
+
+vars == <<success, isReady>>
+
+screen == CASE success = "Success" -> "div > p"
+            [] success = "null" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ success = "null"
+  /\\ isReady \\in {"false", "true"}
+
+\\* isReady && setStep("done")
+t1 ==
+  /\\ UNCHANGED <<success, isReady>>
+
+\\* "Publish"
+t2 ==
+  /\\ success' = "Success"
+  /\\ UNCHANGED <<isReady>>
+
+\\* parent changes isReady
+change_isReady ==
+  /\\ isReady' \\in {"false", "true"}
+  /\\ UNCHANGED <<success>>
+
+Next == t1 \\/ t2 \\/ change_isReady
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > PublishResult keeps its render tree and handlers 1`] = `
@@ -1933,21 +3799,54 @@ flowchart TD
   n7 -->|✓| n8"
 `;
 
-exports[`fixture analysis > PublishResult keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > PublishResult keeps its state chart and findings 1`] = `
 "---
 title: PublishResult src/and-guards.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  S1: success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish" #lt;p#gt; {success.authorName}
-  S2: !success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish"
-  [*] --> S2
+  %% 4 states
+  %% success = success (state): null | Success
+  %% isReady = isReady (input): false | true
+  S1: div
+  S2: div #gt; p
+  [*] --> S1
+  S1 --> S1: isReady && setStep("done")
   S1 --> S2: "Publish"
-  S2 --> S1: "Publish"
-  state "claims" as claims {
-    claims1: holds success! L10
-    claims2: holds step stays within "done" | "form" L9
-  }"
+  S2 --> S2: isReady && setStep("done"), "Publish""
+`;
+
+exports[`fixture analysis > ResourceDetails keeps its TLA+ module 1`] = `
+"---- MODULE ResourceDetails ----
+\\* user: user (input), 2 cells
+\\* renderExtra: renderExtra (input), 2 cells
+VARIABLES user, renderExtra
+
+vars == <<user, renderExtra>>
+
+screen == CASE user = "null" /\\ renderExtra = "(user: User) => string" -> "p \\"Loading\\""
+            [] user = "null" /\\ renderExtra = "undefined" -> "p \\"Loading\\" (2)"
+            [] user = "User" -> "p"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ user \\in {"null", "User"}
+  /\\ renderExtra \\in {"undefined", "(user: User) => string"}
+
+\\* user changes
+change_user ==
+  /\\ user' \\in {"null", "User"}
+  /\\ UNCHANGED <<renderExtra>>
+
+\\* parent changes renderExtra
+change_renderExtra ==
+  /\\ renderExtra' \\in {"undefined", "(user: User) => string"}
+  /\\ UNCHANGED <<user>>
+
+Next == change_user \\/ change_renderExtra
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ResourceDetails keeps its render tree and handlers 1`] = `
@@ -1975,23 +3874,76 @@ flowchart TD
   n8 -->|✓| n9"
 `;
 
-exports[`fixture analysis > ResourceDetails keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ResourceDetails keeps its state chart and findings 1`] = `
 "---
 title: ResourceDetails src/claims.tsx:71
 ---
 stateDiagram-v2
   direction LR
-  S1: user === null ∧ renderExtra · #lt;p#gt; "Loading " {renderExtra(user)}
-  S2: user === null ∧ !renderExtra · #lt;p#gt; "Loading "
-  S3: user !== null ∧ renderExtra · #lt;p#gt; {renderExtra(user)}
-  S4: user !== null ∧ !renderExtra · #lt;p#gt;
+  %% 4 states
+  %% user = user (input): null | User
+  %% renderExtra = renderExtra (input): undefined | (user: User) => string
+  S1: p "Loading" (2)
+  S2: p "Loading"
+  S3: p
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  [*] --> S4
-  state "claims" as claims {
-    claims1: broken user! L73 in S1 · user = null
-  }"
+  S1 --> S3: user changes
+  S1 --> S2: parent changes renderExtra
+  S2 --> S3: user changes
+  S2 --> S1: parent changes renderExtra
+  S3 --> S1: user changes
+  S3 --> S2: user changes"
+`;
+
+exports[`fixture analysis > RetryForm keeps its TLA+ module 1`] = `
+"---- MODULE RetryForm ----
+\\* error: error (state), 3 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+VARIABLES error, pending_t1, test_Unknown_throws
+
+vars == <<error, pending_t1, test_Unknown_throws>>
+
+screen == CASE error = "other string" -> "form > p"
+            [] error /= "other string" -> "form"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ error = "null"
+  /\\ pending_t1 = "idle"
+  /\\ test_Unknown_throws \\in {"false", "true"}
+
+\\* "Save"
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ error' = "null"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<test_Unknown_throws>>
+
+\\* "Save" resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ error' \\in (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<test_Unknown_throws>>
+
+\\* "Save" rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<error, test_Unknown_throws>>
+
+\\* Unknown(throws) changes
+change_test_Unknown_throws ==
+  /\\ test_Unknown_throws' \\in {"false", "true"}
+  /\\ UNCHANGED <<error, pending_t1>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > RetryForm keeps its render tree and handlers 1`] = `
@@ -2013,20 +3965,47 @@ flowchart TD
   n5 -->|✓| n6"
 `;
 
-exports[`fixture analysis > RetryForm keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > RetryForm keeps its state chart and findings 1`] = `
 "---
 title: RetryForm src/catch-after-await.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  S1: error · #lt;form#gt; #lt;button#gt; "Save" #lt;p#gt; {"Failed"}
-  S2: !error · #lt;form#gt; #lt;button#gt; "Save"
-  [*] --> S2
-  S1 --> S2: "Save" (async)
-  S2 --> S1: "Save" (async)
-  state "claims" as claims {
-    claims1: holds error stays within null | string L8
-  }"
+  %% 6 states
+  %% error = error (state): null | empty | other string
+  %% pending_t1 = t1 pending (pending): idle | pending
+  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  S1: form
+  S2: form #gt; p
+  [*] --> S1
+  S1 --> S1: "Save", "Save" resolves
+  S1 --> S2: "Save" resolves
+  S2 --> S1: "Save"
+  %% ⚠ When "Save" fails, nothing on screen changes (L9)"
+`;
+
+exports[`fixture analysis > RoleBadge keeps its TLA+ module 1`] = `
+"---- MODULE RoleBadge ----
+\\* role: role (input), 3 cells
+VARIABLES role
+
+vars == <<role>>
+
+screen == CASE role = "admin" -> "strong \\"Admin\\""
+            [] role /= "admin" -> "span \\"Member\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ role \\in {"null", "admin", "other string"}
+
+\\* parent changes role
+change_role ==
+  /\\ role' \\in {"null", "admin", "other string"}
+
+Next == change_role
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > RoleBadge keeps its render tree and handlers 1`] = `
@@ -2044,16 +4023,69 @@ flowchart TD
   n2 -->|✗| n4"
 `;
 
-exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > RoleBadge keeps its state chart and findings 1`] = `
 "---
 title: RoleBadge src/literals.tsx:30
 ---
 stateDiagram-v2
   direction LR
-  S1: role === "admin" · #lt;strong#gt; "Admin"
-  S2: role !== "admin" · #lt;span#gt; "Member"
+  %% 3 states
+  %% role = role (input): null | admin | other string
+  S1: span "Member"
+  S2: strong "Admin"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: parent changes role
+  S2 --> S1: parent changes role"
+`;
+
+exports[`fixture analysis > SaveForm keeps its TLA+ module 1`] = `
+"---- MODULE SaveForm ----
+\\* loading: loading (state), 2 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+VARIABLES loading, pending_t1, test_Unknown_throws
+
+vars == <<loading, pending_t1, test_Unknown_throws>>
+
+screen == CASE loading = "true" -> "form > p \\"Saving…\\""
+            [] loading = "false" -> "form > button \\"Save\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ loading = "false"
+  /\\ pending_t1 = "idle"
+  /\\ test_Unknown_throws \\in {"false", "true"}
+
+\\* submit, "Save"
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ loading' = "true"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<test_Unknown_throws>>
+
+\\* submit, "Save" resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ loading' \\in (IF test_Unknown_throws = "false" THEN {"false"} ELSE (IF test_Unknown_throws = "true" THEN {"false"} ELSE {loading}))
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<test_Unknown_throws>>
+
+\\* submit, "Save" rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<loading, test_Unknown_throws>>
+
+\\* Unknown(throws) changes
+change_test_Unknown_throws ==
+  /\\ test_Unknown_throws' \\in {"false", "true"}
+  /\\ UNCHANGED <<loading, pending_t1>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SaveForm keeps its render tree and handlers 1`] = `
@@ -2077,20 +4109,57 @@ flowchart TD
   n6 -.-> n7"
 `;
 
-exports[`fixture analysis > SaveForm keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SaveForm keeps its state chart and findings 1`] = `
 "---
 title: SaveForm src/form-actions.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  S1: loading · #lt;form#gt; #lt;p#gt; "Saving…"
-  S2: !loading · #lt;form#gt; #lt;button#gt; "Save"
-  [*] --> S2
-  S1 --> S2: submit, "Save" (async)
-  S2 --> S1: submit, "Save" (async)
-  state "claims" as claims {
-    claims1: holds loading stays within false | true L8
-  }"
+  %% 6 states
+  %% loading = loading (state): false | true
+  %% pending_t1 = t1 pending (pending): idle | pending
+  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  S1: form #gt; button "Save"
+  S2: form #gt; p "Saving…"
+  [*] --> S1
+  S1 --> S2: submit, "Save"
+  S2 --> S1: submit, "Save" resolves
+  S2 --> S2: submit, "Save"
+  %% ⚠ When submit, "Save" fails, nothing on screen changes (L9)"
+`;
+
+exports[`fixture analysis > SearchList keeps its TLA+ module 1`] = `
+"---- MODULE SearchList ----
+\\* items_length: items.length (input), 2 cells
+\\* items_filter_function_length: items.filter(function).length (derived), 2 cells
+VARIABLES items_length, items_filter_function_length
+
+vars == <<items_length, items_filter_function_length>>
+
+screen == CASE items_length = "0" /\\ items_filter_function_length = ">0" -> "div > p \\"No items\\" > ul"
+            [] items_length = "0" /\\ items_filter_function_length = "0" -> "div > p \\"No items\\""
+            [] items_length = ">0" /\\ items_filter_function_length = ">0" -> "div > ul"
+            [] items_length = ">0" /\\ items_filter_function_length = "0" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ items_length \\in {"0", ">0"}
+  /\\ items_filter_function_length \\in {"0", ">0"}
+
+\\* setQuery(event.target.value)
+t1 ==
+  /\\ items_filter_function_length' \\in {"0", ">0"}
+  /\\ UNCHANGED <<items_length>>
+
+\\* parent changes items.length
+change_items_length ==
+  /\\ items_length' \\in {"0", ">0"}
+  /\\ items_filter_function_length' \\in {"0", ">0"}
+
+Next == t1 \\/ change_items_length
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SearchList keeps its render tree and handlers 1`] = `
@@ -2120,20 +4189,75 @@ flowchart TD
   n9 --> n10"
 `;
 
-exports[`fixture analysis > SearchList keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SearchList keeps its state chart and findings 1`] = `
 "---
 title: SearchList src/search.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: items.length === 0 · #lt;div#gt; #lt;input#gt; #lt;p#gt; "No items"
-  S2: items.length !== 0 ∧ items.filter(function).length #gt; 0 · #lt;div#gt; #lt;input#gt; #lt;ul#gt; ↻ items.filter(function)
-  S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
+  %% 4 states
+  %% items_length = items.length (input): 0 | >0
+  %% items_filter_function_length = items.filter(function).length (derived): 0 | >0
+  S1: div #gt; p "No items"
+  S2: div #gt; p "No items" #gt; ul
+  S3: div
+  S4: div #gt; ul
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  S2 --> S3: setQuery(event.target.value)
-  S3 --> S2: setQuery(event.target.value)"
+  [*] --> S4
+  S1 --> S1: setQuery(event.target.value)
+  S1 --> S2: setQuery(event.target.value), parent changes items.length
+  S1 --> S3: parent changes items.length
+  S1 --> S4: parent changes items.length
+  S2 --> S1: setQuery(event.target.value), parent changes items.length
+  S2 --> S2: setQuery(event.target.value)
+  S2 --> S3: parent changes items.length
+  S2 --> S4: parent changes items.length
+  S3 --> S3: setQuery(event.target.value)
+  S3 --> S4: setQuery(event.target.value), parent changes items.length
+  S3 --> S1: parent changes items.length
+  S3 --> S2: parent changes items.length
+  S4 --> S3: setQuery(event.target.value), parent changes items.length
+  S4 --> S4: setQuery(event.target.value)
+  S4 --> S1: parent changes items.length
+  S4 --> S2: parent changes items.length"
+`;
+
+exports[`fixture analysis > SearchPanel keeps its TLA+ module 1`] = `
+"---- MODULE SearchPanel ----
+\\* isFocused: isFocused (state), 2 cells
+\\* test_Unknown_call_enoughChars: Unknown(call).enoughChars (test), 2 cells
+VARIABLES isFocused, test_Unknown_call_enoughChars
+
+vars == <<isFocused, test_Unknown_call_enoughChars>>
+
+screen == CASE (isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") \\/ (isFocused = "false" /\\ isFocused = "true") -> "div > ul"
+            [] ~((isFocused = "true" /\\ test_Unknown_call_enoughChars = "true") \\/ (isFocused = "false" /\\ isFocused = "true")) -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isFocused = "false"
+  /\\ test_Unknown_call_enoughChars \\in {"false", "true"}
+
+\\* setIsFocused(true)
+t1 ==
+  /\\ isFocused' = "true"
+  /\\ UNCHANGED <<test_Unknown_call_enoughChars>>
+
+\\* setCount(count + 1)
+t2 ==
+  /\\ UNCHANGED <<isFocused, test_Unknown_call_enoughChars>>
+
+\\* Unknown(call).enoughChars changes
+change_test_Unknown_call_enoughChars ==
+  /\\ test_Unknown_call_enoughChars' \\in {"false", "true"}
+  /\\ UNCHANGED <<isFocused>>
+
+Next == t1 \\/ t2 \\/ change_test_Unknown_call_enoughChars
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SearchPanel keeps its render tree and handlers 1`] = `
@@ -2159,22 +4283,46 @@ flowchart TD
   n7 -->|✓| n8"
 `;
 
-exports[`fixture analysis > SearchPanel keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SearchPanel keeps its state chart and findings 1`] = `
 "---
 title: SearchPanel src/or-conditions.tsx:23
 ---
 stateDiagram-v2
   direction LR
-  S1: isFocused && Unknown(call).enoughChars · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count} #lt;ul#gt;
-  S2: !(isFocused && Unknown(call).enoughChars) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count}
-  [*] --> S2
-  S1 --> S2: setIsFocused(true)
-  S2 --> S1: setIsFocused(true)
-  S1 --> S2: setCount(count + 1)
-  S2 --> S1: setCount(count + 1)
-  state "claims" as claims {
-    claims1: holds isFocused stays within false | true L25
-  }"
+  %% 4 states
+  %% isFocused = isFocused (state): false | true
+  %% test_Unknown_call_enoughChars = Unknown(call).enoughChars (test): false | true
+  S1: div
+  S2: div #gt; ul
+  [*] --> S1
+  S1 --> S1: setIsFocused(true), setCount(count + 1)
+  S1 --> S2: setIsFocused(true), Unknown(call).enoughChars changes
+  S2 --> S2: setIsFocused(true), setCount(count + 1)
+  S2 --> S1: Unknown(call).enoughChars changes"
+`;
+
+exports[`fixture analysis > Seen keeps its TLA+ module 1`] = `
+"---- MODULE Seen ----
+\\* shown: shown (state), 2 cells
+VARIABLES shown
+
+vars == <<shown>>
+
+screen == CASE shown = "true" -> "button > \\"shown\\""
+            [] shown = "false" -> "button > \\"show\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ shown = "false"
+
+\\* show
+t1 ==
+  /\\ shown' = "true"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Seen keeps its render tree and handlers 1`] = `
@@ -2196,19 +4344,44 @@ flowchart TD
   n4 -->|✗| n6"
 `;
 
-exports[`fixture analysis > Seen keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Seen keeps its state chart and findings 1`] = `
 "---
 title: Seen src/ref-props.tsx:12
 ---
 stateDiagram-v2
   direction LR
-  S1: shown · #lt;button#gt; {"shown"}
-  S2: !shown · #lt;button#gt; {"show"}
-  [*] --> S2
-  S2 --> S1: show
-  state "claims" as claims {
-    claims1: holds shown stays within false | true L13
-  }"
+  %% 2 states
+  %% shown = shown (state): false | true
+  S1: button #gt; "show"
+  S2: button #gt; "shown"
+  [*] --> S1
+  S1 --> S2: show
+  S2 --> S2: show"
+`;
+
+exports[`fixture analysis > ShareButton keeps its TLA+ module 1`] = `
+"---- MODULE ShareButton ----
+\\* dialog_isOpen: dialog.isOpen (state), 2 cells
+VARIABLES dialog_isOpen
+
+vars == <<dialog_isOpen>>
+
+screen == CASE dialog_isOpen = "false" -> "button \\"Share\\""
+            [] dialog_isOpen = "true" -> "p"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ dialog_isOpen = "false"
+
+\\* "Share"
+t1 ==
+  /\\ dialog_isOpen = "false"
+  /\\ dialog_isOpen' = "true"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ShareButton keeps its render tree and handlers 1`] = `
@@ -2228,16 +4401,110 @@ flowchart TD
   n2 -->|✗| n5"
 `;
 
-exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ShareButton keeps its state chart and findings 1`] = `
 "---
 title: ShareButton src/share-dialog.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: !dialog.isOpen · #lt;button#gt; "Share"
-  S2: dialog.isOpen · #lt;p#gt; {"share"}
+  %% 2 states
+  %% dialog_isOpen = dialog.isOpen (state): false | true
+  S1: button "Share"
+  S2: p
   [*] --> S1
   S1 --> S2: "Share""
+`;
+
+exports[`fixture analysis > SignIn keeps its TLA+ module 1`] = `
+"---- MODULE SignIn ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "a \\"Sign in\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
+`;
+
+exports[`fixture analysis > SignIn keeps its TLA+ module 2`] = `
+"---- MODULE SignIn ----
+\\* status: status (state), 2 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+\\* test_Unknown_wrapped_call: Unknown(wrapped-call) (test), 2 cells
+\\* test_values_email: values.email (test), 2 cells
+\\* pending_t2: t2 pending (pending), 2 cells
+VARIABLES status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2
+
+vars == <<status, pending_t1, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+
+screen == CASE status = "sent" -> "p \\"Check your inbox\\""
+            [] status = "editing" -> "form"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status = "editing"
+  /\\ pending_t1 = "idle"
+  /\\ test_Unknown_wrapped_call \\in {"false", "true"}
+  /\\ test_values_email \\in {"false", "true"}
+  /\\ pending_t2 = "idle"
+
+\\* "Send"
+t1 ==
+  /\\ status = "editing" /\\ pending_t1 = "idle"
+  /\\ status' \\in (IF test_Unknown_wrapped_call = "true" /\\ test_values_email = "true" THEN {"sent"} ELSE {status})
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<test_Unknown_wrapped_call, test_values_email, pending_t2>>
+
+\\* "Send" resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<status, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+
+\\* "Send" rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<status, test_Unknown_wrapped_call, test_values_email, pending_t2>>
+
+\\* <input> {...}
+t2 ==
+  /\\ status = "editing" /\\ pending_t2 = "idle"
+  /\\ pending_t2' = "pending"
+  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+
+\\* <input> {...} resolves
+t2_resolves ==
+  /\\ pending_t2 = "pending"
+  /\\ pending_t2' = "idle"
+  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+
+\\* <input> {...} rejects
+t2_rejects ==
+  /\\ pending_t2 = "pending"
+  /\\ pending_t2' = "idle"
+  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, test_values_email>>
+
+\\* Unknown(wrapped-call) changes
+change_test_Unknown_wrapped_call ==
+  /\\ test_Unknown_wrapped_call' \\in {"false", "true"}
+  /\\ UNCHANGED <<status, pending_t1, test_values_email, pending_t2>>
+
+\\* values.email changes
+change_test_values_email ==
+  /\\ test_values_email' \\in {"false", "true"}
+  /\\ UNCHANGED <<status, pending_t1, test_Unknown_wrapped_call, pending_t2>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ t2_resolves \\/ t2_rejects \\/ change_test_Unknown_wrapped_call \\/ change_test_values_email
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SignIn keeps its render tree and handlers 1`] = `
@@ -2274,29 +4541,97 @@ flowchart TD
   n4 --> n8"
 `;
 
-exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SignIn keeps its state chart and findings 1`] = `
 "---
 title: SignIn src/dashboard.tsx:39
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;a#gt; "Sign in"
+  %% 1 states
+  S1: a "Sign in"
   [*] --> S1"
 `;
 
-exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 2`] = `
+exports[`fixture analysis > SignIn keeps its state chart and findings 2`] = `
 "---
 title: SignIn src/submit-wrapper.tsx:8
 ---
 stateDiagram-v2
   direction LR
-  S1: status === "sent" · #lt;p#gt; "Check your inbox"
-  S2: status !== "sent" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Send"
-  [*] --> S2
-  S2 --> S1: "Send" (async)
-  state "claims" as claims {
-    claims1: holds status stays within "editing" | "sent" L9
-  }"
+  %% 32 states
+  %% status = status (state): editing | sent
+  %% pending_t1 = t1 pending (pending): idle | pending
+  %% test_Unknown_wrapped_call = Unknown(wrapped-call) (test): false | true
+  %% test_values_email = values.email (test): false | true
+  %% pending_t2 = t2 pending (pending): idle | pending
+  S1: form
+  S2: p "Check your inbox"
+  [*] --> S1
+  S1 --> S1: "Send"
+  S1 --> S2: "Send"
+  %% ⚠ "Send" resolves never changes anything on screen
+  %% ⚠ When "Send" fails, nothing on screen changes
+  %% ⚠ <input> {...} never changes anything on screen (L17)
+  %% ⚠ <input> {...} resolves never changes anything on screen (L17)
+  %% ⚠ When <input> {...} fails, nothing on screen changes (L17)"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its TLA+ module 1`] = `
+"---- MODULE SizeLabel ----
+\\* test_size_sizes_small: size === sizes.small (test), 2 cells
+\\* test_size_sizes_large: size === sizes.large (test), 2 cells
+VARIABLES test_size_sizes_small, test_size_sizes_large
+
+vars == <<test_size_sizes_small, test_size_sizes_large>>
+
+screen == CASE test_size_sizes_small = "true" -> "p \\"Small\\""
+            [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "true" -> "p \\"Large\\""
+            [] test_size_sizes_small = "false" /\\ test_size_sizes_large = "false" -> "nothing"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ test_size_sizes_small \\in {"false", "true"}
+  /\\ test_size_sizes_large \\in {"false", "true"}
+
+\\* size === sizes.small changes
+change_test_size_sizes_small ==
+  /\\ test_size_sizes_small' \\in {"false", "true"}
+  /\\ UNCHANGED <<test_size_sizes_large>>
+
+\\* size === sizes.large changes
+change_test_size_sizes_large ==
+  /\\ test_size_sizes_large' \\in {"false", "true"}
+  /\\ UNCHANGED <<test_size_sizes_small>>
+
+Next == change_test_size_sizes_small \\/ change_test_size_sizes_large
+
+Spec == Init /\\ [][Next]_vars
+===="
+`;
+
+exports[`fixture analysis > SizeLabel keeps its TLA+ module 2`] = `
+"---- MODULE SizeLabel ----
+\\* size: size (input), 2 cells
+VARIABLES size
+
+vars == <<size>>
+
+screen == CASE size = "sm" -> "p \\"Small\\""
+            [] size = "lg" /\\ size = "lg" -> "p \\"Large\\""
+            [] size = "lg" /\\ size = "sm" -> "nothing"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ size \\in {"lg", "sm"}
+
+\\* parent changes size
+change_size ==
+  /\\ size' \\in {"lg", "sm"}
+
+Next == change_size
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SizeLabel keeps its render tree and handlers 1`] = `
@@ -2333,30 +4668,69 @@ flowchart TD
   n4 -->|✓| n5"
 `;
 
-exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SizeLabel keeps its state chart and findings 1`] = `
 "---
 title: SizeLabel src/expression-defaults.tsx:29
 ---
 stateDiagram-v2
   direction LR
-  S1: size === sizes.small · #lt;p#gt; "Small"
-  S2: size === sizes.large · #lt;p#gt; "Large"
-  S3: size ∉ {sizes.small, sizes.large} · ∅
+  %% 4 states
+  %% test_size_sizes_small = size === sizes.small (test): false | true
+  %% test_size_sizes_large = size === sizes.large (test): false | true
+  S1: nothing
+  S2: p "Large"
+  S3: p "Small"
   [*] --> S1
   [*] --> S2
-  [*] --> S3"
+  [*] --> S3
+  S1 --> S3: size === sizes.small changes
+  S1 --> S2: size === sizes.large changes
+  S2 --> S3: size === sizes.small changes
+  S2 --> S1: size === sizes.large changes
+  S3 --> S1: size === sizes.small changes
+  S3 --> S2: size === sizes.small changes"
 `;
 
-exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 2`] = `
+exports[`fixture analysis > SizeLabel keeps its state chart and findings 2`] = `
 "---
 title: SizeLabel src/literal-constants.tsx:12
 ---
 stateDiagram-v2
   direction LR
-  S1: size === "sm" · #lt;p#gt; "Small"
-  S2: size !== "sm" · #lt;p#gt; "Large"
+  %% 2 states
+  %% size = size (input): lg | sm
+  S1: p "Large"
+  S2: p "Small"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: parent changes size
+  S2 --> S1: parent changes size
+  %% ⚠ size === "lg" is never false here (L16)"
+`;
+
+exports[`fixture analysis > SkippedSteps keeps its TLA+ module 1`] = `
+"---- MODULE SkippedSteps ----
+\\* steps: steps (state), 5 cells
+VARIABLES steps
+
+vars == <<steps>>
+
+screen == CASE steps = "0" -> "button > \\"None\\""
+            [] steps /= "0" /\\ steps = "3" -> "button > \\"Three\\""
+            [] steps /= "0" /\\ steps /= "3" -> "button > \\"Other\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ steps = "0"
+
+\\* advance
+t1 ==
+  /\\ steps' = "3"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SkippedSteps keeps its render tree and handlers 1`] = `
@@ -2382,19 +4756,44 @@ flowchart TD
   n6 -->|✗| n8"
 `;
 
-exports[`fixture analysis > SkippedSteps keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SkippedSteps keeps its state chart and findings 1`] = `
 "---
 title: SkippedSteps src/loops.tsx:63
 ---
 stateDiagram-v2
   direction LR
-  S1: steps === 0 · #lt;button#gt; {"None"}
-  S2: steps !== 0 · #lt;button#gt; {"Three"}
+  %% 2 states
+  %% steps = steps (state): <0 | 0 | (0, 3) | 3 | >3
+  S1: button #gt; "None"
+  S2: button #gt; "Three"
   [*] --> S1
   S1 --> S2: advance
-  state "unreachable branches" as unreachable {
-    unreachable1: never steps !== 3 L77
-  }"
+  S2 --> S2: advance
+  %% ⚠ steps === 3 is never false here (L77)"
+`;
+
+exports[`fixture analysis > Slot keeps its TLA+ module 1`] = `
+"---- MODULE Slot ----
+\\* test_typeof_render_function: typeof render === "function" (test), 2 cells
+VARIABLES test_typeof_render_function
+
+vars == <<test_typeof_render_function>>
+
+screen == CASE test_typeof_render_function = "true" -> "div"
+            [] test_typeof_render_function = "false" -> "div (2)"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ test_typeof_render_function \\in {"false", "true"}
+
+\\* typeof render === "function" changes
+change_test_typeof_render_function ==
+  /\\ test_typeof_render_function' \\in {"false", "true"}
+
+Next == change_test_typeof_render_function
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Slot keeps its render tree and handlers 1`] = `
@@ -2414,19 +4813,37 @@ flowchart TD
   n3 -->|✗| n5"
 `;
 
-exports[`fixture analysis > Slot keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Slot keeps its state chart and findings 1`] = `
 "---
 title: Slot src/typeof-checks.tsx:11
 ---
 stateDiagram-v2
   direction LR
-  S1: typeof render === "function" · #lt;div#gt; ⚠ render()
-  S2: typeof render !== "function" · #lt;div#gt; {render}
+  %% 2 states
+  %% test_typeof_render_function = typeof render === "function" (test): false | true
+  S1: div (2)
+  S2: div
   [*] --> S1
   [*] --> S2
-  state "bailouts" as bailouts {
-    bailouts1: unknown-call L12 call returns JSX the analysis can't see into
-  }"
+  S1 --> S2: typeof render === "function" changes
+  S2 --> S1: typeof render === "function" changes"
+`;
+
+exports[`fixture analysis > SortedList keeps its TLA+ module 1`] = `
+"---- MODULE SortedList ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
@@ -2444,17 +4861,32 @@ flowchart TD
   n3 --> n4"
 `;
 
-exports[`fixture analysis > SortedList keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SortedList keeps its state chart and findings 1`] = `
 "---
 title: SortedList src/mutation.tsx:30
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;ul#gt; ↻ items
-  [*] --> S1
-  state "warnings" as warnings {
-    warnings1: prop-mutation L31 mutates prop items
-  }"
+  %% 1 states
+  S1: ul
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Spinner keeps its TLA+ module 1`] = `
+"---- MODULE Spinner ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Spinner keeps its render tree and handlers 1`] = `
@@ -2468,14 +4900,32 @@ flowchart TD
   n1 --> n2"
 `;
 
-exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Spinner keeps its state chart and findings 1`] = `
 "---
 title: Spinner src/dashboard.tsx:35
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;div#gt;
+  %% 1 states
+  S1: div
   [*] --> S1"
+`;
+
+exports[`fixture analysis > SpreadArray keeps its TLA+ module 1`] = `
+"---- MODULE SpreadArray ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > SpreadArray keeps its render tree and handlers 1`] = `
@@ -2493,14 +4943,41 @@ flowchart TD
   n3 --> n4"
 `;
 
-exports[`fixture analysis > SpreadArray keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > SpreadArray keeps its state chart and findings 1`] = `
 "---
 title: SpreadArray src/rows-from-length.tsx:9
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;ul#gt; ↻ [...Array(count)]
+  %% 1 states
+  S1: ul
   [*] --> S1"
+`;
+
+exports[`fixture analysis > StatusBadge keeps its TLA+ module 1`] = `
+"---- MODULE StatusBadge ----
+\\* status: status (input), 4 cells
+VARIABLES status
+
+vars == <<status>>
+
+screen == CASE status = "error" -> "p \\"Failed\\""
+            [] status /= "error" /\\ status = "loading" -> "p \\"Loading…\\""
+            [] status /= "error" /\\ status /= "loading" /\\ status = "done" -> "p > \\"Done\\""
+            [] status /= "error" /\\ status /= "loading" /\\ status /= "done" -> "p > \\"Idle\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status \\in {"done", "error", "idle", "loading"}
+
+\\* parent changes status
+change_status ==
+  /\\ status' \\in {"done", "error", "idle", "loading"}
+
+Next == change_status
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > StatusBadge keeps its render tree and handlers 1`] = `
@@ -2532,20 +5009,54 @@ flowchart TD
   n6 --> n11"
 `;
 
-exports[`fixture analysis > StatusBadge keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > StatusBadge keeps its state chart and findings 1`] = `
 "---
 title: StatusBadge src/linked.tsx:5
 ---
 stateDiagram-v2
   direction LR
-  S1: status === "error" · #lt;p#gt; "Failed"
-  S2: status === "loading" · #lt;p#gt; "Loading…"
-  S3: status === "done" · #lt;p#gt; {"Done"} " " {count}
-  S4: status ∉ {"error", "loading", "done"} · #lt;p#gt; {"Idle"} " " {count}
+  %% 4 states
+  %% status = status (input): done | error | idle | loading
+  S1: p #gt; "Done"
+  S2: p "Failed"
+  S3: p #gt; "Idle"
+  S4: p "Loading…"
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  [*] --> S4"
+  [*] --> S4
+  S1 --> S2: parent changes status
+  S1 --> S3: parent changes status
+  S1 --> S4: parent changes status
+  S2 --> S1: parent changes status
+  S2 --> S3: parent changes status
+  S2 --> S4: parent changes status
+  S3 --> S1: parent changes status
+  S3 --> S2: parent changes status
+  S3 --> S4: parent changes status
+  S4 --> S1: parent changes status
+  S4 --> S2: parent changes status
+  S4 --> S3: parent changes status"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its TLA+ module 1`] = `
+"---- MODULE StatusBanner ----
+\\* status: status (state), 2 cells
+VARIABLES status
+
+vars == <<status>>
+
+screen == CASE status = "error" -> "p \\"Error\\""
+            [] status = "ok" -> "p \\"Fine\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status = "ok"
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
@@ -2563,20 +5074,48 @@ flowchart TD
   n2 -->|✗| n4"
 `;
 
-exports[`fixture analysis > StatusBanner keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > StatusBanner keeps its state chart and findings 1`] = `
 "---
 title: StatusBanner src/literals.tsx:22
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;p#gt; "Fine"
+  %% 1 states
+  %% status = status (state): error | ok
+  S1: p "Fine"
   [*] --> S1
-  state "claims" as claims {
-    claims1: holds status stays within "error" | "ok" L23
-  }
-  state "unreachable branches" as unreachable {
-    unreachable1: never status === "error" L24
-  }"
+  %% ⚠ status === "error" is never true here (L24)"
+`;
+
+exports[`fixture analysis > StatusView keeps its TLA+ module 1`] = `
+"---- MODULE StatusView ----
+\\* status: status (state), 3 cells
+VARIABLES status
+
+vars == <<status>>
+
+screen == CASE status = "idle" -> "div > button \\"Start\\""
+            [] status /= "idle" /\\ status = "loading" -> "div > button \\"Finish\\""
+            [] status /= "idle" /\\ status /= "loading" -> "div > p \\"Done\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ status = "idle"
+
+\\* "Start"
+t1 ==
+  /\\ status = "idle"
+  /\\ status' = "loading"
+
+\\* "Finish"
+t2 ==
+  /\\ status /= "idle" /\\ status = "loading"
+  /\\ status' = "done"
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > StatusView keeps its render tree and handlers 1`] = `
@@ -2604,21 +5143,54 @@ flowchart TD
   n6 -->|✗| n9"
 `;
 
-exports[`fixture analysis > StatusView keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > StatusView keeps its state chart and findings 1`] = `
 "---
 title: StatusView src/pattern-match.tsx:10
 ---
 stateDiagram-v2
   direction LR
-  S1: status === "idle" · #lt;div#gt; #lt;button#gt; "Start"
-  S2: status === "loading" · #lt;div#gt; #lt;button#gt; "Finish"
-  S3: status ∉ {"idle", "loading"} · #lt;div#gt; #lt;p#gt; "Done"
+  %% 3 states
+  %% status = status (state): done | idle | loading
+  S1: div #gt; button "Start"
+  S2: div #gt; button "Finish"
+  S3: div #gt; p "Done"
   [*] --> S1
   S1 --> S2: "Start"
-  S2 --> S3: "Finish"
-  state "claims" as claims {
-    claims1: holds status stays within "done" | "idle" | "loading" L11
-  }"
+  S2 --> S3: "Finish""
+`;
+
+exports[`fixture analysis > StepView keeps its TLA+ module 1`] = `
+"---- MODULE StepView ----
+\\* step: step (input), 2 cells
+\\* user: user (input), 2 cells
+VARIABLES step, user
+
+vars == <<step, user>>
+
+screen == CASE step = "panel" /\\ user = "User" -> "div > aside \\"panel\\" > b"
+            [] step = "panel" /\\ user = "null" -> "div > aside \\"panel\\" > i \\"anonymous\\""
+            [] step = "list" /\\ user = "User" -> "div > ul > b"
+            [] step = "list" /\\ user = "null" -> "div > ul > i \\"anonymous\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ step \\in {"list", "panel"}
+  /\\ user \\in {"null", "User"}
+
+\\* parent changes step
+change_step ==
+  /\\ step' \\in {"list", "panel"}
+  /\\ UNCHANGED <<user>>
+
+\\* parent changes user
+change_user ==
+  /\\ user' \\in {"null", "User"}
+  /\\ UNCHANGED <<step>>
+
+Next == change_step \\/ change_user
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > StepView keeps its render tree and handlers 1`] = `
@@ -2644,28 +5216,96 @@ flowchart TD
   n6 -->|✗| n8"
 `;
 
-exports[`fixture analysis > StepView keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > StepView keeps its state chart and findings 1`] = `
 "---
 title: StepView src/pattern-match.tsx:24
 ---
 stateDiagram-v2
   direction LR
-  state "StepView" as regions {
-    %% step
-    S1: step === "panel" · #lt;aside#gt; "panel"
-    S2: step !== "panel" · #lt;ul#gt;
-    [*] --> S1
-    [*] --> S2
-    --
-    %% user
-    S3: !!user · #lt;b#gt; {user.name}
-    S4: !user · #lt;i#gt; "anonymous"
-    [*] --> S3
-    [*] --> S4
-  }
-  state "claims" as claims {
-    claims1: holds user! L31
-  }"
+  %% 4 states
+  %% step = step (input): list | panel
+  %% user = user (input): null | User
+  S1: div #gt; ul #gt; i "anonymous"
+  S2: div #gt; ul #gt; b
+  S3: div #gt; aside "panel" #gt; i "anonymous"
+  S4: div #gt; aside "panel" #gt; b
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
+  S1 --> S3: parent changes step
+  S1 --> S2: parent changes user
+  S2 --> S4: parent changes step
+  S2 --> S1: parent changes user
+  S3 --> S1: parent changes step
+  S3 --> S4: parent changes user
+  S4 --> S2: parent changes step
+  S4 --> S3: parent changes user"
+`;
+
+exports[`fixture analysis > Subscribe keeps its TLA+ module 1`] = `
+"---- MODULE Subscribe ----
+\\* useForm_formState_errors_email: useForm().formState.errors.email (input), 2 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+\\* pending_t2: t2 pending (pending), 2 cells
+VARIABLES useForm_formState_errors_email, pending_t1, pending_t2
+
+vars == <<useForm_formState_errors_email, pending_t1, pending_t2>>
+
+screen == CASE useForm_formState_errors_email = "{ message?: string | undefined; }" -> "form > p"
+            [] useForm_formState_errors_email = "undefined" -> "form"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ useForm_formState_errors_email \\in {"undefined", "{ message?: string | undefined; }"}
+  /\\ pending_t1 = "idle"
+  /\\ pending_t2 = "idle"
+
+\\* "Subscribe"
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
+
+\\* "Subscribe" resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
+
+\\* "Subscribe" rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t2>>
+
+\\* <input> {...}
+t2 ==
+  /\\ pending_t2 = "idle"
+  /\\ pending_t2' = "pending"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
+
+\\* <input> {...} resolves
+t2_resolves ==
+  /\\ pending_t2 = "pending"
+  /\\ pending_t2' = "idle"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
+
+\\* <input> {...} rejects
+t2_rejects ==
+  /\\ pending_t2 = "pending"
+  /\\ pending_t2' = "idle"
+  /\\ UNCHANGED <<useForm_formState_errors_email, pending_t1>>
+
+\\* useForm().formState.errors.email changes
+change_useForm_formState_errors_email ==
+  /\\ useForm_formState_errors_email' \\in {"undefined", "{ message?: string | undefined; }"}
+  /\\ UNCHANGED <<pending_t1, pending_t2>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ t2 \\/ t2_resolves \\/ t2_rejects \\/ change_useForm_formState_errors_email
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Subscribe keeps its render tree and handlers 1`] = `
@@ -2691,23 +5331,43 @@ flowchart TD
   n2 --> n8"
 `;
 
-exports[`fixture analysis > Subscribe keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Subscribe keeps its state chart and findings 1`] = `
 "---
 title: Subscribe src/submit-wrapper.tsx:23
 ---
 stateDiagram-v2
   direction LR
-  S1: useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;p#gt; {useForm().formState.errors.email.message} #lt;button#gt; "Subscribe"
-  S2: !useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Subscribe"
+  %% 8 states
+  %% useForm_formState_errors_email = useForm().formState.errors.email (input): undefined | { message?: string | undefined; }
+  %% pending_t1 = t1 pending (pending): idle | pending
+  %% pending_t2 = t2 pending (pending): idle | pending
+  S1: form
+  S2: form #gt; p
   [*] --> S1
   [*] --> S2
-  S1 --> S2: "Subscribe" (async)
-  S2 --> S1: "Subscribe" (async)
-  S1 --> S2: #lt;input#gt; {...} (async)
-  S2 --> S1: #lt;input#gt; {...} (async)
-  state "claims" as claims {
-    claims1: holds isSubscribed stays within false | true L24
-  }"
+  S1 --> S1: "Subscribe", "Subscribe" resolves, #lt;input#gt; {...} resolves
+  S1 --> S2: useForm().formState.errors.email changes
+  S2 --> S2: "Subscribe", "Subscribe" resolves, #lt;input#gt; {...} resolves
+  S2 --> S1: useForm().formState.errors.email changes
+  %% ⚠ When "Subscribe" fails, nothing on screen changes
+  %% ⚠ When <input> {...} fails, nothing on screen changes (L28)"
+`;
+
+exports[`fixture analysis > Switch keeps its TLA+ module 1`] = `
+"---- MODULE Switch ----
+
+vars == <<>>
+
+screen == CASE TRUE -> "input"
+            [] OTHER -> "nothing"
+
+Init ==
+  TRUE
+
+Next == FALSE
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Switch keeps its render tree and handlers 1`] = `
@@ -2723,14 +5383,39 @@ flowchart TD
   n2 -.-> n3"
 `;
 
-exports[`fixture analysis > Switch keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Switch keeps its state chart and findings 1`] = `
 "---
 title: Switch src/callback-arguments.tsx:8
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;input#gt;
+  %% 1 states
+  S1: input
   [*] --> S1"
+`;
+
+exports[`fixture analysis > TagEditor keeps its TLA+ module 1`] = `
+"---- MODULE TagEditor ----
+\\* tags_length: tags.length (state), 2 cells
+VARIABLES tags_length
+
+vars == <<tags_length>>
+
+screen == CASE tags_length = "0" -> "div > p \\"No tags\\""
+            [] tags_length = ">0" -> "div > p \\"Some tags\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ tags_length = "0"
+
+\\* "Add"
+t1 ==
+  /\\ tags_length' = ">0"
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
@@ -2756,16 +5441,43 @@ flowchart TD
   n7 -.-> n8"
 `;
 
-exports[`fixture analysis > TagEditor keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > TagEditor keeps its state chart and findings 1`] = `
 "---
 title: TagEditor src/local-mutations.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: tags.length === 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "No tags" #lt;button#gt; "Add"
-  S2: tags.length !== 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
+  %% 2 states
+  %% tags_length = tags.length (state): 0 | >0
+  S1: div #gt; p "No tags"
+  S2: div #gt; p "Some tags"
   [*] --> S1
-  S1 --> S2: "Add""
+  S1 --> S2: "Add"
+  S2 --> S2: "Add""
+`;
+
+exports[`fixture analysis > TagList keeps its TLA+ module 1`] = `
+"---- MODULE TagList ----
+\\* tags_length: tags.length (state), 2 cells
+VARIABLES tags_length
+
+vars == <<tags_length>>
+
+screen == CASE tags_length = "0" -> "div > p \\"No tags\\""
+            [] tags_length = ">0" -> "div > ul"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ tags_length = "0"
+
+\\* "Copy"
+t1 ==
+  /\\ tags_length' \\in {"0", ">0"}
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > TagList keeps its render tree and handlers 1`] = `
@@ -2795,21 +5507,45 @@ flowchart TD
   n9 --> n10"
 `;
 
-exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > TagList keeps its state chart and findings 1`] = `
 "---
 title: TagList src/mutation.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
-  S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
+  %% 2 states
+  %% tags_length = tags.length (state): 0 | >0
+  S1: div #gt; p "No tags"
+  S2: div #gt; ul
   [*] --> S1
+  S1 --> S1: "Copy"
   S1 --> S2: "Copy"
   S2 --> S1: "Copy"
-  state "warnings" as warnings {
-    warnings1: lost-update L6 sets tags to the array or object it mutated, so React skips the update
-    warnings2: state-mutation L10 mutates tags in place before setting it
-  }"
+  S2 --> S2: "Copy""
+`;
+
+exports[`fixture analysis > TitleCard keeps its TLA+ module 1`] = `
+"---- MODULE TitleCard ----
+\\* title: title (input), 3 cells
+VARIABLES title
+
+vars == <<title>>
+
+screen == CASE title = "empty" -> "p \\"Untitled\\""
+            [] title /= "empty" -> "h1"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ title \\in {"null", "empty", "other string"}
+
+\\* parent changes title
+change_title ==
+  /\\ title' \\in {"null", "empty", "other string"}
+
+Next == change_title
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > TitleCard keeps its render tree and handlers 1`] = `
@@ -2827,16 +5563,98 @@ flowchart TD
   n2 -->|✗| n4"
 `;
 
-exports[`fixture analysis > TitleCard keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > TitleCard keeps its state chart and findings 1`] = `
 "---
 title: TitleCard src/literals.tsx:27
 ---
 stateDiagram-v2
   direction LR
-  S1: title === "" · #lt;p#gt; "Untitled"
-  S2: title !== "" · #lt;h1#gt; {title}
+  %% 3 states
+  %% title = title (input): null | empty | other string
+  S1: h1
+  S2: p "Untitled"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: parent changes title
+  S2 --> S1: parent changes title"
+`;
+
+exports[`fixture analysis > TodoApp keeps its TLA+ module 1`] = `
+"---- MODULE TodoApp ----
+\\* todos_length: todos.length (state), 2 cells
+\\* todo_isDone: todo.isDone (input), 2 cells
+\\* isEditing: isEditing (state), 2 cells
+\\* draft: draft (state), 2 cells
+\\* draft_trim: draft.trim() (derived), 2 cells
+VARIABLES todos_length, todo_isDone, isEditing, draft, draft_trim
+
+vars == <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
+
+screen == CASE todos_length = "0" /\\ isEditing = "true" -> "section > p \\"Nothing to do\\" > button \\"Save\\""
+            [] todos_length = "0" /\\ isEditing = "false" -> "section > p \\"Nothing to do\\" > button \\"Edit\\""
+            [] todos_length = ">0" /\\ isEditing = "true" -> "section > button \\"Save\\""
+            [] todos_length = ">0" /\\ isEditing = "false" -> "section > button \\"Edit\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ todos_length = "0"
+  /\\ todo_isDone \\in {"false", "true"}
+  /\\ isEditing = "false"
+  /\\ draft = "empty"
+  /\\ draft_trim \\in {"empty", "other string"}
+
+\\* setDraft(event.target.value)
+t1 ==
+  /\\ draft' \\in {"empty", "other string"}
+  /\\ draft_trim' \\in {"empty", "other string"}
+  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing>>
+
+\\* "Add"
+t2 ==
+  /\\ draft = "other string"
+  /\\ todos_length' \\in (IF draft_trim = "other string" THEN {">0"} ELSE {todos_length})
+  /\\ draft' \\in (IF draft_trim = "other string" THEN {"empty"} ELSE {draft})
+  /\\ draft_trim' \\in {"empty", "other string"}
+  /\\ UNCHANGED <<todo_isDone, isEditing>>
+
+\\* setTodos( todos.map((other) => other.id…
+t3 ==
+  /\\ todos_length' \\in (IF todos_length = "0" THEN {"0"} ELSE {">0"})
+  /\\ UNCHANGED <<todo_isDone, isEditing, draft, draft_trim>>
+
+\\* "All"
+t4 ==
+  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
+
+\\* "Active"
+t5 ==
+  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
+
+\\* "Done"
+t6 ==
+  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
+
+\\* "Save"
+t7 ==
+  /\\ isEditing = "true"
+  /\\ isEditing' = "false"
+  /\\ UNCHANGED <<todos_length, todo_isDone, draft, draft_trim>>
+
+\\* "Edit"
+t8 ==
+  /\\ isEditing = "false"
+  /\\ isEditing' = "true"
+  /\\ UNCHANGED <<todos_length, todo_isDone, draft, draft_trim>>
+
+\\* todo.isDone changes
+change_todo_isDone ==
+  /\\ todo_isDone' \\in {"false", "true"}
+  /\\ UNCHANGED <<todos_length, isEditing, draft, draft_trim>>
+
+Next == t1 \\/ t2 \\/ t3 \\/ t4 \\/ t5 \\/ t6 \\/ t7 \\/ t8 \\/ change_todo_isDone
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > TodoApp keeps its render tree and handlers 1`] = `
@@ -2900,30 +5718,57 @@ flowchart TD
   n26 -.-> n27"
 `;
 
-exports[`fixture analysis > TodoApp keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > TodoApp keeps its state chart and findings 1`] = `
 "---
 title: TodoApp src/todo.tsx:11
 ---
 stateDiagram-v2
   direction LR
-  state "TodoApp" as regions {
-    %% todos.length
-    S1: todos.length === 0 · #lt;p#gt; "Nothing to do"
-    S2: todos.length !== 0 · ∅
-    [*] --> S1
-    S1 --> S2: "Add"
-    --
-    %% isEditing
-    S3: isEditing · #lt;button#gt; "Save"
-    S4: !isEditing · #lt;button#gt; "Edit"
-    [*] --> S4
-    S3 --> S4: "Save"
-    S4 --> S3: "Edit"
-  }
-  state "claims" as claims {
-    claims1: holds filter stays within "active" | "all" | "done" L14
-    claims2: holds isEditing stays within false | true L15
-  }"
+  %% 32 states
+  %% todos_length = todos.length (state): 0 | >0
+  %% todo_isDone = todo.isDone (input): false | true
+  %% isEditing = isEditing (state): false | true
+  %% draft = draft (state): empty | other string
+  %% draft_trim = draft.trim() (derived): empty | other string
+  S1: section #gt; p "Nothing to do" #gt; button "Edit"
+  S2: section #gt; p "Nothing to do" #gt; button "Save"
+  S3: section #gt; button "Edit"
+  S4: section #gt; button "Save"
+  [*] --> S1
+  S1 --> S1: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
+  S1 --> S2: "Edit"
+  S1 --> S3: "Add"
+  S2 --> S2: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
+  S2 --> S1: "Save"
+  S3 --> S3: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
+  S3 --> S4: "Edit"
+  S2 --> S4: "Add"
+  S4 --> S4: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
+  S4 --> S3: "Save""
+`;
+
+exports[`fixture analysis > Toggle keeps its TLA+ module 1`] = `
+"---- MODULE Toggle ----
+\\* isOpen: isOpen (state), 2 cells
+VARIABLES isOpen
+
+vars == <<isOpen>>
+
+screen == CASE isOpen = "true" -> "div > p \\"Details\\""
+            [] isOpen = "false" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isOpen = "false"
+
+\\* setIsOpen(!isOpen)
+t1 ==
+  /\\ isOpen' \\in (IF isOpen = "false" THEN {"true"} ELSE {"false"})
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Toggle keeps its render tree and handlers 1`] = `
@@ -2945,20 +5790,45 @@ flowchart TD
   n5 -->|✓| n6"
 `;
 
-exports[`fixture analysis > Toggle keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Toggle keeps its state chart and findings 1`] = `
 "---
 title: Toggle src/plain.jsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: isOpen · #lt;div#gt; #lt;button#gt; {"More"} #lt;p#gt; "Details"
-  S2: !isOpen · #lt;div#gt; #lt;button#gt; {"More"}
-  [*] --> S2
+  %% 2 states
+  %% isOpen = isOpen (state): false | true
+  S1: div
+  S2: div #gt; p "Details"
+  [*] --> S1
   S1 --> S2: setIsOpen(!isOpen)
-  S2 --> S1: setIsOpen(!isOpen)
-  state "claims" as claims {
-    claims1: holds isOpen stays within false | true L4
-  }"
+  S2 --> S1: setIsOpen(!isOpen)"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its TLA+ module 1`] = `
+"---- MODULE ToneBadge ----
+\\* tone: tone (input), 4 cells
+VARIABLES tone
+
+vars == <<tone>>
+
+screen == CASE tone = "info" /\\ tone = "warning" -> "span > b \\"Info\\" > i \\"Warning\\""
+            [] tone = "info" /\\ tone /= "warning" -> "span > b \\"Info\\""
+            [] tone /= "info" /\\ tone = "warning" -> "span > i \\"Warning\\""
+            [] tone /= "info" /\\ tone /= "warning" -> "span"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ tone \\in {"undefined", "info", "warning", "other string"}
+
+\\* parent changes tone
+change_tone ==
+  /\\ tone' \\in {"undefined", "info", "warning", "other string"}
+
+Next == change_tone
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ToneBadge keeps its render tree and handlers 1`] = `
@@ -2980,18 +5850,67 @@ flowchart TD
   n5 -->|✓| n6"
 `;
 
-exports[`fixture analysis > ToneBadge keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ToneBadge keeps its state chart and findings 1`] = `
 "---
 title: ToneBadge src/narrowed-strings.tsx:8
 ---
 stateDiagram-v2
   direction LR
-  S1: tone === "info" · #lt;span#gt; #lt;b#gt; "Info"
-  S2: tone === "warning" · #lt;span#gt; #lt;i#gt; "Warning"
-  S3: tone ∉ {"info", "warning"} · #lt;span#gt;
+  %% 4 states
+  %% tone = tone (input): undefined | info | warning | other string
+  S1: span
+  S2: span #gt; b "Info"
+  S3: span #gt; i "Warning"
   [*] --> S1
   [*] --> S2
-  [*] --> S3"
+  [*] --> S3
+  S1 --> S2: parent changes tone
+  S1 --> S3: parent changes tone
+  S2 --> S1: parent changes tone
+  S2 --> S3: parent changes tone
+  S3 --> S1: parent changes tone
+  S3 --> S2: parent changes tone"
+`;
+
+exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
+"---- MODULE ToneCounter ----
+\\* tone: tone (input), 3 cells
+\\* count: count (state), 3 cells
+\\* test_count_1: count + 1 (test), 2 cells
+VARIABLES tone, count, test_count_1
+
+vars == <<tone, count, test_count_1>>
+
+screen == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
+            [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
+            [] tone /= "info" /\\ count = ">0" -> "div > i > \\"Other again\\""
+            [] tone /= "info" /\\ count /= ">0" -> "div > i > \\"Other\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ tone \\in {"undefined", "info", "other string"}
+  /\\ count = "0"
+  /\\ test_count_1 \\in {"false", "true"}
+
+\\* setCount(count + 1)
+t1 ==
+  /\\ count' \\in (IF (count = "<0" /\\ test_count_1 = "false") \\/ (count = "<0" /\\ test_count_1 = "true") THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ UNCHANGED <<tone, test_count_1>>
+
+\\* parent changes tone
+change_tone ==
+  /\\ tone' \\in {"undefined", "info", "other string"}
+  /\\ UNCHANGED <<count, test_count_1>>
+
+\\* count + 1 changes
+change_test_count_1 ==
+  /\\ test_count_1' \\in {"false", "true"}
+  /\\ UNCHANGED <<tone, count>>
+
+Next == t1 \\/ change_tone \\/ change_test_count_1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ToneCounter keeps its render tree and handlers 1`] = `
@@ -3027,20 +5946,54 @@ flowchart TD
   n12 -.-> n13"
 `;
 
-exports[`fixture analysis > ToneCounter keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ToneCounter keeps its state chart and findings 1`] = `
 "---
 title: ToneCounter src/unchanged-props.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: tone === "info" ∧ count #gt; 0 · #lt;div#gt; #lt;b#gt; {"Info again"} #lt;button#gt; {count}
-  S2: tone === "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;b#gt; {"Info"} #lt;button#gt; {count}
-  S3: tone !== "info" ∧ count #gt; 0 · #lt;div#gt; #lt;i#gt; {"Other again"} #lt;button#gt; {count}
-  S4: tone !== "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;i#gt; {"Other"} #lt;button#gt; {count}
+  %% 12 states
+  %% tone = tone (input): undefined | info | other string
+  %% count = count (state): <0 | 0 | >0
+  %% test_count_1 = count + 1 (test): false | true
+  S1: div #gt; i #gt; "Other"
+  S2: div #gt; b #gt; "Info"
+  S3: div #gt; i #gt; "Other again"
+  S4: div #gt; b #gt; "Info again"
+  [*] --> S1
   [*] --> S2
-  [*] --> S4
-  S2 --> S1: setCount(count + 1)
-  S4 --> S3: setCount(count + 1)"
+  S1 --> S3: setCount(count + 1)
+  S1 --> S2: parent changes tone
+  S2 --> S4: setCount(count + 1)
+  S2 --> S1: parent changes tone
+  S3 --> S3: setCount(count + 1)
+  S3 --> S4: parent changes tone
+  S4 --> S4: setCount(count + 1)
+  S4 --> S3: parent changes tone"
+`;
+
+exports[`fixture analysis > ToneLabel keeps its TLA+ module 1`] = `
+"---- MODULE ToneLabel ----
+\\* test__tone_undefined_calm_tone_loud: (tone === undefined ? "calm" : tone) === "loud" (test), 2 cells
+VARIABLES test__tone_undefined_calm_tone_loud
+
+vars == <<test__tone_undefined_calm_tone_loud>>
+
+screen == CASE test__tone_undefined_calm_tone_loud = "true" -> "strong \\"Loud\\""
+            [] test__tone_undefined_calm_tone_loud = "false" -> "span \\"Calm\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ test__tone_undefined_calm_tone_loud \\in {"false", "true"}
+
+\\* (tone === undefined ? "calm" : tone) === "loud" changes
+change_test__tone_undefined_calm_tone_loud ==
+  /\\ test__tone_undefined_calm_tone_loud' \\in {"false", "true"}
+
+Next == change_test__tone_undefined_calm_tone_loud
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `
@@ -3058,16 +6011,96 @@ flowchart TD
   n2 -->|✗| n4"
 `;
 
-exports[`fixture analysis > ToneLabel keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > ToneLabel keeps its state chart and findings 1`] = `
 "---
 title: ToneLabel src/literal-constants.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: (tone === undefined ? "calm" #58; tone) === "loud" · #lt;strong#gt; "Loud"
-  S2: (tone === undefined ? "calm" #58; tone) !== "loud" · #lt;span#gt; "Calm"
+  %% 2 states
+  %% test__tone_undefined_calm_tone_loud = (tone === undefined ? "calm" : tone) === "loud" (test): false | true
+  S1: span "Calm"
+  S2: strong "Loud"
   [*] --> S1
-  [*] --> S2"
+  [*] --> S2
+  S1 --> S2: (tone === undefined ? "calm" #58; tone) === "loud" changes
+  S2 --> S1: (tone === undefined ? "calm" #58; tone) === "loud" changes"
+`;
+
+exports[`fixture analysis > Toolbar keeps its TLA+ module 1`] = `
+"---- MODULE Toolbar ----
+\\* role: role (input), 2 cells
+\\* status_isSaving: status.isSaving (input), 2 cells
+\\* status_error: status.error (input), 3 cells
+\\* isHelpOpen: isHelpOpen (state), 2 cells
+VARIABLES role, status_isSaving, status_error, isHelpOpen
+
+vars == <<role, status_isSaving, status_error, isHelpOpen>>
+
+screen == CASE role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\""
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > p"
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p"
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > span \\"Saving\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > p > p \\"Press E to edit\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\" > p"
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > span \\"Read only\\" > p \\"Press E to edit\\""
+            [] role = "admin" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > span \\"Read only\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > span \\"Saving\\" > p"
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > span \\"Saving\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\" > p"
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > button \\"Edit\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ role = "admin" /\\ role = "admin" /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > button \\"Edit\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\" > p"
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > span \\"Saving\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "true" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > span \\"Saving\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\" > p"
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "true" -> "div > span \\"Read only\\" > p \\"Press E to edit\\""
+            [] role = "viewer" /\\ ~(role = "admin" /\\ role = "admin") /\\ status_isSaving = "false" /\\ status_error /= "other string" /\\ isHelpOpen = "false" -> "div > span \\"Read only\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ role \\in {"admin", "viewer"}
+  /\\ status_isSaving \\in {"false", "true"}
+  /\\ status_error \\in {"null", "empty", "other string"}
+  /\\ isHelpOpen = "false"
+
+\\* "Help"
+t1 ==
+  /\\ isHelpOpen' \\in (IF isHelpOpen = "false" THEN {"true"} ELSE {"false"})
+  /\\ UNCHANGED <<role, status_isSaving, status_error>>
+
+\\* parent changes role
+change_role ==
+  /\\ role' \\in {"admin", "viewer"}
+  /\\ UNCHANGED <<status_isSaving, status_error, isHelpOpen>>
+
+\\* status.isSaving changes
+change_status_isSaving ==
+  /\\ status_isSaving' \\in {"false", "true"}
+  /\\ UNCHANGED <<role, status_error, isHelpOpen>>
+
+\\* status.error changes
+change_status_error ==
+  /\\ status_error' \\in {"null", "empty", "other string"}
+  /\\ UNCHANGED <<role, status_isSaving, isHelpOpen>>
+
+Next == t1 \\/ change_role \\/ change_status_isSaving \\/ change_status_error
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
@@ -3107,39 +6140,153 @@ flowchart TD
   n14 -->|✓| n15"
 `;
 
-exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Toolbar keeps its state chart and findings 1`] = `
 "---
 title: Toolbar src/groups.tsx:12
 ---
 stateDiagram-v2
   direction LR
-  state "Toolbar" as regions {
-    %% role
-    S1: role === "admin" · #lt;span#gt; "Admin" #lt;button#gt; "Edit"
-    S2: role !== "admin" · #lt;span#gt; "Read only"
-    [*] --> S1
-    [*] --> S2
-    --
-    %% status.isSaving, status.error
-    S3: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
-    S4: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
-    S5: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
-    S6: !status.isSaving ∧ !status.error · ∅
-    [*] --> S3
-    [*] --> S4
-    [*] --> S5
-    [*] --> S6
-    --
-    %% isHelpOpen
-    S7: isHelpOpen · #lt;p#gt; "Press E to edit"
-    S8: !isHelpOpen · ∅
-    [*] --> S8
-    S7 --> S8: "Help"
-    S8 --> S7: "Help"
-  }
-  state "claims" as claims {
-    claims1: holds isHelpOpen stays within false | true L14
-  }"
+  %% 24 states
+  %% role = role (input): admin | viewer
+  %% status_isSaving = status.isSaving (input): false | true
+  %% status_error = status.error (input): null | empty | other string
+  %% isHelpOpen = isHelpOpen (state): false | true
+  S1: div #gt; span "Admin" #gt; button "Edit"
+  S2: div #gt; span "Admin" #gt; button "Edit" #gt; p
+  S3: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving"
+  S4: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p
+  S5: div #gt; span "Read only"
+  S6: div #gt; span "Read only" #gt; p
+  S7: div #gt; span "Read only" #gt; span "Saving"
+  S8: div #gt; span "Read only" #gt; span "Saving" #gt; p
+  S9: div #gt; span "Admin" #gt; button "Edit" #gt; p "Press E to edit"
+  S10: div #gt; span "Admin" #gt; button "Edit" #gt; p #gt; p "Press E to edit"
+  S11: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p "Press E to edit"
+  S12: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
+  S13: div #gt; span "Read only" #gt; p "Press E to edit"
+  S14: div #gt; span "Read only" #gt; p #gt; p "Press E to edit"
+  S15: div #gt; span "Read only" #gt; span "Saving" #gt; p "Press E to edit"
+  S16: div #gt; span "Read only" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
+  [*] --> S5
+  [*] --> S6
+  [*] --> S7
+  [*] --> S8
+  S1 --> S9: "Help"
+  S1 --> S5: parent changes role
+  S1 --> S3: status.isSaving changes
+  S1 --> S2: status.error changes
+  S2 --> S10: "Help"
+  S2 --> S6: parent changes role
+  S2 --> S4: status.isSaving changes
+  S2 --> S1: status.error changes
+  S3 --> S11: "Help"
+  S3 --> S7: parent changes role
+  S3 --> S1: status.isSaving changes
+  S3 --> S4: status.error changes
+  S4 --> S12: "Help"
+  S4 --> S8: parent changes role
+  S4 --> S2: status.isSaving changes
+  S4 --> S3: status.error changes
+  S5 --> S13: "Help"
+  S5 --> S1: parent changes role
+  S5 --> S7: status.isSaving changes
+  S5 --> S6: status.error changes
+  S6 --> S14: "Help"
+  S6 --> S2: parent changes role
+  S6 --> S8: status.isSaving changes
+  S6 --> S5: status.error changes
+  S7 --> S15: "Help"
+  S7 --> S3: parent changes role
+  S7 --> S5: status.isSaving changes
+  S7 --> S8: status.error changes
+  S8 --> S16: "Help"
+  S8 --> S4: parent changes role
+  S8 --> S6: status.isSaving changes
+  S8 --> S7: status.error changes
+  S9 --> S1: "Help"
+  S9 --> S13: parent changes role
+  S9 --> S11: status.isSaving changes
+  S9 --> S10: status.error changes
+  S10 --> S2: "Help"
+  S10 --> S14: parent changes role
+  S10 --> S12: status.isSaving changes
+  S10 --> S9: status.error changes
+  S11 --> S3: "Help"
+  S11 --> S15: parent changes role
+  S11 --> S9: status.isSaving changes
+  S11 --> S12: status.error changes
+  S12 --> S4: "Help"
+  S12 --> S16: parent changes role
+  S12 --> S10: status.isSaving changes
+  S12 --> S11: status.error changes
+  S13 --> S5: "Help"
+  S13 --> S9: parent changes role
+  S13 --> S15: status.isSaving changes
+  S13 --> S14: status.error changes
+  S14 --> S6: "Help"
+  S14 --> S10: parent changes role
+  S14 --> S16: status.isSaving changes
+  S14 --> S13: status.error changes
+  S15 --> S7: "Help"
+  S15 --> S11: parent changes role
+  S15 --> S13: status.isSaving changes
+  S15 --> S16: status.error changes
+  S16 --> S8: "Help"
+  S16 --> S12: parent changes role
+  S16 --> S14: status.isSaving changes
+  S16 --> S15: status.error changes"
+`;
+
+exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
+"---- MODULE UploadForm ----
+\\* error: error (state), 3 cells
+\\* pending_t1: t1 pending (pending), 2 cells
+\\* test_Unknown_throws: Unknown(throws) (test), 2 cells
+VARIABLES error, pending_t1, test_Unknown_throws
+
+vars == <<error, pending_t1, test_Unknown_throws>>
+
+screen == CASE error = "other string" -> "div > p"
+            [] error /= "other string" -> "div"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ error = "null"
+  /\\ pending_t1 = "idle"
+  /\\ test_Unknown_throws \\in {"false", "true"}
+
+\\* "Upload"
+t1 ==
+  /\\ pending_t1 = "idle"
+  /\\ pending_t1' = "pending"
+  /\\ UNCHANGED <<error, test_Unknown_throws>>
+
+\\* "Upload" resolves
+t1_resolves ==
+  /\\ pending_t1 = "pending"
+  /\\ error' \\in (IF test_Unknown_throws = "false" /\\ test_Unknown_throws = "true" THEN {"other string"} ELSE (IF test_Unknown_throws = "true" THEN {"other string"} ELSE {error}))
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<test_Unknown_throws>>
+
+\\* "Upload" rejects
+t1_rejects ==
+  /\\ pending_t1 = "pending"
+  /\\ pending_t1' = "idle"
+  /\\ UNCHANGED <<error, test_Unknown_throws>>
+
+\\* Unknown(throws) changes
+change_test_Unknown_throws ==
+  /\\ test_Unknown_throws' \\in {"false", "true"}
+  /\\ UNCHANGED <<error, pending_t1>>
+
+Next == t1 \\/ t1_resolves \\/ t1_rejects \\/ change_test_Unknown_throws
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > UploadForm keeps its render tree and handlers 1`] = `
@@ -3163,20 +6310,47 @@ flowchart TD
   n6 -->|✓| n7"
 `;
 
-exports[`fixture analysis > UploadForm keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > UploadForm keeps its state chart and findings 1`] = `
 "---
 title: UploadForm src/catch-after-await.tsx:25
 ---
 stateDiagram-v2
   direction LR
-  S1: error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step} #lt;p#gt; {"Failed"}
-  S2: !error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step}
-  [*] --> S2
-  S2 --> S1: "Upload" (async)
-  state "claims" as claims {
-    claims1: holds step stays within "done" | "idle" | "processing" | "uploading" L26
-    claims2: holds error stays within null | string L27
-  }"
+  %% 8 states
+  %% error = error (state): null | empty | other string
+  %% pending_t1 = t1 pending (pending): idle | pending
+  %% test_Unknown_throws = Unknown(throws) (test): false | true
+  S1: div
+  S2: div #gt; p
+  [*] --> S1
+  S1 --> S1: "Upload", "Upload" resolves
+  S1 --> S2: "Upload" resolves
+  S2 --> S2: "Upload", "Upload" resolves
+  %% ⚠ When "Upload" fails, nothing on screen changes (L28)"
+`;
+
+exports[`fixture analysis > WarningFilter keeps its TLA+ module 1`] = `
+"---- MODULE WarningFilter ----
+\\* isChecked: isChecked (state), 2 cells
+VARIABLES isChecked
+
+vars == <<isChecked>>
+
+screen == CASE isChecked = "true" -> "div > p \\"Warnings only\\""
+            [] isChecked = "false" -> "div > p \\"All events\\""
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ isChecked = "false"
+
+\\* (_event, checked) => setIsChecked(check…
+t1 ==
+  /\\ isChecked' \\in {"false", "true"}
+
+Next == t1
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > WarningFilter keeps its render tree and handlers 1`] = `
@@ -3200,20 +6374,62 @@ flowchart TD
   n5 -->|✗| n7"
 `;
 
-exports[`fixture analysis > WarningFilter keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > WarningFilter keeps its state chart and findings 1`] = `
 "---
 title: WarningFilter src/callback-arguments.tsx:16
 ---
 stateDiagram-v2
   direction LR
-  S1: isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "Warnings only"
-  S2: !isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "All events"
-  [*] --> S2
+  %% 2 states
+  %% isChecked = isChecked (state): false | true
+  S1: div #gt; p "All events"
+  S2: div #gt; p "Warnings only"
+  [*] --> S1
+  S1 --> S1: (_event, checked) =#gt; setIsChecked(check…
   S1 --> S2: (_event, checked) =#gt; setIsChecked(check…
   S2 --> S1: (_event, checked) =#gt; setIsChecked(check…
-  state "claims" as claims {
-    claims1: holds isChecked stays within false | true L17
-  }"
+  S2 --> S2: (_event, checked) =#gt; setIsChecked(check…"
+`;
+
+exports[`fixture analysis > Wizard keeps its TLA+ module 1`] = `
+"---- MODULE Wizard ----
+\\* state_step: state.step (state), 3 cells
+\\* state_hasError: state.hasError (state), 2 cells
+VARIABLES state_step, state_hasError
+
+vars == <<state_step, state_hasError>>
+
+screen == CASE state_step = "done" -> "p \\"Thanks!\\""
+            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step = "details" /\\ state_step = "payment" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\""
+            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step = "details" /\\ state_step /= "payment" -> "form > p \\"Something went wrong\\" > input"
+            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step /= "details" /\\ state_step = "payment" -> "form > p \\"Something went wrong\\" > input > button \\"Back\\" (2)"
+            [] state_step /= "done" /\\ state_hasError = "true" /\\ state_step /= "details" /\\ state_step /= "payment" -> "form > p \\"Something went wrong\\" > input (2)"
+            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step = "details" /\\ state_step = "payment" -> "form > input > button \\"Back\\""
+            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step = "details" /\\ state_step /= "payment" -> "form > input"
+            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step /= "details" /\\ state_step = "payment" -> "form > input > button \\"Back\\" (2)"
+            [] state_step /= "done" /\\ state_hasError = "false" /\\ state_step /= "details" /\\ state_step /= "payment" -> "form > input (2)"
+            [] OTHER -> "nothing"
+
+Init ==
+  /\\ state_step = "details"
+  /\\ state_hasError = "false"
+
+\\* "Back"
+t1 ==
+  /\\ state_step /= "done" /\\ state_step = "payment"
+  /\\ state_step' = "details"
+  /\\ state_hasError' \\in (IF (state_step = "details" /\\ state_hasError = "false") \\/ (state_step = "done" /\\ state_hasError = "false") \\/ (state_step = "payment" /\\ state_hasError = "false") THEN {"false"} ELSE {"true"})
+
+\\* "Next"
+t2 ==
+  /\\ state_step /= "done"
+  /\\ state_step' \\in (IF (state_step = "details" /\\ state_hasError = "false") \\/ (state_step = "details" /\\ state_hasError = "true") THEN {"payment"} ELSE {"done"})
+  /\\ state_hasError' = "false"
+
+Next == t1 \\/ t2
+
+Spec == Init /\\ [][Next]_vars
+===="
 `;
 
 exports[`fixture analysis > Wizard keeps its render tree and handlers 1`] = `
@@ -3251,20 +6467,21 @@ flowchart TD
   n13 -.-> n14"
 `;
 
-exports[`fixture analysis > Wizard keeps its states, transitions and unreachable branches 1`] = `
+exports[`fixture analysis > Wizard keeps its state chart and findings 1`] = `
 "---
 title: Wizard src/reducer.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: state.step === "done" · #lt;p#gt; "Thanks!"
-  S2: state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
-  S3: state.step ∉ {"done", "details"} · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
-  [*] --> S2
+  %% 3 states
+  %% state_step = state.step (state): details | done | payment
+  %% state_hasError = state.hasError (state): false | true
+  S1: form #gt; input
+  S2: form #gt; input #gt; button "Back" (2)
+  S3: p "Thanks!"
+  [*] --> S1
+  S1 --> S2: "Next"
+  S2 --> S1: "Back"
   S2 --> S3: "Next"
-  S3 --> S1: "Next"
-  S3 --> S2: "Back"
-  state "unreachable branches" as unreachable {
-    unreachable1: never state.hasError L26
-  }"
+  %% ⚠ state.hasError is never true here (L26)"
 `;

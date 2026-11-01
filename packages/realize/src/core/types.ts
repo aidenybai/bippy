@@ -3,6 +3,7 @@ import type { InstructionId, InstructionValue, SourceLocation } from "../react-c
 
 export type { SourceLocation };
 import type { PlaceMap } from "./values/place-map";
+import type { ComponentModel } from "./model/types";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 
@@ -382,86 +383,9 @@ export interface Claim {
   loc: SourceLocation;
 }
 
-export type ClaimVerdict = "holds" | "broken" | "unproven";
-
-export interface ClaimOutcome {
-  claim: Claim;
-  verdict: ClaimVerdict;
-  stateIndex: number | null;
-  path: string[];
-  reason: string | null;
-}
-
-export interface Transition {
-  handlerId: string;
-  targets: number[];
-  isAsync: boolean;
-}
-
-export interface State {
-  regionIndex: number;
-  branches: string[];
-  conditions: string[];
-  render: SymbolicValue;
-  fragments: SymbolicValue[];
-  transitions: Transition[];
-}
-
-export interface Region {
-  placeNames: string[];
-  bindingIds: number[];
-  states: number[];
-  firstRenderState: number | null;
-  possibleFirstRenderStates: number[];
-  isTruncated: boolean;
-}
-
-export interface UnreachableBranch {
-  branch: Branch;
-  isTrueSide: boolean;
-  description: string;
-}
-
-export interface PropWitness {
-  props: Record<string, Sample>;
-  states: number[];
-}
-
-export interface StateReport {
-  places: PlaceMap<AbstractValue[]>;
-  states: State[];
-  regions: Region[];
-  propWitnesses: PropWitness[];
-  unreachableBranches: UnreachableBranch[];
-  claimOutcomes: ClaimOutcome[];
-  isTruncated: boolean;
-}
-
-export interface PropLink {
-  name: string;
-  value: SymbolicValue;
-  domain: Domain;
-}
-
-export interface ComponentLink {
-  parent: string;
-  child: string;
-  loc: SourceLocation;
-  file: string;
-  props: PropLink[];
-  isComplete: boolean;
-}
-
-export interface ComponentInstance {
-  link: ComponentLink;
-  report: StateReport;
-}
-
 export interface AnalyzedComponent {
   analysis: ComponentAnalysis;
-  report: StateReport;
-  links: ComponentLink[];
-  instances: ComponentInstance[];
+  model: ComponentModel;
 }
 
 export interface ProjectAnalysis {

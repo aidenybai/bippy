@@ -5,14 +5,14 @@ import { createTracer } from "../../src/core/project/tracer";
 import { getFixtureConfig } from "./helpers";
 
 describe("a file filter", () => {
-  it("only enumerates the components in the selected files", () => {
+  it("only models the components in the selected files", () => {
     const configPath = getFixtureConfig("conformance-repros");
     const tracer = createTracer(dirname(configPath));
     const project = analyzeProject(configPath, "self-updates", tracer);
-    const enumerated = tracer.events
-      .filter((event) => event.ph === "X" && event.cat === "enumerate")
+    const modeled = tracer.events
+      .filter((event) => event.ph === "X" && event.cat === "model")
       .map((event) => event.name);
-    expect(new Set(enumerated)).toEqual(
+    expect(new Set(modeled)).toEqual(
       new Set(project.components.map((component) => component.analysis.name)),
     );
   });

@@ -19,7 +19,7 @@ import { getConditionallyMutatedPlace } from "./get-conditionally-mutated-place"
 import { getMutatedPlace } from "./get-mutated-place";
 import { isFunctionCreation } from "./is-function-creation";
 import { isStateBinding } from "../values/is-state-binding";
-import { isCollectionWrite } from "../solver/literal-receivers";
+import { isCollectionWrite } from "../interpret/literal-receivers";
 import type { WalkState } from "./walk-state";
 
 interface CreationPath {

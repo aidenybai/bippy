@@ -10,14 +10,14 @@ import type {
 } from "../core/types";
 import { formatPlace, formatSymbolicValue } from "../core/values/format";
 import { getTestExpression } from "../core/values/get-test-expression";
-import { isRenderingNothing } from "../core/states/is-rendering-nothing";
-import { isRenderingNothingWhenFalse } from "../core/states/is-rendering-nothing-when-false";
+import { isRenderingNothing } from "../core/render/is-rendering-nothing";
+import { isRenderingNothingWhenFalse } from "../core/render/is-rendering-nothing-when-false";
 import { isUnchangedField } from "../core/values/is-unchanged-field";
 import { isEffectHandler } from "../core/handlers/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
-import { createSourceReader } from "./source-text";
-import { getEffectTriggerLabel } from "./trigger-labels";
-import { truncate, unescapeQuotedLiterals } from "./text";
+import { createSourceReader } from "../core/labels/source-text";
+import { getEffectTriggerLabel } from "../core/labels/trigger-labels";
+import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
 
 export const DEFAULT_RENDER_DEPTH = 12;
 

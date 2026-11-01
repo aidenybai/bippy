@@ -1,6 +1,8 @@
 export { analyzeProject } from "./core/project/analyze-project";
 export { serializeProjectAnalysis } from "./core/project/serialize";
-export { enumerateStates } from "./core/states/enumerate-states";
+export { buildComponentModel } from "./core/model/build-model";
+export { formatTla } from "./core/model/tla";
+export { checkInvariant } from "./core/model/check-invariants";
 export { formatSymbolicValue } from "./core/values/format";
 export type {
   AbstractValue,
@@ -8,21 +10,13 @@ export type {
   Bailout,
   Binding,
   Claim,
-  ClaimOutcome,
   ComponentAnalysis,
-  ComponentInstance,
-  ComponentLink,
-  PropLink,
-  UnreachableBranch,
   Branch,
   Domain,
-  Transition,
   ProjectAnalysis,
-  Sample,
-  State,
-  StateReport,
   StateUpdate,
   SymbolicValue,
   Handler,
   HandlerTrigger,
 } from "./core/types";
+export type { ComponentModel, Lane, Action, Screen, Finding } from "./core/model/types";

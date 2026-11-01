@@ -1,6 +1,6 @@
 import type { AbstractValue, BinaryOperator, PrimitiveValue } from "../types";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
-import { LOOSE_EQUALITY_OPERATORS } from "../solver/is-equal-to-literal";
+import { LOOSE_EQUALITY_OPERATORS } from "../type-checker/is-equal-to-literal";
 import { isNullish } from "../values/is-nullish";
 
 export const canTypeEqualLiteral = (

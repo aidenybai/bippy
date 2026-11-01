@@ -2,7 +2,7 @@ import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "../types";
 import { isStateBinding } from "../values/is-state-binding";
-import { isWholeBinding } from "../solver/is-whole-binding";
+import { isWholeBinding } from "../interpret/is-whole-binding";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { createBindingValue, createUnknown } from "../values/symbolic-values";

@@ -11,16 +11,12 @@ import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HI
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
 import { isFunctionCreation } from "../../src/core/interpret/is-function-creation";
 import type {
-  AbstractValue,
   AnalyzedComponent,
   Binding,
-  BindingPlace,
   ComponentAnalysis,
   ProjectAnalysis,
-  StateReport,
 } from "../../src/core/types";
 import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
-import { PlaceMap } from "../../src/core/values/place-map";
 import { collectHandlerProbes } from "../conformance/verifier/handler-probes";
 import type { Capture } from "../conformance/verifier/types";
 
@@ -84,16 +80,6 @@ export const createTestAnalysis = (name: string, bindings: Binding[]): Component
     { kind: "Primitive", value: null },
   ),
   bindings,
-});
-
-export const createTestReport = (places: Array<[BindingPlace, AbstractValue[]]>): StateReport => ({
-  places: new PlaceMap(places),
-  states: [],
-  regions: [],
-  propWitnesses: [],
-  unreachableBranches: [],
-  claimOutcomes: [],
-  isTruncated: false,
 });
 
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {

@@ -13,9 +13,10 @@ import type { ModuleFunctionLoader } from "../compile/function-registry";
 import type { HIRFunction } from "../../react-compiler/HIR/HIR";
 import { getMutatedParameters } from "./get-mutated-parameters";
 import { collectStoreModels } from "../interpret/store-actions";
-import { enumerateStates } from "../states/enumerate-states";
-import { linkComponents, type ReportLoader } from "../linking/link-components";
-import { addSamplesFromReadPaths, inferPropsFromCallSites } from "../linking/infer-props";
+import { buildComponentModel } from "../model/build-model";
+import { addSamplesFromReadPaths, inferPropsFromCallSites } from "./infer-props";
+import { collectTriggerLabels } from "../labels/trigger-labels";
+import { createSourceReader } from "../labels/source-text";
 import { collectContextSetterFields } from "../interpret/context-setter-fields";
 import type {
   ComponentAnalysis,
@@ -45,7 +46,6 @@ import {
   isSpreadHeld,
 } from "../interpret/get-prop-holds";
 import type { HeldProps } from "../interpret/get-prop-holds";
-import { memoizeByIdentity } from "../shared/memoize-by-identity";
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
@@ -294,13 +294,6 @@ const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): Compone
   return analyses;
 };
 
-const createReportLoader = (tracer: Tracer): ReportLoader =>
-  memoizeByIdentity((analysis: ComponentAnalysis) =>
-    tracer.span("enumerate", analysis.name, () => enumerateStates(analysis), {
-      file: analysis.file,
-    }),
-  );
-
 export interface InterpretedProject {
   analyses: ComponentAnalysis[];
   fileCount: number;
@@ -340,14 +333,15 @@ export const reportProject = (
 ): ProjectAnalysis => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
-  const loadReport = createReportLoader(tracer);
-  const linked = tracer.span("link", "link components", () =>
-    linkComponents(analyses, loadReport, isSelected),
-  );
+  const sourceReader = createSourceReader();
   const components = analyses.filter(isSelected).map((analysis) => ({
     analysis,
-    report: loadReport(analysis),
-    ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+    model: tracer.span(
+      "model",
+      analysis.name,
+      () => buildComponentModel(analysis, collectTriggerLabels({ analysis }, sourceReader)),
+      { file: analysis.file },
+    ),
   }));
   return { components, fileCount, unparsedFiles };
 };

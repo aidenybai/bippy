@@ -14,7 +14,7 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "../types";
-import { forEachJsxElement } from "../states/for-each-jsx-element";
+import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";

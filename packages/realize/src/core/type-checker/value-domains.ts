@@ -1,7 +1,7 @@
 import { dedupeAbstractValues } from "../values/abstract-values";
-import { EQUALITY_OPERATORS } from "../solver/comparison-operators";
+import { EQUALITY_OPERATORS } from "../type-checker/comparison-operators";
 import type { AbstractValue, BindingValue, Domain, SymbolicValue } from "../types";
-import { getTruthiness } from "../solver/get-truthiness";
+import { getTruthiness } from "../type-checker/get-truthiness";
 import { getValuePlace } from "../values/get-value-place";
 import type { PlaceMap } from "../values/place-map";
 

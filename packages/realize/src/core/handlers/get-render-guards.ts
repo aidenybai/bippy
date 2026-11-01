@@ -1,5 +1,5 @@
 import type { JsxExpressionValue, SymbolicValue } from "../types";
-import { getMemoizedRender } from "../states/get-memoized-render";
+import { getMemoizedRender } from "../render/get-memoized-render";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { negate } from "../values/negate";
