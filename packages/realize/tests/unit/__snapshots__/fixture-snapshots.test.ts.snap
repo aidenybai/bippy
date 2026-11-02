@@ -4579,32 +4579,28 @@ stateDiagram-v2
 
 exports[`fixture analysis > SizeLabel keeps its TLA+ module 1`] = `
 "---- MODULE SizeLabel ----
-\\* opaque_size_sizes_small: size === sizes.small (opaque), 2 values
-\\* opaque_size_sizes_large: size === sizes.large (opaque), 2 values
-VARIABLES opaque_size_sizes_small, opaque_size_sizes_large
+\\* size: size (input), 2 values
+\\* sizes_small: sizes.small (input), 1 values
+\\* sizes_large: sizes.large (input), 1 values
+VARIABLES size, sizes_small, sizes_large
 
-vars == <<opaque_size_sizes_small, opaque_size_sizes_large>>
+vars == <<size, sizes_small, sizes_large>>
 
-view == CASE opaque_size_sizes_small = "true" -> "p \\"Small\\""
-          [] opaque_size_sizes_small = "false" /\\ opaque_size_sizes_large = "true" -> "p \\"Large\\""
-          [] opaque_size_sizes_small = "false" /\\ opaque_size_sizes_large = "false" -> "nothing"
+view == CASE size = "sm" -> "p \\"Small\\""
+          [] size = "lg" -> "p \\"Large\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ opaque_size_sizes_small \\in {"false", "true"}
-  /\\ opaque_size_sizes_large \\in {"false", "true"}
+  /\\ size \\in {"lg", "sm"}
+  /\\ sizes_small = "sm"
+  /\\ sizes_large = "lg"
 
-\\* size === sizes.small changes
-change_opaque_size_sizes_small ==
-  /\\ opaque_size_sizes_small' \\in {"false", "true"}
-  /\\ UNCHANGED <<opaque_size_sizes_large>>
+\\* parent changes size
+change_size ==
+  /\\ size' \\in {"lg", "sm"}
+  /\\ UNCHANGED <<sizes_small, sizes_large>>
 
-\\* size === sizes.large changes
-change_opaque_size_sizes_large ==
-  /\\ opaque_size_sizes_large' \\in {"false", "true"}
-  /\\ UNCHANGED <<opaque_size_sizes_small>>
-
-Next == change_opaque_size_sizes_small \\/ change_opaque_size_sizes_large
+Next == change_size
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4674,21 +4670,17 @@ title: SizeLabel src/expression-defaults.tsx:29
 ---
 stateDiagram-v2
   direction LR
-  %% 4 states
-  %% opaque_size_sizes_small = size === sizes.small (opaque): false | true
-  %% opaque_size_sizes_large = size === sizes.large (opaque): false | true
-  S1: nothing
-  S2: p "Large"
-  S3: p "Small"
+  %% 2 states
+  %% size = size (input): lg | sm
+  %% sizes_small = sizes.small (input): sm
+  %% sizes_large = sizes.large (input): lg
+  S1: p "Large"
+  S2: p "Small"
   [*] --> S1
   [*] --> S2
-  [*] --> S3
-  S1 --> S3: size === sizes.small changes
-  S1 --> S2: size === sizes.large changes
-  S2 --> S3: size === sizes.small changes
-  S2 --> S1: size === sizes.large changes
-  S3 --> S1: size === sizes.small changes
-  S3 --> S2: size === sizes.small changes"
+  S1 --> S2: parent changes size
+  S2 --> S1: parent changes size
+  %% ⚠ size === sizes.large is never false here (L33)"
 `;
 
 exports[`fixture analysis > SizeLabel keeps its state chart and findings 2`] = `

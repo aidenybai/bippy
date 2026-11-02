@@ -8,21 +8,17 @@ import type {
 } from "../types";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
-import { COMPARISONS, compareAbstract, getAbstractTruthiness, type Comparison } from "./abstract";
+import {
+  COMPARISONS,
+  FLIPPED,
+  compareAbstract,
+  compareAbstracts,
+  getAbstractTruthiness,
+  type Comparison,
+} from "./abstract";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
-
-const FLIPPED: Record<Comparison, Comparison> = {
-  "===": "===",
-  "!==": "!==",
-  "==": "==",
-  "!=": "!=",
-  "<": ">",
-  "<=": ">=",
-  ">": "<",
-  ">=": "<=",
-};
 
 export const STATE_KINDS = new Set(["state", "reducer"]);
 
@@ -54,7 +50,13 @@ const TLA_KEYWORDS = new Set([
   "view",
 ]);
 
+interface Place {
+  binding: Binding;
+  path: string[];
+}
+
 type Atom =
+  | { kind: "Relate"; left: Place; operator: Comparison; right: Place }
   | {
       kind: "Compare";
       binding: Binding;
@@ -87,6 +89,8 @@ const toAtom = (value: SymbolicValue): Atom | null => {
   if (value.kind === "Binding") return { kind: "Truthy", binding: value.binding, path: value.path };
   if (value.kind !== "BinaryExpression" || !COMPARISONS.has(value.operator)) return null;
   const operator = value.operator as Comparison;
+  if (value.left.kind === "Binding" && value.right.kind === "Binding")
+    return { kind: "Relate", left: value.left, operator, right: value.right };
   if (value.left.kind === "Binding" && value.right.kind === "Primitive")
     return {
       kind: "Compare",
@@ -159,6 +163,22 @@ const getInputBindingIds = (binding: Binding, bindingsById: Map<number, Binding>
   return [...ids];
 };
 
+const shareLiterals = (relations: Array<[PlaceTests, PlaceTests]>): void => {
+  for (let isGrowing = true; isGrowing;) {
+    isGrowing = false;
+    for (const [left, right] of relations)
+      for (const [from, to] of [
+        [left, right],
+        [right, left],
+      ])
+        for (const literal of from.literals)
+          if (!to.literals.includes(literal)) {
+            to.literals.push(literal);
+            isGrowing = true;
+          }
+  }
+};
+
 const BOOLEAN_DOMAIN: Value[] = [
   { label: "false", abstract: { kind: "Exact", value: false } },
   { label: "true", abstract: { kind: "Exact", value: true } },
@@ -186,20 +206,37 @@ export const createVariableTable = (
     variablesByName.set(variable.name, variable);
   };
 
-  const record = (atom: Atom): void => {
-    if (atom.kind === "Opaque") return;
-    const key = getPlaceKey(atom.binding.id, atom.path);
+  const getEntry = ({ binding, path }: Place): PlaceEntry => {
+    const key = getPlaceKey(binding.id, path);
     const entry = entries.get(key) ?? {
-      binding: atom.binding,
-      path: atom.path,
+      binding,
+      path,
       tests: { literals: [], isTruthinessTested: false },
     };
     entries.set(key, entry);
-    if (atom.kind === "Truthy") entry.tests.isTruthinessTested = true;
-    else entry.tests.literals.push(atom.literal);
+    return entry;
+  };
+
+  const relations: Array<[PlaceTests, PlaceTests]> = [];
+
+  const record = (atom: Atom): void => {
+    switch (atom.kind) {
+      case "Opaque":
+        return;
+      case "Truthy":
+        getEntry(atom).tests.isTruthinessTested = true;
+        return;
+      case "Compare":
+        getEntry(atom).tests.literals.push(atom.literal);
+        return;
+      case "Relate":
+        relations.push([getEntry(atom.left).tests, getEntry(atom.right).tests]);
+        return;
+    }
   };
 
   for (const test of tests) forEachAtom(test, record);
+  shareLiterals(relations);
 
   const getPlaceDomain = (binding: Binding, path: string[]): Domain | null =>
     path.length === 0
@@ -266,9 +303,42 @@ export const createVariableTable = (
     return inValues(variable.name, selected, getValueLabels(variable.domain));
   };
 
+  const compileRelation = (
+    value: SymbolicValue,
+    atom: Extract<Atom, { kind: "Relate" }>,
+  ): Predicate => {
+    const left = getVariable(atom.left.binding, atom.left.path);
+    const right = getVariable(atom.right.binding, atom.right.path);
+    if (!left || !right) return opaque(value);
+    const leftLabels = getValueLabels(left.domain);
+    const rightLabels = getValueLabels(right.domain);
+    const results = left.domain.map((leftValue) =>
+      right.domain.map((rightValue) =>
+        compareAbstracts(leftValue.abstract, atom.operator, rightValue.abstract),
+      ),
+    );
+    if (results.every((row) => row.every((result) => result === null))) return opaque(value);
+    const select = (result: boolean | null): Predicate =>
+      or(
+        results.map((row, index) =>
+          and([
+            inValues(left.name, [leftLabels[index]], leftLabels),
+            inValues(
+              right.name,
+              rightLabels.filter((_label, rightIndex) => row[rightIndex] === result),
+              rightLabels,
+            ),
+          ]),
+        ),
+      );
+    const undecided = select(null);
+    return or([select(true), undecided.kind === "False" ? FALSE : and([undecided, opaque(value)])]);
+  };
+
   const compileAtom = (value: SymbolicValue): Predicate => {
     const atom = toAtom(value);
     if (!atom || atom.kind === "Opaque") return opaque(value);
+    if (atom.kind === "Relate") return compileRelation(value, atom);
     const variable = variablesByPlace.get(getPlaceKey(atom.binding.id, atom.path));
     if (!variable) return opaque(value);
     const predicate =
