@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { getSolidColor } from "@/lib/colors";
 import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
-import { getStateTransitions, type StateTransition } from "@/lib/state-chart";
+import { getStateSteps, type StateStep } from "@/lib/state-chart";
 import {
   buildDecisionTree,
   collectEdges,
@@ -12,7 +12,7 @@ import {
   type TreeEdge,
   type TreeNode,
 } from "@/lib/tree";
-import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
+import type { ViewComponent, ViewHandler } from "@/model";
 import { ArrowHead, type Point } from "./arrow-head";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
@@ -44,7 +44,7 @@ interface LaidOutEdge {
   label: Point;
   labelAlign?: "center" | "start";
   answer?: "yes" | "no";
-  transition?: StateTransition;
+  step?: StateStep;
   handler?: ViewHandler;
 }
 
@@ -74,16 +74,16 @@ const createGraph = (nodes: TreeNode[], treeEdges: TreeEdge[]): graphlib.Graph =
   return graph;
 };
 
-const addTransitionEdges = (
+const addStepEdges = (
   graph: graphlib.Graph,
-  transitions: StateTransition[],
+  steps: StateStep[],
   handlersById: Map<string, ViewHandler>,
 ): void => {
-  transitions.forEach((transition, order) => {
-    const width = getLabelWidth(handlersById.get(transition.handlerId));
+  steps.forEach((step, order) => {
+    const width = getLabelWidth(handlersById.get(step.handlerId));
     graph.setEdge(
-      `leaf:${transition.from}`,
-      `leaf:${transition.to}`,
+      `leaf:${step.from}`,
+      `leaf:${step.to}`,
       { width, height: LABEL_HEIGHT, labelpos: "c" },
       `a${order}`,
     );
@@ -97,17 +97,17 @@ const readEdge = (graph: graphlib.Graph, from: string, to: string, name: string)
   return { points: edge.points, head, label: { x: edge.x, y: edge.y } };
 };
 
-const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null => {
-  const root = buildDecisionTree(component, region);
+const layoutTree = (component: ViewComponent): Layout | null => {
+  const root = buildDecisionTree(component);
   if (!root) return null;
   const nodes = collectNodes(root);
   const treeEdges = collectEdges(root);
   const graph = createGraph(nodes, treeEdges);
-  const allTransitions = getStateTransitions(component, region.states);
-  const transitions = allTransitions.filter((transition) => transition.from !== transition.to);
-  const loops = allTransitions.filter((transition) => transition.from === transition.to);
+  const allSteps = getStateSteps(component);
+  const steps = allSteps.filter((step) => step.from !== step.to);
+  const loops = allSteps.filter((step) => step.from === step.to);
   const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
-  addTransitionEdges(graph, transitions, handlersById);
+  addStepEdges(graph, steps, handlersById);
   dagre.layout(graph);
   const size = graph.graph();
   const loopEdges = layoutLoops(loops, graph, handlersById);
@@ -122,11 +122,11 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
         answer: edge.answer,
         ...readEdge(graph, edge.from, edge.to, `t${order}`),
       })),
-      ...transitions.map((transition, order) => ({
+      ...steps.map((step, order) => ({
         id: `a${order}`,
-        transition,
-        handler: handlersById.get(transition.handlerId),
-        ...readEdge(graph, `leaf:${transition.from}`, `leaf:${transition.to}`, `a${order}`),
+        step,
+        handler: handlersById.get(step.handlerId),
+        ...readEdge(graph, `leaf:${step.from}`, `leaf:${step.to}`, `a${order}`),
       })),
     ],
   };
@@ -139,7 +139,7 @@ const LOOP_REACH = 8;
 type LoopEdge = LaidOutEdge & { right: number };
 
 const layoutLoops = (
-  loops: StateTransition[],
+  loops: StateStep[],
   graph: graphlib.Graph,
   handlersById: Map<string, ViewHandler>,
 ): LoopEdge[] => {
@@ -165,7 +165,7 @@ const layoutLoops = (
       head: { from: control, tip },
       label: { x: labelX, y: node.y + (slot - (count - 1) / 2) * LABEL_HEIGHT },
       labelAlign: "start",
-      transition: loop,
+      step: loop,
       handler,
       right: labelX + getLabelWidth(handler) + 8,
     };
@@ -177,19 +177,19 @@ const toPath = (points: Point[]): string =>
 
 const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
   const { colorByNodeId } = useViewer();
-  const handlerId = edge.transition?.handlerId;
+  const handlerId = edge.step?.handlerId;
   const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
   const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
   const stroke = color ? getSolidColor(color) : "var(--faint)";
-  const strokeWidth = edge.transition ? 1.25 : 1;
+  const strokeWidth = edge.step ? 1.25 : 1;
   return (
-    <g opacity={edge.transition ? 0.85 : 1}>
+    <g opacity={edge.step ? 0.85 : 1}>
       <path
         d={edge.path ?? toPath(edge.points)}
         fill="none"
         style={{ stroke }}
         strokeWidth={strokeWidth}
-        strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
+        strokeDasharray={edge.step?.isAsync ? "4 3" : undefined}
       />
       <ArrowHead {...edge.head} color={stroke} size={6 * strokeWidth} />
     </g>
@@ -197,7 +197,7 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
 };
 
 const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
-  const handlerId = edge.transition?.handlerId;
+  const handlerId = edge.step?.handlerId;
   const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
   return (
     <div
@@ -245,13 +245,8 @@ const NodeView = ({ laid, component }: { laid: LaidOutNode; component: ViewCompo
   );
 };
 
-interface DecisionTreeProps {
-  component: ViewComponent;
-  region: ViewRegion;
-}
-
-export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
-  const layout = useMemo(() => layoutTree(component, region), [component, region]);
+export const DecisionTree = ({ component }: { component: ViewComponent }) => {
+  const layout = useMemo(() => layoutTree(component), [component]);
   if (!layout) return null;
   return (
     <div className="-mx-2 overflow-x-auto overscroll-x-contain px-2 py-2 -my-2">

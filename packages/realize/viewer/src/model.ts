@@ -40,7 +40,7 @@ const viewHandlerSchema = z.object({
   updates: z.array(viewUpdateSchema),
 });
 
-const viewTransitionSchema = z.object({
+const viewStepSchema = z.object({
   handlerId: z.string(),
   targets: z.array(z.number()),
   isAsync: z.boolean(),
@@ -51,12 +51,7 @@ const viewStateSchema = z.object({
   conditions: z.array(z.string()),
   label: z.string(),
   render: z.string(),
-  transitions: z.array(viewTransitionSchema),
-});
-
-const viewRegionSchema = z.object({
-  placeNames: z.array(z.string()),
-  states: z.array(z.number()),
+  steps: z.array(viewStepSchema),
 });
 
 const graphNodeSchema = z.object({
@@ -89,7 +84,6 @@ const viewComponentSchema = z.object({
   branches: z.array(viewBranchSchema),
   handlers: z.array(viewHandlerSchema),
   states: z.array(viewStateSchema),
-  regions: z.array(viewRegionSchema),
   graph: codeGraphSchema,
 });
 
@@ -113,7 +107,6 @@ export type ViewBranch = z.infer<typeof viewBranchSchema>;
 export type ViewUpdate = z.infer<typeof viewUpdateSchema>;
 export type ViewHandler = z.infer<typeof viewHandlerSchema>;
 export type ViewState = z.infer<typeof viewStateSchema>;
-export type ViewRegion = z.infer<typeof viewRegionSchema>;
 export type GraphNode = z.infer<typeof graphNodeSchema>;
 export type GraphEdge = z.infer<typeof graphEdgeSchema>;
 export type CodeGraph = z.infer<typeof codeGraphSchema>;
