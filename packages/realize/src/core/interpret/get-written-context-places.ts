@@ -1,31 +1,26 @@
 import { InstructionKind } from "../../react-compiler/HIR/HIR";
-import type { HIRFunction, IdentifierId, Place } from "../../react-compiler/HIR/HIR";
+import type { HIRFunction, IdentifierId, LValue, Place } from "../../react-compiler/HIR/HIR";
 import { memoizeByIdentity } from "../shared/memoize-by-identity";
 import { isFunctionCreation } from "./is-function-creation";
 import { getMutatedPlace } from "./get-mutated-place";
 
-const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
+const collectStoredLValues = (hirFunction: HIRFunction): LValue[] =>
   [...hirFunction.body.blocks.values()].flatMap((block) =>
     block.instructions.flatMap((instruction) => {
-      if (instruction.value.kind === "StoreContext") return [instruction.value.lvalue.place];
+      if (instruction.value.kind === "StoreContext") return [instruction.value.lvalue];
       return isFunctionCreation(instruction.value)
-        ? collectStoredPlaces(instruction.value.loweredFunc.func)
+        ? collectStoredLValues(instruction.value.loweredFunc.func)
         : [];
     }),
   );
 
+const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
+  collectStoredLValues(hirFunction).map((lvalue) => lvalue.place);
+
 const collectReassignedPlaces = (hirFunction: HIRFunction): Place[] =>
-  [...hirFunction.body.blocks.values()].flatMap((block) =>
-    block.instructions.flatMap((instruction) => {
-      if (instruction.value.kind === "StoreContext")
-        return instruction.value.lvalue.kind === InstructionKind.Reassign
-          ? [instruction.value.lvalue.place]
-          : [];
-      return isFunctionCreation(instruction.value)
-        ? collectReassignedPlaces(instruction.value.loweredFunc.func)
-        : [];
-    }),
-  );
+  collectStoredLValues(hirFunction)
+    .filter((lvalue) => lvalue.kind === InstructionKind.Reassign)
+    .map((lvalue) => lvalue.place);
 
 export const getReassignedIds = memoizeByIdentity(
   (hirFunction: HIRFunction): Set<IdentifierId> =>

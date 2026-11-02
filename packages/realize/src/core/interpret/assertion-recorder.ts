@@ -36,19 +36,6 @@ const describeDomain = (domain: Domain): string | null => {
 const createNotNullishTest = (subject: SymbolicValue): SymbolicValue =>
   foldBinary("!=", subject, { kind: "Primitive", value: null });
 
-const createNonNullAssertion = (
-  subject: SymbolicValue,
-  loc: SourceLocation,
-  guards: SymbolicValue[],
-): Assertion => ({
-  kind: "non-null",
-  subject,
-  check: { kind: "Condition", test: createNotNullishTest(subject) },
-  guards,
-  description: `${formatSymbolicValue(subject)}!`,
-  loc,
-});
-
 const createCastAssertion = (
   subject: SymbolicValue,
   source: Domain,
@@ -58,38 +45,30 @@ const createCastAssertion = (
 ): Assertion | null => {
   const targetText = describeDomain(target);
   if (targetText === null) return null;
-  const description = `${formatSymbolicValue(subject)} as ${targetText}`;
-  if (target.kind === "Cases" && target.cases.every((value) => value.kind === "Literal"))
-    return {
-      kind: "type",
-      subject,
-      check: { kind: "Membership", cases: target.cases },
-      guards,
-      description,
-      loc,
-    };
-  if (hasNullishCase(source) && !hasNullishCase(target))
-    return {
-      kind: "type",
-      subject,
-      check: { kind: "Condition", test: createNotNullishTest(subject) },
-      guards,
-      description,
-      loc,
-    };
-  return null;
+  const check: Assertion["check"] | null =
+    target.kind === "Cases" && target.cases.every((value) => value.kind === "Literal")
+      ? { kind: "Membership", cases: target.cases }
+      : hasNullishCase(source) && !hasNullishCase(target)
+        ? { kind: "Condition", test: createNotNullishTest(subject) }
+        : null;
+  return check
+    ? {
+        kind: "type",
+        subject,
+        check,
+        guards,
+        description: `${formatSymbolicValue(subject)} as ${targetText}`,
+        loc,
+      }
+    : null;
 };
 
 export class AssertionRecorder {
   readonly #interpreter: Interpreter;
-  readonly #assertions: Assertion[] = [];
+  readonly assertions: Assertion[] = [];
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
-  }
-
-  get assertions(): Assertion[] {
-    return this.#assertions;
   }
 
   evaluateTypeCast(
@@ -101,7 +80,14 @@ export class AssertionRecorder {
     const declaredSourceDomain = this.#interpreter.resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
       if (hasNullishCase(declaredSourceDomain))
-        this.record(createNonNullAssertion(castValue, typeCast.loc, getAssertionGuards(pathState)));
+        this.#record({
+          kind: "non-null",
+          subject: castValue,
+          check: { kind: "Condition", test: createNotNullishTest(castValue) },
+          guards: getAssertionGuards(pathState),
+          description: `${formatSymbolicValue(castValue)}!`,
+          loc: typeCast.loc,
+        });
       return castValue;
     }
     const targetDomain = this.#interpreter.resolver.getDomain(typeCast.loc);
@@ -112,7 +98,7 @@ export class AssertionRecorder {
       typeCast.loc,
       getAssertionGuards(pathState),
     );
-    if (assertion) this.record(this.#widenForNonStrictNulls(assertion));
+    if (assertion) this.#record(this.#widenForNonStrictNulls(assertion));
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
     const isNarrowingCast =
       castValue.kind !== "Primitive" &&
@@ -129,7 +115,7 @@ export class AssertionRecorder {
   ): void {
     const [test] = argumentValues;
     if (name === null || !ASSERTION_FUNCTIONS.has(name) || test === undefined) return;
-    this.record({
+    this.#record({
       kind: "call",
       subject: test,
       check: { kind: "Condition", test },
@@ -139,14 +125,14 @@ export class AssertionRecorder {
     });
   }
 
-  record(assertion: Assertion): void {
+  #record(assertion: Assertion): void {
     if (assertion.kind !== "call" && !this.#isCheckable(assertion.subject)) return;
     const handlerEffects = this.#interpreter.handlerEffects;
     if (handlerEffects) {
       handlerEffects.addAssertion(assertion);
       return;
     }
-    this.#assertions.push(assertion);
+    this.assertions.push(assertion);
   }
 
   #widenForNonStrictNulls(assertion: Assertion): Assertion {

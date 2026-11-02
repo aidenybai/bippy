@@ -7,7 +7,6 @@ import { createUnknown } from "../values/symbolic-values";
 import type {
   AbstractValue,
   ArrayExpressionValue,
-  Binding,
   BindingValue,
   CollectionValue,
   Domain,
@@ -15,8 +14,7 @@ import type {
   ObjectExpressionValue,
   SymbolicValue,
 } from "../types";
-import { getConditionallyMutatedPlace } from "./get-conditionally-mutated-place";
-import { getMutatedPlace } from "./get-mutated-place";
+import { getConditionallyMutatedPlace, getMutatedPlace } from "./get-mutated-place";
 import { isFunctionCreation } from "./is-function-creation";
 import { isStateBinding } from "../values/is-state-binding";
 import { isCollectionWrite } from "../interpret/literal-receivers";
@@ -373,9 +371,17 @@ export class MutationTracker {
     guards: SymbolicValue[],
   ): void {
     if (!this.#interpreter.handlerEffects) return;
-    for (const binding of this.#interpreter.bindingTable.bindings)
-      if (isStateBinding(binding) && this.#isInitializedFrom(binding, mutatedGlobal))
+    for (const binding of this.#interpreter.bindingTable.bindings) {
+      const isInitializedFromMutated =
+        isStateBinding(binding) &&
+        binding.initial?.kind === "Global" &&
+        binding.initial.module === mutatedGlobal.module &&
+        (mutatedGlobal.name === binding.initial.name ||
+          mutatedGlobal.name.startsWith(`${binding.initial.name}.`)) &&
+        this.#interpreter.bindingTable.isDeclaredIn(binding, this.#interpreter.resolver.fileName);
+      if (isInitializedFromMutated)
         this.#interpreter.handlerEffects.addMutation(binding, loc, guards);
+    }
   }
 
   #trackModuleMutation(
@@ -396,16 +402,6 @@ export class MutationTracker {
     }
   }
 
-  #isInitializedFrom(binding: Binding, mutatedGlobal: GlobalValue): boolean {
-    return (
-      binding.initial?.kind === "Global" &&
-      binding.initial.module === mutatedGlobal.module &&
-      (mutatedGlobal.name === binding.initial.name ||
-        mutatedGlobal.name.startsWith(`${binding.initial.name}.`)) &&
-      this.#interpreter.bindingTable.isDeclaredIn(binding, this.#interpreter.resolver.fileName)
-    );
-  }
-
   #mutateLiteral(
     instruction: Instruction,
     mutatedPlace: Place,
@@ -424,15 +420,16 @@ export class MutationTracker {
     const writeGuards = isUnderCreationPath
       ? pathState.guards.slice(creationPath.guards.length)
       : null;
-    const mutatedLiteral = this.#getMutatedLiteral(instruction, mutatedPlace, literal, {
+    const mutatedLiteral = this.#getMutatedLiteral(
+      instruction,
+      mutatedPlace,
+      literal,
       isOnCreationPath,
       writeGuards,
-    });
+    );
     if (creationPath && (isOnCreationPath || mutatedLiteral.kind === "Collection"))
       this.#creationPaths.set(mutatedLiteral, creationPath);
-    const { values } = this.#interpreter.getCompilationTables();
-    for (const [identifierId, value] of values)
-      if (value === literal) values.set(identifierId, mutatedLiteral);
+    this.#replaceMutatedValue(literal, mutatedLiteral);
     return mutatedLiteral;
   }
 
@@ -440,7 +437,8 @@ export class MutationTracker {
     instruction: Instruction,
     mutatedPlace: Place,
     literal: MutableLiteral,
-    options: { isOnCreationPath: boolean; writeGuards: SymbolicValue[] | null },
+    isOnCreationPath: boolean,
+    writeGuards: SymbolicValue[] | null,
   ): SymbolicValue {
     const value = instruction.value;
     const methodName =
@@ -448,14 +446,14 @@ export class MutationTracker {
         ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
         : undefined;
     if (literal.kind === "Collection")
-      return options.writeGuards &&
+      return writeGuards &&
         value.kind === "MethodCall" &&
         methodName !== undefined &&
         isCollectionWrite(methodName)
-        ? this.#writeIntoCollection(literal, value, methodName, options.writeGuards)
+        ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
         : createUnknown("mutation", instruction.loc);
     if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")
-      return this.#pushIntoArray(literal, value, options.isOnCreationPath, instruction.loc);
+      return this.#pushIntoArray(literal, value, isOnCreationPath, instruction.loc);
     const isStoreIntoLiteral =
       literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
@@ -467,7 +465,7 @@ export class MutationTracker {
       );
     if (hasSetter) return this.#storeThroughSetter(literal, value, instruction.loc);
     if (isStoreIntoLiteral)
-      return this.#storeIntoObject(literal, value, options.isOnCreationPath, instruction.loc);
+      return this.#storeIntoObject(literal, value, isOnCreationPath, instruction.loc);
     if (value.kind !== "MethodCall") return createUnknown("mutation", instruction.loc);
     const mutated = this.#interpreter.createDerivedValue([literal], "mutation", instruction.loc);
     return literal.kind === "ObjectExpression" || literal.kind === "ArrayExpression"
@@ -515,11 +513,10 @@ export class MutationTracker {
     methodName: string,
     guards: SymbolicValue[],
   ): SymbolicValue {
-    if (write.args.some((argument) => argument.kind !== "Identifier"))
-      return createUnknown("mutation", write.loc);
     const argumentValues = write.args.flatMap((argument) =>
       argument.kind === "Identifier" ? [this.#interpreter.read(argument)] : [],
     );
+    if (argumentValues.length !== write.args.length) return createUnknown("mutation", write.loc);
     return {
       ...collection,
       writes: [...collection.writes, { method: methodName, argumentValues, guards }],

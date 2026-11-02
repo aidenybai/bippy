@@ -23,9 +23,6 @@ const PURE_FUNCTIONS = new Map<string, PureFunction>([
 
 export const isPureFunction = (name: string): boolean => PURE_FUNCTIONS.has(name);
 
-const applyPureFunction = (name: string, values: PrimitiveValue[]): PrimitiveValue | null =>
-  PURE_FUNCTIONS.get(name)?.(...values) ?? null;
-
 const MAX_PURE_CALLS = 32;
 
 export const applyPureFunctionToCases = (
@@ -39,7 +36,7 @@ export const applyPureFunctionToCases = (
   }
   const results: PrimitiveValue[] = [];
   for (const values of combinations) {
-    const result = applyPureFunction(name, values);
+    const result = PURE_FUNCTIONS.get(name)?.(...values) ?? null;
     if (result === null) return null;
     results.push(result);
   }

@@ -1,9 +1,11 @@
 import { SyntaxKind } from "typescript/unstable/ast";
 import type {
   ArrowFunction,
+  CallExpression,
   Expression,
   FunctionExpression,
   Node,
+  ObjectLiteralExpression,
   SourceFile,
 } from "typescript/unstable/ast";
 import {
@@ -82,17 +84,18 @@ const findStateCreator = (
   return middlewareOrCreator && isFunctionNode(middlewareOrCreator) ? middlewareOrCreator : null;
 };
 
-const getReturnedObject = (functionNode: ArrowFunction | FunctionExpression): Node | null => {
+const getReturnedObject = (
+  functionNode: ArrowFunction | FunctionExpression,
+): ObjectLiteralExpression | null => {
   const body = skipParentheses(functionNode.body);
   if (isObjectLiteralExpression(body)) return body;
   if (!isBlock(body)) return null;
   const returnedExpression = body.statements.find(isReturnStatement)?.expression;
-  return returnedExpression && isObjectLiteralExpression(skipParentheses(returnedExpression))
-    ? skipParentheses(returnedExpression)
-    : null;
+  const returned = returnedExpression && skipParentheses(returnedExpression);
+  return returned && isObjectLiteralExpression(returned) ? returned : null;
 };
 
-const getLiteralValue = (node: Node): StoreFieldValue | null => {
+const getLiteralValue = (node: Node): Extract<StoreFieldValue, { kind: "Literal" }> | null => {
   if (node.kind === SyntaxKind.TrueKeyword) return { kind: "Literal", value: true };
   if (node.kind === SyntaxKind.FalseKeyword) return { kind: "Literal", value: false };
   if (node.kind === SyntaxKind.NullKeyword) return { kind: "Literal", value: null };
@@ -104,7 +107,7 @@ const getLiteralValue = (node: Node): StoreFieldValue | null => {
 const getInitialValue = (node: Node): SymbolicValue | null => {
   const expression = skipParentheses(node);
   const literal = getLiteralValue(expression);
-  if (literal?.kind === "Literal") return { kind: "Primitive", value: literal.value };
+  if (literal) return { kind: "Primitive", value: literal.value };
   if (isArrayLiteralExpression(expression)) {
     const elements = expression.elements.map(getInitialValue);
     return elements.every((element) => element !== null)
@@ -167,8 +170,8 @@ const getAssignments = (
   return assignments;
 };
 
-const findSetCalls = (action: Node, setName: string): Node[] => {
-  const setCalls: Node[] = [];
+const findSetCalls = (action: Node, setName: string): CallExpression[] => {
+  const setCalls: CallExpression[] = [];
   const visit = (node: Node): void => {
     if (isFunctionNode(node)) return;
     if (isCallExpression(node) && isIdentifier(node.expression) && node.expression.text === setName)
@@ -191,12 +194,14 @@ const getActionAssignments = (action: Node, setName: string): StoreAssignment[] 
       (onlyStatement !== undefined &&
         isExpressionStatement(onlyStatement) &&
         skipParentheses(onlyStatement.expression) === setCalls[0]));
-  const assignmentsPerCall = setCalls.map((setCall) => {
-    const [setArgument] = isCallExpression(setCall) ? setCall.arguments : [];
-    return setArgument ? getAssignments(setArgument, actionParameters) : null;
-  });
-  if (assignmentsPerCall.length === 0 || assignmentsPerCall.includes(null)) return null;
-  const assignments = assignmentsPerCall.flat().filter((assignment) => assignment !== null);
+  if (setCalls.length === 0) return null;
+  const assignments: StoreAssignment[] = [];
+  for (const setCall of setCalls) {
+    const [setArgument] = setCall.arguments;
+    const callAssignments = setArgument && getAssignments(setArgument, actionParameters);
+    if (!callAssignments) return null;
+    assignments.push(...callAssignments);
+  }
   return isOnlySetCall
     ? assignments
     : assignments.map((assignment) => ({ field: assignment.field, value: { kind: "Unknown" } }));
@@ -212,8 +217,8 @@ export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreMod
       if (!isIdentifier(declaration.name) || !declaration.initializer) continue;
       const creator = findStateCreator(declaration.initializer, creatorNames);
       const [setName] = creator ? getParameterNames(creator) : [];
-      const initialState = creator ? getReturnedObject(creator) : null;
-      if (!setName || !initialState || !isObjectLiteralExpression(initialState)) continue;
+      const initialState = creator && getReturnedObject(creator);
+      if (!setName || !initialState) continue;
       const actions: StoreActions = new Map();
       const initialFields: Array<{ key: string; value: SymbolicValue }> = [];
       let hasOpaqueField = false;

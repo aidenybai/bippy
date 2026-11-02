@@ -13,3 +13,8 @@ export const getMutatedPlace = (effect: AliasingEffect): Place | null => {
       return null;
   }
 };
+
+export const getConditionallyMutatedPlace = (effect: AliasingEffect): Place | null =>
+  effect.kind === "MutateConditionally" || effect.kind === "MutateTransitiveConditionally"
+    ? effect.value
+    : null;
