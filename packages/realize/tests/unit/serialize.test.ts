@@ -32,7 +32,7 @@ const countSelfReferences = (text: string): number =>
   ).length;
 
 describe("serializeProjectAnalysis", () => {
-  const project = analyzeFixture("symbolic-tree", "dashboard");
+  const project = analyzeFixture("state-charts", "dashboard");
   const text = serializeProjectAnalysis(project);
 
   it("writes a shared array once, with its items", () => {

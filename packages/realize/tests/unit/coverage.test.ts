@@ -9,7 +9,7 @@ import { formatCounterexamples } from "../conformance/verifier/verdict-report";
 import { analyzeFixture, getComponent, getHandlerCounterId } from "./helpers";
 
 describe("conformance coverage", () => {
-  const wizard = getComponent(analyzeFixture("symbolic-tree"), "Wizard");
+  const wizard = getComponent(analyzeFixture("state-charts"), "Wizard");
   const nextCounterId = getHandlerCounterId(wizard, '() => dispatch({ type: "next" })');
 
   const getTestBranchId = (test: string): string => {

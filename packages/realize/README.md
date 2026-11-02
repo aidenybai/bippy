@@ -10,9 +10,9 @@ Builds a model of every state a React component can be in by reading its source,
 `tests/unit` holds the unit tests, and `tests/fixtures` the projects they analyze.
 
 ```sh
-pnpm --filter realize analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard
-pnpm --filter realize analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard --tla
-pnpm --filter realize conformance verify tests/fixtures/symbolic-tree/tsconfig.json
+pnpm --filter realize analyze tests/fixtures/state-charts/tsconfig.json -c Wizard
+pnpm --filter realize analyze tests/fixtures/state-charts/tsconfig.json -c Wizard --tla
+pnpm --filter realize conformance verify tests/fixtures/state-charts/tsconfig.json
 pnpm --filter realize conformance run -n 4
 ```
 

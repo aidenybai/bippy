@@ -1,4 +1,4 @@
-const FIXTURES = "tests/fixtures/symbolic-tree/src";
+const FIXTURES = "tests/fixtures/state-charts/src";
 
 export const DEMOS = [
   `${FIXTURES}/dashboard.tsx`,

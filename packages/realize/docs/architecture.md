@@ -7,10 +7,10 @@ The source is the spec here. The model is an over-approximation of what the code
 ## Run
 
 ```sh
-pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json              # every component
-pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
-pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard --tla
-pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard -i 'NoAlert: state_hasError = "false"'
+pnpm analyze tests/fixtures/state-charts/tsconfig.json              # every component
+pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard    # one component
+pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard --tla
+pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard -i 'NoAlert: state_hasError = "false"'
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
@@ -177,7 +177,7 @@ An assertion is checked only when it reads `useState` or `useReducer` values alo
 `-i 'Name: expression'` checks an invariant on every reachable state with tla-ts, a TypeScript port of TLC. The expression can use the variable names, `view` and the assertion operators. A violation prints the shortest trace:
 
 ```text
-$ pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard -i 'NeverDone: state_step /= "done"'
+$ pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard -i 'NeverDone: state_step /= "done"'
 Wizard NeverDone: violated
   1. start: state_step=details, state_hasError=false → form > input
   2. "Next": state_step=payment, state_hasError=false → form > input > button "Back"
@@ -217,7 +217,7 @@ A call to a function the project declares counts as a mutation of each argument 
 
 ## Example
 
-`tests/fixtures/symbolic-tree/src/reducer.tsx`:
+`tests/fixtures/state-charts/src/reducer.tsx`:
 
 ```mermaid
 ---

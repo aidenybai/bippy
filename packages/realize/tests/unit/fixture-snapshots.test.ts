@@ -6,7 +6,7 @@ import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tre
 import { analyzeProject } from "../../src/core/project/analyze-project";
 import { getFixtureConfig } from "./helpers";
 
-const FIXTURE_CONFIG = getFixtureConfig("symbolic-tree");
+const FIXTURE_CONFIG = getFixtureConfig("state-charts");
 
 describe("fixture analysis", () => {
   const { components } = analyzeProject(FIXTURE_CONFIG);
