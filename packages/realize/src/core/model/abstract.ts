@@ -9,6 +9,17 @@ export const ANY: Abstract = { kind: "Any" };
 
 type RangeValue = Extract<Abstract, { kind: "Range" }>;
 
+export const FLIPPED: Record<Comparison, Comparison> = {
+  "===": "===",
+  "!==": "!==",
+  "==": "==",
+  "!=": "!=",
+  "<": ">",
+  "<=": ">=",
+  ">": "<",
+  ">=": "<=",
+};
+
 const isNullish = (value: PrimitiveValue): value is null | undefined =>
   value === null || value === undefined;
 
@@ -118,6 +129,22 @@ export const compareAbstract = (
   if (isEqual === null) return null;
   if (operator === "===" || operator === "==") return isEqual;
   return operator === "!==" || operator === "!=" ? !isEqual : null;
+};
+
+const isRangeBelow = (left: RangeValue, right: RangeValue): boolean =>
+  left.max < right.min || (left.max === right.min && !(left.isMaxIncluded && right.isMinIncluded));
+
+export const compareAbstracts = (
+  left: Abstract,
+  operator: Comparison,
+  right: Abstract,
+): boolean | null => {
+  if (right.kind === "Exact") return compareAbstract(left, operator, right.value);
+  if (left.kind === "Exact") return compareAbstract(right, FLIPPED[operator], left.value);
+  if (left.kind !== "Range" || right.kind !== "Range") return null;
+  if (isRangeBelow(left, right)) return compareValues(0, operator, 1);
+  if (isRangeBelow(right, left)) return compareValues(1, operator, 0);
+  return null;
 };
 
 export const getAbstractTruthiness = (value: Abstract): boolean | null => {
