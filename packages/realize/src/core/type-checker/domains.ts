@@ -2,7 +2,6 @@ import { TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue } from "../types";
 import { formatAbstractValue } from "../values/format";
-import { canTypeEqualLiteral } from "./can-type-equal-literal";
 import { getUnionMembers } from "./get-union-members";
 import { getTypeText } from "./checker-queries";
 
@@ -69,7 +68,7 @@ const includesLiteral = (cases: AbstractValue[], value: PrimitiveValue): boolean
   cases.some((candidate) =>
     candidate.kind === "Literal"
       ? candidate.value === value
-      : canTypeEqualLiteral(candidate, value, "==="),
+      : candidate.text === "any" || candidate.text === "unknown" || candidate.text === "{}",
   );
 
 export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [

@@ -1,40 +1,28 @@
-import { relative } from "node:path";
-import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type {
   AnalyzedComponent,
+  Binding,
   ConditionalValue,
   Handler,
   JsxExpressionValue,
   StateUpdate,
   SymbolicValue,
-  Binding,
-  BindingPlace,
 } from "../core/types";
 import { formatPlace, formatSymbolicValue } from "../core/values/format";
 import { getTestExpression } from "../core/values/get-test-expression";
 import { isRenderingNothing } from "../core/render/is-rendering-nothing";
 import { isEffectHandler } from "../core/handlers/handler-predicates";
-import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "../core/labels/source-text";
+import type { SourceReader } from "../core/labels/source-text";
 import { getTriggerLabel } from "../core/labels/trigger-labels";
 import { truncate, unescapeQuotedLiterals } from "../core/labels/text";
-import { getBindingPlace } from "../core/values/get-binding-place";
-import { getValuePlace } from "../core/values/get-value-place";
 import { getValueKey } from "../core/values/get-value-key";
+import { formatTitle } from "./mermaid";
 
-const isLogicalAnd = (conditional: ConditionalValue): boolean =>
-  getValueKey(conditional.alternate) === getValueKey(conditional.test);
-
-const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
-  isRenderingNothing(conditional.alternate) || isLogicalAnd(conditional);
-
-const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
-  left.bindingId === right.bindingId &&
-  left.path.length === right.path.length &&
-  left.path.every((segment, index) => right.path[index] === segment);
-
-const isUnchangedField = (value: SymbolicValue, binding: Binding, path: string[]): boolean =>
-  value.kind === "Binding" && isSamePlace(getValuePlace(value), getBindingPlace(binding, path));
+const isUnchangedField = (value: SymbolicValue, binding: Binding, key: string): boolean =>
+  value.kind === "Binding" &&
+  value.binding.id === binding.id &&
+  value.path.length === 1 &&
+  value.path[0] === key;
 
 export const DEFAULT_RENDER_DEPTH = 12;
 
@@ -50,13 +38,15 @@ interface Flowchart {
   nodeCount: number;
   maxDepth: number;
   effectsByHandler: Map<string, string>;
-  describer: StateDescriber;
+  file: string;
+  sourceReader: SourceReader;
 }
 
 const INDENT = "  ";
 const MAX_NODES = 400;
 const MAX_LABEL_WIDTH = 80;
 const MAX_EFFECT_WIDTH = 70;
+const MAX_UNKNOWN_WIDTH = 40;
 const EFFECT_SEPARATOR = " · ";
 const SHAPES: Record<NodeShape, [string, string]> = {
   element: ["[", "]"],
@@ -94,7 +84,7 @@ const formatUpdate = (update: StateUpdate): string => {
   const assignments =
     update.value.kind === "ObjectExpression"
       ? update.value.properties
-          .filter((property) => !isUnchangedField(property.value, update.binding, [property.key]))
+          .filter((property) => !isUnchangedField(property.value, update.binding, property.key))
           .map(
             (property) =>
               `${formatPlace(update.binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
@@ -124,8 +114,10 @@ const formatLeaf = (value: SymbolicValue, chart: Flowchart): string | null => {
       return null;
     case "JSXText":
       return JSON.stringify(value.value);
-    case "Unknown":
-      return describeUnknown(value, chart.describer);
+    case "Unknown": {
+      const source = chart.sourceReader.read(chart.file, value.loc);
+      return `⚠ ${source ? truncate(source, MAX_UNKNOWN_WIDTH) : `Unknown(${value.reason})`}`;
+    }
     default:
       return isRenderingNothing(value) ? "∅" : `{${formatSymbolicValue(value)}}`;
   }
@@ -164,8 +156,10 @@ const buildBranch = (
   const id = addNode(chart, formatSymbolicValue(getTestExpression(conditional)), "branch");
   addEdge(chart, parentId, id, edgeLabel);
   buildNode(conditional.consequent, chart, id, depth + 1, "✓");
-  if (!isRenderingNothingWhenFalse(conditional))
-    buildNode(conditional.alternate, chart, id, depth + 1, "✗");
+  const isRenderingNothingWhenFalse =
+    isRenderingNothing(conditional.alternate) ||
+    getValueKey(conditional.alternate) === getValueKey(conditional.test);
+  if (!isRenderingNothingWhenFalse) buildNode(conditional.alternate, chart, id, depth + 1, "✗");
 };
 
 const buildNode = (
@@ -202,7 +196,8 @@ const createFlowchart = (component: AnalyzedComponent, options: RenderTreeOption
   effectsByHandler: new Map(
     component.analysis.handlers.map((handler) => [handler.id, formatHandlerEffects(handler)]),
   ),
-  describer: { file: component.analysis.file, sourceReader: createSourceReader() },
+  file: component.analysis.file,
+  sourceReader: createSourceReader(),
 });
 
 export const formatRenderTree = (
@@ -215,12 +210,8 @@ export const formatRenderTree = (
   buildNode(analysis.render, chart, rootId, 0);
   for (const handler of analysis.handlers.filter(isEffectHandler))
     addEventNode(chart, rootId, `${getTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`);
-  const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
-  const location = `${relative(options.rootDirectory, analysis.file)}${lineSuffix}`;
   return [
-    "---",
-    `title: ${analysis.name} ${location}`,
-    "---",
+    ...formatTitle(component, options.rootDirectory),
     "flowchart TD",
     `${INDENT}classDef event stroke-dasharray: 4 2`,
     ...chart.lines.map((line) => `${INDENT}${line}`),

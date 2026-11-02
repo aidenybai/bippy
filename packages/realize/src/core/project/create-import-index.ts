@@ -1,6 +1,7 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
-import type { ImportedNames } from "../compile/module-values";
+import { appendToGroup } from "../shared/append-to-group";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
+import type { FileContext } from "./analyze-component";
 import { parseDeclarationKey } from "./declaration-key";
 
 interface Importer {
@@ -18,31 +19,24 @@ const getModulePath = (resolver: SourceFileResolver, loc: SourceLocation): strin
   return declarationKey ? parseDeclarationKey(declarationKey).path : null;
 };
 
-export const createImportIndex = (
-  importedNamesByPath: Map<string, ImportedNames>,
-  getResolver: (path: string) => SourceFileResolver | undefined,
-): ImportIndex => {
+export const createImportIndex = (filesByPath: Map<string, FileContext>): ImportIndex => {
   const importers = new Map<string, Importer[]>();
   const reexportedPaths = new Map<string, string[]>();
   const namespacedPaths: string[] = [];
-  for (const [path, imported] of importedNamesByPath) {
-    const resolver = getResolver(path);
-    if (!resolver) continue;
+  for (const [path, file] of filesByPath) {
+    const imported = file.compiled.importedNames;
     for (const specifier of imported.specifiers) {
-      const declarationKey = resolver.getDeclarationKey(specifier.loc);
+      const declarationKey = file.resolver.getDeclarationKey(specifier.loc);
       if (declarationKey)
-        importers.set(declarationKey, [
-          ...(importers.get(declarationKey) ?? []),
-          { path, localName: specifier.localName },
-        ]);
+        appendToGroup(importers, declarationKey, { path, localName: specifier.localName });
     }
     for (const loc of imported.namespaceSources) {
-      const modulePath = getModulePath(resolver, loc);
+      const modulePath = getModulePath(file.resolver, loc);
       if (modulePath) namespacedPaths.push(modulePath);
     }
     for (const loc of imported.reexportSources) {
-      const modulePath = getModulePath(resolver, loc);
-      if (modulePath) reexportedPaths.set(path, [...(reexportedPaths.get(path) ?? []), modulePath]);
+      const modulePath = getModulePath(file.resolver, loc);
+      if (modulePath) appendToGroup(reexportedPaths, path, modulePath);
     }
   }
   const exposedPaths = new Set<string>();

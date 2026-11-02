@@ -2,7 +2,6 @@ import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { SourceFile } from "typescript/unstable/ast";
 import type { CompiledFile, CompiledFunction } from "../compile/compile";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
-import { EQUALITY_OPERATORS } from "../type-checker/comparison-operators";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { collectHandlers } from "../handlers/collect-handlers";
 import { Interpreter } from "../interpret/interpret";
@@ -33,6 +32,8 @@ export interface FileContext {
   modelsByStore: Map<string, StoreModel>;
   exportNames: Map<string, string>;
 }
+
+const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
 const addComparedSamples = (render: SymbolicValue): void => {
   forEachSymbolicValue(render, (value) => {
@@ -92,30 +93,14 @@ export const createEmptyAnalysis = (
   warnings: [],
 });
 
-const createCompilerErrorAnalysis = (
+const createBailoutAnalysis = (
   identity: ComponentIdentity,
-  reactFunction: CompiledFunction,
+  loc: SourceLocation,
+  reason: "compiler-error" | "class-component",
+  message: string,
 ): ComponentAnalysis => ({
-  ...createEmptyAnalysis(identity, reactFunction.loc, {
-    kind: "Unknown",
-    reason: "compiler-error",
-    loc: reactFunction.loc,
-  }),
-  bailouts: [
-    { reason: "compiler-error", message: reactFunction.errors.join("; "), loc: reactFunction.loc },
-  ],
-});
-
-const createClassAnalysis = (
-  identity: ComponentIdentity,
-  reactFunction: CompiledFunction,
-): ComponentAnalysis => ({
-  ...createEmptyAnalysis(identity, reactFunction.loc, {
-    kind: "Unknown",
-    reason: "class-component",
-    loc: reactFunction.loc,
-  }),
-  bailouts: [{ reason: "class-component", message: reactFunction.name, loc: reactFunction.loc }],
+  ...createEmptyAnalysis(identity, loc, { kind: "Unknown", reason, loc }),
+  bailouts: [{ reason, message, loc }],
 });
 
 const getReadBindingIds = (
@@ -152,8 +137,20 @@ export const analyzeComponent = (
   contextSetterFields: ContextSetterFields,
 ): ComponentAnalysis => {
   const identity = getComponentIdentity(reactFunction, fileContext);
-  if (reactFunction.isClass) return createClassAnalysis(identity, reactFunction);
-  if (reactFunction.hir === null) return createCompilerErrorAnalysis(identity, reactFunction);
+  if (reactFunction.isClass)
+    return createBailoutAnalysis(
+      identity,
+      reactFunction.loc,
+      "class-component",
+      reactFunction.name,
+    );
+  if (reactFunction.hir === null)
+    return createBailoutAnalysis(
+      identity,
+      reactFunction.loc,
+      "compiler-error",
+      reactFunction.errors.join("; "),
+    );
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,

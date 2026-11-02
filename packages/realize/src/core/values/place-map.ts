@@ -33,10 +33,6 @@ export class PlaceMap<Value> {
     return this;
   }
 
-  delete(place: BindingPlace): boolean {
-    return this.#entries.delete(getPlaceKey(place));
-  }
-
   places(): BindingPlace[] {
     return [...this.#entries.values()].map((entry) => entry[0]);
   }

@@ -1,10 +1,14 @@
 import type { Place, SourceLocation, SpreadPattern } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "../values/symbolic-values";
+import {
+  UNDEFINED_VALUE,
+  createBindingValue,
+  createUnknown,
+  getKnownTruthiness,
+} from "../values/symbolic-values";
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "../types";
 import { getIdentifierName } from "./get-identifier-name";
-import { getKnownTruthiness } from "../values/get-known-truthiness";
 import { negate } from "../values/negate";
 import { PlaceMap } from "../values/place-map";
 import { getPlaceOrSpread } from "./get-place-or-spread";
