@@ -125,7 +125,7 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
         : evaluateObjectPath(evaluator, value, path);
     case "ArrayMap":
       if (path.length === 0) return [{ kind: "Object", typeText: "array" }];
-      return path.length === 1 && path[0] === "length"
+      return path.length === 1 && path[0] === "length" && !value.isFlat
         ? evaluate(evaluator, value.array, path)
         : [ANY];
     case "ArrayExpression":

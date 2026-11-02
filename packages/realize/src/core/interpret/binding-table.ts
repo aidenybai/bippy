@@ -105,13 +105,15 @@ export class BindingTable {
       place.path.length === 1 && field !== undefined
         ? this.#resolversByBinding.get(binding.id)?.getUnionMemberValues(binding.loc, field)
         : null;
-    if (!unionMemberValues || readDomain.kind !== "Cases") {
+    if (!unionMemberValues || readDomain.kind === "Unknown") {
       this.placeDomains.set(place, readDomain);
       return;
     }
+    const readCases = readDomain.kind === "Cases" ? readDomain.cases : [];
     this.placeDomains.set(place, {
-      ...readDomain,
-      cases: dedupeAbstractValues([...readDomain.cases, ...unionMemberValues.flat()]),
+      kind: "Cases",
+      cases: dedupeAbstractValues([...readCases, ...unionMemberValues.flat()]),
+      origin: readDomain.kind === "Cases" ? readDomain.origin : "type",
     });
   }
 }

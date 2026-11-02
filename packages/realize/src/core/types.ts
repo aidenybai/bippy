@@ -11,7 +11,7 @@ export type PrimitiveTypeName = "string" | "number" | "bigint" | "boolean";
 
 export type AbstractValue =
   | { kind: "Literal"; value: PrimitiveValue }
-  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null };
+  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null; isArrayLike: boolean };
 
 export type TestKind = "truthy" | "nullish";
 
@@ -19,7 +19,7 @@ type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";
 
 export type Domain =
   | { kind: "Cases"; cases: AbstractValue[]; origin: "type" | "call-sites" }
-  | { kind: "Opaque"; typeText: string }
+  | { kind: "Opaque"; typeText: string; isArrayLike: boolean }
   | { kind: "Unknown"; reason: UnknownTypeReason };
 
 export type Sample =

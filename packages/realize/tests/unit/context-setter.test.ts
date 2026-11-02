@@ -8,7 +8,11 @@ describe("context setters", () => {
 
   it("types a context read through a hook from another file", () => {
     const [context] = toggle.analysis.bindings;
-    expect(context?.domain).toEqual({ kind: "Opaque", typeText: "PickerState" });
+    expect(context?.domain).toEqual({
+      kind: "Opaque",
+      typeText: "PickerState",
+      isArrayLike: false,
+    });
   });
 
   it("sets the field a provider pairs with the setter a consumer calls", () => {

@@ -2,6 +2,7 @@ import type {
   Binding,
   ComponentAnalysis,
   ConditionalValue,
+  Domain,
   PrimitiveValue,
   SymbolicValue,
 } from "../types";
@@ -137,6 +138,16 @@ const getVariableSource = (binding: Binding): VariableSource => {
   return DERIVED_KINDS.has(binding.kind) && binding.inputPlaces.length > 0 ? "derived" : "input";
 };
 
+const hasCountedLength = (receiver: Domain | null): boolean => {
+  if (receiver?.kind === "Opaque") return receiver.isArrayLike || receiver.typeText === "string";
+  if (receiver?.kind !== "Cases") return false;
+  return receiver.cases.every((value) =>
+    value.kind === "Literal"
+      ? typeof value.value === "string"
+      : value.isArrayLike || value.primitive === "string",
+  );
+};
+
 const BOOLEAN_DOMAIN: Value[] = [
   { label: "false", abstract: { kind: "Exact", value: false } },
   { label: "true", abstract: { kind: "Exact", value: true } },
@@ -179,12 +190,16 @@ export const createVariableTable = (
 
   for (const test of tests) forEachAtom(test, record);
 
+  const getPlaceDomain = (binding: Binding, path: string[]): Domain | null =>
+    path.length === 0
+      ? binding.domain
+      : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
+
   for (const [key, entry] of entries) {
-    const typeDomain =
-      entry.path.length === 0
-        ? entry.binding.domain
-        : (analysis.placeDomains.get({ bindingId: entry.binding.id, path: entry.path }) ?? null);
-    const values = createDomain(typeDomain, entry.tests, entry.path.at(-1) === "length");
+    const isLength =
+      entry.path.at(-1) === "length" &&
+      hasCountedLength(getPlaceDomain(entry.binding, entry.path.slice(0, -1)));
+    const values = createDomain(getPlaceDomain(entry.binding, entry.path), entry.tests, isLength);
     const label = formatPlace(entry.binding, entry.path);
     const variable: Variable = {
       name: createName(label),

@@ -3,7 +3,7 @@ import { addAbstract, compareAbstract, containsValue } from "../../src/core/mode
 import { createDomain, getValueLabels } from "../../src/core/model/domains";
 import type { Abstract } from "../../src/core/model/types";
 
-const NUMBER = { kind: "Opaque", typeText: "number" } as const;
+const NUMBER = { kind: "Opaque", typeText: "number", isArrayLike: false } as const;
 
 const numberDomain = (literals: number[]) =>
   createDomain(NUMBER, { literals, isTruthinessTested: false }, false);
