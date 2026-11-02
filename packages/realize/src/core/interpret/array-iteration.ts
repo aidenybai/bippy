@@ -167,7 +167,7 @@ export class ArrayIteration {
     if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
       return null;
     if (methodName === "reduce")
-      return this.#reduceFirstValue(initial.elements, callback, accumulator, loc, pathState);
+      return this.#reduce(initial.elements, callback, accumulator, loc, pathState, []);
     const tests = initial.elements.map((element, index) =>
       this.#interpreter.callFunction(
         callback,
@@ -243,12 +243,13 @@ export class ArrayIteration {
     }
   }
 
-  #reduceFirstValue(
+  #reduce(
     elements: SymbolicValue[],
     callback: FunctionValue,
     accumulator: SymbolicValue | undefined,
     loc: SourceLocation,
     pathState: PathState,
+    trailingArguments: SymbolicValue[],
   ): SymbolicValue | null {
     const [first, ...rest] = elements;
     const start = accumulator ?? first;
@@ -259,7 +260,7 @@ export class ArrayIteration {
       (total, element, index) =>
         this.#interpreter.callFunction(
           callback,
-          [total, element, { kind: "Primitive", value: index + offset }],
+          [total, element, { kind: "Primitive", value: index + offset }, ...trailingArguments],
           loc,
           pathState,
         ),
@@ -309,7 +310,7 @@ export class ArrayIteration {
   evaluateLiteralReduce(
     methodName: string,
     receiver: SymbolicValue,
-    [callback, ...initial]: SymbolicValue[],
+    [callback, accumulator]: SymbolicValue[],
     loc: SourceLocation,
     pathState: PathState,
   ): SymbolicValue | null {
@@ -322,20 +323,7 @@ export class ArrayIteration {
       receiver.elements.length > MAX_LITERAL_ROWS
     )
       return null;
-    const [start, ...items] =
-      initial.length > 0 ? [initial[0], ...receiver.elements] : receiver.elements;
-    if (!start) return null;
-    const offset = receiver.elements.length - items.length;
-    return items.reduce<SymbolicValue>(
-      (accumulator, item, index) =>
-        this.#interpreter.callFunction(
-          callback,
-          [accumulator, item, { kind: "Primitive", value: index + offset }, receiver],
-          loc,
-          pathState,
-        ),
-      start,
-    );
+    return this.#reduce(receiver.elements, callback, accumulator, loc, pathState, [receiver]);
   }
 
   evaluateArrayFrom(

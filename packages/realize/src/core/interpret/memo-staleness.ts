@@ -12,15 +12,50 @@ import { createBindingValue, createUnknown } from "../values/symbolic-values";
 import type { BindingPlace, FunctionValue, JsxProp, JsxSpreadProp, SymbolicValue } from "../types";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getBindingPlace } from "../values/get-binding-place";
-import { getClosureMutatedLocals } from "./get-closure-mutated-locals";
 import { getDeclarationLocation } from "./get-declaration-location";
 import { getIdentifierName } from "./get-identifier-name";
+import { getConditionallyMutatedPlace, getMutatedPlace } from "./get-mutated-place";
 import { isPropHeld, isSpreadHeld } from "./get-prop-holds";
 import type { HeldProps } from "./get-prop-holds";
-import { getStoredLocals } from "./get-stored-locals";
 import { getValuePlace } from "../values/get-value-place";
 import { isPlacePrefix } from "../values/is-place-prefix";
 import { PlaceMap } from "../values/place-map";
+import { isFunctionCreation } from "./is-function-creation";
+
+const getStoredLocals = (hirFunction: HIRFunction): Map<IdentifierId, Place> => {
+  const localsByValue = new Map<IdentifierId, Place>();
+  for (const block of hirFunction.body.blocks.values())
+    for (const instruction of block.instructions)
+      if (instruction.value.kind === "StoreLocal")
+        localsByValue.set(instruction.value.value.identifier.id, instruction.value.lvalue.place);
+  return localsByValue;
+};
+
+const collectClosureMutatedIds = (
+  hirFunction: HIRFunction,
+  mutatedIds: Set<IdentifierId>,
+): void => {
+  for (const block of hirFunction.body.blocks.values())
+    for (const instruction of block.instructions) {
+      if (!isFunctionCreation(instruction.value)) continue;
+      for (const effect of [
+        ...(instruction.effects ?? []),
+        ...(instruction.value.loweredFunc.func.aliasingEffects ?? []),
+      ]) {
+        const mutatedPlace = getMutatedPlace(effect) ?? getConditionallyMutatedPlace(effect);
+        if (mutatedPlace) mutatedIds.add(mutatedPlace.identifier.id);
+      }
+      collectClosureMutatedIds(instruction.value.loweredFunc.func, mutatedIds);
+    }
+};
+
+const getClosureMutatedLocals = (hirFunction: HIRFunction): Map<IdentifierId, Place> => {
+  const mutatedIds = new Set<IdentifierId>();
+  collectClosureMutatedIds(hirFunction, mutatedIds);
+  return new Map(
+    [...getStoredLocals(hirFunction)].filter(([, local]) => mutatedIds.has(local.identifier.id)),
+  );
+};
 
 const getNullishTestPlaces = (
   value: SymbolicValue,

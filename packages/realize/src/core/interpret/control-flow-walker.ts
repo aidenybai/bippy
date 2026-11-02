@@ -168,14 +168,14 @@ export const createFunctionScope = (): FunctionScope => ({
 
 export class ControlFlowWalker {
   readonly #interpreter: Interpreter;
-  #blockVisits = 0;
+  blockVisits = 0;
   #walkDepth = 0;
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
   readonly #loopContextPlaces = new Map<BlockId, Place[]>();
   readonly #unrolledLoopHeaders = new Set<BlockId>();
   readonly #trackedContextPlaces = new WeakMap<HIRFunction, Place[]>();
-  #functionScope = createFunctionScope();
+  functionScope = createFunctionScope();
   readonly #throwingCatches = new Set<BlockId>();
   #awaitCount = 0;
 
@@ -194,22 +194,6 @@ export class ControlFlowWalker {
     } finally {
       this.#loopDepth--;
     }
-  }
-
-  get blockVisits(): number {
-    return this.#blockVisits;
-  }
-
-  set blockVisits(blockVisits: number) {
-    this.#blockVisits = blockVisits;
-  }
-
-  get functionScope(): FunctionScope {
-    return this.#functionScope;
-  }
-
-  set functionScope(functionScope: FunctionScope) {
-    this.#functionScope = functionScope;
   }
 
   #resolvePhi(phi: Phi, completion: Completion, guards: SymbolicValue[]): SymbolicValue {
@@ -535,7 +519,7 @@ export class ControlFlowWalker {
   ): Completion | null {
     const loopHeaders = getLoopHeaders(terminal);
     const [loopEntry = terminal.fallthrough] = loopHeaders;
-    const isUnrollable = this.#getLoopBlocks(loopEntry, terminal.fallthrough).every(
+    const isUnrollable = this.#getBlocksBetween(loopEntry, terminal.fallthrough).every(
       (block) =>
         UNROLLABLE_TERMINALS.has(block.terminal.kind) &&
         block.instructions.every((instruction) =>
@@ -569,16 +553,16 @@ export class ControlFlowWalker {
     return this.#continueAfter(completion, terminal.fallthrough, stops, pathState);
   }
 
-  #getLoopBlocks(loopEntry: BlockId, loopFallthrough: BlockId): BasicBlock[] {
-    const visitedBlocks = new Set([loopEntry, loopFallthrough]);
-    const loopBlocks = [this.#getBlock(loopEntry)];
-    for (const block of loopBlocks)
+  #getBlocksBetween(entry: BlockId, exit: BlockId): BasicBlock[] {
+    const visitedBlocks = new Set([entry, exit]);
+    const blocks = [this.#getBlock(entry)];
+    for (const block of blocks)
       for (const successor of eachTerminalSuccessor(block.terminal)) {
         if (visitedBlocks.has(successor)) continue;
         visitedBlocks.add(successor);
-        loopBlocks.push(this.#getBlock(successor));
+        blocks.push(this.#getBlock(successor));
       }
-    return loopBlocks;
+    return blocks;
   }
 
   #getTrackedContextPlaces(): Place[] {
@@ -628,24 +612,7 @@ export class ControlFlowWalker {
   }
 
   mergeReturnedContextValues(completion: Completion, guards: SymbolicValue[]): void {
-    for (const place of this.#getTrackedContextPlaces()) {
-      const returned = this.#getReturnedContextValue(completion, place.identifier.id, guards);
-      if (returned) this.#interpreter.write(place, returned);
-    }
-  }
-
-  #getReturnedContextValue(
-    completion: Completion,
-    id: IdentifierId,
-    guards: SymbolicValue[],
-  ): SymbolicValue | null {
-    if (completion.kind !== "Split") return completion.contextValues?.get(id)?.value ?? null;
-    const consequent = this.#getReturnedContextValue(completion.consequent, id, guards);
-    const alternate = this.#getReturnedContextValue(completion.alternate, id, guards);
-    if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
-    return createConditional(completion, guards, (edge) =>
-      edge === completion.consequent ? consequent : alternate,
-    );
+    this.#mergeContextValues(completion, null, guards);
   }
 
   #restoreContextValues(fallthrough: FallthroughCompletion): void {
@@ -653,7 +620,7 @@ export class ControlFlowWalker {
       this.#interpreter.write(contextValue.place, contextValue.value);
   }
 
-  #mergeContextValues(completion: Completion, join: BlockId, guards: SymbolicValue[]): void {
+  #mergeContextValues(completion: Completion, join: BlockId | null, guards: SymbolicValue[]): void {
     for (const place of this.#getTrackedContextPlaces()) {
       const merged = this.#getJoinedContextValue(completion, join, place.identifier.id, guards);
       if (merged) this.#interpreter.write(place, merged);
@@ -662,13 +629,15 @@ export class ControlFlowWalker {
 
   #getJoinedContextValue(
     completion: Completion,
-    join: BlockId,
+    join: BlockId | null,
     id: IdentifierId,
     guards: SymbolicValue[],
   ): SymbolicValue | null {
-    if (completion.kind === "Return") return null;
-    if (completion.kind === "Fallthrough")
-      return completion.to === join ? (completion.contextValues?.get(id)?.value ?? null) : null;
+    if (completion.kind !== "Split") {
+      const isJoined =
+        join === null || (completion.kind === "Fallthrough" && completion.to === join);
+      return isJoined ? (completion.contextValues?.get(id)?.value ?? null) : null;
+    }
     const consequent = this.#getJoinedContextValue(completion.consequent, join, id, guards);
     const alternate = this.#getJoinedContextValue(completion.alternate, join, id, guards);
     if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
@@ -686,24 +655,16 @@ export class ControlFlowWalker {
   }
 
   #getStoredContextPlaces(entry: BlockId, exit: BlockId): Place[] {
-    const places: Place[] = [];
-    const visited = new Set<BlockId>();
-    const pending = [entry];
-    for (let blockId = pending.pop(); blockId !== undefined; blockId = pending.pop()) {
-      if (blockId === exit || visited.has(blockId)) continue;
-      visited.add(blockId);
-      const block = this.#getBlock(blockId);
-      for (const instruction of block.instructions) {
-        if (instruction.value.kind === "StoreContext") places.push(instruction.value.lvalue.place);
-        if (
-          instruction.value.kind === "PostfixUpdateContext" ||
+    if (entry === exit) return [];
+    return this.#getBlocksBetween(entry, exit).flatMap((block) =>
+      block.instructions.flatMap((instruction) => {
+        if (instruction.value.kind === "StoreContext") return [instruction.value.lvalue.place];
+        return instruction.value.kind === "PostfixUpdateContext" ||
           instruction.value.kind === "PrefixUpdateContext"
-        )
-          places.push(instruction.value.lvalue);
-      }
-      pending.push(...eachTerminalSuccessor(block.terminal));
-    }
-    return places;
+          ? [instruction.value.lvalue]
+          : [];
+      }),
+    );
   }
 
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
@@ -724,7 +685,7 @@ export class ControlFlowWalker {
 
   #addLoopInputPlaces(loopBindings: Binding[], loopEntry: BlockId, loopFallthrough: BlockId): void {
     if (loopBindings.length === 0) return;
-    const loopBlocks = this.#getLoopBlocks(loopEntry, loopFallthrough);
+    const loopBlocks = this.#getBlocksBetween(loopEntry, loopFallthrough);
     const loopDefinedIds = new Set(
       loopBlocks.flatMap((block) => [
         ...[...block.phis].map((phi) => phi.place.identifier.id),
@@ -787,7 +748,7 @@ export class ControlFlowWalker {
     let isPhiResolved = entryPhiState === "resolved";
     let currentPathState = pathState;
     while (true) {
-      if (++this.#blockVisits > MAX_BLOCK_VISITS)
+      if (++this.blockVisits > MAX_BLOCK_VISITS)
         return this.#bailOutTooComplex("visits too many blocks");
       const isLoopHeader = this.#enteredLoopHeaders.has(currentId);
       if (isLoopHeader) {
@@ -848,7 +809,7 @@ export class ControlFlowWalker {
       case "optional":
         return this.#walkValueBranch(terminal, blockId, stops, pathState);
       case "try":
-        this.#functionScope.catchBindings.set(terminal.handler, terminal.handlerBinding);
+        this.functionScope.catchBindings.set(terminal.handler, terminal.handlerBinding);
         return this.#interpreter.handlerEffects
           ? this.#walkTryInHandler(terminal, blockId, stops, pathState)
           : { kind: "Next", block: terminal.block };
@@ -902,10 +863,10 @@ export class ControlFlowWalker {
     if (
       this.#interpreter.handlerEffects ||
       terminal.handler === null ||
-      this.#functionScope.walkedCatches.has(terminal.handler)
+      this.functionScope.walkedCatches.has(terminal.handler)
     )
       return { kind: "Next", block: terminal.continuation };
-    this.#functionScope.walkedCatches.add(terminal.handler);
+    this.functionScope.walkedCatches.add(terminal.handler);
     const throwTest = createUnknown("throws", terminal.loc);
     const places = this.#getTrackedContextPlaces();
     const valuesBefore = places.map((place) => this.#interpreter.read(place));
@@ -933,7 +894,7 @@ export class ControlFlowWalker {
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
   ): TerminalStep {
-    const handlerBinding = this.#functionScope.catchBindings.get(handler);
+    const handlerBinding = this.functionScope.catchBindings.get(handler);
     if (handlerBinding) this.#interpreter.write(handlerBinding, this.#interpreter.read(value));
     return stops.has(handler)
       ? this.#fallthrough(blockId, handler)
@@ -944,7 +905,7 @@ export class ControlFlowWalker {
     this.#awaitCount++;
     this.#interpreter.cells.passAwait();
     const asyncPathState = getAsyncPathState(pathState);
-    const throwPoints = this.#functionScope.throwPointsByTry.at(-1);
+    const throwPoints = this.functionScope.throwPointsByTry.at(-1);
     if (!throwPoints) return asyncPathState;
     const test = createUnknown("throws", loc);
     throwPoints.push({ pathState: asyncPathState, test });
@@ -960,9 +921,9 @@ export class ControlFlowWalker {
     const bodyStops = new Set([...stops, terminal.fallthrough]);
     const awaitCountBefore = this.#awaitCount;
     const throwPoints: ThrowPoint[] = [];
-    this.#functionScope.throwPointsByTry.push(throwPoints);
+    this.functionScope.throwPointsByTry.push(throwPoints);
     const bodyCompletion = this.walk(terminal.block, bodyStops, blockId, pathState, "unresolved");
-    this.#functionScope.throwPointsByTry.pop();
+    this.functionScope.throwPointsByTry.pop();
     const afterPathState =
       this.#awaitCount > awaitCountBefore ? getAsyncPathState(pathState) : pathState;
     if (!this.#throwingCatches.delete(terminal.handler))

@@ -168,9 +168,7 @@ export class Destructurer {
           getIdentifierName(pendingPlace) ?? "isPending",
           "hook",
           pendingPlace.loc,
-          {
-            hookKind: hook.hookKind,
-          },
+          { hookKind: hook.hookKind },
         )
       : null;
     return [

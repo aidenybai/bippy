@@ -6,25 +6,6 @@ const COLLECTION_READS = new Set(["has", "get"]);
 
 const COLLECTION_WRITES = new Set(["add", "set", "delete", "clear"]);
 
-const toPrimitiveResult = (result: unknown): PrimitiveValue | null =>
-  result === undefined ||
-  typeof result === "string" ||
-  typeof result === "number" ||
-  typeof result === "boolean"
-    ? result
-    : null;
-
-const applyMethod = (
-  receiver: object,
-  methodName: string,
-  argumentValues: PrimitiveValue[],
-): PrimitiveValue | null => {
-  const method: unknown = Reflect.get(receiver, methodName);
-  return typeof method === "function"
-    ? toPrimitiveResult(Reflect.apply(method, receiver, argumentValues))
-    : null;
-};
-
 const getPrimitives = (values: SymbolicValue[]): PrimitiveValue[] | null => {
   const primitives = values.flatMap((value) => (value.kind === "Primitive" ? [value.value] : []));
   return primitives.length === values.length ? primitives : null;
@@ -84,8 +65,15 @@ export const applyCollectionMethod = (
   argumentValues: PrimitiveValue[],
 ): PrimitiveValue | null => {
   const collection = getLiteralCollection(value);
-  return collection && isCollectionRead(methodName)
-    ? applyMethod(collection, methodName, argumentValues)
+  if (!collection || !isCollectionRead(methodName)) return null;
+  const method: unknown = Reflect.get(collection, methodName);
+  if (typeof method !== "function") return null;
+  const result: unknown = Reflect.apply(method, collection, argumentValues);
+  return result === undefined ||
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+    ? result
     : null;
 };
 
