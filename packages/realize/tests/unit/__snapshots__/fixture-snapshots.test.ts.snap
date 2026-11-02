@@ -3415,7 +3415,7 @@ stateDiagram-v2
 exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
 "---- MODULE Profile ----
 \\* status: status (state), 2 values
-\\* user_name: user.name (input), 2 values
+\\* user_name: user.name (input), 3 values
 \\* step: step (state), 3 values
 VARIABLES status, user_name, step
 
@@ -3427,13 +3427,13 @@ view == CASE status = "saving" -> "p \\"Saving\\""
 
 Init ==
   /\\ status = "idle"
-  /\\ user_name \\in {"empty", "other string"}
+  /\\ user_name \\in {"undefined", "empty", "other string"}
   /\\ step = "a"
 
 \\* "Save"
 t1 ==
   /\\ status = "idle"
-  /\\ status' \\in (IF user_name = "empty" THEN {"idle"} ELSE {"saving"})
+  /\\ status' \\in (IF user_name /= "other string" THEN {"idle"} ELSE {"saving"})
   /\\ UNCHANGED <<user_name, step>>
 
 \\* "Next"
@@ -3450,7 +3450,7 @@ t3 ==
 
 \\* parent changes user.name
 change_user_name ==
-  /\\ user_name' \\in {"empty", "other string"}
+  /\\ user_name' \\in {"undefined", "empty", "other string"}
   /\\ UNCHANGED <<status, step>>
 
 Next == t1 \\/ t2 \\/ t3 \\/ change_user_name
@@ -3504,9 +3504,9 @@ title: Profile src/claims.tsx:11
 ---
 stateDiagram-v2
   direction LR
-  %% 8 states
+  %% 12 states
   %% status = status (state): idle | saving
-  %% user_name = user.name (input): empty | other string
+  %% user_name = user.name (input): undefined | empty | other string
   %% step = step (state): a | b | c
   S1: div
   S2: p "Saving"

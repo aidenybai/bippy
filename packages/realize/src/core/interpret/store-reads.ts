@@ -45,7 +45,7 @@ export class StoreReads {
     return this.#interpreter.externalSources.getStoreBinding(storeKey, storeModel, () =>
       this.#interpreter.createBinding(`${storeHookName}()`, "hook", loc, {
         hookKind: "Custom",
-        domain: { kind: "Opaque", typeText: storeHookName },
+        domain: { kind: "Opaque", typeText: storeHookName, isArrayLike: false },
         initial: storeModel.initial,
       }),
     );

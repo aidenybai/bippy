@@ -217,15 +217,20 @@ export class SourceFileResolver {
   getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {
     const type = this.#getType(loc);
     const members = type?.isUnionType() ? getUnionMembers(type) : null;
-    if (!members) return null;
+    if (!members?.some((member) => member.flags & (TypeFlags.Object | TypeFlags.Intersection)))
+      return null;
     const unionMemberValues: AbstractValue[][] = [];
     for (const member of members) {
       if (member.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
         unionMemberValues.push([UNDEFINED_CASE]);
         continue;
       }
-      if (!(member.flags & (TypeFlags.Object | TypeFlags.Intersection))) return null;
-      const property = getPropertyOfType(this.#checker, member, field);
+      const receiver =
+        member.flags & (TypeFlags.Object | TypeFlags.Intersection)
+          ? member
+          : this.#checker.getApparentType(member);
+      if (!receiver) return null;
+      const property = getPropertyOfType(this.#checker, receiver, field);
       if (!property) {
         unionMemberValues.push([UNDEFINED_CASE]);
         continue;

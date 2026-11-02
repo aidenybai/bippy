@@ -6,7 +6,11 @@ describe("baseUrl", () => {
 
   it("resolves bare imports through baseUrl", () => {
     const nav = getComponent(project, "Nav");
-    expect(getBinding(nav, "item").domain).toEqual({ kind: "Opaque", typeText: "NavItem" });
+    expect(getBinding(nav, "item").domain).toEqual({
+      kind: "Opaque",
+      typeText: "NavItem",
+      isArrayLike: false,
+    });
     expect(nav.analysis.bailouts).toEqual([]);
   });
 });

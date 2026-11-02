@@ -23,7 +23,12 @@ export const getAbstractValue = (checker: Checker, type: Type): AbstractValue =>
     return { kind: "Literal", value: getTypeText(checker, type) === "true" };
   if (type.flags & TypeFlags.Null) return { kind: "Literal", value: null };
   if (type.flags & TypeFlags.Undefined) return UNDEFINED_CASE;
-  return { kind: "Type", text: getTypeText(checker, type), primitive: getPrimitiveTypeName(type) };
+  return {
+    kind: "Type",
+    text: getTypeText(checker, type),
+    primitive: getPrimitiveTypeName(type),
+    isArrayLike: checker.isArrayLikeType(type),
+  };
 };
 
 export const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
@@ -43,8 +48,11 @@ export const getDomainOfType = (checker: Checker, type: Type | undefined): Domai
   if (type.isLiteralType() || type.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
     return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
   }
-  const typeText = getTypeText(checker, type);
-  return { kind: "Opaque", typeText };
+  return {
+    kind: "Opaque",
+    typeText: getTypeText(checker, type),
+    isArrayLike: checker.isArrayLikeType(type),
+  };
 };
 
 export const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
