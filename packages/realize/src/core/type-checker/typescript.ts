@@ -3,8 +3,8 @@ import type { Node } from "typescript/unstable/ast";
 import { isPropertyAccessExpression, isIdentifier } from "typescript/unstable/ast/is";
 import { SymbolFlags } from "typescript/unstable/sync";
 import { createDeclarationKey } from "../project/declaration-key";
-import { LIBRARY_DECLARATION_PATTERN } from "./library-declaration-pattern";
 
+export const LIBRARY_DECLARATION_PATTERN = /[\\/]lib\.[\w.]*\.d\.ts$/;
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react(?:-dom)?[\\/]/;
 
 const isDeclaredType = (type: Type, namePattern: RegExp, declarationPattern: RegExp): boolean =>

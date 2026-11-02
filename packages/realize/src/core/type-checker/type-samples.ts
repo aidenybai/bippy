@@ -16,7 +16,7 @@ import {
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const ELEMENT_TYPE_PATTERN = /^(?:ReactElement|Element)$/;
+const ELEMENT_TYPE_PATTERN = /^(?:ReactElement|Element|ReactNode|ReactChild|ReactPortal)$/;
 const PROMISE_TYPE_PATTERN = /^Promise$/;
 const DATE_TYPE_PATTERN = /^Date$/;
 const SET_TYPE_NAMES = new Set(["Set", "ReadonlySet"]);
@@ -24,7 +24,6 @@ const MAP_TYPE_NAMES = new Set(["Map", "ReadonlyMap"]);
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
-const NODE_TYPE_PATTERN = /^(?:ReactNode|ReactChild|ReactPortal)$/;
 
 const getSampleKey = (sample: Sample): string => JSON.stringify(sample);
 
@@ -33,9 +32,6 @@ export const dedupeSamples = (samples: Sample[]): Sample[] => [
 ];
 
 const TRUNCATED_OBJECT_SAMPLE: Sample = { kind: "Object", fields: {}, isOpen: true };
-
-const isTruncatedOptionalField = (property: Symbol, sample: Sample): boolean =>
-  (property.flags & SymbolFlags.Optional) !== 0 && sample === TRUNCATED_OBJECT_SAMPLE;
 
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
   if (depth >= MAX_SAMPLE_DEPTH) return TRUNCATED_OBJECT_SAMPLE;
@@ -47,8 +43,9 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
     const definedSample = getPropertySamples(checker, property, depth + 1).find(
       (sample) => sample.kind !== "Undefined",
     );
-    if (definedSample && !isTruncatedOptionalField(property, definedSample))
-      fields[property.name] = definedSample;
+    const isTruncatedOptional =
+      (property.flags & SymbolFlags.Optional) !== 0 && definedSample === TRUNCATED_OBJECT_SAMPLE;
+    if (definedSample && !isTruncatedOptional) fields[property.name] = definedSample;
   }
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
@@ -124,20 +121,6 @@ const getCollectionSamples = (checker: Checker, type: Type, depth: number): Samp
   return null;
 };
 
-const getBrandedSamples = (
-  checker: Checker,
-  members: readonly Type[],
-  depth: number,
-  name: string | null,
-): Sample[] | null => {
-  for (const member of members) {
-    const samples =
-      getPrimitiveSamples(checker, member, name) ?? getCollectionSamples(checker, member, depth);
-    if (samples) return samples;
-  }
-  return null;
-};
-
 export const getSamples = (
   checker: Checker,
   type: Type | undefined,
@@ -148,7 +131,6 @@ export const getSamples = (
     return getStringSamples(name).slice(0, 1);
   if (isLibraryType(type, DOM_NODE_TYPE_PATTERN)) return [{ kind: "Undefined" }];
   if (isReactType(type, ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
-  if (isReactType(type, NODE_TYPE_PATTERN)) return [{ kind: "Element" }];
   if (type.isUnionType()) {
     const memberSamples = dedupeSamples(
       (getUnionMembers(type) ?? []).flatMap((member) => getSamples(checker, member, depth, name)),
@@ -160,10 +142,12 @@ export const getSamples = (
   }
   const primitiveSamples = getPrimitiveSamples(checker, type, name);
   if (primitiveSamples) return primitiveSamples;
-  const brandedSamples = type.isIntersectionType()
-    ? getBrandedSamples(checker, type.getTypes() ?? [], depth, name)
-    : null;
-  if (brandedSamples) return brandedSamples;
+  if (type.isIntersectionType())
+    for (const member of type.getTypes() ?? []) {
+      const brandedSamples =
+        getPrimitiveSamples(checker, member, name) ?? getCollectionSamples(checker, member, depth);
+      if (brandedSamples) return brandedSamples;
+    }
   const [signature] = getSignaturesOfType(checker, type, SignatureKind.Call);
   if (signature) {
     const returnSample = getFirstSample(

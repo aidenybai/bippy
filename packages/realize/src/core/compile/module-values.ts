@@ -46,11 +46,6 @@ export interface ImportedNames {
   isReadOnly: (localName: string, value: SymbolicValue) => boolean;
 }
 
-const COLLECTION_NAMES = new Map<string, "Set" | "Map">([
-  ["Set", "Set"],
-  ["Map", "Map"],
-]);
-
 const allOrNone = <Item>(items: Array<Item | null>): Item[] | null => {
   const present = items.filter((item): item is Item => item !== null);
   return present.length === items.length ? present : null;
@@ -84,7 +79,8 @@ const toSymbolicValue = (node: types.Node): SymbolicValue | null => {
   )
     return toSymbolicValue(node.expression);
   if (types.isNewExpression(node) && types.isIdentifier(node.callee)) {
-    const collection = COLLECTION_NAMES.get(node.callee.name);
+    const collection =
+      node.callee.name === "Set" || node.callee.name === "Map" ? node.callee.name : null;
     const [source] = node.arguments;
     const sourceValue =
       source && !types.isSpreadElement(source) && types.isExpression(source)
@@ -468,14 +464,6 @@ export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclaratio
   return (variableName) => declarations.get(variableName) ?? null;
 };
 
-export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
-  const loadDeclaration = createModuleDeclarationLoader(ast);
-  return (variableName) => {
-    const declaration = loadDeclaration(variableName);
-    return declaration?.isWritten ? declaration : null;
-  };
-};
-
 export const createImportUseLoader = (ast: types.File): ImportUseLoader => {
   const uses = new Map<string, ImportUse>();
   traverse(ast, {
@@ -553,11 +541,7 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
         (!isExported &&
           binding !== undefined &&
           binding.constantViolations.length === 0 &&
-          !isReadThroughState(binding.referencePaths, value) &&
-          binding.referencePaths.every(
-            (reference) =>
-              isStateValueReference(reference) || isReadOfPrimitive(reference, [value], []),
-          ));
+          isOnlyReadOfPrimitives(binding.referencePaths, value));
       if (isUnchanged) constants.set(path.node.id.name, value);
     },
     TSEnumDeclaration(path) {

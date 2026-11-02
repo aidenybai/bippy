@@ -4,15 +4,16 @@ import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type {
   AbstractValue,
   BinaryExpressionValue,
+  BinaryOperator,
   Binding,
   ConditionalValue,
   PrimitiveValue,
   SymbolicValue,
   UnknownOrigin,
 } from "../types";
-import { getNegatedOperator } from "../values/get-negated-operator";
+import { getChildValues } from "./for-each-symbolic-value";
 import { getValueKey } from "./get-value-key";
-import { isTreeLargerThan } from "./is-tree-larger-than";
+import { getOriginValues } from "./symbolic-values";
 
 const BINARY_PRECEDENCE = new Map<string, number>([
   ["??", 1],
@@ -31,6 +32,17 @@ const BINARY_PRECEDENCE = new Map<string, number>([
   ["*", 7],
   ["/", 7],
   ["%", 7],
+]);
+
+const NEGATED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
+  ["===", "!=="],
+  ["!==", "==="],
+  ["==", "!="],
+  ["!=", "=="],
+  ["<", ">="],
+  [">", "<="],
+  ["<=", ">"],
+  [">=", "<"],
 ]);
 
 const ATOMIC_PRECEDENCE = 10;
@@ -99,8 +111,20 @@ const formatOptionalChain = (value: ConditionalValue): string | null => {
     : null;
 };
 
+const isTooLargeToFormat = (root: SymbolicValue): boolean => {
+  const pending = [root];
+  let count = 0;
+  for (let value = pending.pop(); value !== undefined; value = pending.pop()) {
+    count++;
+    if (count > MAX_FORMATTED_NODES) return true;
+    pending.push(...getChildValues(value));
+    if (value.kind === "Unknown" && value.origin) pending.push(...getOriginValues(value.origin));
+  }
+  return false;
+};
+
 export const formatSymbolicValue = (value: SymbolicValue): string => {
-  if (isTreeLargerThan(value, MAX_FORMATTED_NODES)) return ELIDED_TEXT;
+  if (isTooLargeToFormat(value)) return ELIDED_TEXT;
   switch (value.kind) {
     case "Primitive":
       return formatPrimitive(value.value);
@@ -235,7 +259,7 @@ export const formatNegated = (
   const resolvedPromise = getResolvedPromise(value);
   if (resolvedPromise) return `${formatSymbolicValue(resolvedPromise)} resolves`;
   if (value.kind === "BinaryExpression") {
-    const negatedOperator = getNegatedOperator(value.operator);
+    const negatedOperator = NEGATED_OPERATORS.get(value.operator);
     if (negatedOperator && isComplement(value))
       return formatSymbolicValue({ ...value, operator: negatedOperator });
     return `!(${formatSymbolicValue(value)})`;

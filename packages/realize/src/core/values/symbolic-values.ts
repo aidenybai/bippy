@@ -1,5 +1,6 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import type {
+  AbstractValue,
   BinaryOperator,
   Binding,
   BindingValue,
@@ -11,8 +12,6 @@ import type {
   UnknownOrigin,
 } from "../types";
 import { isNullish } from "./is-nullish";
-import { isObjectValue } from "./is-object-value";
-import { getKnownTruthiness } from "./get-known-truthiness";
 import { negate } from "./negate";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import { forEachSymbolicValue } from "./for-each-symbolic-value";
@@ -262,6 +261,40 @@ export const foldBinary = (
     default:
       return { kind: "BinaryExpression", operator, left, right };
   }
+};
+
+const OBJECT_KINDS = new Set<SymbolicValue["kind"]>([
+  "JsxExpression",
+  "JsxFragment",
+  "Function",
+  "ObjectExpression",
+  "ArrayExpression",
+]);
+
+const isObjectValue = (value: SymbolicValue): boolean => OBJECT_KINDS.has(value.kind);
+
+const isNumberCase = (candidate: AbstractValue): boolean =>
+  candidate.kind === "Literal"
+    ? typeof candidate.value === "number"
+    : candidate.primitive === "number";
+
+const isNumber = (value: SymbolicValue): boolean => {
+  if (value.kind !== "Binding" || value.path.length > 0) return false;
+  const domain = value.binding.domain;
+  if (domain.kind === "Opaque") return domain.typeText === "number";
+  return domain.kind === "Cases" && domain.cases.every(isNumberCase);
+};
+
+const isNonEmptyText = (value: SymbolicValue): boolean =>
+  value.kind === "BinaryExpression" && value.operator === "+"
+    ? isNonEmptyText(value.left) || isNonEmptyText(value.right)
+    : (value.kind === "Primitive" && typeof value.value === "string" && value.value !== "") ||
+      isNumber(value);
+
+export const getKnownTruthiness = (value: SymbolicValue): boolean | null => {
+  if (value.kind === "Primitive") return Boolean(value.value);
+  if (value.kind === "BinaryExpression") return isNonEmptyText(value) ? true : null;
+  return isObjectValue(value) ? true : null;
 };
 
 export const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolean | null => {
