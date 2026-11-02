@@ -2,8 +2,13 @@ import { describe, expect, it } from "vite-plus/test";
 import { addAbstract, compareAbstract, containsValue } from "../../src/core/model/abstract";
 import { createDomain, getValueLabels } from "../../src/core/model/domains";
 import type { Abstract } from "../../src/core/model/types";
+import type { Domain } from "../../src/core/types";
 
-const NUMBER = { kind: "Opaque", typeText: "number", isArrayLike: false } as const;
+const NUMBER: Domain = {
+  kind: "Cases",
+  cases: [{ kind: "Type", text: "number", primitive: "number", isArrayLike: false }],
+  origin: "type",
+};
 
 const numberDomain = (literals: number[]) =>
   createDomain(NUMBER, { literals, isTruthinessTested: false }, false);

@@ -28,10 +28,8 @@ const hasNullishCase = (domain: Domain): boolean =>
 const isLiteralDomain = (domain: Domain): boolean =>
   domain.kind === "Cases" && domain.cases.every((value) => value.kind === "Literal");
 
-const describeDomain = (domain: Domain): string | null => {
-  if (domain.kind === "Cases") return describeCases(domain.cases);
-  return domain.kind === "Opaque" ? domain.typeText : null;
-};
+const describeDomain = (domain: Domain): string | null =>
+  domain.kind === "Cases" ? describeCases(domain.cases) : null;
 
 const createNotNullishTest = (subject: SymbolicValue): SymbolicValue =>
   foldBinary("!=", subject, { kind: "Primitive", value: null });
@@ -153,7 +151,7 @@ export class AssertionRecorder {
       const domain =
         this.#interpreter.bindingTable.placeDomains.get(getValuePlace(part)) ??
         (part.path.length === 0 ? part.binding.domain : undefined);
-      if (domain?.kind !== "Cases" && domain?.kind !== "Opaque") isCheckable = false;
+      if (domain?.kind !== "Cases") isCheckable = false;
     });
     return isCheckable;
   }

@@ -120,11 +120,6 @@ const createCaseValues = (value: AbstractValue, tests: PlaceTests): Abstract[] =
   }
 };
 
-const getPrimitiveName = (typeText: string): "string" | "number" | "boolean" | null => {
-  if (typeText === "string" || typeText === "number" || typeText === "boolean") return typeText;
-  return null;
-};
-
 const createUnknownValues = (tests: PlaceTests): Abstract[] => {
   const literals = [...new Set(tests.literals)];
   if (literals.length === 0)
@@ -142,12 +137,6 @@ const createAbstractValues = (
   switch (typeDomain.kind) {
     case "Cases":
       return typeDomain.cases.flatMap((value) => createCaseValues(value, tests));
-    case "Opaque": {
-      const primitive = getPrimitiveName(typeDomain.typeText);
-      return primitive
-        ? createPrimitiveValues(primitive, tests, false)
-        : [{ kind: "Object", typeText: typeDomain.typeText }];
-    }
     case "Unknown":
       return createUnknownValues(tests);
   }

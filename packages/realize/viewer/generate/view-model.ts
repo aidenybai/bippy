@@ -96,8 +96,6 @@ const formatDomain = (domain: Domain): string => {
   switch (domain.kind) {
     case "Cases":
       return domain.cases.map(formatAbstractValue).join(" | ");
-    case "Opaque":
-      return domain.typeText;
     case "Unknown":
       return `Unknown(${domain.reason})`;
   }

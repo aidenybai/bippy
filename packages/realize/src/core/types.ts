@@ -19,7 +19,6 @@ type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";
 
 export type Domain =
   | { kind: "Cases"; cases: AbstractValue[]; origin: "type" | "call-sites" }
-  | { kind: "Opaque"; typeText: string; isArrayLike: boolean }
   | { kind: "Unknown"; reason: UnknownTypeReason };
 
 export type Sample =

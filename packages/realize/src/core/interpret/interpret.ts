@@ -68,7 +68,7 @@ import { isPureFunction } from "../interpret/pure-functions";
 import { createDeclarationKey } from "../project/declaration-key";
 import { getLocationKey } from "../shared/get-location-key";
 import { getPropertyKeyForms } from "./get-property-key-forms";
-import { getDomainPrimitive } from "../type-checker/domains";
+import { getDomainPrimitive, isEnumerated } from "../type-checker/domains";
 import { isRefOnlyRead } from "./is-ref-only-read";
 import { applyStringMethod, isStringMethod } from "../interpret/string-methods";
 import {
@@ -1779,7 +1779,7 @@ export class Interpreter {
       (methodName !== undefined &&
         LENGTH_LIMITING_METHODS.has(methodName) &&
         this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc));
-    const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
+    const hasFiniteResult = isEnumerated(this.#resolver.getDomain(callSite.loc));
     if (!isDerivedResult && !initial && inputPlaces.size === 0 && !hasFiniteResult) {
       const unknownResult = createUnknown("call", callSite.loc);
       this.addUnknownSource(unknownResult, {

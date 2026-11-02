@@ -44,30 +44,19 @@ export const getDomainOfType = (checker: Checker, type: Type | undefined): Domai
       origin: "type",
     };
   }
-  if (type.isLiteralType() || type.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
-    return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
-  }
-  return {
-    kind: "Opaque",
-    typeText: getTypeText(checker, type),
-    isArrayLike: checker.isArrayLikeType(type),
-  };
+  return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
 };
 
 export const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
   const domain = getDomainOfType(checker, type);
-  if (domain.kind === "Cases")
-    return domain.cases.some((value) => value.kind === "Literal" && value.value === undefined)
-      ? domain
-      : { ...domain, cases: [...domain.cases, UNDEFINED_CASE] };
-  if (domain.kind === "Opaque" && type)
-    return {
-      kind: "Cases",
-      cases: [getAbstractValue(checker, type), UNDEFINED_CASE],
-      origin: "type",
-    };
-  return domain;
+  if (domain.kind !== "Cases") return domain;
+  return domain.cases.some((value) => value.kind === "Literal" && value.value === undefined)
+    ? domain
+    : { ...domain, cases: [...domain.cases, UNDEFINED_CASE] };
 };
+
+export const isEnumerated = (domain: Domain): domain is Extract<Domain, { kind: "Cases" }> =>
+  domain.kind === "Cases" && (domain.cases.length !== 1 || domain.cases[0]?.kind !== "Type");
 
 export const describeCases = (cases: AbstractValue[]): string =>
   cases.map(formatAbstractValue).join(" | ");
@@ -94,8 +83,6 @@ const getCasePrimitive = (value: AbstractValue): PrimitiveTypeName | null => {
 };
 
 export const getDomainPrimitive = (domain: Domain): PrimitiveTypeName | null => {
-  if (domain.kind === "Opaque")
-    return domain.typeText === "number" || domain.typeText === "string" ? domain.typeText : null;
   if (domain.kind !== "Cases") return null;
   const [first, ...rest] = domain.cases.map(getCasePrimitive);
   return first !== undefined && rest.every((primitive) => primitive === first) ? first : null;
