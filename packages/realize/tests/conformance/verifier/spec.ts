@@ -28,7 +28,7 @@ interface ComponentFixture {
   page: Page;
   click: (label: string) => Promise<void>;
   observe: () => Promise<void>;
-  expectState: (label: string) => void;
+  expectState: (label: string) => Promise<void>;
 }
 
 interface ExportedComponent {
@@ -98,7 +98,11 @@ const findClickAction = async (
   );
 };
 
-const expectShowingView = (session: Session, capture: Capture, label: string): void => {
+const expectShowingView = async (
+  session: Session,
+  capture: Capture,
+  label: string,
+): Promise<void> => {
   const analysis = session.component.analysis;
   const model = session.component.model;
   const labelledViews = model.views.filter((view) => isLabelled(view, label));
@@ -106,7 +110,7 @@ const expectShowingView = (session: Session, capture: Capture, label: string): v
     labelledViews.length,
     `${analysis.name} has no view labelled "${label}". Its views are:\n${model.views.map((view) => view.label).join("\n")}`,
   ).toBeGreaterThan(0);
-  const modelIndex = indexModel(analysis, model, session.observations);
+  const modelIndex = await indexModel(analysis, model, session.observations);
   const observed = abstractCapture(modelIndex, capture);
   expect(
     labelledViews.some((view) => canShowView(modelIndex, observed, view)),
@@ -204,8 +208,8 @@ const startSession = async (
   return { page, session, props, initialCapture };
 };
 
-const expectNoCounterexamples = (session: Session): void => {
-  const verdict = checkComponent(
+const expectNoCounterexamples = async (session: Session): Promise<void> => {
+  const verdict = await checkComponent(
     session.component.analysis,
     session.component.model,
     session.observations,
@@ -220,7 +224,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
       const [repo] = loadRepos([repoId]);
       if (!repo) throw new Error(`Unknown repo ${repoId}`);
       const appDirectory = join(CACHE_DIRECTORY, repo.id, repo.workingDirectory);
-      const { components } = analyzeProject(join(appDirectory, repo.tsconfig));
+      const { components } = await analyzeProject(join(appDirectory, repo.tsconfig));
       const harness = await startProjectHarness(
         appDirectory,
         components,
@@ -241,7 +245,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
       return createComponentFixture(fixtureContext);
     });
     await page.close();
-    for (const session of sessions) expectNoCounterexamples(session);
+    for (const session of sessions) await expectNoCounterexamples(session);
   },
 });
 

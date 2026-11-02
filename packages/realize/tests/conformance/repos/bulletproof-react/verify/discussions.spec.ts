@@ -6,7 +6,7 @@ test("lists discussions once they load", async ({ mountComponent }) => {
   const list = await mountComponent("DiscussionsList", {
     scenario: { name: "discussion", args: ["first"] },
   });
-  list.expectState("!discussionsQuery.isLoading ∧ discussionsQuery.data?.data");
+  await list.expectState("!discussionsQuery.isLoading ∧ discussionsQuery.data?.data");
 });
 
 test("shows a discussion with its author", async ({ mountComponent }) => {
@@ -14,14 +14,14 @@ test("shows a discussion with its author", async ({ mountComponent }) => {
     props: { discussionId: "first" },
     scenario: { name: "discussion", args: ["first"] },
   });
-  view.expectState(
+  await view.expectState(
     "!discussionQuery.isLoading ∧ discussionQuery.data?.data ∧ discussionQuery.data.data.author",
   );
 });
 
 test("shows nothing for a missing discussion", async ({ mountComponent }) => {
   const view = await mountComponent("DiscussionView", { props: { discussionId: "missing" } });
-  view.expectState("!discussionQuery.isLoading ∧ !discussionQuery.data?.data");
+  await view.expectState("!discussionQuery.isLoading ∧ !discussionQuery.data?.data");
 });
 
 test("shows the empty comments state", async ({ mountComponent }) => {
@@ -29,7 +29,7 @@ test("shows the empty comments state", async ({ mountComponent }) => {
     props: { discussionId: "first" },
     scenario: { name: "discussion", args: ["first"] },
   });
-  comments.expectState(
+  await comments.expectState(
     "!commentsQuery.isLoading ∧ !commentsQuery.data?.pages.flatMap(function)?.length",
   );
 });
@@ -39,11 +39,11 @@ test("pages through comments", async ({ mountComponent }) => {
     props: { discussionId: "first" },
     scenario: { name: "discussion", args: ["first", 12] },
   });
-  comments.expectState(
+  await comments.expectState(
     "!commentsQuery.isLoading ∧ commentsQuery.data?.pages.flatMap(function)?.length ∧ commentsQuery.hasNextPage ∧ !commentsQuery.isFetchingNextPage",
   );
   await comments.click("Load More Comments");
-  comments.expectState(
+  await comments.expectState(
     "!commentsQuery.isLoading ∧ commentsQuery.data?.pages.flatMap(function)?.length ∧ !commentsQuery.hasNextPage",
   );
 });

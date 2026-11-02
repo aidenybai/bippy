@@ -18,6 +18,7 @@ import type {
   SymbolicValue,
   StoreModel,
   ProjectAnalysis,
+  AnalyzedComponent,
 } from "../types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
@@ -313,23 +314,25 @@ export const interpretProject = (
     tracer,
   );
 
-export const reportProject = (
+export const reportProject = async (
   interpretedProject: InterpretedProject,
   fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
-): ProjectAnalysis => {
+): Promise<ProjectAnalysis> => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
   const sourceReader = createSourceReader();
-  const components = interpretedProject.analyses.filter(isSelected).map((analysis) => ({
-    analysis,
-    model: tracer.span(
-      "model",
-      analysis.name,
-      () => buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
-      { file: analysis.file },
-    ),
-  }));
+  const components: AnalyzedComponent[] = [];
+  for (const analysis of interpretedProject.analyses.filter(isSelected))
+    components.push({
+      analysis,
+      model: await tracer.span(
+        "model",
+        analysis.name,
+        () => buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
+        { file: analysis.file },
+      ),
+    });
   return {
     components,
     fileCount: interpretedProject.fileCount,
@@ -337,8 +340,9 @@ export const reportProject = (
   };
 };
 
-export const analyzeProject = (
+export const analyzeProject = async (
   configPath: string,
   fileFilter: string | null = null,
   tracer: Tracer = NO_TRACER,
-): ProjectAnalysis => reportProject(interpretProject(configPath, tracer), fileFilter, tracer);
+): Promise<ProjectAnalysis> =>
+  reportProject(interpretProject(configPath, tracer), fileFilter, tracer);

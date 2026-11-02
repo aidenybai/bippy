@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("annotated declarations", () => {
-  const project = analyzeFixture("conformance-repros", "annotated-hooks");
+describe("annotated declarations", async () => {
+  const project = await analyzeFixture("conformance-repros", "annotated-hooks");
 
   it("types a hook result stored in a variable with a type annotation", () => {
     const { analysis } = getComponent(project, "ThemeBadge");

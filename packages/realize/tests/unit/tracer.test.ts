@@ -5,10 +5,10 @@ import { createTracer } from "../../src/core/project/tracer";
 import { getFixtureConfig } from "./helpers";
 
 describe("tracing an analysis", () => {
-  it("records a span per phase and component, with memory after each", () => {
+  it("records a span per phase and component, with memory after each", async () => {
     const configPath = getFixtureConfig("conformance-repros");
     const tracer = createTracer(dirname(configPath));
-    const project = analyzeProject(configPath, "self-updates", tracer);
+    const project = await analyzeProject(configPath, "self-updates", tracer);
     const spans = tracer.events.filter((event) => event.ph === "X");
     const categories = new Set(spans.map((event) => event.cat));
     expect([...categories]).toEqual(

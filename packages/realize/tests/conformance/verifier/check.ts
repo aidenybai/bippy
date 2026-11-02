@@ -1,8 +1,8 @@
 import { getValueLabels } from "../../../src/core/model/domains";
 import { containsValue } from "../../../src/core/model/abstract";
 import { and, inValues, or } from "../../../src/core/model/predicates";
-import { exploreModel } from "../../../src/core/model/explore";
-import type { StateGraph } from "../../../src/core/model/explore";
+import { checkStateGraph } from "../../../src/core/model/state-graph";
+import type { StateGraph } from "../../../src/core/model/state-graph";
 import type {
   Action,
   ComponentModel,
@@ -138,13 +138,13 @@ const collectStateVariables = (
   });
 };
 
-export const indexModel = (
+export const indexModel = async (
   analysis: ComponentAnalysis,
   model: ComponentModel,
   observations: Observation[],
-): ModelIndex => ({
+): Promise<ModelIndex> => ({
   model,
-  stateGraph: exploreModel(model.variables, model.actions, model.views),
+  stateGraph: await checkStateGraph(analysis.name, model),
   edges: collectEdges(model),
   stateVariables: collectStateVariables(analysis, model, observations),
   variablesByName: new Map(model.variables.map((variable) => [variable.name, variable])),
@@ -310,11 +310,11 @@ class ComponentCheck {
   }
 }
 
-export const checkComponent = (
+export const checkComponent = async (
   analysis: ComponentAnalysis,
   model: ComponentModel,
   observations: Observation[],
-): ComponentVerdict => {
+): Promise<ComponentVerdict> => {
   const verdict: ComponentVerdict = {
     ...createEmptyVerdict(analysis, model),
     observationCount: observations.length,
@@ -322,7 +322,7 @@ export const checkComponent = (
   if (!analysis.exportName) return verdict;
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
-  const modelIndex = indexModel(analysis, model, observations);
+  const modelIndex = await indexModel(analysis, model, observations);
   const componentCheck = new ComponentCheck(analysis, modelIndex, verdict);
   const counterIds = new Set(collectBranchCounters(analysis).map((counter) => counter.id));
   const coveredEdges = new Set<string>();

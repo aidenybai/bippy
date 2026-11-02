@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("refs typed as null", () => {
-  const project = analyzeFixture("conformance-repros", "attached-null-refs");
+describe("refs typed as null", async () => {
+  const project = await analyzeFixture("conformance-repros", "attached-null-refs");
 
   const getCurrentValues = (name: string, label: string): string[] =>
     getComponent(project, name)

@@ -9,15 +9,15 @@ describe("config errors", () => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-config-"));
   afterAll(() => rmSync(directory, { recursive: true, force: true }));
 
-  it("reports a malformed tsconfig instead of analyzing nothing", () => {
+  it("reports a malformed tsconfig instead of analyzing nothing", async () => {
     const configPath = join(directory, "tsconfig.json");
     writeFileSync(configPath, '{ "compilerOptions": { "jsx": "react-jsx" }, "include": ["."]');
-    expect(() => analyzeProject(configPath)).toThrow(ConfigError);
+    await expect(analyzeProject(configPath)).rejects.toThrow(ConfigError);
   });
 
-  it("reports a missing tsconfig as one named error", () => {
+  it("reports a missing tsconfig as one named error", async () => {
     const configPath = join(directory, "missing", "tsconfig.json");
-    expect(() => analyzeProject(configPath)).toThrow(ConfigError);
-    expect(() => analyzeProject(configPath)).toThrow(/could not read/);
+    await expect(analyzeProject(configPath)).rejects.toThrow(ConfigError);
+    await expect(analyzeProject(configPath)).rejects.toThrow(/could not read/);
   });
 });

@@ -7,9 +7,9 @@ import type { Action, Capture } from "../conformance/verifier/types";
 import { formatCounterexamples } from "../conformance/verifier/verdict-report";
 import { analyzeFixture, getComponent, getHandlerCounterId } from "./helpers";
 
-describe("render-phase actions", () => {
+describe("render-phase actions", async () => {
   const copied = getComponent(
-    analyzeFixture("conformance-repros", "render-phase-updates"),
+    await analyzeFixture("conformance-repros", "render-phase-updates"),
     "CopiedDuringRender",
   );
   const setCounterId = getHandlerCounterId(copied, "() => setSource(true)");
@@ -31,7 +31,7 @@ describe("render-phase actions", () => {
 
   const clickSet: Action = { key: "set", kind: "click", tag: "button", label: "set" };
 
-  it("lets a render-phase update follow the handler that triggered it", () => {
+  it("lets a render-phase update follow the handler that triggered it", async () => {
     const mounted = capture(false, false, []);
     const observations: Observation[] = [
       { props: {}, path: [], action: null, before: null, after: mounted },
@@ -43,7 +43,7 @@ describe("render-phase actions", () => {
         after: capture(true, true, [setCounterId]),
       },
     ];
-    const verdict = checkComponent(copied.analysis, copied.model, observations);
+    const verdict = await checkComponent(copied.analysis, copied.model, observations);
     expect(formatCounterexamples(verdict)).toEqual([]);
     expect(verdict.checkedTransitionCount).toBe(1);
   });

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("an unknown value names where it came from", () => {
-  const project = analyzeFixture("conformance-repros", "unknown-origins");
+describe("an unknown value names where it came from", async () => {
+  const project = await analyzeFixture("conformance-repros", "unknown-origins");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

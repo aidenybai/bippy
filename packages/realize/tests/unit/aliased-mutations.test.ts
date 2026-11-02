@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent, getWarningKinds } from "./helpers";
 
-describe("aliased mutations", () => {
-  const project = analyzeFixture("conformance-repros", "shallow-copy-rows");
+describe("aliased mutations", async () => {
+  const project = await analyzeFixture("conformance-repros", "shallow-copy-rows");
 
   it.each(["DirectRowEdit", "CopiedRowEdit", "IndexedRowEdit", "IndexedDirectEdit"])(
     "warns when %s mutates a row it read from state",
@@ -21,8 +21,8 @@ describe("aliased mutations", () => {
   );
 });
 
-describe("iteration callback mutations", () => {
-  const project = analyzeFixture("conformance-repros", "callback-item-mutations");
+describe("iteration callback mutations", async () => {
+  const project = await analyzeFixture("conformance-repros", "callback-item-mutations");
 
   it("warns when a handler's forEach callback mutates state items", () => {
     expect(getComponent(project, "CompleteAllTasks").analysis.warnings).toMatchObject([
@@ -42,16 +42,16 @@ describe("iteration callback mutations", () => {
 });
 
 describe("conditional mutations", () => {
-  it("warns when a value that may be the prop itself is sorted in place", () => {
-    const project = analyzeFixture("conformance-repros", "callback-item-mutations");
+  it("warns when a value that may be the prop itself is sorted in place", async () => {
+    const project = await analyzeFixture("conformance-repros", "callback-item-mutations");
     expect(getComponent(project, "SortedOptions").analysis.warnings).toMatchObject([
       { kind: "prop-mutation", message: "mutates prop options" },
     ]);
   });
 });
 
-describe("helper mutations through a copy", () => {
-  const project = analyzeFixture("conformance-repros", "copied-helper-mutations");
+describe("helper mutations through a copy", async () => {
+  const project = await analyzeFixture("conformance-repros", "copied-helper-mutations");
 
   it.each(["SlicedRowsHelper", "SpreadRowsLoopHelper"])(
     "warns when %s passes a copy to a helper that mutates its rows",

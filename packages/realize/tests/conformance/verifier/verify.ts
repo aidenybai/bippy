@@ -178,7 +178,7 @@ const verifyComponent = async (
         )
       : [];
     return {
-      verdict: checkComponent(component.analysis, component.model, observations),
+      verdict: await checkComponent(component.analysis, component.model, observations),
       isPageBroken: false,
     };
   } catch (error) {
@@ -308,7 +308,7 @@ export const verifyProject = async (
 ): Promise<VerifyReport> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
-  const analyzed = options.analyzed ?? analyzeProject(configPath).components;
+  const analyzed = options.analyzed ?? (await analyzeProject(configPath)).components;
   const componentNames = options.componentNames;
   const mountable = exposeLocalComponents(
     componentNames

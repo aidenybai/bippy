@@ -2,9 +2,9 @@ import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("derived inputs", () => {
-  it("lets a derived value change when state it reads through a call changes", () => {
+  it("lets a derived value change when state it reads through a call changes", async () => {
     const { model } = getComponent(
-      analyzeFixture("conformance-repros", "render-hidden-inputs"),
+      await analyzeFixture("conformance-repros", "render-hidden-inputs"),
       "CountedLevel",
     );
     const cycle = model.actions.find((action) => action.label === '"cycle"');

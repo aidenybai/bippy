@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("key checks on object literals", () => {
-  const project = analyzeFixture("conformance-repros", "key-checks");
+describe("key checks on object literals", async () => {
+  const project = await analyzeFixture("conformance-repros", "key-checks");
 
   it("decides whether each object literal passed in has the key", () => {
     const { analysis } = getComponent(project, "SizeForm");

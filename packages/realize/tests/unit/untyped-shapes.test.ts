@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
-describe("shapes of untyped props", () => {
-  const project = analyzeFixture("conformance-repros", "untyped-shapes");
+describe("shapes of untyped props", async () => {
+  const project = await analyzeFixture("conformance-repros", "untyped-shapes");
   const row = getComponent(project, "BookingRow");
 
   it("mounts an untyped prop with the fields the component reads from it", () => {
@@ -38,8 +38,11 @@ describe("shapes of untyped props", () => {
     });
   });
 
-  it("mounts an untyped prop passed straight to a host element's style with an object", () => {
-    const band = getComponent(analyzeFixture("conformance-repros", "untyped-style"), "StyledBand");
+  it("mounts an untyped prop passed straight to a host element's style with an object", async () => {
+    const band = getComponent(
+      await analyzeFixture("conformance-repros", "untyped-style"),
+      "StyledBand",
+    );
     expect(getBinding(band, "style").samples[0]).toEqual({
       kind: "Object",
       fields: {},
@@ -47,9 +50,9 @@ describe("shapes of untyped props", () => {
     });
   });
 
-  it("mounts an untyped prop spread into a host element's style with an object", () => {
+  it("mounts an untyped prop spread into a host element's style with an object", async () => {
     const band = getComponent(
-      analyzeFixture("conformance-repros", "untyped-style"),
+      await analyzeFixture("conformance-repros", "untyped-style"),
       "SpreadStyleBand",
     );
     expect(getBinding(band, "style").samples[0]).toEqual({

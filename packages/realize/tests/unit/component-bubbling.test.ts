@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a click that bubbles across a component boundary", () => {
-  const project = analyzeFixture("conformance-repros", "component-bubbling");
+describe("a click that bubbles across a component boundary", async () => {
+  const project = await analyzeFixture("conformance-repros", "component-bubbling");
 
   const getUpdateSequences = (name: string) =>
     getComponent(project, name).analysis.handlers.map((handler) =>

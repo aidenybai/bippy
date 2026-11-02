@@ -12,7 +12,7 @@ import { forEachJsxElement } from "../../src/core/render/for-each-jsx-element";
 import { isRenderingNothing } from "../../src/core/render/is-rendering-nothing";
 import { collectTriggerLabels } from "../../src/core/labels/trigger-labels";
 import { createSourceReader } from "../../src/core/labels/source-text";
-import { exploreModel, type StateGraph } from "../../src/core/model/explore";
+import { checkStateGraph, type StateGraph } from "../../src/core/model/state-graph";
 import type { ComponentModel } from "../../src/core/model/types";
 import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
 import type {
@@ -238,12 +238,8 @@ const getViewHandlers = (component: AnalyzedComponent): ViewHandler[] => {
   );
 };
 
-const getViewBindings = (component: AnalyzedComponent): ViewBinding[] => {
-  const stateGraph = exploreModel(
-    component.model.variables,
-    component.model.actions,
-    component.model.views,
-  );
+const getViewBindings = async (component: AnalyzedComponent): Promise<ViewBinding[]> => {
+  const stateGraph = await checkStateGraph(component.analysis.name, component.model);
   return component.analysis.bindings
     .filter((binding) => binding.kind !== "item")
     .map((binding) => ({
@@ -272,8 +268,11 @@ const getViewTransitions = (model: ComponentModel, label: string): ViewState["tr
   return transitions;
 };
 
-const toViewComponent = (component: AnalyzedComponent, source: string): ViewComponent => {
-  const bindings = getViewBindings(component);
+const toViewComponent = async (
+  component: AnalyzedComponent,
+  source: string,
+): Promise<ViewComponent> => {
+  const bindings = await getViewBindings(component);
   const branches = collectBranches(component);
   const handlers = getViewHandlers(component);
   const model = component.model;
@@ -321,17 +320,14 @@ const findTsconfig = (file: string): string => {
   }
 };
 
-export const analyzeFile = (file: string): { view: ViewFile; json: string } => {
-  const analysis = analyzeProject(findTsconfig(file), file);
+export const analyzeFile = async (file: string): Promise<{ view: ViewFile; json: string }> => {
+  const analysis = await analyzeProject(findTsconfig(file), file);
   const source = readFileSync(file, "utf8");
+  const components: ViewComponent[] = [];
+  for (const component of analysis.components)
+    if (component.analysis.file === file) components.push(await toViewComponent(component, source));
   return {
-    view: {
-      file,
-      source,
-      components: analysis.components
-        .filter((component) => component.analysis.file === file)
-        .map((component) => toViewComponent(component, source)),
-    },
+    view: { file, source, components },
     json: JSON.stringify(JSON.parse(serializeProjectAnalysis(analysis)), null, 2),
   };
 };

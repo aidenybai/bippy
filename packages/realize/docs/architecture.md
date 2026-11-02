@@ -43,7 +43,7 @@ Read `src/core` in this order. Each stage has its own folder, with its helpers n
 | `model/variables.ts`, `model/domains.ts`     | One variable per tested place, with its domain of abstract values              |
 | `model/views.ts`                             | The views a render can show and the predicate of each branch edge              |
 | `model/actions.ts`, `model/evaluate.ts`      | Each handler as a guarded action that writes variables                         |
-| `model/explore.ts`                           | The state graph: every reachable state, the transitions between views, traces  |
+| `model/state-graph.ts`                       | Checks the TLA+ module with tla-ts and reads back the state graph and traces   |
 | `model/build-model.ts`                       | Puts the model together and reports findings                                   |
 | `model/tla.ts`, `model/check-invariant.ts`   | The TLA+ module and invariant checks through tla-ts                            |
 | `render/`, `labels/`                         | Walks render trees, and reads button text to label handlers                    |
@@ -130,8 +130,6 @@ A variable's source says where its value comes from:
 | `opaque`  | A test the model can't split into a place, like `ref.current`. Either `true` or `false`.      |
 | `control` | Whether an async handler is still running.                                                    |
 
-A component with more than 64 variables isn't explored.
-
 ### Views and branches
 
 A view is one way the render can look: a choice of edge at each branch, with the predicate that selects it. Its label comes from the elements each edge renders, like `form > button "Back"`. Combinations that contradict themselves, like `role = "admin"` with `role = "viewer"`, are dropped. A component has at most 64 views.
@@ -146,7 +144,7 @@ An async handler gets a `control` variable and three actions: the call, then `fu
 
 ### State space and findings
 
-The explorer starts from every combination of initial values and applies every enabled action, breadth first. It keeps the path to each state, so any reachable state comes with a trace. It stops at 20,000 states or 400,000 successors and marks the model truncated.
+tla-ts, a TypeScript port of TLC, checks the TLA+ module breadth first from every initial state and dumps the state graph, which realize reads back. Each state keeps the step that first reached it, so any reachable state comes with a shortest trace. A state constraint stops the search at 20,000 distinct states or 400,000 generated states, and the model is marked truncated. A model whose `Init` alone has 20,000 states is marked truncated without a check.
 
 A complete model reports three kinds of findings:
 

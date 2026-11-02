@@ -28,7 +28,7 @@ const interpretedFixtures = new Map<string, InterpretedProject>();
 export const analyzeFixture = (
   fixture: string,
   fileFilter: string | null = null,
-): ProjectAnalysis => {
+): Promise<ProjectAnalysis> => {
   const interpreted =
     interpretedFixtures.get(fixture) ?? interpretProject(getFixtureConfig(fixture));
   interpretedFixtures.set(fixture, interpreted);

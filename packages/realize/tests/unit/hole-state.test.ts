@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("state with an unread value", () => {
-  const project = analyzeFixture("conformance-repros", "hole-state");
+describe("state with an unread value", async () => {
+  const project = await analyzeFixture("conformance-repros", "hole-state");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

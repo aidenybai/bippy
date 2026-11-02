@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("mutations the analysis can't see", () => {
-  const project = analyzeFixture("conformance-repros", "unwarned-mutations");
+describe("mutations the analysis can't see", async () => {
+  const project = await analyzeFixture("conformance-repros", "unwarned-mutations");
 
   const getWarnings = (name: string) =>
     getComponent(project, name).analysis.warnings.map((warning) => warning.kind);

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent, getWarningKinds } from "./helpers";
 
-describe("a ref prop written through a helper", () => {
-  const project = analyzeFixture("conformance-repros", "ref-prop-helpers");
+describe("a ref prop written through a helper", async () => {
+  const project = await analyzeFixture("conformance-repros", "ref-prop-helpers");
 
   it("is not a prop mutation", () => {
     expect(getWarningKinds(getComponent(project, "ForwardedBox"))).toEqual([]);

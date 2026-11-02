@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("context reads after an await", () => {
-  const project = analyzeFixture("conformance-repros", "context-reads");
+describe("context reads after an await", async () => {
+  const project = await analyzeFixture("conformance-repros", "context-reads");
 
   const getGuards = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("context tags", () => {
-  const project = analyzeFixture("conformance-repros", "context-tag");
+describe("context tags", async () => {
+  const project = await analyzeFixture("conformance-repros", "context-tag");
 
   it("marks a context rendered as its own provider, as React 19 allows", () => {
     const { render } = getComponent(project, "FontProvider").analysis;

@@ -8,7 +8,7 @@ import { COMPARISONS } from "./abstract";
 import { compileHandlerActions, compileInputActions } from "./actions";
 import { and, collectPredicateVariables, not, or } from "./predicates";
 import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
-import { exploreModel, type StateGraph } from "./explore";
+import { checkStateGraph, type StateGraph } from "./state-graph";
 import { STATE_KINDS, createVariableTable, type VariableTable } from "./variables";
 import { collectViews } from "./views";
 import type {
@@ -211,10 +211,10 @@ const collectFindings = (
   ];
 };
 
-export const buildComponentModel = (
+export const buildComponentModel = async (
   analysis: ComponentAnalysis,
   triggerLabels: ReadonlyMap<string, string> = new Map(),
-): ComponentModel => {
+): Promise<ComponentModel> => {
   const assertions = collectAssertions(analysis);
   const table = createVariableTable(analysis, collectTests(analysis, assertions));
   const { views, branches } = collectViews(
@@ -246,7 +246,12 @@ export const buildComponentModel = (
     const initial = bindingsById.get(variable.bindingId)?.initial;
     if (initial) variable.initial = evaluateInitialValues(table, variable, initial);
   }
-  const stateGraph = exploreModel(table.variables, actions, views);
+  const stateGraph = await checkStateGraph(analysis.name, {
+    variables: table.variables,
+    actions,
+    views,
+    invariants,
+  });
   const isComplete = !stateGraph.stateSpace.isTruncated;
   for (const branch of branches)
     for (const edge of [branch.consequent, branch.alternate])

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a handler on an element passed through a prop", () => {
-  const project = analyzeFixture("conformance-repros", "prop-element-handlers");
+describe("a handler on an element passed through a prop", async () => {
+  const project = await analyzeFixture("conformance-repros", "prop-element-handlers");
 
   it("is collected under the guards of the element that receives it", () => {
     const { analysis } = getComponent(project, "ShareDialog");

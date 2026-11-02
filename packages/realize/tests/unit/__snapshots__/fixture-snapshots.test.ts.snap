@@ -54,12 +54,12 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% isLoading = isLoading (input): false | true
-  S1: Button
-  S2: Loading
+  S1: Loading
+  S2: Button
   [*] --> S1
   [*] --> S2
-  S1 --> S1: setCount(count + 1)
   S1 --> S2: parent changes isLoading
+  S2 --> S2: setCount(count + 1)
   S2 --> S1: parent changes isLoading"
 `;
 
@@ -119,7 +119,7 @@ view == CASE TRUE -> "button"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -196,8 +196,8 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% note = note (input): undefined | empty | other string
-  S1: div
-  S2: div #gt; p
+  S1: div #gt; p
+  S2: div
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes note
@@ -255,9 +255,9 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% options_shape = options.shape (state): undefined | other string
-  S1: button #gt; "auto"
-  S2: button
-  [*] --> S1
+  S1: button
+  S2: button #gt; "auto"
+  [*] --> S2
   S1 --> S1: fillDefaults(options, 120)
   S1 --> S2: fillDefaults(options, 120)
   S2 --> S1: fillDefaults(options, 120)
@@ -313,8 +313,8 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% options_shape = options.shape (input): undefined | other string
-  S1: p #gt; "auto"
-  S2: p
+  S1: p
+  S2: p #gt; "auto"
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes options.shape
@@ -335,7 +335,7 @@ view == CASE stats_clicks = ">0" -> "button > \\"Clicked\\""
 Init ==
   /\\ stats_clicks = "0"
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -439,8 +439,8 @@ stateDiagram-v2
   %% checked = checked (state): false | true
   %% flags = flags (input): undefined | { ok: boolean; }[]
   %% opaque_flags_some_function_null = flags?.some(function) != null (opaque): false | true
-  S1: p #gt; "off"
-  S2: p #gt; "on"
+  S1: p #gt; "on"
+  S2: p #gt; "off"
   [*] --> S1
   [*] --> S2
   S1 --> S1: after serverChecked changes
@@ -576,11 +576,11 @@ stateDiagram-v2
   %% 3 states
   %% isSent = isSent (state): false | true
   %% draft = draft (state): empty | other string
-  S1: div
-  S2: p "Sent"
-  [*] --> S1
-  S1 --> S1: setDraft(event.target.value), "Send"
-  S1 --> S2: "Send""
+  S1: p "Sent"
+  S2: div
+  [*] --> S2
+  S2 --> S2: setDraft(event.target.value), "Send"
+  S2 --> S1: "Send""
 `;
 
 exports[`fixture analysis > Countdown keeps its TLA+ module 1`] = `
@@ -632,8 +632,8 @@ stateDiagram-v2
   direction LR
   %% 4 states
   %% steps = steps (input): <0 | 0 | >0 | NaN
-  S1: p #gt; "Counted"
-  S2: p #gt; "Done"
+  S1: p #gt; "Done"
+  S2: p #gt; "Counted"
   [*] --> S1
   [*] --> S2
   S1 --> S2: steps changes
@@ -718,12 +718,12 @@ stateDiagram-v2
   %% 8 states
   %% items_length = items.length (input): 0 | >0
   %% count = count (input): <0 | 0 | >0 | NaN
-  S1: div #gt; p "Empty"
-  S2: div #gt; p "Empty" #gt; i "None"
-  S3: div #gt; p "Empty" #gt; b
-  S4: div #gt; ul #gt; p "Has items"
-  S5: div #gt; ul #gt; p "Has items" #gt; i "None"
-  S6: div #gt; ul #gt; p "Has items" #gt; b
+  S1: div #gt; ul #gt; p "Has items" #gt; b
+  S2: div #gt; ul #gt; p "Has items" #gt; i "None"
+  S3: div #gt; ul #gt; p "Has items"
+  S4: div #gt; p "Empty" #gt; b
+  S5: div #gt; p "Empty" #gt; i "None"
+  S6: div #gt; p "Empty"
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -801,11 +801,11 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% isDone = isDone (state): false | true
-  S1: button #gt; "Start"
-  S2: button #gt; "Done"
-  [*] --> S1
-  S1 --> S2: finish
-  S2 --> S2: finish"
+  S1: button #gt; "Done"
+  S2: button #gt; "Start"
+  [*] --> S2
+  S1 --> S1: finish
+  S2 --> S1: finish"
 `;
 
 exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
@@ -914,28 +914,28 @@ stateDiagram-v2
   %% user = user (input): null | User
   %% items_length = items.length (state): 0 | >0
   %% pending_t1 = t1 pending (control): idle | pending
-  S1: SignIn
-  S2: main #gt; Empty
-  S3: Spinner
-  S4: main #gt; List
+  S1: Spinner
+  S2: SignIn
+  S3: main #gt; List
+  S4: main #gt; Empty
   [*] --> S1
   [*] --> S2
-  [*] --> S3
-  S1 --> S3: parent changes status
-  S1 --> S2: parent changes user
-  S2 --> S2: setCount(count + 1)
-  S2 --> S3: parent changes status
-  S2 --> S1: parent changes user
-  S3 --> S1: parent changes status
-  S3 --> S2: parent changes status
+  [*] --> S4
   S1 --> S1: after first render resolves
-  S2 --> S4: after first render resolves
-  S3 --> S3: after first render resolves
-  S1 --> S4: parent changes user
-  S4 --> S4: setCount(count + 1), after first render resolves
-  S4 --> S3: parent changes status
-  S4 --> S1: parent changes user
-  S3 --> S4: parent changes status
+  S1 --> S2: parent changes status
+  S1 --> S3: parent changes status
+  S1 --> S4: parent changes status
+  S2 --> S2: after first render resolves
+  S2 --> S1: parent changes status
+  S2 --> S3: parent changes user
+  S2 --> S4: parent changes user
+  S3 --> S3: after first render resolves, setCount(count + 1)
+  S3 --> S1: parent changes status
+  S3 --> S2: parent changes user
+  S4 --> S3: after first render resolves
+  S4 --> S4: setCount(count + 1)
+  S4 --> S1: parent changes status
+  S4 --> S2: parent changes user
   %% ⚠ When after first render fails, the render stays the same (L21)"
 `;
 
@@ -1081,15 +1081,15 @@ stateDiagram-v2
   %% isOpen = isOpen (state): false | true
   %% icon = icon (input): null | other string | any number | NaN | other | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<unknown, string | JSXElementConstructor<any>> | ReactPortal | undefined
   %% opaque_icon_undefined = icon === undefined (opaque): false | true
-  S1: div
+  S1: nothing
   S2: div #gt; span "×"
-  S3: nothing
-  [*] --> S1
+  S3: div
   [*] --> S2
-  S1 --> S3: setIsOpen(false)
-  S1 --> S2: icon === undefined changes
-  S2 --> S3: setIsOpen(false)
-  S2 --> S1: icon === undefined changes"
+  [*] --> S3
+  S2 --> S1: setIsOpen(false)
+  S2 --> S3: icon === undefined changes
+  S3 --> S1: setIsOpen(false)
+  S3 --> S2: icon === undefined changes"
 `;
 
 exports[`fixture analysis > EarlyReturn keeps its TLA+ module 1`] = `
@@ -1228,17 +1228,17 @@ stateDiagram-v2
   %% 4 states
   %% role = role (input): admin | viewer
   %% isEditing = isEditing (state): false | true
-  S1: button "Edit"
-  S2: p "Read only"
-  S3: button "Save"
+  S1: p "Read only"
+  S2: button "Save"
+  S3: button "Edit"
   [*] --> S1
-  [*] --> S2
-  S1 --> S3: "Edit"
+  [*] --> S3
   S1 --> S2: parent changes role
+  S1 --> S3: parent changes role
+  S2 --> S3: "Save"
   S2 --> S1: parent changes role
-  S3 --> S1: "Save"
-  S3 --> S2: parent changes role
-  S2 --> S3: parent changes role"
+  S3 --> S2: "Edit"
+  S3 --> S1: parent changes role"
 `;
 
 exports[`fixture analysis > Empty keeps its TLA+ module 1`] = `
@@ -1252,7 +1252,7 @@ view == CASE TRUE -> "p \\"No items\\""
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1291,7 +1291,7 @@ view == CASE TRUE -> "p"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1330,7 +1330,7 @@ view == CASE TRUE -> "p"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1446,10 +1446,10 @@ stateDiagram-v2
   %% isEnabled_share = isEnabled("share") (input): false | true
   %% isEnabled_sync_2 = isEnabled("sync") (input): false | true
   %% isEnabled_offline = isEnabled("offline") (input): false | true
-  S1: p #gt; "Features off"
-  S2: p #gt; "Features off" #gt; "Full sync"
-  S3: p #gt; "Features on"
-  S4: p #gt; "Features on" #gt; "Full sync"
+  S1: p #gt; "Features on" #gt; "Full sync"
+  S2: p #gt; "Features on"
+  S3: p #gt; "Features off" #gt; "Full sync"
+  S4: p #gt; "Features off"
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -1458,9 +1458,9 @@ stateDiagram-v2
   S1 --> S2: isEnabled("sync") changes, isEnabled("offline") changes
   S2 --> S4: isEnabled("search") changes, isEnabled("sync") changes, isEnabled("share") changes
   S2 --> S1: isEnabled("sync") changes, isEnabled("offline") changes
-  S3 --> S1: isEnabled("share") changes, isEnabled("sync") changes, isEnabled("search") changes
+  S3 --> S1: isEnabled("search") changes, isEnabled("sync") changes, isEnabled("share") changes
   S3 --> S4: isEnabled("sync") changes, isEnabled("offline") changes
-  S4 --> S2: isEnabled("share") changes, isEnabled("sync") changes, isEnabled("search") changes
+  S4 --> S2: isEnabled("search") changes, isEnabled("sync") changes, isEnabled("share") changes
   S4 --> S3: isEnabled("sync") changes, isEnabled("offline") changes"
 `;
 
@@ -1607,16 +1607,16 @@ stateDiagram-v2
   %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
   %% opened = opened (state): <0 | 0 | >0 | NaN
   %% opaque_opened_1 = opened + 1 (opaque): false | true
-  S1: button #gt; span "File"
+  S1: button #gt; span "TS" #gt; b
   S2: button #gt; span "TS"
   S3: button #gt; span "File" #gt; b
-  S4: button #gt; span "TS" #gt; b
-  [*] --> S1
+  S4: button #gt; span "File"
   [*] --> S2
-  S1 --> S3: setOpened(opened + 1)
-  S2 --> S4: setOpened(opened + 1)
+  [*] --> S4
+  S1 --> S1: setOpened(opened + 1)
+  S2 --> S1: setOpened(opened + 1)
   S3 --> S3: setOpened(opened + 1)
-  S4 --> S4: setOpened(opened + 1)"
+  S4 --> S3: setOpened(opened + 1)"
 `;
 
 exports[`fixture analysis > FilterLabel keeps its TLA+ module 1`] = `
@@ -1812,7 +1812,7 @@ view == CASE TRUE -> "ul"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1855,7 +1855,7 @@ view == CASE TRUE -> "div"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1936,8 +1936,8 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% auth_user = auth.user (input): undefined | User
-  S1: div #gt; p "Signed out"
-  S2: div #gt; p
+  S1: div #gt; p
+  S2: div #gt; p "Signed out"
   [*] --> S1
   [*] --> S2
   S1 --> S2: auth.user changes
@@ -2104,12 +2104,12 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% kind = kind (input): a | b | c
-  S1: button
-  S2: p "c"
+  S1: p "c"
+  S2: button
   [*] --> S1
   [*] --> S2
-  S1 --> S1: setPicked(kind as "a" | "b")
   S1 --> S2: parent changes kind
+  S2 --> S2: setPicked(kind as "a" | "b")
   S2 --> S1: parent changes kind"
 `;
 
@@ -2185,7 +2185,7 @@ view == CASE TRUE -> "section"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2285,11 +2285,11 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% kind = kind (state): chip | extendedFab | fab
-  S1: div #gt; p "Chip"
-  S2: div #gt; FabRow
-  [*] --> S1
-  S1 --> S2: "FAB", "Extended"
-  S2 --> S2: "FAB", "Extended"
+  S1: div #gt; FabRow
+  S2: div #gt; p "Chip"
+  [*] --> S2
+  S1 --> S1: "FAB", "Extended"
+  S2 --> S1: "FAB", "Extended"
   %% ⚠ kind !== "chip" && !(kind === "fab" || kind === "extendedFab") is never true here (L16)"
 `;
 
@@ -2349,7 +2349,7 @@ view == CASE TRUE -> "ul"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2392,7 +2392,7 @@ view == CASE TRUE -> "p \\"some\\""
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2487,7 +2487,7 @@ view == CASE TRUE -> "p \\"Loading…\\""
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2575,13 +2575,13 @@ stateDiagram-v2
   %% 8 states
   %% isFull = isFull (state): false | true
   %% total = total (input): <100 | 100 | >100 | NaN
-  S1: button #gt; "Fill"
-  S2: button #gt; "Full"
-  [*] --> S1
+  S1: button #gt; "Full"
+  S2: button #gt; "Fill"
+  [*] --> S2
   S1 --> S1: fill
   S1 --> S2: fill
-  S2 --> S2: fill
-  S2 --> S1: fill"
+  S2 --> S1: fill
+  S2 --> S2: fill"
 `;
 
 exports[`fixture analysis > LoopList keeps its TLA+ module 1`] = `
@@ -2666,22 +2666,22 @@ stateDiagram-v2
   %% hasLong = hasLong (input): false | true
   %% isSelected = isSelected (state): false | true
   %% item = item (input): empty | other string
-  S1: div #gt; "Select"
+  S1: div #gt; p "Long" #gt; "Selected"
   S2: div #gt; p "Long" #gt; "Select"
   S3: div #gt; "Selected"
-  S4: div #gt; p "Long" #gt; "Selected"
-  [*] --> S1
+  S4: div #gt; "Select"
   [*] --> S2
+  [*] --> S4
   S1 --> S1: selectAll
-  S1 --> S2: hasLong changes
-  S1 --> S3: selectAll
+  S1 --> S3: hasLong changes
+  S2 --> S1: selectAll
   S2 --> S2: selectAll
-  S2 --> S1: hasLong changes
-  S2 --> S4: selectAll
+  S2 --> S4: hasLong changes
   S3 --> S3: selectAll
-  S3 --> S4: hasLong changes
+  S3 --> S1: hasLong changes
+  S4 --> S3: selectAll
   S4 --> S4: selectAll
-  S4 --> S3: hasLong changes"
+  S4 --> S2: hasLong changes"
 `;
 
 exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
@@ -2769,20 +2769,20 @@ stateDiagram-v2
   %% name = name (state): empty | other string
   %% opaque_typeof_data_get_name_string = typeof data.get("name") === "string" (opaque): false | true
   %% opaque_typeof_data_get_name = typeof data.get("name") (opaque): false | true
-  S1: form #gt; p #gt; "No name yet"
-  S2: form #gt; p "Saving…"
+  S1: form #gt; p "Saving…"
+  S2: form #gt; p #gt; "No name yet"
   S3: form #gt; p
   [*] --> S1
   [*] --> S2
   S1 --> S1: "Save"
   S1 --> S2: isPending changes
-  S1 --> S3: "Save"
+  S1 --> S3: isPending changes
   S2 --> S2: "Save"
+  S2 --> S3: "Save"
   S2 --> S1: isPending changes
-  S3 --> S1: "Save"
+  S3 --> S2: "Save"
   S3 --> S3: "Save"
-  S3 --> S2: isPending changes
-  S2 --> S3: isPending changes"
+  S3 --> S1: isPending changes"
 `;
 
 exports[`fixture analysis > NavLinks keeps its TLA+ module 1`] = `
@@ -2849,8 +2849,8 @@ stateDiagram-v2
   %% 4 states
   %% pathname = pathname (input): / | /about | /blog | other string
   S1: nav #gt; b "Home" #gt; a "Blog" #gt; a "About"
-  S2: nav #gt; a "Home" #gt; a "Blog" #gt; b "About"
-  S3: nav #gt; a "Home" #gt; b "Blog" #gt; a "About"
+  S2: nav #gt; a "Home" #gt; b "Blog" #gt; a "About"
+  S3: nav #gt; a "Home" #gt; a "Blog" #gt; b "About"
   S4: nav #gt; a "Home" #gt; a "Blog" #gt; a "About"
   [*] --> S1
   [*] --> S2
@@ -2931,18 +2931,18 @@ stateDiagram-v2
   %% 6 states
   %% user = user (input): null | User
   %% user_name = user.name (input): undefined | empty | other string
-  S1: div (2)
+  S1: div #gt; i "named"
   S2: div
-  S3: div #gt; i "named"
+  S3: div (2)
   [*] --> S1
   [*] --> S2
   [*] --> S3
-  S1 --> S2: parent changes user
   S1 --> S3: parent changes user
-  S2 --> S1: parent changes user
-  S2 --> S3: parent changes user.name
+  S1 --> S2: parent changes user.name
+  S2 --> S3: parent changes user
+  S2 --> S1: parent changes user.name
   S3 --> S1: parent changes user
-  S3 --> S2: parent changes user.name"
+  S3 --> S2: parent changes user"
 `;
 
 exports[`fixture analysis > OptionRow keeps its TLA+ module 1`] = `
@@ -2959,7 +2959,7 @@ view == CASE options_index_icon = "other string" -> "li > i"
 Init ==
   /\\ options_index_icon \\in {"undefined", "empty", "other string"}
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -2990,8 +2990,8 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% options_index_icon = options[index].icon (derived): undefined | empty | other string
-  S1: li
-  S2: li #gt; i
+  S1: li #gt; i
+  S2: li
   [*] --> S1
   [*] --> S2"
 `;
@@ -3007,7 +3007,7 @@ view == CASE TRUE -> "Toggle"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -3107,19 +3107,19 @@ stateDiagram-v2
   %% 4 states
   %% isOpen = isOpen (state): false | true
   %% isDark = isDark (state): false | true
-  S1: div #gt; span "Light"
+  S1: div #gt; p "More details" #gt; span "Dark"
   S2: div #gt; p "More details" #gt; span "Light"
   S3: div #gt; span "Dark"
-  S4: div #gt; p "More details" #gt; span "Dark"
-  [*] --> S1
-  S1 --> S2: "Details"
-  S1 --> S3: "Theme"
-  S2 --> S1: "Details"
-  S2 --> S4: "Theme"
-  S3 --> S4: "Details"
-  S3 --> S1: "Theme"
-  S4 --> S3: "Details"
-  S4 --> S2: "Theme""
+  S4: div #gt; span "Light"
+  [*] --> S4
+  S1 --> S3: "Details"
+  S1 --> S2: "Theme"
+  S2 --> S4: "Details"
+  S2 --> S1: "Theme"
+  S3 --> S1: "Details"
+  S3 --> S4: "Theme"
+  S4 --> S2: "Details"
+  S4 --> S3: "Theme""
 `;
 
 exports[`fixture analysis > Picker keeps its TLA+ module 1`] = `
@@ -3191,20 +3191,20 @@ stateDiagram-v2
   %% 6 states
   %% data = data (input): null | { rows: Row[]; }
   %% selected = selected (state): null | empty | other string
-  S1: ul
+  S1: ul #gt; list #gt; p
   S2: ul #gt; list
-  S3: ul #gt; list #gt; p
-  S4: ul #gt; p
-  [*] --> S1
+  S3: ul #gt; p
+  S4: ul
   [*] --> S2
-  S1 --> S2: parent changes data
+  [*] --> S4
+  S1 --> S1: setSelected(row.id)
+  S1 --> S2: setSelected(row.id)
+  S1 --> S3: parent changes data
+  S2 --> S1: setSelected(row.id)
   S2 --> S2: setSelected(row.id)
-  S2 --> S3: setSelected(row.id)
-  S2 --> S1: parent changes data
-  S3 --> S2: setSelected(row.id)
-  S3 --> S3: setSelected(row.id)
-  S3 --> S4: parent changes data
-  S4 --> S3: parent changes data"
+  S2 --> S4: parent changes data
+  S3 --> S1: parent changes data
+  S4 --> S2: parent changes data"
 `;
 
 exports[`fixture analysis > PlanForm keeps its TLA+ module 1`] = `
@@ -3281,8 +3281,8 @@ stateDiagram-v2
   %% 4 states
   %% watch_plan = watch("plan") (derived): free | pro
   %% pending_t1 = t1 pending (control): idle | pending
-  S1: form #gt; p "No charge"
-  S2: form #gt; p "Billed monthly"
+  S1: form #gt; p "Billed monthly"
+  S2: form #gt; p "No charge"
   [*] --> S1
   [*] --> S2
   S1 --> S1: #lt;select#gt; {...} resolves
@@ -3370,14 +3370,14 @@ stateDiagram-v2
   %% price = price (input): null | other string | any number | NaN
   %% opaque_typeof_price_string = typeof price === "string" (opaque): false | true
   %% opaque_typeof_price_number = typeof price === "number" (opaque): false | true
-  S1: p #gt; s "Free"
-  S2: p #gt; i #gt; s "Free"
+  S1: p #gt; b #gt; i #gt; s "Free"
+  S2: p #gt; b #gt; i
   S3: p #gt; b #gt; s "Free"
-  S4: p #gt; b #gt; i #gt; s "Free"
-  S5: p
+  S4: p #gt; b
+  S5: p #gt; i #gt; s "Free"
   S6: p #gt; i
-  S7: p #gt; b
-  S8: p #gt; b #gt; i
+  S7: p #gt; s "Free"
+  S8: p
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -3386,30 +3386,30 @@ stateDiagram-v2
   [*] --> S6
   [*] --> S7
   [*] --> S8
-  S1 --> S5: parent changes price
-  S1 --> S3: typeof price === "string" changes
-  S1 --> S2: typeof price === "number" changes
-  S2 --> S6: parent changes price
-  S2 --> S4: typeof price === "string" changes
-  S2 --> S1: typeof price === "number" changes
-  S3 --> S7: parent changes price
-  S3 --> S1: typeof price === "string" changes
-  S3 --> S4: typeof price === "number" changes
-  S4 --> S8: parent changes price
-  S4 --> S2: typeof price === "string" changes
-  S4 --> S3: typeof price === "number" changes
-  S5 --> S1: parent changes price
-  S5 --> S7: typeof price === "string" changes
-  S5 --> S6: typeof price === "number" changes
-  S6 --> S2: parent changes price
-  S6 --> S8: typeof price === "string" changes
-  S6 --> S5: typeof price === "number" changes
-  S7 --> S3: parent changes price
-  S7 --> S5: typeof price === "string" changes
-  S7 --> S8: typeof price === "number" changes
-  S8 --> S4: parent changes price
-  S8 --> S6: typeof price === "string" changes
-  S8 --> S7: typeof price === "number" changes"
+  S1 --> S2: parent changes price
+  S1 --> S5: typeof price === "string" changes
+  S1 --> S3: typeof price === "number" changes
+  S2 --> S1: parent changes price
+  S2 --> S6: typeof price === "string" changes
+  S2 --> S4: typeof price === "number" changes
+  S3 --> S4: parent changes price
+  S3 --> S7: typeof price === "string" changes
+  S3 --> S1: typeof price === "number" changes
+  S4 --> S3: parent changes price
+  S4 --> S8: typeof price === "string" changes
+  S4 --> S2: typeof price === "number" changes
+  S5 --> S6: parent changes price
+  S5 --> S1: typeof price === "string" changes
+  S5 --> S7: typeof price === "number" changes
+  S6 --> S5: parent changes price
+  S6 --> S2: typeof price === "string" changes
+  S6 --> S8: typeof price === "number" changes
+  S7 --> S8: parent changes price
+  S7 --> S3: typeof price === "string" changes
+  S7 --> S5: typeof price === "number" changes
+  S8 --> S7: parent changes price
+  S8 --> S4: typeof price === "string" changes
+  S8 --> S6: typeof price === "number" changes"
 `;
 
 exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
@@ -3508,11 +3508,11 @@ stateDiagram-v2
   %% status = status (state): idle | saving
   %% user_name = user.name (input): undefined | empty | other string
   %% step = step (state): a | b | c
-  S1: div
-  S2: p "Saving"
-  [*] --> S1
-  S1 --> S1: "Save", "Next", "Finish"
-  S1 --> S2: "Finish", "Save"
+  S1: p "Saving"
+  S2: div
+  [*] --> S2
+  S2 --> S1: "Save", "Finish"
+  S2 --> S2: "Save", "Next", "Finish"
   %% ⚠ "done" as "idle" | "saving" can fail (L21)"
 `;
 
@@ -3596,26 +3596,26 @@ stateDiagram-v2
   %% query_isPending = query.isPending (input): false | true
   %% query_isError = query.isError (input): false | true
   %% query_data_isAdmin = query.data.isAdmin (input): false | true
-  S1: div
-  S2: div #gt; span "Admin"
-  S3: p "Error#58;"
-  S4: p "Loading"
+  S1: p "Loading"
+  S2: p "Error#58;"
+  S3: div #gt; span "Admin"
+  S4: div
   [*] --> S1
   [*] --> S2
   [*] --> S3
   [*] --> S4
+  S1 --> S2: query.isPending changes
+  S1 --> S3: query.isPending changes
   S1 --> S4: query.isPending changes
-  S1 --> S3: query.isError changes
-  S1 --> S2: query.data.isAdmin changes
-  S2 --> S4: query.isPending changes
+  S2 --> S1: query.isPending changes
   S2 --> S3: query.isError changes
-  S2 --> S1: query.data.isAdmin changes
-  S3 --> S4: query.isPending changes
-  S3 --> S1: query.isError changes
+  S2 --> S4: query.isError changes
+  S3 --> S1: query.isPending changes
   S3 --> S2: query.isError changes
+  S3 --> S4: query.data.isAdmin changes
   S4 --> S1: query.isPending changes
-  S4 --> S2: query.isPending changes
-  S4 --> S3: query.isPending changes"
+  S4 --> S2: query.isError changes
+  S4 --> S3: query.data.isAdmin changes"
 `;
 
 exports[`fixture analysis > ProfileStatus keeps its TLA+ module 1`] = `
@@ -3696,14 +3696,14 @@ stateDiagram-v2
   %% useQuery_isPending = useQuery().isPending (input): false | true
   %% useQuery_isError = useQuery().isError (input): false | true
   %% useQuery_data = useQuery().data (input): undefined | NoInfer<Profile>
-  S1: div
-  S2: div #gt; p
-  S3: div #gt; p "Error"
-  S4: div #gt; p "Error" #gt; p
-  S5: div #gt; p "Loading"
-  S6: div #gt; p "Loading" #gt; p
-  S7: div #gt; p "Loading" #gt; p "Error"
-  S8: div #gt; p "Loading" #gt; p "Error" #gt; p
+  S1: div #gt; p "Loading" #gt; p "Error" #gt; p
+  S2: div #gt; p "Loading" #gt; p "Error"
+  S3: div #gt; p "Loading" #gt; p
+  S4: div #gt; p "Loading"
+  S5: div #gt; p "Error" #gt; p
+  S6: div #gt; p "Error"
+  S7: div #gt; p
+  S8: div
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -3809,12 +3809,12 @@ stateDiagram-v2
   %% 4 states
   %% success = success (state): null | Success
   %% isReady = isReady (input): false | true
-  S1: div
-  S2: div #gt; p
-  [*] --> S1
-  S1 --> S1: isReady && setStep("done")
-  S1 --> S2: "Publish"
-  S2 --> S2: isReady && setStep("done"), "Publish""
+  S1: div #gt; p
+  S2: div
+  [*] --> S2
+  S1 --> S1: isReady && setStep("done"), "Publish"
+  S2 --> S2: isReady && setStep("done")
+  S2 --> S1: "Publish""
 `;
 
 exports[`fixture analysis > ResourceDetails keeps its TLA+ module 1`] = `
@@ -3884,8 +3884,8 @@ stateDiagram-v2
   %% 4 states
   %% user = user (input): null | User
   %% renderExtra = renderExtra (input): undefined | (user: User) => string
-  S1: p "Loading" (2)
-  S2: p "Loading"
+  S1: p "Loading"
+  S2: p "Loading" (2)
   S3: p
   [*] --> S1
   [*] --> S2
@@ -3976,12 +3976,12 @@ stateDiagram-v2
   %% error = error (state): null | empty | other string
   %% pending_t1 = t1 pending (control): idle | pending
   %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
-  S1: form
-  S2: form #gt; p
-  [*] --> S1
-  S1 --> S1: "Save", "Save" resolves
-  S1 --> S2: "Save" resolves
-  S2 --> S1: "Save"
+  S1: form #gt; p
+  S2: form
+  [*] --> S2
+  S1 --> S2: "Save"
+  S2 --> S2: "Save", "Save" resolves
+  S2 --> S1: "Save" resolves
   %% ⚠ When "Save" fails, the render stays the same (L9)"
 `;
 
@@ -4032,8 +4032,8 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% role = role (input): null | admin | other string
-  S1: span "Member"
-  S2: strong "Admin"
+  S1: strong "Admin"
+  S2: span "Member"
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes role
@@ -4120,12 +4120,12 @@ stateDiagram-v2
   %% loading = loading (state): false | true
   %% pending_t1 = t1 pending (control): idle | pending
   %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
-  S1: form #gt; button "Save"
-  S2: form #gt; p "Saving…"
-  [*] --> S1
-  S1 --> S2: submit, "Save"
-  S2 --> S1: submit, "Save" resolves
-  S2 --> S2: submit, "Save"
+  S1: form #gt; p "Saving…"
+  S2: form #gt; button "Save"
+  [*] --> S2
+  S1 --> S1: submit, "Save"
+  S1 --> S2: submit, "Save" resolves
+  S2 --> S1: submit, "Save"
   %% ⚠ When submit, "Save" fails, the render stays the same (L9)"
 `;
 
@@ -4199,10 +4199,10 @@ stateDiagram-v2
   %% 4 states
   %% items_length = items.length (input): 0 | >0
   %% items_filter_function_length = items.filter(function).length (derived): 0 | >0
-  S1: div #gt; p "No items"
-  S2: div #gt; p "No items" #gt; ul
-  S3: div
-  S4: div #gt; ul
+  S1: div #gt; p "No items" #gt; ul
+  S2: div #gt; p "No items"
+  S3: div #gt; ul
+  S4: div
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -4293,13 +4293,13 @@ stateDiagram-v2
   %% 4 states
   %% isFocused = isFocused (state): false | true
   %% opaque_Unknown_call_enoughChars = Unknown(call).enoughChars (opaque): false | true
-  S1: div
-  S2: div #gt; ul
-  [*] --> S1
+  S1: div #gt; ul
+  S2: div
+  [*] --> S2
   S1 --> S1: setIsFocused(true), setCount(count + 1)
-  S1 --> S2: setIsFocused(true), Unknown(call).enoughChars changes
-  S2 --> S2: setIsFocused(true), setCount(count + 1)
-  S2 --> S1: Unknown(call).enoughChars changes"
+  S1 --> S2: Unknown(call).enoughChars changes
+  S2 --> S1: setIsFocused(true), Unknown(call).enoughChars changes
+  S2 --> S2: setIsFocused(true), setCount(count + 1)"
 `;
 
 exports[`fixture analysis > Seen keeps its TLA+ module 1`] = `
@@ -4353,11 +4353,11 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% shown = shown (state): false | true
-  S1: button #gt; "show"
-  S2: button #gt; "shown"
-  [*] --> S1
-  S1 --> S2: show
-  S2 --> S2: show"
+  S1: button #gt; "shown"
+  S2: button #gt; "show"
+  [*] --> S2
+  S1 --> S1: show
+  S2 --> S1: show"
 `;
 
 exports[`fixture analysis > ShareButton keeps its TLA+ module 1`] = `
@@ -4427,7 +4427,7 @@ view == CASE TRUE -> "a \\"Sign in\\""
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4565,11 +4565,11 @@ stateDiagram-v2
   %% opaque_Unknown_wrapped_call = Unknown(wrapped-call) (opaque): false | true
   %% opaque_values_email = values.email (opaque): false | true
   %% pending_t2 = t2 pending (control): idle | pending
-  S1: form
-  S2: p "Check your inbox"
-  [*] --> S1
-  S1 --> S1: "Send"
-  S1 --> S2: "Send"
+  S1: p "Check your inbox"
+  S2: form
+  [*] --> S2
+  S2 --> S1: "Send"
+  S2 --> S2: "Send"
   %% ⚠ "Send" resolves never changes the render
   %% ⚠ When "Send" fails, the render stays the same
   %% ⚠ <input> {...} never changes the render (L17)
@@ -4674,8 +4674,8 @@ stateDiagram-v2
   %% size = size (input): lg | sm
   %% sizes_small = sizes.small (input): sm
   %% sizes_large = sizes.large (input): lg
-  S1: p "Large"
-  S2: p "Small"
+  S1: p "Small"
+  S2: p "Large"
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes size
@@ -4691,8 +4691,8 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% size = size (input): lg | sm
-  S1: p "Large"
-  S2: p "Small"
+  S1: p "Small"
+  S2: p "Large"
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes size
@@ -4813,8 +4813,8 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% opaque_typeof_render_function = typeof render === "function" (opaque): false | true
-  S1: div (2)
-  S2: div
+  S1: div
+  S2: div (2)
   [*] --> S1
   [*] --> S2
   S1 --> S2: typeof render === "function" changes
@@ -4832,7 +4832,7 @@ view == CASE TRUE -> "ul"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4875,7 +4875,7 @@ view == CASE TRUE -> "div"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4914,7 +4914,7 @@ view == CASE TRUE -> "ul"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -5009,10 +5009,10 @@ stateDiagram-v2
   direction LR
   %% 4 states
   %% status = status (input): done | error | idle | loading
-  S1: p #gt; "Done"
-  S2: p "Failed"
-  S3: p #gt; "Idle"
-  S4: p "Loading…"
+  S1: p "Failed"
+  S2: p "Loading…"
+  S3: p #gt; "Done"
+  S4: p #gt; "Idle"
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -5045,7 +5045,7 @@ view == CASE status = "error" -> "p \\"Error\\""
 Init ==
   /\\ status = "ok"
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -5177,8 +5177,8 @@ stateDiagram-v2
   %% useForm_formState_errors_email = useForm().formState.errors.email (input): undefined | { message?: string | undefined; }
   %% pending_t1 = t1 pending (control): idle | pending
   %% pending_t2 = t2 pending (control): idle | pending
-  S1: form
-  S2: form #gt; p
+  S1: form #gt; p
+  S2: form
   [*] --> S1
   [*] --> S2
   S1 --> S1: "Subscribe", "Subscribe" resolves, #lt;input#gt; {...} resolves
@@ -5200,7 +5200,7 @@ view == CASE TRUE -> "input"
 Init ==
   TRUE
 
-Next == FALSE
+Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -5407,8 +5407,8 @@ stateDiagram-v2
   direction LR
   %% 3 states
   %% title = title (input): null | empty | other string
-  S1: h1
-  S2: p "Untitled"
+  S1: p "Untitled"
+  S2: h1
   [*] --> S1
   [*] --> S2
   S1 --> S2: parent changes title
@@ -5565,21 +5565,21 @@ stateDiagram-v2
   %% isEditing = isEditing (state): false | true
   %% draft = draft (state): empty | other string
   %% draft_trim = draft.trim() (derived): empty | other string
-  S1: section #gt; p "Nothing to do" #gt; button "Edit"
-  S2: section #gt; p "Nothing to do" #gt; button "Save"
-  S3: section #gt; button "Edit"
-  S4: section #gt; button "Save"
-  [*] --> S1
-  S1 --> S1: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
-  S1 --> S2: "Edit"
+  S1: section #gt; p "Nothing to do" #gt; button "Save"
+  S2: section #gt; p "Nothing to do" #gt; button "Edit"
+  S3: section #gt; button "Save"
+  S4: section #gt; button "Edit"
+  [*] --> S2
+  S1 --> S1: setDraft(event.target.value), "Add", setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done"
   S1 --> S3: "Add"
-  S2 --> S2: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
-  S2 --> S1: "Save"
-  S3 --> S3: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
-  S3 --> S4: "Edit"
+  S1 --> S2: "Save"
+  S2 --> S2: setDraft(event.target.value), "Add", setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done"
   S2 --> S4: "Add"
-  S4 --> S4: setDraft(event.target.value), setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done", "Add"
-  S4 --> S3: "Save""
+  S2 --> S1: "Edit"
+  S3 --> S3: setDraft(event.target.value), "Add", setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done"
+  S3 --> S4: "Save"
+  S4 --> S4: setDraft(event.target.value), "Add", setTodos( todos.map((other) =#gt; other.id…, "All", "Active", "Done"
+  S4 --> S3: "Edit""
 `;
 
 exports[`fixture analysis > Toggle keeps its TLA+ module 1`] = `
@@ -5633,9 +5633,9 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% isOpen = isOpen (state): false | true
-  S1: div
-  S2: div #gt; p "Details"
-  [*] --> S1
+  S1: div #gt; p "Details"
+  S2: div
+  [*] --> S2
   S1 --> S2: setIsOpen(!isOpen)
   S2 --> S1: setIsOpen(!isOpen)"
 `;
@@ -5692,9 +5692,9 @@ stateDiagram-v2
   direction LR
   %% 4 states
   %% tone = tone (input): undefined | info | warning | other string
-  S1: span
-  S2: span #gt; b "Info"
-  S3: span #gt; i "Warning"
+  S1: span #gt; b "Info"
+  S2: span #gt; i "Warning"
+  S3: span
   [*] --> S1
   [*] --> S2
   [*] --> S3
@@ -5790,20 +5790,20 @@ stateDiagram-v2
   %% tone = tone (input): undefined | info | other string
   %% count = count (state): <0 | 0 | >0 | NaN
   %% opaque_count_1 = count + 1 (opaque): false | true
-  S1: div #gt; i #gt; "Other"
+  S1: div #gt; b #gt; "Info again"
   S2: div #gt; b #gt; "Info"
   S3: div #gt; i #gt; "Other again"
-  S4: div #gt; b #gt; "Info again"
-  [*] --> S1
+  S4: div #gt; i #gt; "Other"
   [*] --> S2
-  S1 --> S3: setCount(count + 1)
-  S1 --> S2: parent changes tone
-  S2 --> S4: setCount(count + 1)
-  S2 --> S1: parent changes tone
+  [*] --> S4
+  S1 --> S1: setCount(count + 1)
+  S1 --> S3: parent changes tone
+  S2 --> S1: setCount(count + 1)
+  S2 --> S4: parent changes tone
   S3 --> S3: setCount(count + 1)
-  S3 --> S4: parent changes tone
-  S4 --> S4: setCount(count + 1)
-  S4 --> S3: parent changes tone"
+  S3 --> S1: parent changes tone
+  S4 --> S3: setCount(count + 1)
+  S4 --> S2: parent changes tone"
 `;
 
 exports[`fixture analysis > ToneLabel keeps its TLA+ module 1`] = `
@@ -5853,8 +5853,8 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% opaque__tone_undefined_calm_tone_loud = (tone === undefined ? "calm" : tone) === "loud" (opaque): false | true
-  S1: span "Calm"
-  S2: strong "Loud"
+  S1: strong "Loud"
+  S2: span "Calm"
   [*] --> S1
   [*] --> S2
   S1 --> S2: (tone === undefined ? "calm" #58; tone) === "loud" changes
@@ -5969,94 +5969,94 @@ stateDiagram-v2
   %% status_isSaving = status.isSaving (input): false | true
   %% status_error = status.error (input): null | empty | other string
   %% isHelpOpen = isHelpOpen (state): false | true
-  S1: div #gt; span "Admin" #gt; button "Edit"
-  S2: div #gt; span "Admin" #gt; button "Edit" #gt; p
-  S3: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving"
-  S4: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p
-  S5: div #gt; span "Read only"
-  S6: div #gt; span "Read only" #gt; p
-  S7: div #gt; span "Read only" #gt; span "Saving"
-  S8: div #gt; span "Read only" #gt; span "Saving" #gt; p
-  S9: div #gt; span "Admin" #gt; button "Edit" #gt; p "Press E to edit"
-  S10: div #gt; span "Admin" #gt; button "Edit" #gt; p #gt; p "Press E to edit"
-  S11: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p "Press E to edit"
-  S12: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
-  S13: div #gt; span "Read only" #gt; p "Press E to edit"
-  S14: div #gt; span "Read only" #gt; p #gt; p "Press E to edit"
-  S15: div #gt; span "Read only" #gt; span "Saving" #gt; p "Press E to edit"
-  S16: div #gt; span "Read only" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
-  [*] --> S1
+  S1: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
+  S2: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p
+  S3: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving" #gt; p "Press E to edit"
+  S4: div #gt; span "Admin" #gt; button "Edit" #gt; span "Saving"
+  S5: div #gt; span "Admin" #gt; button "Edit" #gt; p #gt; p "Press E to edit"
+  S6: div #gt; span "Admin" #gt; button "Edit" #gt; p
+  S7: div #gt; span "Admin" #gt; button "Edit" #gt; p "Press E to edit"
+  S8: div #gt; span "Admin" #gt; button "Edit"
+  S9: div #gt; span "Read only" #gt; span "Saving" #gt; p #gt; p "Press E to edit"
+  S10: div #gt; span "Read only" #gt; span "Saving" #gt; p
+  S11: div #gt; span "Read only" #gt; span "Saving" #gt; p "Press E to edit"
+  S12: div #gt; span "Read only" #gt; span "Saving"
+  S13: div #gt; span "Read only" #gt; p #gt; p "Press E to edit"
+  S14: div #gt; span "Read only" #gt; p
+  S15: div #gt; span "Read only" #gt; p "Press E to edit"
+  S16: div #gt; span "Read only"
   [*] --> S2
-  [*] --> S3
   [*] --> S4
-  [*] --> S5
   [*] --> S6
-  [*] --> S7
   [*] --> S8
-  S1 --> S9: "Help"
-  S1 --> S5: parent changes role
-  S1 --> S3: status.isSaving changes
-  S1 --> S2: status.error changes
-  S2 --> S10: "Help"
-  S2 --> S6: parent changes role
-  S2 --> S4: status.isSaving changes
-  S2 --> S1: status.error changes
-  S3 --> S11: "Help"
-  S3 --> S7: parent changes role
-  S3 --> S1: status.isSaving changes
-  S3 --> S4: status.error changes
-  S4 --> S12: "Help"
-  S4 --> S8: parent changes role
-  S4 --> S2: status.isSaving changes
-  S4 --> S3: status.error changes
-  S5 --> S13: "Help"
-  S5 --> S1: parent changes role
-  S5 --> S7: status.isSaving changes
-  S5 --> S6: status.error changes
-  S6 --> S14: "Help"
-  S6 --> S2: parent changes role
-  S6 --> S8: status.isSaving changes
-  S6 --> S5: status.error changes
-  S7 --> S15: "Help"
-  S7 --> S3: parent changes role
-  S7 --> S5: status.isSaving changes
-  S7 --> S8: status.error changes
-  S8 --> S16: "Help"
-  S8 --> S4: parent changes role
-  S8 --> S6: status.isSaving changes
-  S8 --> S7: status.error changes
-  S9 --> S1: "Help"
-  S9 --> S13: parent changes role
-  S9 --> S11: status.isSaving changes
-  S9 --> S10: status.error changes
-  S10 --> S2: "Help"
-  S10 --> S14: parent changes role
-  S10 --> S12: status.isSaving changes
-  S10 --> S9: status.error changes
-  S11 --> S3: "Help"
-  S11 --> S15: parent changes role
-  S11 --> S9: status.isSaving changes
-  S11 --> S12: status.error changes
-  S12 --> S4: "Help"
-  S12 --> S16: parent changes role
-  S12 --> S10: status.isSaving changes
-  S12 --> S11: status.error changes
-  S13 --> S5: "Help"
-  S13 --> S9: parent changes role
-  S13 --> S15: status.isSaving changes
-  S13 --> S14: status.error changes
-  S14 --> S6: "Help"
-  S14 --> S10: parent changes role
-  S14 --> S16: status.isSaving changes
-  S14 --> S13: status.error changes
-  S15 --> S7: "Help"
-  S15 --> S11: parent changes role
-  S15 --> S13: status.isSaving changes
-  S15 --> S16: status.error changes
-  S16 --> S8: "Help"
-  S16 --> S12: parent changes role
-  S16 --> S14: status.isSaving changes
-  S16 --> S15: status.error changes"
+  [*] --> S10
+  [*] --> S12
+  [*] --> S14
+  [*] --> S16
+  S1 --> S2: "Help"
+  S1 --> S9: parent changes role
+  S1 --> S5: status.isSaving changes
+  S1 --> S3: status.error changes
+  S2 --> S1: "Help"
+  S2 --> S10: parent changes role
+  S2 --> S6: status.isSaving changes
+  S2 --> S4: status.error changes
+  S3 --> S4: "Help"
+  S3 --> S11: parent changes role
+  S3 --> S7: status.isSaving changes
+  S3 --> S1: status.error changes
+  S4 --> S3: "Help"
+  S4 --> S12: parent changes role
+  S4 --> S8: status.isSaving changes
+  S4 --> S2: status.error changes
+  S5 --> S6: "Help"
+  S5 --> S13: parent changes role
+  S5 --> S1: status.isSaving changes
+  S5 --> S7: status.error changes
+  S6 --> S5: "Help"
+  S6 --> S14: parent changes role
+  S6 --> S2: status.isSaving changes
+  S6 --> S8: status.error changes
+  S7 --> S8: "Help"
+  S7 --> S15: parent changes role
+  S7 --> S3: status.isSaving changes
+  S7 --> S5: status.error changes
+  S8 --> S7: "Help"
+  S8 --> S16: parent changes role
+  S8 --> S4: status.isSaving changes
+  S8 --> S6: status.error changes
+  S9 --> S10: "Help"
+  S9 --> S1: parent changes role
+  S9 --> S13: status.isSaving changes
+  S9 --> S11: status.error changes
+  S10 --> S9: "Help"
+  S10 --> S2: parent changes role
+  S10 --> S14: status.isSaving changes
+  S10 --> S12: status.error changes
+  S11 --> S12: "Help"
+  S11 --> S3: parent changes role
+  S11 --> S15: status.isSaving changes
+  S11 --> S9: status.error changes
+  S12 --> S11: "Help"
+  S12 --> S4: parent changes role
+  S12 --> S16: status.isSaving changes
+  S12 --> S10: status.error changes
+  S13 --> S14: "Help"
+  S13 --> S5: parent changes role
+  S13 --> S9: status.isSaving changes
+  S13 --> S15: status.error changes
+  S14 --> S13: "Help"
+  S14 --> S6: parent changes role
+  S14 --> S10: status.isSaving changes
+  S14 --> S16: status.error changes
+  S15 --> S16: "Help"
+  S15 --> S7: parent changes role
+  S15 --> S11: status.isSaving changes
+  S15 --> S13: status.error changes
+  S16 --> S15: "Help"
+  S16 --> S8: parent changes role
+  S16 --> S12: status.isSaving changes
+  S16 --> S14: status.error changes"
 `;
 
 exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
@@ -6138,12 +6138,12 @@ stateDiagram-v2
   %% error = error (state): null | empty | other string
   %% pending_t1 = t1 pending (control): idle | pending
   %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
-  S1: div
-  S2: div #gt; p
-  [*] --> S1
+  S1: div #gt; p
+  S2: div
+  [*] --> S2
   S1 --> S1: "Upload", "Upload" resolves
-  S1 --> S2: "Upload" resolves
   S2 --> S2: "Upload", "Upload" resolves
+  S2 --> S1: "Upload" resolves
   %% ⚠ When "Upload" fails, the render stays the same (L28)"
 `;
 
@@ -6200,9 +6200,9 @@ stateDiagram-v2
   direction LR
   %% 2 states
   %% isChecked = isChecked (state): false | true
-  S1: div #gt; p "All events"
-  S2: div #gt; p "Warnings only"
-  [*] --> S1
+  S1: div #gt; p "Warnings only"
+  S2: div #gt; p "All events"
+  [*] --> S2
   S1 --> S1: (_event, checked) =#gt; setIsChecked(check…
   S1 --> S2: (_event, checked) =#gt; setIsChecked(check…
   S2 --> S1: (_event, checked) =#gt; setIsChecked(check…
@@ -6290,12 +6290,12 @@ stateDiagram-v2
   %% 3 states
   %% state_step = state.step (state): details | done | payment
   %% state_hasError = state.hasError (state): false | true
-  S1: form #gt; input
-  S2: form #gt; input #gt; button "Back"
-  S3: p "Thanks!"
-  [*] --> S1
-  S1 --> S2: "Next"
-  S2 --> S1: "Back"
+  S1: p "Thanks!"
+  S2: form #gt; input
+  S3: form #gt; input #gt; button "Back"
+  [*] --> S2
   S2 --> S3: "Next"
+  S3 --> S2: "Back"
+  S3 --> S1: "Next"
   %% ⚠ state.hasError is never true here (L26)"
 `;

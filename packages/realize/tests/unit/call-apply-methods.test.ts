@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("call and apply on a function", () => {
-  const project = analyzeFixture("conformance-repros", "call-apply-methods");
+describe("call and apply on a function", async () => {
+  const project = await analyzeFixture("conformance-repros", "call-apply-methods");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

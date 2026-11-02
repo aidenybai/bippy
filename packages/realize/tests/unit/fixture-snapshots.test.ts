@@ -8,8 +8,8 @@ import { getFixtureConfig } from "./helpers";
 
 const FIXTURE_CONFIG = getFixtureConfig("state-charts");
 
-describe("fixture analysis", () => {
-  const { components } = analyzeProject(FIXTURE_CONFIG);
+describe("fixture analysis", async () => {
+  const { components } = await analyzeProject(FIXTURE_CONFIG);
   const rootDirectory = dirname(FIXTURE_CONFIG);
   const cases = components.map((component) => [component.analysis.name, component] as const);
 
