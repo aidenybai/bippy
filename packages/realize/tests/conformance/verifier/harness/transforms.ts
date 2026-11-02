@@ -183,7 +183,7 @@ export const createRequirePlugin = (): Plugin => ({
 });
 
 export const createCoveragePlugin = (counters: Counter[]): Plugin => {
-  const probesByFile = Map.groupBy(
+  const countersByFile = Map.groupBy(
     new Map(counters.map((counter) => [counter.id, counter])).values(),
     (counter) => counter.file,
   );
@@ -191,10 +191,10 @@ export const createCoveragePlugin = (counters: Counter[]): Plugin => {
     name: "bippy-verify-coverage",
     enforce: "pre",
     transform: (code, id) => {
-      const fileProbes = probesByFile.get(stripQuery(id));
-      if (!fileProbes) return null;
+      const fileCounters = countersByFile.get(stripQuery(id));
+      if (!fileCounters) return null;
       const source = new MagicString(code);
-      const innermostFirst = [...fileProbes].sort(
+      const innermostFirst = [...fileCounters].sort(
         (left, right) => left.end - left.start - (right.end - right.start),
       );
       for (const counter of innermostFirst) {

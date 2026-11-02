@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("decided branch arms", () => {
+describe("decided branches", () => {
   const project = analyzeFixture("conformance-repros", "flagged-steps");
 
-  it("records only the updates on the arm a known test takes", () => {
+  it("records only the updates on the edge a known test takes", () => {
     const { analysis } = getComponent(project, "Stepper");
     expect(
       analysis.handlers.map((handler) => handler.updates.map((update) => update.binding.name)),

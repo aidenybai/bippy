@@ -82,7 +82,7 @@ interface DomainViolation {
 
 interface ModelIndex {
   model: ComponentModel;
-  explored: StateGraph;
+  stateGraph: StateGraph;
   edges: Map<string, Edge>;
   stateVariables: StateVariable[];
   variablesByName: Map<string, Variable>;
@@ -145,7 +145,7 @@ export const indexModel = (
   observations: Observation[],
 ): ModelIndex => ({
   model,
-  explored: exploreModel(model.variables, model.actions, model.views),
+  stateGraph: exploreModel(model.variables, model.actions, model.views),
   edges: collectEdges(model),
   stateVariables: collectStateVariables(analysis, model, observations),
   variablesByName: new Map(model.variables.map((variable) => [variable.name, variable])),
@@ -195,7 +195,7 @@ export const abstractCapture = (modelIndex: ModelIndex, capture: Capture): Abstr
 };
 
 export const canShowView = (modelIndex: ModelIndex, observed: AbstractState, view: View): boolean =>
-  modelIndex.explored.findTrace(and([observed.predicate, view.predicate])) !== null;
+  modelIndex.stateGraph.findTrace(and([observed.predicate, view.predicate])) !== null;
 
 const isPropInput = (modelIndex: ModelIndex, action: Action): boolean =>
   action.writes.some(
@@ -246,7 +246,7 @@ class ComponentCheck {
       if (this.#isFirstSeen(JSON.stringify(["value", violation])))
         this.#verdict.domainCounterexamples.push({ path: observation.path, ...violation });
     if (observed.domainViolations.length > 0) return;
-    const trace = this.#modelIndex.explored.findTrace(observed.predicate);
+    const trace = this.#modelIndex.stateGraph.findTrace(observed.predicate);
     if (trace) {
       for (const view of this.#modelIndex.model.views)
         if (!this.#coveredViews.has(view.label) && canShowView(this.#modelIndex, observed, view))
@@ -277,10 +277,10 @@ class ComponentCheck {
       !this.#modelIndex.model.actions.some(
         (action) => action.handlerId !== null && handlerIds.has(action.handlerId),
       ) &&
-      this.#modelIndex.explored.findTrace(and([beforeObserved.predicate, after.predicate])) !==
+      this.#modelIndex.stateGraph.findTrace(and([beforeObserved.predicate, after.predicate])) !==
         null;
     if (isStutter) return;
-    const isCovered = this.#modelIndex.explored.findTransition(
+    const isCovered = this.#modelIndex.stateGraph.findTransition(
       beforeObserved.predicate,
       after.predicate,
       createActionFilter(this.#modelIndex, handlerIds, this.#backgroundIds),
@@ -319,7 +319,7 @@ export const checkComponent = (
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
   const modelIndex = indexModel(analysis, model, observations);
-  const score = new ComponentCheck(analysis, modelIndex, verdict);
+  const componentCheck = new ComponentCheck(analysis, modelIndex, verdict);
   const counterIds = new Set(collectBranchCounters(analysis).map((counter) => counter.id));
   const coveredEdges = new Set<string>();
   for (const observation of observations) {
@@ -331,10 +331,10 @@ export const checkComponent = (
     }
     if (verdict.isTruncated) continue;
     const observed = abstractCapture(modelIndex, observation.after);
-    score.checkRender(observation, observed);
-    score.checkTransition(observation, observed);
+    componentCheck.checkRender(observation, observed);
+    componentCheck.checkTransition(observation, observed);
   }
-  verdict.coveredViews = score.coveredViews;
+  verdict.coveredViews = componentCheck.coveredViews;
   verdict.branchEdgeCount = counterIds.size * 2;
   verdict.coveredBranchEdgeCount = coveredEdges.size;
   verdict.unreachableEdgesTaken = [...coveredEdges].flatMap((key) => {

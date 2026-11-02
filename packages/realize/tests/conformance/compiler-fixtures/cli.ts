@@ -6,7 +6,7 @@ import { admitsOutput, admitsSequentialOutput } from "./match-output";
 import { PROJECT_DIRECTORY, writeFixtureProject } from "./fixtures";
 import type { Fixture } from "./fixtures";
 
-type Outcome =
+type FixtureResult =
   | { kind: "admitted" }
   | { kind: "mismatch"; output: string }
   | { kind: "skipped"; reason: string };
@@ -22,7 +22,7 @@ const SKIPPED: SkippedFixture[] = JSON.parse(
 
 const RESULTS_FILE = join(import.meta.dirname, "../results/compiler-fixtures.json");
 
-const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): Outcome => {
+const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): FixtureResult => {
   if (fixture.error) return { kind: "skipped", reason: `doesn't parse: ${fixture.error}` };
   if (fixture.output === null) return { kind: "skipped", reason: "has no successful eval output" };
   if (!fixture.entry) return { kind: "skipped", reason: "has no FIXTURE_ENTRYPOINT fn" };
@@ -45,28 +45,28 @@ const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): Outcom
 
 const fixtures = writeFixtureProject();
 const project = analyzeProject(join(PROJECT_DIRECTORY, "tsconfig.json"));
-const outcomes = fixtures.map((fixture) => ({
+const results = fixtures.map((fixture) => ({
   fixture: fixture.name,
   ...checkFixture(fixture, project.components),
 }));
 mkdirSync(dirname(RESULTS_FILE), { recursive: true });
-writeFileSync(RESULTS_FILE, JSON.stringify(outcomes, null, 2));
+writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
 
 const skippedNames = new Map(SKIPPED.map((skipped) => [skipped.fixture, skipped.reason]));
-const mismatches = outcomes.filter(
-  (outcome) => outcome.kind === "mismatch" && !skippedNames.has(outcome.fixture),
+const mismatches = results.filter(
+  (result) => result.kind === "mismatch" && !skippedNames.has(result.fixture),
 );
 const staleSkips = SKIPPED.filter((skipped) =>
-  outcomes.some((outcome) => outcome.fixture === skipped.fixture && outcome.kind === "admitted"),
+  results.some((result) => result.fixture === skipped.fixture && result.kind === "admitted"),
 );
 const counts = new Map<string, number>();
-for (const outcome of outcomes) {
-  const isKnownMismatch = outcome.kind === "mismatch" && skippedNames.has(outcome.fixture);
+for (const result of results) {
+  const isKnownMismatch = result.kind === "mismatch" && skippedNames.has(result.fixture);
   const key = isKnownMismatch
     ? "known mismatch, in skipped.json"
-    : outcome.kind === "skipped"
-      ? `skipped: ${outcome.reason.split(":")[0]}`
-      : outcome.kind;
+    : result.kind === "skipped"
+      ? `skipped: ${result.reason.split(":")[0]}`
+      : result.kind;
   counts.set(key, (counts.get(key) ?? 0) + 1);
 }
 for (const [key, count] of [...counts].sort((left, right) => right[1] - left[1]))

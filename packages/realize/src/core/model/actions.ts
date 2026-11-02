@@ -11,10 +11,10 @@ type Settlement = "fulfilled" | "rejected";
 const IDLE = "idle";
 const PENDING = "pending";
 
-const getSettledOutcome = (guard: SymbolicValue): Settlement | null => {
-  if (guard.kind === "Unknown" && guard.origin?.kind === "Settled") return guard.origin.outcome;
+const getSettlement = (guard: SymbolicValue): Settlement | null => {
+  if (guard.kind === "Unknown" && guard.origin?.kind === "Settled") return guard.origin.settlement;
   if (guard.kind === "UnaryExpression" && guard.operator === "!") {
-    const inner = getSettledOutcome(guard.value);
+    const inner = getSettlement(guard.value);
     if (inner === "fulfilled") return "rejected";
     if (inner === "rejected") return "fulfilled";
   }
@@ -23,13 +23,13 @@ const getSettledOutcome = (guard: SymbolicValue): Settlement | null => {
 
 const getUpdatePhase = (update: StateUpdate): ActionPhase => {
   if (!update.isAsync) return "call";
-  return update.guards.map(getSettledOutcome).find((outcome) => outcome !== null) ?? "fulfilled";
+  return update.guards.map(getSettlement).find((outcome) => outcome !== null) ?? "fulfilled";
 };
 
 const compileUpdateGuard = (table: VariableTable, update: StateUpdate): Predicate =>
   and(
     update.guards
-      .filter((guard) => getSettledOutcome(guard) === null)
+      .filter((guard) => getSettlement(guard) === null)
       .map((guard) => table.compile(guard)),
   );
 

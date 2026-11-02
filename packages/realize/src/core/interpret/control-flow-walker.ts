@@ -133,8 +133,8 @@ const getReachTest = (
       kind: "Primitive",
       value: completion.kind === "Fallthrough" && completion.to === block,
     };
-  const conditional = createConditional(completion, guards, (arm, armGuards) =>
-    getReachTest(arm, block, armGuards),
+  const conditional = createConditional(completion, guards, (edge, edgeGuards) =>
+    getReachTest(edge, block, edgeGuards),
   );
   const isUndecided =
     conditional.consequent.kind !== "Primitive" ||
@@ -219,8 +219,8 @@ export class ControlFlowWalker {
         return operand ? this.#interpreter.read(operand) : createUnknown("loop", phi.place.loc);
       }
       case "Split":
-        return createConditional(completion, guards, (arm, armGuards) =>
-          this.#resolvePhi(phi, arm, armGuards),
+        return createConditional(completion, guards, (edge, edgeGuards) =>
+          this.#resolvePhi(phi, edge, edgeGuards),
         );
       case "Return":
         return createUnknown("unreachable", phi.place.loc);
@@ -245,22 +245,22 @@ export class ControlFlowWalker {
       this.#mergeContextValues(completion, join, pathState.guards);
       return this.walk(join, stops, null, pathState, "resolved");
     }
-    const resumeAtJoin = (arm: Completion, guards: SymbolicValue[]): Completion => {
-      switch (arm.kind) {
+    const resumeAtJoin = (edge: Completion, guards: SymbolicValue[]): Completion => {
+      switch (edge.kind) {
         case "Return":
-          return arm;
+          return edge;
         case "Fallthrough":
-          if (arm.to !== join) return arm;
-          this.#restoreContextValues(arm);
-          return this.walk(join, stops, arm.from, { ...pathState, guards }, joinPhiState);
+          if (edge.to !== join) return edge;
+          this.#restoreContextValues(edge);
+          return this.walk(join, stops, edge.from, { ...pathState, guards }, joinPhiState);
         case "Split":
           return this.#nestWalk(() => ({
-            ...arm,
-            consequent: resumeAtJoin(arm.consequent, [...guards, getGuard(arm, true)]),
-            alternate: resumeAtJoin(arm.alternate, [...guards, getGuard(arm, false)]),
+            ...edge,
+            consequent: resumeAtJoin(edge.consequent, [...guards, getGuard(edge, true)]),
+            alternate: resumeAtJoin(edge.alternate, [...guards, getGuard(edge, false)]),
           }));
         default:
-          return assertExhaustive(arm, "Unhandled completion");
+          return assertExhaustive(edge, "Unhandled completion");
       }
     };
     return hasFallthrough(completion, join)
@@ -285,7 +285,7 @@ export class ControlFlowWalker {
       "ternary";
     const branchTest = getBranchTest(operator, this.#interpreter.read(terminal.test));
     const testGuard = getTestExpression(branchTest);
-    const armStops = new Set([...stops, terminal.fallthrough]);
+    const successorStops = new Set([...stops, terminal.fallthrough]);
     const isSwapped = operator === "&&";
     const consequentGuard = isSwapped ? negate(testGuard) : testGuard;
     const branch = this.#interpreter.createBranchSite(
@@ -293,9 +293,15 @@ export class ControlFlowWalker {
       this.#interpreter.resolver.isExpression(terminal.test.loc) ? branchTest.testKind : null,
     );
     const walkConsequent = () =>
-      this.#walkArm(terminal.consequent, from, armStops, pathState, consequentGuard);
+      this.#walkSuccessor(terminal.consequent, from, successorStops, pathState, consequentGuard);
     const walkAlternate = () =>
-      this.#walkArm(terminal.alternate, from, armStops, pathState, negate(consequentGuard));
+      this.#walkSuccessor(
+        terminal.alternate,
+        from,
+        successorStops,
+        pathState,
+        negate(consequentGuard),
+      );
     if (this.#interpreter.handlerEffects === null)
       this.#interpreter.branchEvaluations.push({
         branch,
@@ -304,16 +310,16 @@ export class ControlFlowWalker {
         guards: pathState.guards,
       });
     if (branchTest.knownOutcome !== null) {
-      const takenArm =
+      const takenSuccessor =
         branchTest.knownOutcome !== isSwapped ? terminal.consequent : terminal.alternate;
       return this.#continueAfter(
-        this.#walkArm(takenArm, from, armStops, pathState, null),
+        this.#walkSuccessor(takenSuccessor, from, successorStops, pathState, null),
         terminal.fallthrough,
         stops,
         pathState,
       );
     }
-    const storedPlaces = this.#getArmStoredContextPlaces(
+    const storedPlaces = this.#getSuccessorStoredContextPlaces(
       [terminal.consequent, terminal.alternate],
       terminal.fallthrough,
     );
@@ -334,7 +340,7 @@ export class ControlFlowWalker {
       const consequentValue = consequentValues[index] ?? UNDEFINED_VALUE;
       const alternateValue = this.#interpreter.read(place);
       if (consequentValue === alternateValue) return;
-      const valuesByArm = new Map<Completion, SymbolicValue>([
+      const valuesByEdge = new Map<Completion, SymbolicValue>([
         [consequentCompletion, consequentValue],
         [alternateCompletion, alternateValue],
       ]);
@@ -343,23 +349,23 @@ export class ControlFlowWalker {
         createConditional(
           splitCompletion,
           pathState.guards,
-          (arm) => valuesByArm.get(arm) ?? alternateValue,
+          (edge) => valuesByEdge.get(edge) ?? alternateValue,
         ),
       );
     });
     return this.#continueAfter(splitCompletion, terminal.fallthrough, stops, pathState);
   }
 
-  #walkArm(
-    armBlock: BlockId,
+  #walkSuccessor(
+    successorBlock: BlockId,
     from: BlockId,
-    armStops: ReadonlySet<BlockId>,
+    successorStops: ReadonlySet<BlockId>,
     pathState: PathState,
     guard: SymbolicValue | null,
   ): Completion {
-    if (armStops.has(armBlock)) return this.#fallthrough(from, armBlock);
+    if (successorStops.has(successorBlock)) return this.#fallthrough(from, successorBlock);
     const guards = guard ? [...pathState.guards, guard] : pathState.guards;
-    return this.walk(armBlock, armStops, from, { ...pathState, guards }, "unresolved");
+    return this.walk(successorBlock, successorStops, from, { ...pathState, guards }, "unresolved");
   }
 
   #walkSwitch(
@@ -637,8 +643,8 @@ export class ControlFlowWalker {
     const consequent = this.#getReturnedContextValue(completion.consequent, id, guards);
     const alternate = this.#getReturnedContextValue(completion.alternate, id, guards);
     if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
-    return createConditional(completion, guards, (arm) =>
-      arm === completion.consequent ? consequent : alternate,
+    return createConditional(completion, guards, (edge) =>
+      edge === completion.consequent ? consequent : alternate,
     );
   }
 
@@ -666,12 +672,12 @@ export class ControlFlowWalker {
     const consequent = this.#getJoinedContextValue(completion.consequent, join, id, guards);
     const alternate = this.#getJoinedContextValue(completion.alternate, join, id, guards);
     if (!consequent || !alternate || consequent === alternate) return consequent ?? alternate;
-    return createConditional(completion, guards, (arm) =>
-      arm === completion.consequent ? consequent : alternate,
+    return createConditional(completion, guards, (edge) =>
+      edge === completion.consequent ? consequent : alternate,
     );
   }
 
-  #getArmStoredContextPlaces(entries: BlockId[], exit: BlockId): Place[] {
+  #getSuccessorStoredContextPlaces(entries: BlockId[], exit: BlockId): Place[] {
     const placesById = new Map<IdentifierId, Place>();
     for (const entry of entries)
       for (const place of this.#getStoredContextPlaces(entry, exit))
@@ -903,7 +909,7 @@ export class ControlFlowWalker {
     const throwTest = createUnknown("throws", terminal.loc);
     const places = this.#getTrackedContextPlaces();
     const valuesBefore = places.map((place) => this.#interpreter.read(place));
-    const consequent = this.#walkArm(terminal.handler, blockId, stops, pathState, throwTest);
+    const consequent = this.#walkSuccessor(terminal.handler, blockId, stops, pathState, throwTest);
     places.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
     return {
       kind: "Split",
@@ -911,7 +917,13 @@ export class ControlFlowWalker {
       testKind: "truthy",
       branch: this.#interpreter.createBranchSite(terminal.loc),
       consequent,
-      alternate: this.#walkArm(terminal.continuation, blockId, stops, pathState, negate(throwTest)),
+      alternate: this.#walkSuccessor(
+        terminal.continuation,
+        blockId,
+        stops,
+        pathState,
+        negate(throwTest),
+      ),
     };
   }
 
@@ -958,9 +970,9 @@ export class ControlFlowWalker {
     if (throwPoints.length === 0)
       throwPoints.push({ pathState: afterPathState, test: createUnknown("throws", terminal.loc) });
     const branch = this.#interpreter.createBranchSite(terminal.loc);
-    const catchArms = throwPoints.map((throwPoint) => ({
+    const catchPaths = throwPoints.map((throwPoint) => ({
       test: throwPoint.test,
-      completion: this.#walkArm(
+      completion: this.#walkSuccessor(
         terminal.handler,
         blockId,
         bodyStops,
@@ -968,13 +980,13 @@ export class ControlFlowWalker {
         throwPoint.test,
       ),
     }));
-    const completion = catchArms.reduceRight<Completion>(
-      (alternate, catchArm) => ({
+    const completion = catchPaths.reduceRight<Completion>(
+      (alternate, catchPath) => ({
         kind: "Split",
-        test: catchArm.test,
+        test: catchPath.test,
         testKind: "truthy",
         branch,
-        consequent: catchArm.completion,
+        consequent: catchPath.completion,
         alternate,
       }),
       bodyCompletion,
@@ -993,8 +1005,8 @@ export class ControlFlowWalker {
       case "Fallthrough":
         return createUnknown("fallthrough", loc);
       case "Split":
-        return createConditional(completion, guards, (arm, armGuards) =>
-          this.getCompletionValue(arm, loc, armGuards),
+        return createConditional(completion, guards, (edge, edgeGuards) =>
+          this.getCompletionValue(edge, loc, edgeGuards),
         );
       default:
         return assertExhaustive(completion, "Unhandled completion");

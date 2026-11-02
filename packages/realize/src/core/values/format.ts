@@ -209,7 +209,7 @@ const formatOrigin = (origin: UnknownOrigin): string => {
     case "Call":
       return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatSymbolicValue).join(", ")})`;
     case "Settled":
-      return origin.outcome === "fulfilled"
+      return origin.settlement === "fulfilled"
         ? `await ${formatWithPrecedence(origin.promise, ATOMIC_PRECEDENCE)}`
         : `${formatSymbolicValue(origin.promise)} rejects`;
     case "Value":
@@ -222,7 +222,7 @@ const formatOrigin = (origin: UnknownOrigin): string => {
 const getResolvedPromise = (value: SymbolicValue): SymbolicValue | null =>
   value.kind === "Unknown" &&
   value.origin?.kind === "Settled" &&
-  value.origin.outcome === "rejected"
+  value.origin.settlement === "rejected"
     ? value.origin.promise
     : null;
 

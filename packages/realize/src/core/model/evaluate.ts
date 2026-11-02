@@ -139,7 +139,7 @@ const evaluate = (evaluator: Evaluator, value: SymbolicValue, path: string[]): A
       if (value.operator === "-") return evaluate(evaluator, value.value, []).map(negate);
       return [ANY];
     case "Unknown":
-      return value.origin?.kind === "Settled" && value.origin.outcome === "fulfilled"
+      return value.origin?.kind === "Settled" && value.origin.settlement === "fulfilled"
         ? evaluate(evaluator, value.origin.promise, path)
         : [ANY];
     case "JsxExpression":
@@ -250,27 +250,26 @@ const toAssignmentPredicate = (
   );
 };
 
-interface Outcome {
+interface NextValueRow {
   assignment: Map<string, string>;
   values: string[];
   key: string;
 }
 
-const isUnchangedBy = (variable: Variable, outcomes: Outcome[]): boolean =>
-  outcomes.every(
-    (outcome) =>
-      outcome.values.length === 1 && outcome.assignment.get(variable.name) === outcome.values[0],
+const isUnchangedBy = (variable: Variable, rows: NextValueRow[]): boolean =>
+  rows.every(
+    (row) => row.values.length === 1 && row.assignment.get(variable.name) === row.values[0],
   );
 
-const getRelevantDependencies = (dependencies: Variable[], outcomes: Outcome[]): Variable[] =>
+const getRelevantDependencies = (dependencies: Variable[], rows: NextValueRow[]): Variable[] =>
   dependencies.reduce<Variable[]>((relevant, dependency) => {
     const remaining = relevant.filter((variable) => variable !== dependency);
     const keysByRest = new Map<string, string>();
-    const isIrrelevant = outcomes.every((outcome) => {
-      const restKey = remaining.map((variable) => outcome.assignment.get(variable.name)).join("\0");
+    const isIrrelevant = rows.every((row) => {
+      const restKey = remaining.map((variable) => row.assignment.get(variable.name)).join("\0");
       const existing = keysByRest.get(restKey);
-      keysByRest.set(restKey, outcome.key);
-      return existing === undefined || existing === outcome.key;
+      keysByRest.set(restKey, row.key);
+      return existing === undefined || existing === row.key;
     });
     return isIrrelevant ? remaining : relevant;
   }, dependencies);
@@ -284,30 +283,27 @@ export const compileNextValue = (
   const dependencies = collectDependencies(table, value);
   if (countAssignments(dependencies) > MAX_DEPENDENCY_COMBINATIONS)
     return { kind: "Values", values: domain };
-  const outcomes: Outcome[] = [];
+  const rows: NextValueRow[] = [];
   forEachAssignment(dependencies, (assignment) => {
     const values = toValues(
       variable,
       evaluate({ table, valueOf: (name) => assignment.get(name) }, value, variable.path),
     );
-    outcomes.push({ assignment, values, key: values.join("\0") });
+    rows.push({ assignment, values, key: values.join("\0") });
   });
-  if (isUnchangedBy(variable, outcomes)) return UNCHANGED;
-  const relevant = getRelevantDependencies(dependencies, outcomes);
+  if (isUnchangedBy(variable, rows)) return UNCHANGED;
+  const relevant = getRelevantDependencies(dependencies, rows);
   const groups = new Map<
     string,
     { values: string[]; assignments: Map<string, Map<string, string>> }
   >();
-  for (const outcome of outcomes) {
+  for (const row of rows) {
     const projected = new Map(
-      relevant.map((dependency) => [
-        dependency.name,
-        outcome.assignment.get(dependency.name) ?? "",
-      ]),
+      relevant.map((dependency) => [dependency.name, row.assignment.get(dependency.name) ?? ""]),
     );
-    const group = groups.get(outcome.key) ?? { values: outcome.values, assignments: new Map() };
+    const group = groups.get(row.key) ?? { values: row.values, assignments: new Map() };
     group.assignments.set([...projected.values()].join("\0"), projected);
-    groups.set(outcome.key, group);
+    groups.set(row.key, group);
   }
   const ordered = [...groups.values()];
   const fallback = ordered.pop();

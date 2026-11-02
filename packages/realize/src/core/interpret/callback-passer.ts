@@ -28,7 +28,7 @@ export class CallbackPasser {
     const isRejected = createUnknown("rejected", loc, {
       kind: "Settled",
       promise,
-      outcome: "rejected",
+      settlement: "rejected",
     });
     const guardsByArgument =
       methodName === "then"
@@ -36,7 +36,7 @@ export class CallbackPasser {
         : methodName === "catch"
           ? [isRejected]
           : [];
-    const outcomesByArgument: Array<"fulfilled" | "rejected"> =
+    const settlementsByArgument: Array<"fulfilled" | "rejected"> =
       methodName === "then"
         ? ["fulfilled", "rejected"]
         : methodName === "catch"
@@ -44,11 +44,11 @@ export class CallbackPasser {
           : [];
     argumentValues.forEach((argument, argumentIndex) => {
       const guard = guardsByArgument[argumentIndex];
-      const outcome = outcomesByArgument[argumentIndex];
+      const settlement = settlementsByArgument[argumentIndex];
       this.#visitArgument(
         argument,
         guard ? { ...asyncPathState, guards: [...asyncPathState.guards, guard] } : asyncPathState,
-        outcome && { kind: "Settled", promise, outcome },
+        settlement && { kind: "Settled", promise, settlement },
       );
     });
   }

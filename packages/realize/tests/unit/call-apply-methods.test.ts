@@ -17,7 +17,7 @@ describe("call and apply on a function", () => {
     expect(getUpdates("PlainApply")).toEqual([["pick", { kind: "Primitive", value: "b" }]]);
   });
 
-  it("runs both arms of a conditional receiver", () => {
+  it("runs both edges of a conditional receiver", () => {
     expect(getUpdates("ChosenCall").map(([name]) => name)).toEqual(["isLeft", "left", "right"]);
   });
 });

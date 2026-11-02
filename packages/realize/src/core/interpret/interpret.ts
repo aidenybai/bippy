@@ -2180,7 +2180,7 @@ export class Interpreter {
       return UNDEFINED_VALUE;
     }
     if (isIteratingLiteral)
-      return this.#iterateLiteralArms(
+      return this.#iterateLiteralBranches(
         methodName,
         receiver,
         callback,
@@ -2287,13 +2287,13 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue | null {
     if (receiver.kind === "Conditional") {
-      const readArm = (arm: SymbolicValue) =>
-        this.#readAt(arm, atIndex, loc, instructionId, pathState) ??
-        this.createDerivedValue([arm, atIndex], "computed-member", loc);
+      const readBranchValue = (branchValue: SymbolicValue) =>
+        this.#readAt(branchValue, atIndex, loc, instructionId, pathState) ??
+        this.createDerivedValue([branchValue, atIndex], "computed-member", loc);
       return {
         ...receiver,
-        consequent: readArm(receiver.consequent),
-        alternate: readArm(receiver.alternate),
+        consequent: readBranchValue(receiver.consequent),
+        alternate: readBranchValue(receiver.alternate),
       };
     }
     const isBinding = receiver.kind === "Binding";
@@ -2326,7 +2326,7 @@ export class Interpreter {
     );
   }
 
-  #iterateLiteralArms(
+  #iterateLiteralBranches(
     methodName: string,
     receiver: SymbolicValue,
     callback: FunctionValue,
@@ -2363,7 +2363,7 @@ export class Interpreter {
     const test = getTestExpression(receiver);
     return {
       ...receiver,
-      consequent: this.#iterateLiteralArms(
+      consequent: this.#iterateLiteralBranches(
         methodName,
         receiver.consequent,
         callback,
@@ -2371,7 +2371,7 @@ export class Interpreter {
         instructionId,
         { ...pathState, guards: [...pathState.guards, test] },
       ),
-      alternate: this.#iterateLiteralArms(
+      alternate: this.#iterateLiteralBranches(
         methodName,
         receiver.alternate,
         callback,
@@ -2542,7 +2542,7 @@ export class Interpreter {
         return createUnknown("async", value.loc, {
           kind: "Settled",
           promise: this.read(value.value),
-          outcome: "fulfilled",
+          settlement: "fulfilled",
         });
       case "NewExpression": {
         const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
