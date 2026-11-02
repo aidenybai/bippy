@@ -1,13 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
-import type { Demos, ViewFile } from "@/model";
-import { packageRoot, viewerRoot } from "./paths";
+import type { Demos } from "@/model";
 import { analyzeFile } from "./view-model";
+
+const viewerRoot = resolve(import.meta.dirname, "..");
+const packageRoot = resolve(viewerRoot, "..");
 
 const stripRoot = (text: string): string =>
   text.replaceAll(`${packageRoot}/`, "").replaceAll(`${packageRoot.toLowerCase()}/`, "");
-
-const toRelativeView = (view: ViewFile, file: string): ViewFile => ({ ...view, file });
 
 export const buildDemos = async (files: string[]): Promise<Demos> => {
   const demos: Demos = { examples: [], views: {}, json: {} };
@@ -17,7 +17,7 @@ export const buildDemos = async (files: string[]): Promise<Demos> => {
     const name = basename(file, ".tsx");
     const analyzed = await analyzeFile(absolute);
     demos.examples.push({ file, name });
-    demos.views[name] = toRelativeView(analyzed.view, file);
+    demos.views[name] = { ...analyzed.view, file };
     demos.json[name] = stripRoot(analyzed.json);
   }
   return demos;

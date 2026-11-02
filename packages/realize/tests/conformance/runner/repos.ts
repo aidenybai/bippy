@@ -2,17 +2,6 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-export interface RepoConfig {
-  id: string;
-  repository: string;
-  revision: string;
-  workingDirectory: string;
-  tsconfig: string;
-  install: string;
-  patchFile: string | null;
-  setupDirectory: string | null;
-}
-
 const REPO_FILE_SCHEMA = z.object({
   repository: z.string(),
   revision: z.string(),
@@ -20,6 +9,12 @@ const REPO_FILE_SCHEMA = z.object({
   tsconfig: z.string(),
   install: z.string(),
 });
+
+export type RepoConfig = z.infer<typeof REPO_FILE_SCHEMA> & {
+  id: string;
+  patchFile: string | null;
+  setupDirectory: string | null;
+};
 
 export const CONFORMANCE_DIRECTORY = join(import.meta.dirname, "..");
 export const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "../..");
@@ -48,6 +43,4 @@ export const loadRepos = (ids: string[]): RepoConfig[] => {
   });
 };
 
-export interface LineLogger {
-  (line: string): void;
-}
+export type LineLogger = (line: string) => void;

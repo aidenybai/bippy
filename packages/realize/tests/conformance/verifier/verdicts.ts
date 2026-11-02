@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 import type { ComponentModel } from "../../../src/core/model/types";
 import type { Observation } from "./driver";
@@ -57,21 +58,23 @@ type MountFailedVerdict = Extract<ComponentVerdict, { status: "mount-failed" }>;
 export const isMountFailedVerdict = (verdict: ComponentVerdict): verdict is MountFailedVerdict =>
   verdict.status === "mount-failed";
 
-export interface VerificationSummary {
-  verifiedCount: number;
-  unmountableCount: number;
-  notExportedCount: number;
-  counterexampleCount: number;
-  viewCount: number;
-  coveredViewCount: number;
-  branchEdgeCount: number;
-  coveredBranchEdgeCount: number;
-  warningCount: number;
-  coveredWarningCount: number;
-  unwarnedMutationCount: number;
-  mountFailureCounts: Partial<Record<MountFailure, number>>;
-  durationMs: number;
-}
+export const VERIFICATION_SUMMARY_SCHEMA = z.object({
+  verifiedCount: z.number(),
+  unmountableCount: z.number(),
+  notExportedCount: z.number(),
+  counterexampleCount: z.number(),
+  viewCount: z.number(),
+  coveredViewCount: z.number(),
+  branchEdgeCount: z.number(),
+  coveredBranchEdgeCount: z.number(),
+  warningCount: z.number(),
+  coveredWarningCount: z.number(),
+  unwarnedMutationCount: z.number(),
+  mountFailureCounts: z.record(z.string(), z.number()),
+  durationMs: z.number(),
+});
+
+export type VerificationSummary = z.infer<typeof VERIFICATION_SUMMARY_SCHEMA>;
 
 export const createEmptyVerdict = (
   analysis: ComponentAnalysis,
