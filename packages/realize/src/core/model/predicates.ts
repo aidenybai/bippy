@@ -195,22 +195,3 @@ export const collectPredicateVariables = (
   }
   return variables;
 };
-
-export const evaluateNextValue = (
-  next: NextValue,
-  current: string,
-  valueOf: (variable: string) => string | undefined,
-): string[] => {
-  switch (next.kind) {
-    case "Unchanged":
-      return [current];
-    case "Copy":
-      return [valueOf(next.variable) ?? current];
-    case "Values":
-      return next.values;
-    case "If":
-      return evaluatePredicate(next.predicate, valueOf)
-        ? evaluateNextValue(next.consequent, current, valueOf)
-        : evaluateNextValue(next.alternate, current, valueOf);
-  }
-};
