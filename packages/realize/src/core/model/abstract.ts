@@ -7,15 +7,25 @@ export const COMPARISONS = new Set<string>(["===", "!==", "==", "!=", "<", "<=",
 
 export const ANY: Abstract = { kind: "Any" };
 
+type RangeValue = Extract<Abstract, { kind: "Range" }>;
+
 const isNullish = (value: PrimitiveValue): value is null | undefined =>
   value === null || value === undefined;
+
+const isNaNValue = (value: PrimitiveValue): boolean =>
+  typeof value === "number" && Number.isNaN(value);
+
+const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
+  left === right || (isNaNValue(left) && isNaNValue(right));
 
 const isLooselyEqual = (left: PrimitiveValue, right: PrimitiveValue): boolean => {
   if (isNullish(left) || isNullish(right)) return isNullish(left) && isNullish(right);
   return typeof left === typeof right ? left === right : Number(left) === Number(right);
 };
 
-const compareExact = (
+const isStrict = (operator: Comparison): boolean => operator === "===" || operator === "!==";
+
+const compareValues = (
   left: PrimitiveValue,
   operator: Comparison,
   right: PrimitiveValue,
@@ -46,69 +56,55 @@ const isAbove = (min: number, isMinIncluded: boolean, value: number): boolean =>
 const isBelow = (max: number, isMaxIncluded: boolean, value: number): boolean =>
   isMaxIncluded ? value <= max : value < max;
 
-const isInRange = (range: Extract<Abstract, { kind: "Range" }>, value: number): boolean =>
+const isInRange = (range: RangeValue, value: number): boolean =>
   isAbove(range.min, range.isMinIncluded, value) && isBelow(range.max, range.isMaxIncluded, value);
 
-const compareRange = (
-  range: Extract<Abstract, { kind: "Range" }>,
-  operator: Comparison,
-  literal: PrimitiveValue,
-): boolean | null => {
-  if (typeof literal !== "number") {
-    if (operator === "===" || operator === "==") return false;
-    if (operator === "!==" || operator === "!=") return true;
-    return null;
-  }
-  const isSinglePoint = range.min === range.max && range.isMinIncluded && range.isMaxIncluded;
-  const contains = isInRange(range, literal);
-  switch (operator) {
-    case "===":
-    case "==":
-      return isSinglePoint ? contains : contains ? null : false;
-    case "!==":
-    case "!=":
-      return isSinglePoint ? !contains : contains ? null : true;
-    case "<":
-      return range.max < literal || (range.max === literal && !range.isMaxIncluded)
-        ? true
-        : range.min >= literal
-          ? false
-          : null;
-    case "<=":
-      return range.max <= literal
-        ? true
-        : range.min > literal || (range.min === literal && !range.isMinIncluded)
-          ? false
-          : null;
-    case ">":
-      return range.min > literal || (range.min === literal && !range.isMinIncluded)
-        ? true
-        : range.max <= literal
-          ? false
-          : null;
-    case ">=":
-      return range.min >= literal
-        ? true
-        : range.max < literal || (range.max === literal && !range.isMaxIncluded)
-          ? false
-          : null;
-  }
+const isSinglePoint = (range: RangeValue): boolean => range.min === range.max;
+
+const getSample = (range: RangeValue): number => {
+  if (isSinglePoint(range)) return range.min;
+  if (range.min === -Infinity) return range.max === Infinity ? 0 : range.max - 1;
+  return range.max === Infinity ? range.min + 1 : (range.min + range.max) / 2;
 };
 
-const isEqualityOperator = (operator: Comparison): boolean =>
-  operator === "===" || operator === "==";
+const getComparedNumber = (operator: Comparison, literal: PrimitiveValue): number | null => {
+  if (isStrict(operator)) return typeof literal === "number" ? literal : null;
+  if (isNullish(literal) && (operator === "==" || operator === "!=")) return null;
+  return Number(literal);
+};
 
-const isInequalityOperator = (operator: Comparison): boolean =>
-  operator === "!==" || operator === "!=";
-
-const compareByTruthiness = (
-  isTruthy: boolean,
+const compareRange = (
+  range: RangeValue,
   operator: Comparison,
   literal: PrimitiveValue,
 ): boolean | null => {
-  if (!isEqualityOperator(operator) && !isInequalityOperator(operator)) return null;
-  if (Boolean(literal) === isTruthy) return null;
-  return isInequalityOperator(operator);
+  const point = getComparedNumber(operator, literal);
+  if (point !== null && isInRange(range, point) && !isSinglePoint(range)) return null;
+  return compareValues(getSample(range), operator, literal);
+};
+
+const getEquality = (
+  value: Abstract,
+  operator: Comparison,
+  literal: PrimitiveValue,
+): boolean | null => {
+  switch (value.kind) {
+    case "Other":
+      if (isStrict(operator))
+        return (value.type === "string" && typeof literal !== "string") ||
+          value.excluded.includes(literal)
+          ? false
+          : null;
+      return value.type === "string" && isNullish(literal) ? false : null;
+    case "Object":
+      return isStrict(operator) || isNullish(literal) ? false : null;
+    case "Truthy":
+      return (isStrict(operator) ? !literal : isNullish(literal)) ? false : null;
+    case "Falsy":
+      return isStrict(operator) && literal ? false : null;
+    default:
+      return null;
+  }
 };
 
 export const compareAbstract = (
@@ -116,29 +112,12 @@ export const compareAbstract = (
   operator: Comparison,
   literal: PrimitiveValue,
 ): boolean | null => {
-  switch (value.kind) {
-    case "Exact":
-      return compareExact(value.value, operator, literal);
-    case "Range":
-      return compareRange(value, operator, literal);
-    case "Other": {
-      if (!isEqualityOperator(operator) && !isInequalityOperator(operator)) return null;
-      const isOtherType = value.type === "string" && typeof literal !== "string";
-      return isOtherType || value.excluded.includes(literal)
-        ? isInequalityOperator(operator)
-        : null;
-    }
-    case "Object":
-      return isEqualityOperator(operator) || isInequalityOperator(operator)
-        ? isInequalityOperator(operator)
-        : null;
-    case "Truthy":
-      return compareByTruthiness(true, operator, literal);
-    case "Falsy":
-      return compareByTruthiness(false, operator, literal);
-    case "Any":
-      return null;
-  }
+  if (value.kind === "Exact") return compareValues(value.value, operator, literal);
+  if (value.kind === "Range") return compareRange(value, operator, literal);
+  const isEqual = getEquality(value, operator, literal);
+  if (isEqual === null) return null;
+  if (operator === "===" || operator === "==") return isEqual;
+  return operator === "!==" || operator === "!=" ? !isEqual : null;
 };
 
 export const getAbstractTruthiness = (value: Abstract): boolean | null => {
@@ -159,10 +138,7 @@ export const getAbstractTruthiness = (value: Abstract): boolean | null => {
   }
 };
 
-const rangesOverlap = (
-  left: Extract<Abstract, { kind: "Range" }>,
-  right: Extract<Abstract, { kind: "Range" }>,
-): boolean => {
+const rangesOverlap = (left: RangeValue, right: RangeValue): boolean => {
   if (left.max < right.min || right.max < left.min) return false;
   if (left.max === right.min) return left.isMaxIncluded && right.isMinIncluded;
   if (right.max === left.min) return right.isMaxIncluded && left.isMinIncluded;
@@ -172,7 +148,7 @@ const rangesOverlap = (
 const containsExact = (container: Abstract, value: PrimitiveValue): boolean => {
   switch (container.kind) {
     case "Exact":
-      return container.value === value;
+      return isSameValue(container.value, value);
     case "Range":
       return typeof value === "number" && isInRange(container, value);
     case "Other":
@@ -215,16 +191,28 @@ export const mayOverlap = (other: Abstract, value: Abstract): boolean => {
   }
 };
 
+const isRounded = (bound: number, amount: number): boolean =>
+  Number.isFinite(bound) && bound + amount - amount !== bound;
+
 const shiftAbstract = (value: Abstract, amount: number): Abstract => {
   if (value.kind === "Exact" && typeof value.value === "number")
     return { kind: "Exact", value: value.value + amount };
-  if (value.kind === "Range") return { ...value, min: value.min + amount, max: value.max + amount };
-  return ANY;
+  if (value.kind !== "Range") return ANY;
+  return {
+    ...value,
+    min: value.min + amount,
+    max: value.max + amount,
+    isMinIncluded: value.isMinIncluded || isRounded(value.min, amount),
+    isMaxIncluded: value.isMaxIncluded || isRounded(value.max, amount),
+  };
 };
 
-const toRange = (value: Abstract): Extract<Abstract, { kind: "Range" }> | null => {
+const isFiniteNumber = (value: Abstract): value is { kind: "Exact"; value: number } =>
+  value.kind === "Exact" && typeof value.value === "number" && Number.isFinite(value.value);
+
+const toRange = (value: Abstract): RangeValue | null => {
   if (value.kind === "Range") return value;
-  if (value.kind === "Exact" && typeof value.value === "number")
+  if (value.kind === "Exact" && typeof value.value === "number" && !Number.isNaN(value.value))
     return {
       kind: "Range",
       min: value.value,
@@ -235,14 +223,21 @@ const toRange = (value: Abstract): Extract<Abstract, { kind: "Range" }> | null =
   return null;
 };
 
+const includesInfinity = (range: RangeValue, sign: 1 | -1): boolean =>
+  sign === 1
+    ? range.max === Infinity && range.isMaxIncluded
+    : range.min === -Infinity && range.isMinIncluded;
+
+const canSumToNaN = (left: RangeValue, right: RangeValue): boolean =>
+  (includesInfinity(left, 1) && includesInfinity(right, -1)) ||
+  (includesInfinity(left, -1) && includesInfinity(right, 1));
+
 export const addAbstract = (left: Abstract, right: Abstract): Abstract => {
-  if (right.kind === "Exact" && typeof right.value === "number")
-    return shiftAbstract(left, right.value);
-  if (left.kind === "Exact" && typeof left.value === "number")
-    return shiftAbstract(right, left.value);
+  if (isFiniteNumber(right)) return shiftAbstract(left, right.value);
+  if (isFiniteNumber(left)) return shiftAbstract(right, left.value);
   const leftRange = toRange(left);
   const rightRange = toRange(right);
-  if (!leftRange || !rightRange) return ANY;
+  if (!leftRange || !rightRange || canSumToNaN(leftRange, rightRange)) return ANY;
   return {
     kind: "Range",
     min: leftRange.min + rightRange.min,

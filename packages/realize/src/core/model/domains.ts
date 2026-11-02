@@ -52,7 +52,7 @@ const createNumberValues = (literals: PrimitiveValue[], bounds: NumberBounds): A
   ].sort((left, right) => left - right);
   const values: Abstract[] = [];
   let lower = bounds.min;
-  let isLowerIncluded = Number.isFinite(bounds.min);
+  let isLowerIncluded = true;
   for (const point of points) {
     const isEmptyGap =
       lower === point ||
@@ -74,9 +74,9 @@ const createNumberValues = (literals: PrimitiveValue[], bounds: NumberBounds): A
     min: lower,
     max: Infinity,
     isMinIncluded: isLowerIncluded,
-    isMaxIncluded: false,
+    isMaxIncluded: !bounds.isInteger,
   });
-  return values;
+  return bounds.isInteger ? values : [...values, exact(NaN)];
 };
 
 const createStringValues = (literals: PrimitiveValue[]): Abstract[] => {

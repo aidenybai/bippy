@@ -323,7 +323,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > ClickStats keeps its TLA+ module 1`] = `
 "---- MODULE ClickStats ----
-\\* stats_clicks: stats.clicks (state), 3 values
+\\* stats_clicks: stats.clicks (state), 4 values
 VARIABLES stats_clicks
 
 vars == <<stats_clicks>>
@@ -365,7 +365,7 @@ title: ClickStats src/mutation.tsx:41
 stateDiagram-v2
   direction LR
   %% 1 states
-  %% stats_clicks = stats.clicks (state): <0 | 0 | >0
+  %% stats_clicks = stats.clicks (state): <0 | 0 | >0 | NaN
   S1: button #gt; "Not clicked"
   [*] --> S1
   %% ⚠ stats.clicks > 0 is never true here (L49)"
@@ -585,7 +585,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Countdown keeps its TLA+ module 1`] = `
 "---- MODULE Countdown ----
-\\* steps: steps (input), 3 values
+\\* steps: steps (input), 4 values
 VARIABLES steps
 
 vars == <<steps>>
@@ -595,11 +595,11 @@ view == CASE steps = "0" -> "p > \\"Done\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ steps \\in {"<0", "0", ">0"}
+  /\\ steps \\in {"<0", "0", ">0", "NaN"}
 
 \\* steps changes
 change_steps ==
-  /\\ steps' \\in {"<0", "0", ">0"}
+  /\\ steps' \\in {"<0", "0", ">0", "NaN"}
 
 Next == change_steps
 
@@ -630,8 +630,8 @@ title: Countdown src/loops.tsx:39
 ---
 stateDiagram-v2
   direction LR
-  %% 3 states
-  %% steps = steps (input): <0 | 0 | >0
+  %% 4 states
+  %% steps = steps (input): <0 | 0 | >0 | NaN
   S1: p #gt; "Counted"
   S2: p #gt; "Done"
   [*] --> S1
@@ -643,22 +643,22 @@ stateDiagram-v2
 exports[`fixture analysis > CountedList keeps its TLA+ module 1`] = `
 "---- MODULE CountedList ----
 \\* items_length: items.length (input), 2 values
-\\* count: count (input), 3 values
+\\* count: count (input), 4 values
 VARIABLES items_length, count
 
 vars == <<items_length, count>>
 
 view == CASE items_length = ">0" /\\ count = ">0" -> "div > ul > p \\"Has items\\" > b"
-          [] items_length = ">0" /\\ count = "0" -> "div > ul > p \\"Has items\\" > i \\"None\\""
+          [] items_length = ">0" /\\ count \\in {"0", "NaN"} -> "div > ul > p \\"Has items\\" > i \\"None\\""
           [] items_length = ">0" /\\ count = "<0" -> "div > ul > p \\"Has items\\""
           [] items_length = "0" /\\ count = ">0" -> "div > p \\"Empty\\" > b"
-          [] items_length = "0" /\\ count = "0" -> "div > p \\"Empty\\" > i \\"None\\""
+          [] items_length = "0" /\\ count \\in {"0", "NaN"} -> "div > p \\"Empty\\" > i \\"None\\""
           [] items_length = "0" /\\ count = "<0" -> "div > p \\"Empty\\""
           [] OTHER -> "nothing"
 
 Init ==
   /\\ items_length \\in {"0", ">0"}
-  /\\ count \\in {"<0", "0", ">0"}
+  /\\ count \\in {"<0", "0", ">0", "NaN"}
 
 \\* parent changes items.length
 change_items_length ==
@@ -667,7 +667,7 @@ change_items_length ==
 
 \\* parent changes count
 change_count ==
-  /\\ count' \\in {"<0", "0", ">0"}
+  /\\ count' \\in {"<0", "0", ">0", "NaN"}
   /\\ UNCHANGED <<items_length>>
 
 Next == change_items_length \\/ change_count
@@ -715,9 +715,9 @@ title: CountedList src/counted-lists.tsx:1
 ---
 stateDiagram-v2
   direction LR
-  %% 6 states
+  %% 8 states
   %% items_length = items.length (input): 0 | >0
-  %% count = count (input): <0 | 0 | >0
+  %% count = count (input): <0 | 0 | >0 | NaN
   S1: div #gt; p "Empty"
   S2: div #gt; p "Empty" #gt; i "None"
   S3: div #gt; p "Empty" #gt; b
@@ -1008,7 +1008,7 @@ stateDiagram-v2
 exports[`fixture analysis > Dialog keeps its TLA+ module 1`] = `
 "---- MODULE Dialog ----
 \\* isOpen: isOpen (state), 2 values
-\\* icon: icon (input), 11 values
+\\* icon: icon (input), 12 values
 \\* opaque_icon_undefined: icon === undefined (opaque), 2 values
 VARIABLES isOpen, icon, opaque_icon_undefined
 
@@ -1021,7 +1021,7 @@ view == CASE isOpen = "false" -> "nothing"
 
 Init ==
   /\\ isOpen = "true"
-  /\\ icon \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
+  /\\ icon \\in {"null", "other string", "any number", "NaN", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
   /\\ opaque_icon_undefined \\in {"false", "true"}
 
 \\* setIsOpen(false)
@@ -1032,7 +1032,7 @@ t1 ==
 
 \\* parent changes icon
 change_icon ==
-  /\\ icon' \\in {"null", "other string", "any number", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
+  /\\ icon' \\in {"null", "other string", "any number", "NaN", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
   /\\ UNCHANGED <<isOpen, opaque_icon_undefined>>
 
 \\* icon === undefined changes
@@ -1077,9 +1077,9 @@ title: Dialog src/expression-defaults.tsx:7
 ---
 stateDiagram-v2
   direction LR
-  %% 44 states
+  %% 48 states
   %% isOpen = isOpen (state): false | true
-  %% icon = icon (input): null | other string | any number | other | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<unknown, string | JSXElementConstructor<any>> | ReactPortal | undefined
+  %% icon = icon (input): null | other string | any number | NaN | other | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<unknown, string | JSXElementConstructor<any>> | ReactPortal | undefined
   %% opaque_icon_undefined = icon === undefined (opaque): false | true
   S1: div
   S2: div #gt; span "×"
@@ -1094,14 +1094,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > EarlyReturn keeps its TLA+ module 1`] = `
 "---- MODULE EarlyReturn ----
-\\* picked: picked (state), 5 values
+\\* picked: picked (state), 6 values
 VARIABLES picked
 
 vars == <<picked>>
 
 view == CASE picked = "0" -> "button > \\"Pick\\""
           [] picked = "3" -> "button > \\"Third\\""
-          [] picked \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
+          [] picked \\in {"<0", "(0, 3)", ">3", "NaN"} -> "button > \\"Other\\""
           [] OTHER -> "nothing"
 
 Init ==
@@ -1147,7 +1147,7 @@ title: EarlyReturn src/loops.tsx:82
 stateDiagram-v2
   direction LR
   %% 2 states
-  %% picked = picked (state): <0 | 0 | (0, 3) | 3 | >3
+  %% picked = picked (state): <0 | 0 | (0, 3) | 3 | >3 | NaN
   S1: button #gt; "Pick"
   S2: button #gt; "Third"
   [*] --> S1
@@ -1535,7 +1535,7 @@ stateDiagram-v2
 exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
 "---- MODULE FileRow ----
 \\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 values
-\\* opened: opened (state), 3 values
+\\* opened: opened (state), 4 values
 \\* opaque_opened_1: opened + 1 (opaque), 2 values
 VARIABLES path_endsWith_ts, opened, opaque_opened_1
 
@@ -1554,7 +1554,7 @@ Init ==
 
 \\* setOpened(opened + 1)
 t1 ==
-  /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE (IF opened \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
   /\\ UNCHANGED <<path_endsWith_ts, opaque_opened_1>>
 
 \\* opened + 1 changes
@@ -1605,7 +1605,7 @@ stateDiagram-v2
   direction LR
   %% 8 states
   %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
-  %% opened = opened (state): <0 | 0 | >0
+  %% opened = opened (state): <0 | 0 | >0 | NaN
   %% opaque_opened_1 = opened + 1 (opaque): false | true
   S1: button #gt; span "File"
   S2: button #gt; span "TS"
@@ -1736,17 +1736,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > FoundOfState keeps its TLA+ module 1`] = `
 "---- MODULE FoundOfState ----
-\\* found: found (input), 2 values
+\\* found: found (input), 3 values
 VARIABLES found
 
 vars == <<found>>
 
 view == CASE found = "null" -> "div > i \\"none\\""
-          [] found = "any number" -> "div > b"
+          [] found /= "null" -> "div > b"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ found \\in {"null", "any number"}
+  /\\ found \\in {"null", "any number", "NaN"}
 
 \\* "score"
 t1 ==
@@ -1754,7 +1754,7 @@ t1 ==
 
 \\* found changes
 change_found ==
-  /\\ found' \\in {"null", "any number"}
+  /\\ found' \\in {"null", "any number", "NaN"}
 
 Next == t1 \\/ change_found
 
@@ -1789,8 +1789,8 @@ title: FoundOfState src/loops.tsx:109
 ---
 stateDiagram-v2
   direction LR
-  %% 2 states
-  %% found = found (input): null | any number
+  %% 3 states
+  %% found = found (input): null | any number | NaN
   S1: div #gt; i "none"
   S2: div #gt; b
   [*] --> S1
@@ -2518,7 +2518,7 @@ stateDiagram-v2
 exports[`fixture analysis > LongLoop keeps its TLA+ module 1`] = `
 "---- MODULE LongLoop ----
 \\* isFull: isFull (state), 2 values
-\\* total: total (input), 3 values
+\\* total: total (input), 4 values
 VARIABLES isFull, total
 
 vars == <<isFull, total>>
@@ -2529,7 +2529,7 @@ view == CASE isFull = "true" -> "button > \\"Full\\""
 
 Init ==
   /\\ isFull = "false"
-  /\\ total \\in {"<100", "100", ">100"}
+  /\\ total \\in {"<100", "100", ">100", "NaN"}
 
 \\* fill
 t1 ==
@@ -2538,7 +2538,7 @@ t1 ==
 
 \\* total changes
 change_total ==
-  /\\ total' \\in {"<100", "100", ">100"}
+  /\\ total' \\in {"<100", "100", ">100", "NaN"}
   /\\ UNCHANGED <<isFull>>
 
 Next == t1 \\/ change_total
@@ -2572,9 +2572,9 @@ title: LongLoop src/loops.tsx:95
 ---
 stateDiagram-v2
   direction LR
-  %% 6 states
+  %% 8 states
   %% isFull = isFull (state): false | true
-  %% total = total (input): <100 | 100 | >100
+  %% total = total (input): <100 | 100 | >100 | NaN
   S1: button #gt; "Fill"
   S2: button #gt; "Full"
   [*] --> S1
@@ -3294,7 +3294,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > PriceTag keeps its TLA+ module 1`] = `
 "---- MODULE PriceTag ----
-\\* price: price (input), 3 values
+\\* price: price (input), 4 values
 \\* opaque_typeof_price_string: typeof price === "string" (opaque), 2 values
 \\* opaque_typeof_price_number: typeof price === "number" (opaque), 2 values
 VARIABLES price, opaque_typeof_price_string, opaque_typeof_price_number
@@ -3312,13 +3312,13 @@ view == CASE opaque_typeof_price_string = "true" /\\ opaque_typeof_price_number 
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ price \\in {"null", "other string", "any number"}
+  /\\ price \\in {"null", "other string", "any number", "NaN"}
   /\\ opaque_typeof_price_string \\in {"false", "true"}
   /\\ opaque_typeof_price_number \\in {"false", "true"}
 
 \\* parent changes price
 change_price ==
-  /\\ price' \\in {"null", "other string", "any number"}
+  /\\ price' \\in {"null", "other string", "any number", "NaN"}
   /\\ UNCHANGED <<opaque_typeof_price_string, opaque_typeof_price_number>>
 
 \\* typeof price === "string" changes
@@ -3366,8 +3366,8 @@ title: PriceTag src/typeof-checks.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  %% 12 states
-  %% price = price (input): null | other string | any number
+  %% 16 states
+  %% price = price (input): null | other string | any number | NaN
   %% opaque_typeof_price_string = typeof price === "string" (opaque): false | true
   %% opaque_typeof_price_number = typeof price === "number" (opaque): false | true
   S1: p #gt; s "Free"
@@ -4710,14 +4710,14 @@ stateDiagram-v2
 
 exports[`fixture analysis > SkippedSteps keeps its TLA+ module 1`] = `
 "---- MODULE SkippedSteps ----
-\\* steps: steps (state), 5 values
+\\* steps: steps (state), 6 values
 VARIABLES steps
 
 vars == <<steps>>
 
 view == CASE steps = "0" -> "button > \\"None\\""
           [] steps = "3" -> "button > \\"Three\\""
-          [] steps \\in {"<0", "(0, 3)", ">3"} -> "button > \\"Other\\""
+          [] steps \\in {"<0", "(0, 3)", ">3", "NaN"} -> "button > \\"Other\\""
           [] OTHER -> "nothing"
 
 Init ==
@@ -4763,7 +4763,7 @@ title: SkippedSteps src/loops.tsx:63
 stateDiagram-v2
   direction LR
   %% 2 states
-  %% steps = steps (state): <0 | 0 | (0, 3) | 3 | >3
+  %% steps = steps (state): <0 | 0 | (0, 3) | 3 | >3 | NaN
   S1: button #gt; "None"
   S2: button #gt; "Three"
   [*] --> S1
@@ -5717,7 +5717,7 @@ stateDiagram-v2
 exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
 "---- MODULE ToneCounter ----
 \\* tone: tone (input), 3 values
-\\* count: count (state), 3 values
+\\* count: count (state), 4 values
 \\* opaque_count_1: count + 1 (opaque), 2 values
 VARIABLES tone, count, opaque_count_1
 
@@ -5736,7 +5736,7 @@ Init ==
 
 \\* setCount(count + 1)
 t1 ==
-  /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE {">0"})
+  /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE (IF count \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
   /\\ UNCHANGED <<tone, opaque_count_1>>
 
 \\* parent changes tone
@@ -5796,7 +5796,7 @@ stateDiagram-v2
   direction LR
   %% 12 states
   %% tone = tone (input): undefined | info | other string
-  %% count = count (state): <0 | 0 | >0
+  %% count = count (state): <0 | 0 | >0 | NaN
   %% opaque_count_1 = count + 1 (opaque): false | true
   S1: div #gt; i #gt; "Other"
   S2: div #gt; b #gt; "Info"

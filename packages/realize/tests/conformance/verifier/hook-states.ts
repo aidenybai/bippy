@@ -49,4 +49,4 @@ export const readPath = (value: unknown, path: string[]): unknown => {
 };
 
 export const formatRuntimeValue = (value: unknown): string =>
-  value === undefined ? "undefined" : JSON.stringify(value);
+  value === undefined || typeof value === "number" ? String(value) : JSON.stringify(value);
