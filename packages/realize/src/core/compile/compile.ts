@@ -1,4 +1,3 @@
-import { getModuleType } from "./get-module-type";
 import { parseSync, traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
 import { compileFn } from "../../react-compiler/Entrypoint/Pipeline";
@@ -12,14 +11,15 @@ import type {
   ParsedPluginOptions,
   PluginOptions,
 } from "../../react-compiler/Entrypoint/Options";
+import { defaultModuleTypeProvider } from "../../react-compiler/HIR/DefaultModuleTypeProvider";
 import type { ReactFunctionType } from "../../react-compiler/HIR/Environment";
 import { isHookName } from "../../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../../react-compiler/HIR/HIR";
+import type { TypeConfig } from "../../react-compiler/HIR/TypeSchema";
 import type { ModuleFunctionLoader } from "./function-registry";
 import {
   createModuleConstantLoader,
   createModuleDeclarationLoader,
-  createModuleVariableLoader,
   createImportUseLoader,
   collectImportedNames,
 } from "./module-values";
@@ -31,7 +31,7 @@ import type {
   ImportedNames,
 } from "./module-values";
 import { getLocationKey } from "../shared/get-location-key";
-import { isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
+import { getClassName, isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
 import { isModuleLevel } from "./is-module-level";
 
 type BabelFunction = NodePath<
@@ -80,6 +80,15 @@ const describeEvent = (event: LoggerEvent): string | null => {
   }
 };
 
+const getWrapperName = (path: NodePath): string | null => {
+  const ancestor = path.findParent(
+    (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
+  );
+  if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
+    return ancestor.node.id.name;
+  return ancestor?.isExportDefaultDeclaration() ? "default" : null;
+};
+
 const getFunctionName = (path: NodePath<types.Function>, code: string): string => {
   if (types.isFunctionDeclaration(path.node) && path.node.id) return path.node.id.name;
   const parent = path.parentPath?.node;
@@ -88,12 +97,8 @@ const getFunctionName = (path: NodePath<types.Function>, code: string): string =
     return code.slice(parent.left.start ?? 0, parent.left.end ?? 0);
   if (types.isObjectProperty(parent) && types.isIdentifier(parent.key)) return parent.key.name;
   if (types.isAssignmentPattern(parent) && types.isIdentifier(parent.left)) return parent.left.name;
-  const ancestor = path.findParent(
-    (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
-  );
-  if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
-    return ancestor.node.id.name;
-  if (ancestor?.isExportDefaultDeclaration()) return "default";
+  const wrapperName = getWrapperName(path);
+  if (wrapperName) return wrapperName;
   return types.isFunctionExpression(path.node) && path.node.id ? path.node.id.name : ANONYMOUS_NAME;
 };
 
@@ -126,13 +131,6 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
     isReadOnly: () => false,
   },
   comparedComponents: new Set(),
-};
-
-const getClassName = (path: NodePath<types.Class>): string | null => {
-  if (path.node.id) return path.node.id.name;
-  return types.isVariableDeclarator(path.parent) && types.isIdentifier(path.parent.id)
-    ? path.parent.id.name
-    : null;
 };
 
 const collectClassComponents = (ast: types.File): CompiledFunction[] => {
@@ -190,7 +188,14 @@ const createPluginOptions = (
     eslintSuppressionRules: [],
     environment: {
       ...environment,
-      moduleTypeProvider: getModuleType,
+      moduleTypeProvider: (moduleName: string): TypeConfig | null => {
+        const moduleType = defaultModuleTypeProvider(moduleName);
+        return moduleType
+          ? JSON.parse(JSON.stringify(moduleType), (key, value) =>
+              key === "knownIncompatible" ? undefined : value,
+            )
+          : null;
+      },
       validateRefAccessDuringRender: false,
     },
     logger,
@@ -217,46 +222,6 @@ const parseFile = (fileName: string, code: string): ParsedFile => {
   }
 };
 
-const lowerModuleFunction = (
-  functionPath: BabelFunction,
-  programPath: NodePath<types.Program>,
-  pluginOptions: ParsedPluginOptions,
-  fileName: string,
-  code: string,
-): HIRFunction | null => {
-  let hir: HIRFunction | null = null;
-  const programContext = new ProgramContext({
-    program: programPath,
-    opts: pluginOptions,
-    filename: fileName,
-    code,
-    suppressions: [],
-    hasModuleScopeOptOut: false,
-  });
-  const logger = {
-    logEvent: () => {},
-    debugLogIRs: createLoweringLogger((hirFunction, hasErrors) => {
-      if (!hasErrors) hir = hirFunction;
-      return true;
-    }),
-  };
-  try {
-    compileFn(
-      functionPath,
-      pluginOptions.environment,
-      "Other",
-      "lint",
-      programContext,
-      logger,
-      fileName,
-      code,
-    );
-  } catch (error) {
-    if (error !== STOP && !(error instanceof CompilerError)) throw error;
-  }
-  return hir;
-};
-
 const createModuleFunctionLowerer =
   (
     fileName: string,
@@ -266,15 +231,38 @@ const createModuleFunctionLowerer =
   ): ModuleFunctionLoader =>
   (functionName) => {
     const functionPath = programFunctions.moduleFunctionPaths.get(functionName);
-    return functionPath && programFunctions.programPath
-      ? lowerModuleFunction(
-          functionPath,
-          programFunctions.programPath,
-          pluginOptions,
-          fileName,
-          code,
-        )
-      : null;
+    if (!functionPath || !programFunctions.programPath) return null;
+    let hir: HIRFunction | null = null;
+    const programContext = new ProgramContext({
+      program: programFunctions.programPath,
+      opts: pluginOptions,
+      filename: fileName,
+      code,
+      suppressions: [],
+      hasModuleScopeOptOut: false,
+    });
+    const logger = {
+      logEvent: () => {},
+      debugLogIRs: createLoweringLogger((hirFunction, hasErrors) => {
+        if (!hasErrors) hir = hirFunction;
+        return true;
+      }),
+    };
+    try {
+      compileFn(
+        functionPath,
+        pluginOptions.environment,
+        "Other",
+        "lint",
+        programContext,
+        logger,
+        fileName,
+        code,
+      );
+    } catch (error) {
+      if (error !== STOP && !(error instanceof CompilerError)) throw error;
+    }
+    return hir;
   };
 
 const createModuleFunctionLoader = (lower: ModuleFunctionLoader): ModuleFunctionLoader => {
@@ -375,13 +363,8 @@ const compileProgramFunctions = (
       const calleeName = types.isMemberExpression(callee) ? callee.property : callee;
       if (!types.isIdentifier(calleeName, { name: "memo" }) || path.node.arguments.length < 2)
         return;
-      const ancestor = path.findParent(
-        (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
-      );
-      if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
-        programFunctions.comparedComponents.add(ancestor.node.id.name);
-      if (ancestor?.isExportDefaultDeclaration())
-        programFunctions.comparedComponents.add("default");
+      const wrapperName = getWrapperName(path);
+      if (wrapperName) programFunctions.comparedComponents.add(wrapperName);
     },
   });
   return programFunctions;
@@ -402,6 +385,7 @@ export const compileFile = (
   });
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
+  const loadModuleDeclaration = createModuleDeclarationLoader(ast);
   return {
     parseError: null,
     functions: [
@@ -411,8 +395,11 @@ export const compileFile = (
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
     loadModuleConstant: createModuleConstantLoader(ast),
-    loadModuleVariable: createModuleVariableLoader(ast),
-    loadModuleDeclaration: createModuleDeclarationLoader(ast),
+    loadModuleVariable: (variableName) => {
+      const declaration = loadModuleDeclaration(variableName);
+      return declaration?.isWritten ? declaration : null;
+    },
+    loadModuleDeclaration,
     loadImportUse: createImportUseLoader(ast),
     importedNames: collectImportedNames(ast),
     comparedComponents: programFunctions.comparedComponents,

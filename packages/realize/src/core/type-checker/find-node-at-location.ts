@@ -1,7 +1,6 @@
 import { isBindingElement } from "typescript/unstable/ast";
 import type { SourceFile, Node } from "typescript/unstable/ast";
-import { getRangeKey } from "../shared/get-range-key";
-import { getLocationKey } from "../shared/get-location-key";
+import { getLocationKey, getRangeKey } from "../shared/get-location-key";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 

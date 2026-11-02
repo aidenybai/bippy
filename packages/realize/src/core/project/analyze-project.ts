@@ -3,13 +3,7 @@ import type { CompiledFunction } from "../compile/compile";
 import { CompilerTypeProvider } from "../type-checker/type-provider";
 import { SourceFileResolver } from "../type-checker/source-file-resolver";
 import type { ProjectHook, ProjectLoaders, ProjectModuleDeclaration } from "../interpret/interpret";
-import type {
-  ImportUse,
-  ImportUseLoader,
-  ImportedNames,
-  ModuleDeclarationLoader,
-} from "../compile/module-values";
-import type { ModuleFunctionLoader } from "../compile/function-registry";
+import type { ImportUse } from "../compile/module-values";
 import type { HIRFunction } from "../../react-compiler/HIR/HIR";
 import { getMutatedParameters } from "./get-mutated-parameters";
 import { collectStoreModels } from "../interpret/store-actions";
@@ -72,32 +66,28 @@ const compileProjectFiles = (
   const isStrictNullChecks =
     project.compilerOptions.strictNullChecks ?? project.compilerOptions.strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
-  const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const componentsByDeclaration = new Map<string, HIRFunction>();
   const comparedDeclarations = new Set<string>();
   const heldNamesByDeclaration = new Map<string, ReadonlySet<string>>();
   const heldPropsByDeclaration = new Map<string, HeldProps>();
-  const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
-  const declarationLoadersByPath = new Map<string, ModuleDeclarationLoader>();
-  const importUseLoadersByPath = new Map<string, ImportUseLoader>();
-  const importedNamesByPath = new Map<string, ImportedNames>();
+  const filesByPath = new Map<string, FileContext>();
   const readOnlyByDeclaration = new Map<string, boolean>();
   let importIndex: ImportIndex | null = null;
-  const lowerersByPath = new Map<string, ModuleFunctionLoader>();
   const mutatedParametersByDeclaration = new Map<string, Map<number, boolean>>();
   const modelsByStore = new Map<string, StoreModel>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
-  const lowerProjectFunction = (declarationKey: string): ProjectHook | null => {
-    const { path, name } = parseDeclarationKey(declarationKey);
-    const loader = loadersByPath.get(path);
-    const hirFunction = loader?.loadModuleFunction(name) ?? null;
-    return loader && hirFunction ? { ...loader, hirFunction } : null;
-  };
   const loadProjectFunction = (declarationKey: string): ProjectHook | null => {
-    if (!projectFunctionsByDeclaration.has(declarationKey))
-      projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
-    return projectFunctionsByDeclaration.get(declarationKey) ?? null;
+    const { path, name } = parseDeclarationKey(declarationKey);
+    const file = filesByPath.get(path);
+    const hirFunction = file?.compiled.loadModuleFunction(name);
+    return file && hirFunction
+      ? {
+          resolver: file.resolver,
+          loadModuleFunction: file.compiled.loadModuleFunction,
+          hirFunction,
+        }
+      : null;
   };
   const getContextLocs = (declarationKey: string): ReadonlyMap<string, unknown> => {
     const hirFunction = componentsByDeclaration.get(declarationKey);
@@ -114,7 +104,7 @@ const compileProjectFiles = (
     if (!hirFunction || visited.has(declarationKey)) return new Set();
     visited.add(declarationKey);
     const holds = getPropHolds(hirFunction);
-    const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
+    const resolver = filesByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
     const forwarded = holds.forwards.filter((forward) => {
       const tagKey = resolver?.getDeclarationKey(forward.tagLoc);
       const tagHeld = tagKey ? toHeldProps(tagKey, getHeldNames(tagKey, visited)) : NO_HELD_PROPS;
@@ -141,7 +131,7 @@ const compileProjectFiles = (
   const getHeldContexts = (): ReadonlySet<string> =>
     new Set(
       [...componentsByDeclaration].flatMap(([declarationKey, hirFunction]) => {
-        const resolver = loadersByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
+        const resolver = filesByPath.get(parseDeclarationKey(declarationKey).path)?.resolver;
         const contextLocs = getPropHolds(hirFunction).contextLocs;
         return [...loadHeldNames(declarationKey)].flatMap((name) => {
           const loc = contextLocs.get(name);
@@ -153,7 +143,7 @@ const compileProjectFiles = (
   const loadHeldContexts = (): ReadonlySet<string> => (heldContexts ??= getHeldContexts());
   const summarizeMutatedParameters = (declarationKey: string): Map<number, boolean> => {
     const { path, name } = parseDeclarationKey(declarationKey);
-    const hirFunction = lowerersByPath.get(path)?.(name);
+    const hirFunction = filesByPath.get(path)?.compiled.lowerModuleFunction(name);
     return hirFunction ? getMutatedParameters(hirFunction) : new Map();
   };
   const loadMutatedParameters = (declarationKey: string): Map<number, boolean> => {
@@ -165,31 +155,30 @@ const compileProjectFiles = (
   };
   const loadModuleDeclaration = (declarationKey: string): ProjectModuleDeclaration | null => {
     const { path, name } = parseDeclarationKey(declarationKey);
-    const resolver = loadersByPath.get(path)?.resolver;
-    const declaration = declarationLoadersByPath.get(path)?.(name);
-    return resolver && declaration ? { ...declaration, name, resolver } : null;
+    const file = filesByPath.get(path);
+    const declaration = file?.compiled.loadModuleDeclaration(name);
+    return file && declaration ? { ...declaration, name, resolver: file.resolver } : null;
   };
   const loadImportUse = (declarationKey: string): ImportUse => {
     const { path, name } = parseDeclarationKey(declarationKey);
-    return importUseLoadersByPath.get(path)?.(name) ?? "read";
+    return filesByPath.get(path)?.compiled.loadImportUse(name) ?? "read";
   };
   const getImportIndex = (): ImportIndex => {
-    importIndex ??= createImportIndex(
-      importedNamesByPath,
-      (path) => loadersByPath.get(path)?.resolver,
-    );
+    importIndex ??= createImportIndex(filesByPath);
     return importIndex;
   };
   const isImportedReadOnly = (declarationKey: string, value: SymbolicValue): boolean =>
     (getImportIndex().importers.get(declarationKey) ?? []).every(
       (importer) =>
-        importedNamesByPath.get(importer.path)?.isReadOnly(importer.localName, value) ?? false,
+        filesByPath
+          .get(importer.path)
+          ?.compiled.importedNames.isReadOnly(importer.localName, value) ?? false,
     );
   const isReadOnlyDeclaration = (declarationKey: string): boolean => {
     const cached = readOnlyByDeclaration.get(declarationKey);
     if (cached !== undefined) return cached;
     const { path, name } = parseDeclarationKey(declarationKey);
-    const declaration = declarationLoadersByPath.get(path)?.(name);
+    const declaration = filesByPath.get(path)?.compiled.loadModuleDeclaration(name);
     const isReadOnly =
       declaration?.isReadOnly === true &&
       declaration.initial !== null &&
@@ -220,30 +209,19 @@ const compileProjectFiles = (
     );
     for (const [storeKey, model] of collectStoreModels(sourceFile))
       modelsByStore.set(storeKey, model);
-    loadersByPath.set(sourceFile.path, {
-      resolver,
-      loadModuleFunction: compiled.loadModuleFunction,
-    });
-    lowerersByPath.set(sourceFile.path, compiled.lowerModuleFunction);
-    declarationLoadersByPath.set(sourceFile.path, compiled.loadModuleDeclaration);
-    importUseLoadersByPath.set(sourceFile.path, compiled.loadImportUse);
     const exportNames = collectExportNames(sourceFile);
+    const getDeclarationKeys = (name: string): string[] =>
+      [...new Set([name, exportNames.get(name) ?? name])].map((key) =>
+        createDeclarationKey(sourceFile.path, key),
+      );
     for (const name of compiled.comparedComponents)
-      for (const key of new Set([name, exportNames.get(name) ?? name]))
-        comparedDeclarations.add(createDeclarationKey(sourceFile.path, key));
-    for (const compiledFunction of compiled.functions)
-      if (compiledFunction.functionType === "Component" && compiledFunction.hir)
-        for (const key of new Set([
-          compiledFunction.name,
-          exportNames.get(compiledFunction.name) ?? compiledFunction.name,
-        ]))
-          componentsByDeclaration.set(
-            createDeclarationKey(sourceFile.path, key),
-            compiledFunction.hir,
-          );
-    importedNamesByPath.set(sourceFile.path, compiled.importedNames);
-    for (const compiledFunction of compiled.functions)
-      if (compiledFunction.functionType === "Hook" && compiledFunction.hir)
+      for (const key of getDeclarationKeys(name)) comparedDeclarations.add(key);
+    for (const compiledFunction of compiled.functions) {
+      if (!compiledFunction.hir) continue;
+      if (compiledFunction.functionType === "Component")
+        for (const key of getDeclarationKeys(compiledFunction.name))
+          componentsByDeclaration.set(key, compiledFunction.hir);
+      if (compiledFunction.functionType === "Hook")
         projectHooksByDeclaration.set(
           createDeclarationKey(sourceFile.path, compiledFunction.name),
           {
@@ -252,16 +230,17 @@ const compileProjectFiles = (
             loadModuleFunction: compiled.loadModuleFunction,
           },
         );
-    return [
-      {
-        sourceFile,
-        resolver,
-        compiled,
-        projectLoaders,
-        modelsByStore,
-        exportNames,
-      },
-    ];
+    }
+    const fileContext = {
+      sourceFile,
+      resolver,
+      compiled,
+      projectLoaders,
+      modelsByStore,
+      exportNames,
+    };
+    filesByPath.set(sourceFile.path, fileContext);
+    return [fileContext];
   });
 };
 

@@ -97,15 +97,6 @@ const getHostStyleBindingIds = (render: SymbolicValue): Set<number> => {
   return bindingIds;
 };
 
-const inferUntypedPropSample = (
-  binding: Binding,
-  readPaths: string[][] | undefined,
-  hostStyleBindingIds: Set<number>,
-): Sample | null => {
-  if (readPaths) return inferSampleFromReadPaths(binding.propName ?? binding.name, readPaths);
-  return hostStyleBindingIds.has(binding.id) ? STYLE_SAMPLE : null;
-};
-
 export const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
   const readPathsByBinding = new Map<number, string[][]>();
   for (const place of analysis.placeDomains.places()) {
@@ -114,11 +105,12 @@ export const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
   const hostStyleBindingIds = getHostStyleBindingIds(analysis.render);
   for (const binding of analysis.bindings) {
     if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
-    const inferredSample = inferUntypedPropSample(
-      binding,
-      readPathsByBinding.get(binding.id),
-      hostStyleBindingIds,
-    );
+    const readPaths = readPathsByBinding.get(binding.id);
+    const inferredSample = readPaths
+      ? inferSampleFromReadPaths(binding.propName ?? binding.name, readPaths)
+      : hostStyleBindingIds.has(binding.id)
+        ? STYLE_SAMPLE
+        : null;
     if (inferredSample) binding.samples = [inferredSample, ...binding.samples];
   }
   for (const [contextKey, bindingId] of analysis.untypedContextBindingIds) {

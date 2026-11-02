@@ -190,10 +190,10 @@ const isClassMember = (path: NodePath | null, classBody: types.ClassBody): boole
   (path.parent === classBody ||
     (path.parentPath?.isClassProperty() === true && path.parentPath.parent === classBody));
 
-const usesThis = (value: MethodValue): boolean => {
+const containsNode = (root: types.Node, isMatch: (node: types.Node) => boolean): boolean => {
   let isFound = false;
-  types.traverseFast(value.body, (node) => {
-    if (types.isThisExpression(node)) isFound = true;
+  types.traverseFast(root, (node) => {
+    if (isMatch(node)) isFound = true;
   });
   return isFound;
 };
@@ -212,7 +212,7 @@ const isUnboundMethodValue = (
     member.parent.object === member.node &&
     types.isIdentifier(member.parent.property) &&
     BINDING_METHODS.has(member.parent.property.name);
-  return !isCalled && !isBound && usesThis(value);
+  return !isCalled && !isBound && containsNode(value.body, types.isThisExpression);
 };
 
 const isNullishNode = (node: types.Expression): boolean =>
@@ -389,21 +389,13 @@ const createMethodDeclaration = (name: string, value: MethodValue): types.Functi
   return withLoc(declaration, value.loc);
 };
 
-const hasReturn = (body: types.BlockStatement): boolean => {
-  let isFound = false;
-  types.traverseFast(body, (node) => {
-    if (types.isReturnStatement(node)) isFound = true;
-  });
-  return isFound;
-};
-
 const createLifecycleEffect = (
   mount: MethodValue | undefined,
   unmount: MethodValue | undefined,
 ): types.Statement | null => {
   if (!mount && !unmount) return null;
   const mountBody = mount ? toBlock(mount.body) : types.blockStatement([]);
-  if (unmount && mount && hasReturn(mountBody)) return null;
+  if (unmount && mount && containsNode(mountBody, types.isReturnStatement)) return null;
   const cleanup = unmount
     ? [types.returnStatement(types.arrowFunctionExpression([], toBlock(unmount.body)))]
     : [];
@@ -439,9 +431,10 @@ const createComponentBody = (
   render: types.ClassMethod,
   usesState: boolean,
 ): types.Statement[] | null => {
-  const lifecycleMethods = [parts.methods.get(MOUNT_METHOD), parts.methods.get(UNMOUNT_METHOD)];
-  const effect = createLifecycleEffect(lifecycleMethods[0], lifecycleMethods[1]);
-  if (lifecycleMethods.some(Boolean) && !effect) return null;
+  const mount = parts.methods.get(MOUNT_METHOD);
+  const unmount = parts.methods.get(UNMOUNT_METHOD);
+  const effect = createLifecycleEffect(mount, unmount);
+  if ((mount || unmount) && !effect) return null;
   const stateDeclaration =
     usesState || parts.initialState
       ? withLoc(
@@ -497,7 +490,7 @@ const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
   return true;
 };
 
-const getClassName = (path: NodePath<types.Class>): string | null => {
+export const getClassName = (path: NodePath<types.Class>): string | null => {
   if (path.node.id) return path.node.id.name;
   return types.isVariableDeclarator(path.parent) && types.isIdentifier(path.parent.id)
     ? path.parent.id.name

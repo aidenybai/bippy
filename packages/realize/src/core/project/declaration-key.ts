@@ -1,4 +1,4 @@
-export interface DeclarationKeyParts {
+interface DeclarationKeyParts {
   path: string;
   name: string;
 }

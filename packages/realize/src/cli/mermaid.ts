@@ -35,11 +35,18 @@ const groupEdges = (
   return groups;
 };
 
+export const formatTitle = (component: AnalyzedComponent, rootDirectory: string): string[] => {
+  const analysis = component.analysis;
+  const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
+  return [
+    "---",
+    `title: ${analysis.name} ${relative(rootDirectory, analysis.file)}${lineSuffix}`,
+    "---",
+  ];
+};
+
 export const formatMermaid = (component: AnalyzedComponent, options: MermaidOptions): string => {
   const stateSpace = component.model.stateSpace;
-  const lineSuffix =
-    component.analysis.loc === GeneratedSource ? "" : `:${component.analysis.loc.start.line}`;
-  const location = `${relative(options.rootDirectory, component.analysis.file)}${lineSuffix}`;
   const viewIds = new Map(
     stateSpace.reachableViews.map((label, index) => [label, `S${index + 1}`]),
   );
@@ -62,9 +69,7 @@ export const formatMermaid = (component: AnalyzedComponent, options: MermaidOpti
   );
   const summary = `%% ${stateSpace.stateCount} states${stateSpace.isTruncated ? ", truncated" : ""}`;
   return [
-    "---",
-    `title: ${component.analysis.name} ${location}`,
-    "---",
+    ...formatTitle(component, options.rootDirectory),
     "stateDiagram-v2",
     indent("direction LR"),
     ...[

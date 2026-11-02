@@ -2,7 +2,7 @@ import type { SourceFile } from "typescript/unstable/ast";
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { MutableCollection } from "../../react-compiler/HIR/Environment";
-import { LIBRARY_DECLARATION_PATTERN } from "./library-declaration-pattern";
+import { LIBRARY_DECLARATION_PATTERN } from "./typescript";
 import { getPropertiesOfType, isArrayType, isTupleType } from "./checker-queries";
 
 const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
