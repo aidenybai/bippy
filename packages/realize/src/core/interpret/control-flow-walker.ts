@@ -233,7 +233,8 @@ export class ControlFlowWalker {
           return edge;
         case "Fallthrough":
           if (edge.to !== join) return edge;
-          this.#restoreContextValues(edge);
+          for (const contextValue of edge.contextValues?.values() ?? [])
+            this.#interpreter.write(contextValue.place, contextValue.value);
           return this.walk(join, stops, edge.from, { ...pathState, guards }, joinPhiState);
         case "Split":
           return this.#nestWalk(() => ({
@@ -600,18 +601,8 @@ export class ControlFlowWalker {
       : { kind: "Fallthrough", from, to };
   }
 
-  #return(value: SymbolicValue): Completion {
-    const contextValues = this.#getContextValues();
-    return contextValues ? { kind: "Return", value, contextValues } : { kind: "Return", value };
-  }
-
   mergeReturnedContextValues(completion: Completion, guards: SymbolicValue[]): void {
     this.#mergeContextValues(completion, null, guards);
-  }
-
-  #restoreContextValues(fallthrough: FallthroughCompletion): void {
-    for (const contextValue of fallthrough.contextValues?.values() ?? [])
-      this.#interpreter.write(contextValue.place, contextValue.value);
   }
 
   #mergeContextValues(completion: Completion, join: BlockId | null, guards: SymbolicValue[]): void {
@@ -705,16 +696,6 @@ export class ControlFlowWalker {
       binding.inputPlaces = [...binding.inputPlaces, ...outsidePlaces];
   }
 
-  walk(
-    blockId: BlockId,
-    stops: ReadonlySet<BlockId>,
-    from: BlockId | null,
-    pathState: PathState,
-    entryPhiState: PhiState,
-  ): Completion {
-    return this.#nestWalk(() => this.#walkBlocks(blockId, stops, from, pathState, entryPhiState));
-  }
-
   #nestWalk(walkNested: () => Completion): Completion {
     if (this.#walkDepth >= MAX_WALK_DEPTH) return this.#bailOutTooComplex("nests too many blocks");
     this.#walkDepth++;
@@ -730,42 +711,44 @@ export class ControlFlowWalker {
     return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
   }
 
-  #walkBlocks(
+  walk(
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
     from: BlockId | null,
     pathState: PathState,
     entryPhiState: PhiState,
   ): Completion {
-    let currentId = blockId;
-    let previousId = from;
-    let isPhiResolved = entryPhiState === "resolved";
-    let currentPathState = pathState;
-    while (true) {
-      if (++this.blockVisits > MAX_BLOCK_VISITS)
-        return this.#bailOutTooComplex("visits too many blocks");
-      const isLoopHeader = this.#enteredLoopHeaders.has(currentId);
-      if (isLoopHeader) {
-        if (this.#enteredLoopHeaders.get(currentId))
-          return { kind: "Fallthrough", from: previousId, to: currentId };
-        this.#enteredLoopHeaders.set(currentId, true);
-        for (const place of this.#loopContextPlaces.get(currentId) ?? [])
-          this.#interpreter.write(place, createUnknown("loop", place.loc));
+    return this.#nestWalk(() => {
+      let currentId = blockId;
+      let previousId = from;
+      let isPhiResolved = entryPhiState === "resolved";
+      let currentPathState = pathState;
+      while (true) {
+        if (++this.blockVisits > MAX_BLOCK_VISITS)
+          return this.#bailOutTooComplex("visits too many blocks");
+        const isLoopHeader = this.#enteredLoopHeaders.has(currentId);
+        if (isLoopHeader) {
+          if (this.#enteredLoopHeaders.get(currentId))
+            return { kind: "Fallthrough", from: previousId, to: currentId };
+          this.#enteredLoopHeaders.set(currentId, true);
+          for (const place of this.#loopContextPlaces.get(currentId) ?? [])
+            this.#interpreter.write(place, createUnknown("loop", place.loc));
+        }
+        const block = this.#getBlock(currentId);
+        if (!isPhiResolved && (!isLoopHeader || this.#unrolledLoopHeaders.has(currentId)))
+          this.#resolveBlockPhis(block, previousId, currentPathState.guards);
+        for (const instruction of block.instructions) {
+          this.#interpreter.evaluateInstruction(instruction, currentPathState);
+          if (instruction.value.kind === "Await")
+            currentPathState = this.#passAwait(currentPathState, instruction.loc);
+        }
+        const step = this.#walkTerminal(block.terminal, currentId, stops, currentPathState);
+        if (step.kind !== "Next") return step;
+        previousId = currentId;
+        currentId = step.block;
+        isPhiResolved = false;
       }
-      const block = this.#getBlock(currentId);
-      if (!isPhiResolved && (!isLoopHeader || this.#unrolledLoopHeaders.has(currentId)))
-        this.#resolveBlockPhis(block, previousId, currentPathState.guards);
-      for (const instruction of block.instructions) {
-        this.#interpreter.evaluateInstruction(instruction, currentPathState);
-        if (instruction.value.kind === "Await")
-          currentPathState = this.#passAwait(currentPathState, instruction.loc);
-      }
-      const step = this.#walkTerminal(block.terminal, currentId, stops, currentPathState);
-      if (step.kind !== "Next") return step;
-      previousId = currentId;
-      currentId = step.block;
-      isPhiResolved = false;
-    }
+    });
   }
 
   #resolveBlockPhis(block: BasicBlock, from: BlockId | null, guards: SymbolicValue[]): void {
@@ -783,8 +766,11 @@ export class ControlFlowWalker {
     pathState: PathState,
   ): TerminalStep {
     switch (terminal.kind) {
-      case "return":
-        return this.#return(this.#interpreter.read(terminal.value));
+      case "return": {
+        const value = this.#interpreter.read(terminal.value);
+        const contextValues = this.#getContextValues();
+        return contextValues ? { kind: "Return", value, contextValues } : { kind: "Return", value };
+      }
       case "throw":
       case "unreachable":
       case "unsupported":

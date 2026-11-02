@@ -519,7 +519,7 @@ class HandlerCollector {
     const reachable =
       getHandlerKey(resolved) === null
         ? this.#interpreter
-            .getSourceFunctions(prop.value)
+            .getSourceFunctions([prop.value])
             .filter((candidate) => getHandlerKey(candidate) !== null)
         : [];
     const callback = reachable.length > 0 ? chooseReachableCallback(reachable, prop) : resolved;
