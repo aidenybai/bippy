@@ -9,7 +9,7 @@ import type {
   ViewUpdate,
 } from "@/model";
 import { getComponentName } from "./graph";
-import { getTransitions, getArmOutcome } from "./lookup";
+import { getSteps, getArmOutcome } from "./lookup";
 
 const formatStateList = (states: ViewState[]): string =>
   states.map((state) => `S${state.index + 1}`).join(", ");
@@ -35,7 +35,7 @@ const describeBinding = (component: ViewComponent, binding: ViewBinding): string
     handler.updates.some((update) => update.bindingId === binding.id),
   ).length;
   const parts = [`${binding.name}: ${summarizeDomain(binding.domain)}`];
-  if (binding.reachable) parts.push(`only ${binding.reachable}`);
+  if (binding.reachable) parts.push(`reachable ${binding.reachable}`);
   parts.push(setters === 0 ? "never set" : `set by ${setters} action${setters === 1 ? "" : "s"}`);
   return parts.join(" · ");
 };
@@ -47,8 +47,8 @@ const describeWrite = (component: ViewComponent, node: GraphNode): string => {
 };
 
 const describeHandler = (component: ViewComponent, node: GraphNode): string => {
-  const transitions = node.handlerId === undefined ? [] : getTransitions(component, node.handlerId);
-  return `${node.label} · ${transitions.length === 0 ? "no state change" : transitions.join(", ")}`;
+  const steps = node.handlerId === undefined ? [] : getSteps(component, node.handlerId);
+  return `${node.label} · ${steps.length === 0 ? "stutters" : steps.join(", ")}`;
 };
 
 const describeBranch = (view: ViewFile, component: ViewComponent, branch: ViewBranch): string => {
@@ -67,7 +67,7 @@ const describeArm = (
   branch: ViewBranch,
   node: GraphNode,
 ): string => {
-  if (branch.never === node.arm) return "never rendered";
+  if (branch.never === node.arm) return "unreachable";
   const test = branch.loc ? getSourceText(view, branch.loc) : branch.test;
   const when = node.arm === "consequent" ? test : `not ${test}`;
   const states = component.states.filter((state) => getArmOutcome(branch, state) === node.arm);

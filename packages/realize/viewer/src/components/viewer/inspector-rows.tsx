@@ -9,7 +9,7 @@ import {
   getHandlerNodeId,
   getStateArmNodeIds,
   getStateNodeIds,
-  getTransitions,
+  getSteps,
   getUpdateKey,
 } from "@/lib/lookup";
 import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
@@ -55,7 +55,7 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
             </span>
           )}
           {binding.reachable && (
-            <span className="text-muted-foreground"> · only {binding.reachable}</span>
+            <span className="text-muted-foreground"> · reachable {binding.reachable}</span>
           )}
         </span>
       </Cell>
@@ -118,11 +118,11 @@ const Update = ({ update }: { update: ViewUpdate }) => (
   </div>
 );
 
-const Transitions = ({ transitions }: { transitions: string[] }) => (
+const Steps = ({ steps }: { steps: string[] }) => (
   <div className="flex flex-wrap gap-1">
-    {transitions.map((transition) => (
-      <Badge key={transition} variant="secondary">
-        {transition}
+    {steps.map((step) => (
+      <Badge key={step} variant="secondary">
+        {step}
       </Badge>
     ))}
   </div>
@@ -131,7 +131,7 @@ const Transitions = ({ transitions }: { transitions: string[] }) => (
 export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   const component = useInspectorComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
-  const transitions = getTransitions(component, handler.id);
+  const steps = getSteps(component, handler.id);
   return (
     <Row nodeIds={nodeId ? [nodeId] : []}>
       <Cell className="grid gap-2 py-3">
@@ -139,7 +139,7 @@ export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
           <Chip nodeIds={nodeId ? [nodeId] : []}>
             <Code>{handler.label}</Code>
           </Chip>
-          {transitions.length > 0 && <Transitions transitions={transitions} />}
+          {steps.length > 0 && <Steps steps={steps} />}
         </div>
         {handler.updates.length > 0 && (
           <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono wrap-anywhere">

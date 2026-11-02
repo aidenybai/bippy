@@ -1,4 +1,4 @@
-import type { ViewBranch, ViewComponent, ViewRegion, ViewState } from "@/model";
+import type { ViewBranch, ViewComponent, ViewState } from "@/model";
 
 interface BranchNode {
   kind: "branch";
@@ -44,12 +44,8 @@ const buildNode = (
   };
 };
 
-export const buildDecisionTree = (component: ViewComponent, region: ViewRegion): TreeNode | null =>
-  buildNode(
-    component,
-    region.states.flatMap((index) => component.states[index] ?? []),
-    0,
-  );
+export const buildDecisionTree = (component: ViewComponent): TreeNode | null =>
+  buildNode(component, component.states, 0);
 
 export const collectNodes = (node: TreeNode | null, into: TreeNode[] = []): TreeNode[] => {
   if (!node) return into;

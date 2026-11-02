@@ -256,20 +256,19 @@ const getViewBindings = (component: AnalyzedComponent): ViewBinding[] => {
     }));
 };
 
-const getViewTransitions = (model: ComponentModel, label: string): ViewState["transitions"] => {
-  const transitions: ViewState["transitions"] = [];
+const getViewSteps = (model: ComponentModel, label: string): ViewState["steps"] => {
+  const steps: ViewState["steps"] = [];
   for (const edge of model.stateSpace.edges) {
     const target = model.views.findIndex((view) => view.label === edge.to);
     if (edge.from !== label || edge.handlerId === null || target === -1) continue;
-    const existing = transitions.find(
-      (transition) =>
-        transition.handlerId === edge.handlerId && transition.isAsync === edge.isAsync,
+    const existing = steps.find(
+      (step) => step.handlerId === edge.handlerId && step.isAsync === edge.isAsync,
     );
     if (!existing)
-      transitions.push({ handlerId: edge.handlerId, targets: [target], isAsync: edge.isAsync });
+      steps.push({ handlerId: edge.handlerId, targets: [target], isAsync: edge.isAsync });
     else if (!existing.targets.includes(target)) existing.targets.push(target);
   }
-  return transitions;
+  return steps;
 };
 
 const toViewComponent = (component: AnalyzedComponent, source: string): ViewComponent => {
@@ -297,16 +296,8 @@ const toViewComponent = (component: AnalyzedComponent, source: string): ViewComp
       conditions: view.conditions,
       label: view.conditions.join(" ∧ ") || "always",
       render: view.label,
-      transitions: getViewTransitions(model, view.label),
+      steps: getViewSteps(model, view.label),
     })),
-    regions: [
-      {
-        placeNames: model.variables
-          .filter((variable) => variable.source !== "control")
-          .map((variable) => variable.label),
-        states: model.views.map((_view, index) => index),
-      },
-    ],
   };
 };
 
