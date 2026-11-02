@@ -140,16 +140,16 @@ export class ArrayIteration {
   ): SymbolicValue | null {
     if (array.spreads.length > 0) return null;
     if (methodName === "map") return { kind: "ArrayExpression", elements: results, spreads: [] };
-    const outcomes = results.map(getKnownTruthiness);
-    if (outcomes.some((outcome) => outcome === null)) return null;
+    const truthinesses = results.map(getKnownTruthiness);
+    if (truthinesses.includes(null)) return null;
     if (methodName === "filter")
       return {
         kind: "ArrayExpression",
-        elements: array.elements.filter((_element, index) => outcomes[index]),
+        elements: array.elements.filter((_element, index) => truthinesses[index]),
         spreads: [],
       };
-    if (methodName === "some") return { kind: "Primitive", value: outcomes.includes(true) };
-    if (methodName === "every") return { kind: "Primitive", value: !outcomes.includes(false) };
+    if (methodName === "some") return { kind: "Primitive", value: truthinesses.includes(true) };
+    if (methodName === "every") return { kind: "Primitive", value: !truthinesses.includes(false) };
     return null;
   }
 
@@ -168,7 +168,7 @@ export class ArrayIteration {
       return null;
     if (methodName === "reduce")
       return this.#reduceFirstValue(initial.elements, callback, accumulator, loc, pathState);
-    const outcomes = initial.elements.map((element, index) =>
+    const tests = initial.elements.map((element, index) =>
       this.#interpreter.callFunction(
         callback,
         [element, { kind: "Primitive", value: index }],
@@ -176,26 +176,26 @@ export class ArrayIteration {
         pathState,
       ),
     );
-    return this.getOpenResult(methodName, initial, outcomes, loc);
+    return this.getOpenResult(methodName, initial, tests, loc);
   }
 
   getOpenResult(
     methodName: string,
     array: ArrayExpressionValue,
-    outcomes: SymbolicValue[],
+    tests: SymbolicValue[],
     loc: SourceLocation,
   ): SymbolicValue | null {
     if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
     const select = (
-      outcome: SymbolicValue,
+      test: SymbolicValue,
       consequent: SymbolicValue,
       alternate: SymbolicValue,
     ): SymbolicValue => {
-      const truthiness = getKnownTruthiness(outcome);
+      const truthiness = getKnownTruthiness(test);
       if (truthiness !== null) return truthiness ? consequent : alternate;
       return {
         kind: "Conditional",
-        test: outcome,
+        test,
         testKind: "truthy",
         consequent,
         alternate,
@@ -207,11 +207,11 @@ export class ArrayIteration {
       isFirstMatch: boolean,
       fallback: SymbolicValue,
     ): SymbolicValue =>
-      outcomes.reduceRight<SymbolicValue>(
-        (rest, outcome, index) =>
+      tests.reduceRight<SymbolicValue>(
+        (rest, test, index) =>
           isFirstMatch
-            ? select(outcome, consequentAt(index), rest)
-            : select(outcome, rest, consequentAt(index)),
+            ? select(test, consequentAt(index), rest)
+            : select(test, rest, consequentAt(index)),
         fallback,
       );
     switch (methodName) {
@@ -227,14 +227,14 @@ export class ArrayIteration {
       case "find":
         return chain((index) => array.elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
       case "filter": {
-        const openCount = outcomes.filter((outcome) => getKnownTruthiness(outcome) === null).length;
+        const openCount = tests.filter((test) => getKnownTruthiness(test) === null).length;
         if (openCount > MAX_OPEN_FILTER_OUTCOMES) return null;
         const keep = (index: number, kept: SymbolicValue[]): SymbolicValue => {
-          const outcome = outcomes[index];
+          const test = tests[index];
           const element = array.elements[index];
-          if (outcome === undefined || element === undefined)
+          if (test === undefined || element === undefined)
             return { kind: "ArrayExpression", elements: kept, spreads: [] };
-          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept));
+          return select(test, keep(index + 1, [...kept, element]), keep(index + 1, kept));
         };
         return keep(0, []);
       }

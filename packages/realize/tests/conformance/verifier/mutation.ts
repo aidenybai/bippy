@@ -12,7 +12,7 @@ interface OriginPredicate {
   (origin: string | null): boolean;
 }
 
-interface WarningScore extends Pick<
+interface WarningCheck extends Pick<
   ComponentVerdict,
   "coveredWarningCount" | "refutedWarnings" | "unwarnedMutations"
 > {}
@@ -106,7 +106,7 @@ const formatOrigin = (origin: string, stateBindings: Binding[] | null): string =
   return binding ? `state ${binding.name}` : `state hook ${name}`;
 };
 
-const isWarningWitnessed = (
+const isWarningCovered = (
   instrumented: InstrumentedWarning,
   observations: Observation[],
 ): boolean | null => {
@@ -151,14 +151,14 @@ export const checkWarnings = (
   analysis: ComponentAnalysis,
   observations: Observation[],
   stateBindings: Binding[] | null,
-): WarningScore => {
+): WarningCheck => {
   const instrumentedWarnings = getInstrumentedWarnings(analysis, stateBindings);
   let coveredWarningCount = 0;
   const refutedWarnings: string[] = [];
   for (const instrumented of instrumentedWarnings) {
-    const isWitnessed = isWarningWitnessed(instrumented, observations);
-    if (isWitnessed === true) coveredWarningCount++;
-    if (isWitnessed === false) refutedWarnings.push(formatWarning(instrumented.warning));
+    const isCovered = isWarningCovered(instrumented, observations);
+    if (isCovered === true) coveredWarningCount++;
+    if (isCovered === false) refutedWarnings.push(formatWarning(instrumented.warning));
   }
   return {
     coveredWarningCount,

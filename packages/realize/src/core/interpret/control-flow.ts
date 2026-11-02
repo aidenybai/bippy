@@ -136,13 +136,13 @@ export const collapseLoopSplits = (
 export const createConditional = (
   split: SplitCompletion,
   guards: SymbolicValue[],
-  getArmValue: (arm: Completion, armGuards: SymbolicValue[]) => SymbolicValue,
+  getEdgeValue: (edge: Completion, edgeGuards: SymbolicValue[]) => SymbolicValue,
 ): ConditionalValue => ({
   kind: "Conditional",
   test: split.test,
   testKind: split.testKind,
-  consequent: getArmValue(split.consequent, [...guards, getGuard(split, true)]),
-  alternate: getArmValue(split.alternate, [...guards, getGuard(split, false)]),
+  consequent: getEdgeValue(split.consequent, [...guards, getGuard(split, true)]),
+  alternate: getEdgeValue(split.alternate, [...guards, getGuard(split, false)]),
   branch: split.branch,
 });
 

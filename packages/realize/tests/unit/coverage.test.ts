@@ -78,11 +78,11 @@ describe("conformance coverage", () => {
     { handlerCalls: [nextCounterId] },
   );
 
-  const score = (observations: Observation[]) =>
+  const check = (observations: Observation[]) =>
     checkComponent(wizard.analysis, wizard.model, observations);
 
   it("accepts renders and transitions the model reaches", () => {
-    const verdict = score([mount(details), click(details, payment)]);
+    const verdict = check([mount(details), click(details, payment)]);
     expect(formatCounterexamples(verdict)).toEqual([]);
     expect(verdict.checkedTransitionCount).toBe(1);
     expect(verdict.coveredViews.length).toBeGreaterThan(0);
@@ -94,11 +94,11 @@ describe("conformance coverage", () => {
       { 'state.step === "done"': false, "state.hasError": true },
       { hasError: true },
     );
-    expect(score([mount(failed)]).unreachableEdgesTaken).toEqual(["state.hasError is true L26"]);
+    expect(check([mount(failed)]).unreachableEdgesTaken).toEqual(["state.hasError is true L26"]);
   });
 
   it("reports a state value outside its domain", () => {
-    const verdict = score([mount(capture("review", {}))]);
+    const verdict = check([mount(capture("review", {}))]);
     expect(formatCounterexamples(verdict)).toEqual([
       'state.step = "review" is outside the domain details | done | payment',
     ]);
@@ -106,7 +106,7 @@ describe("conformance coverage", () => {
 
   it("reports a render no model state explains", () => {
     const contradicted = capture("payment", { 'state.step === "details"': true });
-    expect(score([mount(contradicted)]).renderCounterexamples).toHaveLength(1);
+    expect(check([mount(contradicted)]).renderCounterexamples).toHaveLength(1);
   });
 
   it("reports a transition with no model path", () => {
@@ -115,14 +115,14 @@ describe("conformance coverage", () => {
       { 'state.step === "done"': true },
       { handlerCalls: [nextCounterId] },
     );
-    expect(score([mount(details), click(details, done)]).transitionCounterexamples).toEqual([
+    expect(check([mount(details), click(details, done)]).transitionCounterexamples).toEqual([
       { path: ["next"], action: "Next", handlers: ["t2"] },
     ]);
   });
 });
 
 describe("conformance coverage of steps the model leaves out", () => {
-  const project = analyzeFixture("symbolic-tree");
+  const project = analyzeFixture("state-charts");
 
   const createCapture = (overrides: Partial<Capture>): Capture => ({
     shapes: [{ kind: "element", tag: "div", children: [] }],

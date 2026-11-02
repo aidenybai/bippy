@@ -159,20 +159,20 @@ const describeStutteringAction = (action: Action): string =>
     : `${action.label} never changes the render`;
 
 const collectFindings = (
-  explored: StateGraph,
+  stateGraph: StateGraph,
   branches: Branch[],
   handlerActions: Action[],
   invariants: Invariant[],
   variables: Variable[],
 ): Finding[] => {
   const isEffective = (action: Action): boolean =>
-    explored.isActionEffective(action) ||
+    stateGraph.isActionEffective(action) ||
     (action.phase === "call" &&
       handlerActions.some(
         (settle) =>
           settle.handlerId === action.handlerId &&
           settle.phase !== "call" &&
-          explored.isActionEffective(settle),
+          stateGraph.isActionEffective(settle),
       ));
   return [
     ...branches.flatMap((branch) =>
@@ -191,12 +191,12 @@ const collectFindings = (
         kind: "stuttering-action",
         message: describeStutteringAction(action),
         loc: action.loc,
-        trace: explored.findTrace(action.guard),
+        trace: stateGraph.findTrace(action.guard),
       })),
     ...invariants
       .filter((invariant) => isStateOnly(invariant, variables))
       .flatMap((invariant): Finding[] => {
-        const trace = explored.findTrace(not(invariant.predicate));
+        const trace = stateGraph.findTrace(not(invariant.predicate));
         return trace
           ? [
               {
@@ -246,13 +246,13 @@ export const buildComponentModel = (
     const initial = bindingsById.get(variable.bindingId)?.initial;
     if (initial) variable.initial = evaluateInitialValues(table, variable, initial);
   }
-  const explored = exploreModel(table.variables, actions, views);
-  const isComplete = !explored.stateSpace.isTruncated;
+  const stateGraph = exploreModel(table.variables, actions, views);
+  const isComplete = !stateGraph.stateSpace.isTruncated;
   for (const branch of branches)
     for (const edge of [branch.consequent, branch.alternate])
-      edge.isReachable = isComplete ? explored.findTrace(edge.predicate) !== null : null;
+      edge.isReachable = isComplete ? stateGraph.findTrace(edge.predicate) !== null : null;
   const findings = isComplete
-    ? collectFindings(explored, branches, handlerActions, invariants, table.variables)
+    ? collectFindings(stateGraph, branches, handlerActions, invariants, table.variables)
     : [];
   return {
     variables: table.variables,
@@ -260,7 +260,7 @@ export const buildComponentModel = (
     views,
     branches,
     invariants,
-    stateSpace: explored.stateSpace,
+    stateSpace: stateGraph.stateSpace,
     findings,
   };
 };
