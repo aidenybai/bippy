@@ -73,14 +73,10 @@ const isRefCase = (value: AbstractValue): boolean => {
   return value.kind === "Type" && (REF_TYPE_PATTERN.test(value.text) || value.text.includes("=>"));
 };
 
-const isRefDomain = (domain: Domain): boolean => {
-  if (domain.kind === "Opaque") return REF_TYPE_PATTERN.test(domain.typeText);
-  return (
-    domain.kind === "Cases" &&
-    domain.cases.some((value) => value.kind === "Type" && REF_TYPE_PATTERN.test(value.text)) &&
-    domain.cases.every(isRefCase)
-  );
-};
+const isRefDomain = (domain: Domain): boolean =>
+  domain.kind === "Cases" &&
+  domain.cases.some((value) => value.kind === "Type" && REF_TYPE_PATTERN.test(value.text)) &&
+  domain.cases.every(isRefCase);
 
 const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): boolean => {
   const passesWholeRef = ownedValue.path.length === 0 && storedProperty === null;

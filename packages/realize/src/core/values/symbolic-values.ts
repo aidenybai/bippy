@@ -281,7 +281,6 @@ const isNumberCase = (candidate: AbstractValue): boolean =>
 const isNumber = (value: SymbolicValue): boolean => {
   if (value.kind !== "Binding" || value.path.length > 0) return false;
   const domain = value.binding.domain;
-  if (domain.kind === "Opaque") return domain.typeText === "number";
   return domain.kind === "Cases" && domain.cases.every(isNumberCase);
 };
 

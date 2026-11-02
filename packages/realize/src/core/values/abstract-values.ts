@@ -7,6 +7,4 @@ export const dedupeAbstractValues = (values: AbstractValue[]): AbstractValue[] =
 ];
 
 export const isNullishCase = (value: AbstractValue): boolean =>
-  value.kind === "Literal"
-    ? isNullish(value.value)
-    : value.kind === "Type" && (value.text === "undefined" || value.text === "null");
+  value.kind === "Literal" && isNullish(value.value);

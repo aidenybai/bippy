@@ -147,7 +147,6 @@ const getVariableSource = (binding: Binding): VariableSource => {
 };
 
 const hasCountedLength = (receiver: Domain | null): boolean => {
-  if (receiver?.kind === "Opaque") return receiver.isArrayLike || receiver.typeText === "string";
   if (receiver?.kind !== "Cases") return false;
   return receiver.cases.every((value) =>
     value.kind === "Literal"

@@ -3,6 +3,7 @@ import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import type { Binding, BindingKind, BindingValue, Domain, BindingPlace } from "../types";
 import { dedupeAbstractValues } from "../values/abstract-values";
+import { isEnumerated } from "../type-checker/domains";
 import { PlaceMap } from "../values/place-map";
 import { getBindingPlace } from "../values/get-binding-place";
 import { createBindingValue } from "../values/symbolic-values";
@@ -109,11 +110,11 @@ export class BindingTable {
       this.placeDomains.set(place, readDomain);
       return;
     }
-    const readCases = readDomain.kind === "Cases" ? readDomain.cases : [];
+    const readCases = isEnumerated(readDomain) ? readDomain.cases : [];
     this.placeDomains.set(place, {
       kind: "Cases",
       cases: dedupeAbstractValues([...readCases, ...unionMemberValues.flat()]),
-      origin: readDomain.kind === "Cases" ? readDomain.origin : "type",
+      origin: readDomain.origin,
     });
   }
 }

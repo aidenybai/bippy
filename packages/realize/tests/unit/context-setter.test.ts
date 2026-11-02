@@ -9,9 +9,9 @@ describe("context setters", () => {
   it("types a context read through a hook from another file", () => {
     const [context] = toggle.analysis.bindings;
     expect(context?.domain).toEqual({
-      kind: "Opaque",
-      typeText: "PickerState",
-      isArrayLike: false,
+      kind: "Cases",
+      cases: [{ kind: "Type", text: "PickerState", primitive: null, isArrayLike: false }],
+      origin: "type",
     });
   });
 

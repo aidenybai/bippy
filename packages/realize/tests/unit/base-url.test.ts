@@ -7,9 +7,9 @@ describe("baseUrl", () => {
   it("resolves bare imports through baseUrl", () => {
     const nav = getComponent(project, "Nav");
     expect(getBinding(nav, "item").domain).toEqual({
-      kind: "Opaque",
-      typeText: "NavItem",
-      isArrayLike: false,
+      kind: "Cases",
+      cases: [{ kind: "Type", text: "NavItem", primitive: null, isArrayLike: false }],
+      origin: "type",
     });
     expect(nav.analysis.bailouts).toEqual([]);
   });
