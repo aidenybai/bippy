@@ -6,6 +6,55 @@ export const FALSE: Predicate = { kind: "False" };
 
 export const UNCHANGED: NextValue = { kind: "Unchanged" };
 
+const isSameList = <Item>(
+  left: Item[],
+  right: Item[],
+  isSame: (leftItem: Item, rightItem: Item) => boolean,
+): boolean =>
+  left.length === right.length && left.every((item, index) => isSame(item, right[index]));
+
+const isSameLabel = (left: string, right: string): boolean => left === right;
+
+const isSamePredicate = (left: Predicate, right: Predicate): boolean => {
+  if (left === right) return true;
+  switch (left.kind) {
+    case "True":
+    case "False":
+      return right.kind === left.kind;
+    case "In":
+      return (
+        right.kind === "In" &&
+        left.variable === right.variable &&
+        isSameList(left.values, right.values, isSameLabel)
+      );
+    case "Not":
+      return right.kind === "Not" && isSamePredicate(left.operand, right.operand);
+    case "And":
+      return right.kind === "And" && isSameList(left.conjuncts, right.conjuncts, isSamePredicate);
+    case "Or":
+      return right.kind === "Or" && isSameList(left.disjuncts, right.disjuncts, isSamePredicate);
+  }
+};
+
+const isSameNextValue = (left: NextValue, right: NextValue): boolean => {
+  if (left === right) return true;
+  switch (left.kind) {
+    case "Unchanged":
+      return right.kind === "Unchanged";
+    case "Values":
+      return right.kind === "Values" && isSameList(left.values, right.values, isSameLabel);
+    case "If":
+      return (
+        right.kind === "If" &&
+        isSamePredicate(left.predicate, right.predicate) &&
+        isSameNextValue(left.consequent, right.consequent) &&
+        isSameNextValue(left.alternate, right.alternate)
+      );
+    case "Copy":
+      return right.kind === "Copy" && left.variable === right.variable;
+  }
+};
+
 export const ifThenElse = (
   predicate: Predicate,
   consequent: NextValue,
@@ -13,7 +62,7 @@ export const ifThenElse = (
 ): NextValue => {
   if (predicate.kind === "True") return consequent;
   if (predicate.kind === "False") return alternate;
-  if (JSON.stringify(consequent) === JSON.stringify(alternate)) return consequent;
+  if (isSameNextValue(consequent, alternate)) return consequent;
   return { kind: "If", predicate, consequent, alternate };
 };
 
@@ -30,15 +79,8 @@ export const not = (predicate: Predicate): Predicate => {
   return { kind: "Not", operand: predicate };
 };
 
-const dedupe = (parts: Predicate[]): Predicate[] => {
-  const seen = new Set<string>();
-  return parts.filter((part) => {
-    const key = JSON.stringify(part);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
+const dedupe = (parts: Predicate[]): Predicate[] =>
+  parts.filter((part, index) => parts.findIndex((other) => isSamePredicate(other, part)) === index);
 
 const intersectValues = (parts: Predicate[]): Predicate[] | null => {
   const merged = new Map<string, Extract<Predicate, { kind: "In" }>>();
