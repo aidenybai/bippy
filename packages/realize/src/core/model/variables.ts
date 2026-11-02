@@ -1,4 +1,5 @@
 import type {
+  AbstractValue,
   Binding,
   ComponentAnalysis,
   ConditionalValue,
@@ -6,6 +7,9 @@ import type {
   PrimitiveValue,
   SymbolicValue,
 } from "../types";
+import { forEachJsxElement } from "../render/for-each-jsx-element";
+import { isNullishCase } from "../values/abstract-values";
+import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
 import {
@@ -179,6 +183,43 @@ const shareLiterals = (relations: Array<[PlaceTests, PlaceTests]>): void => {
   }
 };
 
+const ATTACHED: AbstractValue = {
+  kind: "Type",
+  text: "attached",
+  primitive: null,
+  isArrayLike: false,
+};
+
+const getAttachedRefIds = (analysis: ComponentAnalysis): ReadonlySet<number> | null => {
+  const refIds = new Set<number>();
+  let hasCallbackRef = false;
+  forEachJsxElement(analysis.render, (element) => {
+    for (const prop of element.props) {
+      if (prop.kind !== "JsxAttribute") continue;
+      if (prop.name === "ref" && prop.value.kind === "Function") hasCallbackRef = true;
+      forEachSymbolicValue(prop.value, (part) => {
+        if (part.kind === "Binding" && part.binding.kind === "ref") refIds.add(part.binding.id);
+      });
+    }
+  });
+  return hasCallbackRef ? null : refIds;
+};
+
+const withAttachedRef = (
+  entry: PlaceEntry,
+  domain: Domain | null,
+  attachedRefIds: ReadonlySet<number> | null,
+): Domain | null => {
+  const isAttachable =
+    entry.binding.kind === "ref" &&
+    entry.path.length === 1 &&
+    entry.path[0] === "current" &&
+    (attachedRefIds === null || attachedRefIds.has(entry.binding.id));
+  return isAttachable && domain?.kind === "Cases" && domain.cases.every(isNullishCase)
+    ? { ...domain, cases: [...domain.cases, ATTACHED] }
+    : domain;
+};
+
 const BOOLEAN_DOMAIN: Value[] = [
   { label: "false", abstract: { kind: "Exact", value: false } },
   { label: "true", abstract: { kind: "Exact", value: true } },
@@ -244,11 +285,17 @@ export const createVariableTable = (
       : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
 
+  const attachedRefIds = getAttachedRefIds(analysis);
   for (const [key, entry] of entries) {
     const isLength =
       entry.path.at(-1) === "length" &&
       hasCountedLength(getPlaceDomain(entry.binding, entry.path.slice(0, -1)));
-    const values = createDomain(getPlaceDomain(entry.binding, entry.path), entry.tests, isLength);
+    const typeDomain = withAttachedRef(
+      entry,
+      getPlaceDomain(entry.binding, entry.path),
+      attachedRefIds,
+    );
+    const values = createDomain(typeDomain, entry.tests, isLength);
     const label = formatPlace(entry.binding, entry.path);
     const variable: Variable = {
       name: createName(label),
