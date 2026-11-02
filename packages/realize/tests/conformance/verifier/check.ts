@@ -273,6 +273,13 @@ class ComponentCheck {
     const beforeObserved = abstractCapture(this.#modelIndex, observation.before);
     if (beforeObserved.domainViolations.length > 0 || after.domainViolations.length > 0) return;
     this.#verdict.checkedTransitionCount++;
+    const isStutter =
+      !this.#modelIndex.model.actions.some(
+        (action) => action.handlerId !== null && handlerIds.has(action.handlerId),
+      ) &&
+      this.#modelIndex.explored.findTrace(and([beforeObserved.predicate, after.predicate])) !==
+        null;
+    if (isStutter) return;
     const isCovered = this.#modelIndex.explored.findTransition(
       beforeObserved.predicate,
       after.predicate,
