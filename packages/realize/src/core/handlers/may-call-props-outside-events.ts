@@ -3,8 +3,6 @@ import type { HIRFunction, IdentifierId } from "../../react-compiler/HIR/HIR";
 import { isFunctionCreation } from "../interpret/is-function-creation";
 import { getHookTraits } from "../interpret/hook-traits";
 
-const resultsByFunction = new WeakMap<HIRFunction, boolean>();
-
 const scanFunction = (hirFunction: HIRFunction): boolean => {
   const functionIds = new Set<IdentifierId>();
   for (const block of hirFunction.body.blocks.values())
@@ -39,10 +37,5 @@ const scanFunction = (hirFunction: HIRFunction): boolean => {
   return false;
 };
 
-export const mayCallPropsOutsideEvents = (hirFunction: HIRFunction): boolean => {
-  const cached = resultsByFunction.get(hirFunction);
-  if (cached !== undefined) return cached;
-  const result = scanFunction(hirFunction);
-  resultsByFunction.set(hirFunction, result);
-  return result;
-};
+export const mayCallPropsOutsideEvents = (hirFunction: HIRFunction): boolean =>
+  scanFunction(hirFunction);

@@ -16,7 +16,6 @@ import { getKnownTruthiness } from "./get-known-truthiness";
 import { negate } from "./negate";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import { forEachSymbolicValue } from "./for-each-symbolic-value";
-import { memoizeByIdentity } from "../shared/memoize-by-identity";
 
 const BOOLEAN_OPERATORS = new Set(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
 
@@ -293,10 +292,10 @@ export const getShortCircuit = (
     ? { test: value.test, testKind: value.testKind }
     : null;
 
-export const hasUnknownPart = memoizeByIdentity((value: SymbolicValue): boolean => {
+export const hasUnknownPart = (value: SymbolicValue): boolean => {
   let hasUnknown = false;
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Unknown") hasUnknown = true;
   });
   return hasUnknown;
-});
+};
