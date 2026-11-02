@@ -1,5 +1,6 @@
 import type { JsxExpressionValue, SymbolicValue } from "../types";
 import { getMemoizedRender } from "../render/get-memoized-render";
+import { forEachPropNode } from "../render/for-each-jsx-element";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { negate } from "../values/negate";
@@ -22,8 +23,7 @@ export const getRenderGuards = (
     switch (node.kind) {
       case "JsxExpression":
         guardsByElement.set(node, nodeGuards);
-        for (const prop of node.props)
-          if (prop.kind === "JsxAttribute") walkPropValue(prop.value, nodeGuards);
+        forEachPropNode(node, (propNode) => walk(propNode, nodeGuards));
         node.children.forEach((child) => walk(child, nodeGuards));
         return;
       case "JsxFragment":
@@ -48,18 +48,6 @@ export const getRenderGuards = (
       }
       default:
         return;
-    }
-  };
-  const walkPropValue = (value: SymbolicValue, guards: SymbolicValue[]): void => {
-    switch (value.kind) {
-      case "ArrayExpression":
-        value.elements.forEach((element) => walkPropValue(element, guards));
-        return;
-      case "ObjectExpression":
-        for (const property of value.properties) walkPropValue(property.value, guards);
-        return;
-      default:
-        walk(value, guards);
     }
   };
   walk(render, []);

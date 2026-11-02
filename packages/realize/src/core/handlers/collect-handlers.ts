@@ -14,7 +14,7 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "../types";
-import { forEachJsxElement } from "../render/for-each-jsx-element";
+import { forEachJsxElement, forEachPropNode } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";
@@ -29,14 +29,15 @@ import {
 import { getRenderGuards, intersectGuards } from "./get-render-guards";
 import { isStateBinding } from "../values/is-state-binding";
 import { mayCallPropsOutsideEvents } from "./may-call-props-outside-events";
+import { isFunctionCreation } from "../interpret/is-function-creation";
 import { getTargetMethodCalls } from "./get-target-method-calls";
-import { isDisabledEvent, isMouseBlockedEvent } from "./is-disabled-event";
 import {
   ACTIVATABLE_TAGS,
   ANY_EVENT,
   CAPTURE_SUFFIX,
   CHECK_EVENTS,
   ENTER_EVENTS,
+  EVENT_ARGUMENT,
   EVENT_HANDLER_PATTERN,
   INTERACTIVE_TAGS,
   LEAVE_EVENTS,
@@ -56,13 +57,14 @@ import {
   getResetControl,
   getSubmitControl,
   getTriggerEvent,
+  isDisabledEvent,
   isHandlerProp,
   isLabelable,
+  isMouseBlockedEvent,
   isRefCallback,
   isTextInput,
 } from "./dom-events";
 import type { ControlEvent } from "./dom-events";
-import { EVENT_ARGUMENT } from "./handler-predicates";
 
 const getIndependentCallbacks = (value: SymbolicValue): SymbolicValue =>
   value.kind === "ArrayExpression" && value.spreads.length === 0
@@ -79,14 +81,10 @@ const getIndependentCallbacks = (value: SymbolicValue): SymbolicValue =>
 const getSpreadProperty = (spread: ObjectExpressionValue | null, key: string): SymbolicValue =>
   spread?.properties.find((property) => property.key === key)?.value ?? UNDEFINED_VALUE;
 
-const getSpreadHandlers = (
-  tag: JsxTag,
-  prop: JsxSpreadProp,
-  value: SymbolicValue = prop.value,
-): ObjectExpressionValue | null => {
+const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): ObjectExpressionValue | null => {
   if (value.kind === "Conditional") {
-    const consequent = getSpreadHandlers(tag, prop, value.consequent);
-    const alternate = getSpreadHandlers(tag, prop, value.alternate);
+    const consequent = getSpreadHandlers(tag, value.consequent);
+    const alternate = getSpreadHandlers(tag, value.alternate);
     if (!consequent && !alternate) return null;
     const keys = new Set(
       [...(consequent?.properties ?? []), ...(alternate?.properties ?? [])].map(
@@ -108,14 +106,7 @@ const getSpreadHandlers = (
   }
   if (value.kind !== "ObjectExpression") return null;
   const properties = value.properties.filter((property) =>
-    isHandlerProp(tag, {
-      kind: "JsxAttribute",
-      name: property.key,
-      value: property.value,
-      handlerId: null,
-      loc: prop.loc,
-      file: prop.file,
-    }),
+    isHandlerProp(tag, { name: property.key, value: property.value }),
   );
   return properties.length > 0 ? { kind: "ObjectExpression", properties, spreads: [] } : null;
 };
@@ -127,53 +118,37 @@ const getDefinitePropKeys = (prop: JsxProp | JsxSpreadProp): string[] => {
     : [];
 };
 
-const getLaterPropKeys = (props: Array<JsxProp | JsxSpreadProp>): Array<Set<string>> => {
-  const laterKeys: Array<Set<string>> = [];
-  let keys = new Set<string>();
-  for (let index = props.length - 1; index >= 0; index--) {
-    laterKeys[index] = keys;
-    const prop = props[index];
-    keys = prop ? new Set([...keys, ...getDefinitePropKeys(prop)]) : keys;
-  }
-  return laterKeys;
-};
-
-interface GuardedConditional {
-  test: SymbolicValue;
-  consequent: SymbolicValue;
-  alternate: SymbolicValue;
-  loc: SourceLocation;
-  file: string;
-}
-
-const createGuardedConditional = (conditional: GuardedConditional): SymbolicValue => ({
+const createGuardedConditional = (
+  test: SymbolicValue,
+  consequent: SymbolicValue,
+  alternate: SymbolicValue,
+  origin: Pick<JsxProp, "loc" | "file">,
+): SymbolicValue => ({
   kind: "Conditional",
-  test: conditional.test,
+  test,
   testKind: "truthy",
-  consequent: conditional.consequent,
-  alternate: conditional.alternate,
-  branch: { loc: conditional.loc, file: conditional.file, testKind: null },
+  consequent,
+  alternate,
+  branch: { loc: origin.loc, file: origin.file, testKind: null },
 });
 
 const chooseSpreadHandler = (
   handlers: ObjectExpressionValue,
-  loc: SourceLocation,
-  file: string,
+  origin: Pick<JsxProp, "loc" | "file">,
 ): SymbolicValue => {
   const [last, ...earlier] = [...handlers.properties].reverse();
   if (!last) return UNDEFINED_VALUE;
   return earlier.reduce<SymbolicValue>(
     (alternate, property) =>
-      createGuardedConditional({
-        test: createUnknown(`spread-event ${property.key}`, loc, {
+      createGuardedConditional(
+        createUnknown(`spread-event ${property.key}`, origin.loc, {
           kind: "Name",
           name: property.key,
         }),
-        consequent: property.value,
+        property.value,
         alternate,
-        loc,
-        file,
-      }),
+        origin,
+      ),
     last.value,
   );
 };
@@ -184,13 +159,7 @@ const guardCallbacks = (
   prop: JsxProp,
 ): SymbolicValue[] =>
   callbacks.map((callback) =>
-    createGuardedConditional({
-      test: createUnknown(reason, prop.loc),
-      consequent: callback,
-      alternate: UNDEFINED_VALUE,
-      loc: prop.loc,
-      file: prop.file,
-    }),
+    createGuardedConditional(createUnknown(reason, prop.loc), callback, UNDEFINED_VALUE, prop),
   );
 
 const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): SymbolicValue =>
@@ -198,13 +167,12 @@ const chooseReachableCallback = (callbacks: SymbolicValue[], prop: JsxProp): Sym
     ...new Map(callbacks.map((callback) => [getHandlerKey(callback), callback])).values(),
   ].reduceRight<SymbolicValue>(
     (alternate, callback, caseIndex) =>
-      createGuardedConditional({
-        test: createUnknown(`reachable-callback ${caseIndex}`, prop.loc),
-        consequent: callback,
+      createGuardedConditional(
+        createUnknown(`reachable-callback ${caseIndex}`, prop.loc),
+        callback,
         alternate,
-        loc: prop.loc,
-        file: prop.file,
-      }),
+        prop,
+      ),
     UNDEFINED_VALUE,
   );
 
@@ -215,14 +183,7 @@ const getRenderedBranch = (
   prop: JsxProp,
 ): SymbolicValue =>
   guards.reduceRight<SymbolicValue>(
-    (inner, test) =>
-      createGuardedConditional({
-        test,
-        consequent: inner,
-        alternate,
-        loc: prop.loc,
-        file: prop.file,
-      }),
+    (inner, test) => createGuardedConditional(test, inner, alternate, prop),
     consequent,
   );
 
@@ -330,7 +291,7 @@ class HandlerCollector {
   readonly #idsByContent = new Map<string, string>();
   readonly commitCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
 
-  readonly #consumerCallbacks: Map<JsxExpressionValue, SymbolicValue[]>;
+  readonly #consumerCallbacks: Map<JsxExpressionValue, Set<SymbolicValue>>;
   readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
   readonly #renderGuards: Map<JsxExpressionValue, SymbolicValue[]>;
   readonly #wrapperLoads = new Map<SymbolicValue, Set<string>>();
@@ -348,7 +309,7 @@ class HandlerCollector {
 
   #getConsumerCallbacks(
     ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>,
-  ): Map<JsxExpressionValue, SymbolicValue[]> {
+  ): Map<JsxExpressionValue, Set<SymbolicValue>> {
     const callbacksByAncestor = new Map<JsxExpressionValue, Set<SymbolicValue>>();
     for (const [element, ancestors] of ancestorsByElement) {
       if (element.tag.kind !== "Component" || element.tag.isContext) continue;
@@ -368,9 +329,7 @@ class HandlerCollector {
               (callbacksByAncestor.get(ancestor) ?? new Set()).add(callback),
             );
     }
-    return new Map(
-      [...callbacksByAncestor].map(([ancestor, callbacks]) => [ancestor, [...callbacks]]),
-    );
+    return callbacksByAncestor;
   }
 
   addHandler(
@@ -423,15 +382,10 @@ class HandlerCollector {
     return handler.id;
   }
 
-  planElementHandlers(
-    element: JsxExpressionValue,
-    renderGuards: SymbolicValue[],
-    ancestors: JsxExpressionValue[],
-  ): void {
+  planElementHandlers(element: JsxExpressionValue, renderGuards: SymbolicValue[]): void {
     const enabledGuards = getEnabledGuards(element);
-    const laterKeys = getLaterPropKeys(element.props);
     element.props.forEach((prop, index) => {
-      const overridden = laterKeys[index] ?? new Set<string>();
+      const overridden = new Set(element.props.slice(index + 1).flatMap(getDefinitePropKeys));
       if (prop.kind === "JsxSpreadAttribute")
         this.#planSpreadHandlers(element, prop, renderGuards, overridden);
       else if (overridden.has(prop.name)) return;
@@ -441,32 +395,34 @@ class HandlerCollector {
           element,
           prop,
           isDisabledEvent(prop.name) ? [...renderGuards, ...enabledGuards] : renderGuards,
-          ancestors,
         );
     });
+    const location = getLocationKey(element.loc);
     const autoFocus = getAttribute(element, "autoFocus")?.value;
-    const focused =
-      autoFocus && !(autoFocus.kind === "Primitive" && !autoFocus.value)
-        ? this.#getElementEventCallbacks(element, "focus")
-        : [];
-    if (focused.length > 0)
-      this.commitCallbacks.set(`autofocus:${getLocationKey(element.loc)}`, {
-        callback: { kind: "ArrayExpression", elements: focused, spreads: [] },
-        loc: element.loc,
-      });
+    if (autoFocus && !(autoFocus.kind === "Primitive" && !autoFocus.value))
+      this.#addCommitCallbacks(
+        `autofocus:${location}`,
+        this.#getElementEventCallbacks(element, "focus"),
+        element.loc,
+      );
+    if (element.tag.kind !== "BuiltinTag" || element.tag.name !== "details") return;
     const toggleProp = this.#getEventProp(element, "onToggle");
-    const toggled =
-      element.tag.kind === "BuiltinTag" && element.tag.name === "details"
-        ? this.#getDispatchCallbacks(element, "onToggle", toggleProp)
-        : [];
-    if (toggled.length > 0)
-      this.commitCallbacks.set(`toggle:${getLocationKey(element.loc)}`, {
-        callback: {
-          kind: "ArrayExpression",
-          elements: guardCallbacks(toggled, `toggle ${getLocationKey(element.loc)}`, toggleProp),
-          spreads: [],
-        },
-        loc: element.loc,
+    this.#addCommitCallbacks(
+      `toggle:${location}`,
+      guardCallbacks(
+        this.#getDispatchCallbacks(element, "onToggle", toggleProp),
+        `toggle ${location}`,
+        toggleProp,
+      ),
+      element.loc,
+    );
+  }
+
+  #addCommitCallbacks(key: string, callbacks: SymbolicValue[], loc: SourceLocation): void {
+    if (callbacks.length > 0)
+      this.commitCallbacks.set(key, {
+        callback: { kind: "ArrayExpression", elements: callbacks, spreads: [] },
+        loc,
       });
   }
 
@@ -516,24 +472,26 @@ class HandlerCollector {
       });
       return;
     }
-    const allSpreadHandlers = getSpreadHandlers(element.tag, prop);
-    const keptProperties = allSpreadHandlers?.properties.filter(
-      (property) => !overridden.has(property.key),
-    );
-    const spreadHandlers: ObjectExpressionValue | null =
-      keptProperties && keptProperties.length > 0
-        ? { kind: "ObjectExpression", properties: keptProperties, spreads: [] }
-        : null;
-    const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
-    if (spreadHandlers && spreadHandlerKey)
-      this.#plan(spreadHandlerKey, {
-        trigger,
-        callback: chooseSpreadHandler(spreadHandlers, element.loc, prop.file),
-        callbackArguments: [EVENT_ARGUMENT],
-        loc: element.loc,
-        guards,
-        props: [prop],
-      });
+    const properties =
+      getSpreadHandlers(element.tag, prop.value)?.properties.filter(
+        (property) => !overridden.has(property.key),
+      ) ?? [];
+    if (properties.length === 0) return;
+    const spreadHandlers: ObjectExpressionValue = {
+      kind: "ObjectExpression",
+      properties,
+      spreads: [],
+    };
+    const spreadHandlerKey = getHandlerKey(spreadHandlers);
+    if (spreadHandlerKey === null) return;
+    this.#plan(spreadHandlerKey, {
+      trigger,
+      callback: chooseSpreadHandler(spreadHandlers, { loc: element.loc, file: prop.file }),
+      callbackArguments: [EVENT_ARGUMENT],
+      loc: element.loc,
+      guards,
+      props: [prop],
+    });
   }
 
   #planRefCallback(prop: JsxProp, guards: SymbolicValue[]): void {
@@ -553,12 +511,7 @@ class HandlerCollector {
     });
   }
 
-  #planEventHandler(
-    element: JsxExpressionValue,
-    prop: JsxProp,
-    guards: SymbolicValue[],
-    ancestors: JsxExpressionValue[],
-  ): void {
+  #planEventHandler(element: JsxExpressionValue, prop: JsxProp, guards: SymbolicValue[]): void {
     const unwrapped = this.#unwrapCallback(prop.value);
     const resolved =
       element.tag.kind === "BuiltinTag" ? unwrapped : getIndependentCallbacks(unwrapped);
@@ -571,12 +524,13 @@ class HandlerCollector {
     const callback = reachable.length > 0 ? chooseReachableCallback(reachable, prop) : resolved;
     const callbackKey = getHandlerKey(callback);
     if (callbackKey === null) return;
-    if (element.tag.kind === "Component" && this.#mayCallOutsideEvents(element.tag.declaration))
+    const component = this.#loadComponent(element);
+    if (component && mayCallPropsOutsideEvents(component))
       this.commitCallbacks.set(callbackKey, { callback, loc: prop.loc });
     const propagated =
       element.tag.kind === "Component"
-        ? this.#getBubbledCallbacks(prop, callback, ancestors)
-        : this.#getPropagatedCallbacks(element, prop, callback, ancestors);
+        ? this.#getBubbledCallbacks(element, prop, callback)
+        : this.#getPropagatedCallbacks(element, prop, callback);
     const targeted =
       element.tag.kind === "BuiltinTag" ? this.#getTargetEventCallbacks(element, callback) : [];
     const sequence = [...(propagated.length > 0 ? propagated : [callback]), ...targeted];
@@ -605,9 +559,9 @@ class HandlerCollector {
     element: JsxExpressionValue,
     prop: JsxProp,
     callback: SymbolicValue,
-    ancestors: JsxExpressionValue[],
   ): SymbolicValue[] {
     if (element.tag.kind !== "BuiltinTag" || !EVENT_HANDLER_PATTERN.test(prop.name)) return [];
+    const ancestors = this.#getAncestors(element);
     if (ENTER_EVENTS.has(prop.name) || LEAVE_EVENTS.has(prop.name)) {
       const entered = ancestors.flatMap((ancestor) =>
         ancestor.tag.kind === "BuiltinTag"
@@ -627,14 +581,13 @@ class HandlerCollector {
     const eventProp = isCapture ? { ...prop, name: getBaseEvent(prop.name) } : prop;
     if (NON_BUBBLING_EVENTS.has(eventProp.name)) return [];
     const consumers = guardCallbacks(
-      this.#consumerCallbacks.get(element) ?? [],
+      [...(this.#consumerCallbacks.get(element) ?? [])],
       `consumer ${prop.name} ${getLocationKey(element.loc)}`,
       prop,
     );
     const clicked = this.#getEventSequence(
       element,
       getDispatchedEvents(element, eventProp),
-      ancestors,
       prop,
       (event) => {
         const isProp = event === eventProp.name;
@@ -675,7 +628,7 @@ class HandlerCollector {
           descendant.tag.kind === "BuiltinTag" && INTERACTIVE_TAGS.has(descendant.tag.name),
       ) || getDescendantLoads("preventDefault").some((load) => load !== null);
     const reason = `descendant ${prop.name} ${getLocationKey(element.loc)}`;
-    const defaults = this.#getDefaultActionCallbacks(element, eventProp, ancestors, clicked);
+    const defaults = this.#getDefaultActionCallbacks(element, eventProp, clicked);
     const propagated = [
       ...(isStoppedBelow
         ? [
@@ -713,9 +666,10 @@ class HandlerCollector {
     if (callback.kind !== "Function") return [];
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
     if (!hirFunction) return [];
-    const ancestors = this.#ancestorsByElement.get(element) ?? [];
     return getTargetMethodCalls(hirFunction).flatMap((call) => {
-      const target = call.isForm ? this.#getOwnerForm(element, ancestors) : element;
+      const target = call.isForm
+        ? this.#getOwnerForm(element, this.#getAncestors(element))
+        : element;
       if (!target) return [];
       return guardCallbacks(
         this.#getElementEventCallbacks(target, call.methodName),
@@ -739,10 +693,9 @@ class HandlerCollector {
   #getElementEventCallbacks(element: JsxExpressionValue, methodName: string): SymbolicValue[] {
     const event = REF_METHOD_EVENTS.get(methodName);
     if (!event || element.tag.kind !== "BuiltinTag") return [];
-    const ancestors = this.#ancestorsByElement.get(element) ?? [];
     const prop = this.#getEventProp(element, methodName);
     const [callback = UNDEFINED_VALUE] = this.#getAncestorCallbacks(element, event);
-    const propagated = this.#getPropagatedCallbacks(element, prop, callback, ancestors);
+    const propagated = this.#getPropagatedCallbacks(element, prop, callback);
     const callbacks = propagated.length > 0 ? propagated : [callback];
     return event === "onFocus" || event === "onBlur"
       ? guardCallbacks(callbacks, `${methodName} ${getLocationKey(element.loc)}`, prop)
@@ -789,7 +742,6 @@ class HandlerCollector {
     prop: JsxProp,
     gate: (callback: SymbolicValue) => SymbolicValue,
   ): SymbolicValue[] {
-    const ancestors = this.#ancestorsByElement.get(control) ?? [];
     const location = getLocationKey(control.loc);
     const clickProp = { ...prop, name: "onClick" };
     const focused = guardCallbacks(
@@ -800,7 +752,6 @@ class HandlerCollector {
     const dispatched = this.#getEventSequence(
       control,
       getDispatchedEvents(control, clickProp),
-      ancestors,
       prop,
       (event) => ({
         captured: this.#getAncestorCallbacks(control, `${event}${CAPTURE_SUFFIX}`),
@@ -809,13 +760,10 @@ class HandlerCollector {
     );
     const activated = [
       ...dispatched,
-      ...this.#getDefaultActionCallbacks(control, clickProp, ancestors, dispatched),
+      ...this.#getDefaultActionCallbacks(control, clickProp, dispatched),
     ];
-    if (focused.length > 0 && activated.length > 0)
-      this.commitCallbacks.set(`activated:${location}`, {
-        callback: { kind: "ArrayExpression", elements: activated.map(gate), spreads: [] },
-        loc: control.loc,
-      });
+    if (focused.length > 0)
+      this.#addCommitCallbacks(`activated:${location}`, activated.map(gate), control.loc);
     return [...focused, ...activated].map(gate);
   }
 
@@ -828,8 +776,7 @@ class HandlerCollector {
         return id !== undefined && getValueKey(id) === getValueKey(target);
       });
     return elements.filter(
-      (element) =>
-        isLabelable(element) && (this.#ancestorsByElement.get(element) ?? []).includes(label),
+      (element) => isLabelable(element) && this.#getAncestors(element).includes(label),
     );
   }
 
@@ -871,12 +818,9 @@ class HandlerCollector {
   }
 
   #getWrapperMarkers(component: JsxExpressionValue, names: string[]): SymbolicValue[] {
-    const hirFunction =
-      component.tag.kind === "Component" && component.tag.declaration
-        ? this.#interpreter.loadProjectComponent(component.tag.declaration)
-        : null;
+    const hirFunction = this.#loadComponent(component);
     if (!hirFunction) return [];
-    const loads = HIDDEN_PROPERTIES.filter((property) =>
+    const loads = ["stopPropagation", "preventDefault"].filter((property) =>
       loadsInHandlers(hirFunction, new Set(names), property),
     );
     if (loads.length === 0) return [];
@@ -896,7 +840,7 @@ class HandlerCollector {
           ...this.#getAncestorCallbacks(target, `${event}${CAPTURE_SUFFIX}`),
           ...this.#getAncestorCallbacks(target, event),
         ],
-        this.#ancestorsByElement.get(target) ?? [],
+        this.#getAncestors(target),
         prop,
       ),
       prop,
@@ -906,10 +850,10 @@ class HandlerCollector {
   #getEventSequence(
     element: JsxExpressionValue,
     events: string[],
-    ancestors: JsxExpressionValue[],
     prop: JsxProp,
     getTargetCallbacks: (event: string) => TargetCallbacks,
   ): SymbolicValue[] {
+    const ancestors = this.#getAncestors(element);
     const location = getLocationKey(element.loc);
     const isRadio = getCheckableType(element) === "radio";
     return events.reduce<SymbolicValue[]>((sequence, event, index) => {
@@ -924,11 +868,7 @@ class HandlerCollector {
           `input ${location}`,
           prop,
         );
-        if (inputs.length > 0)
-          this.commitCallbacks.set(`input:${location}`, {
-            callback: { kind: "ArrayExpression", elements: inputs, spreads: [] },
-            loc: element.loc,
-          });
+        this.#addCommitCallbacks(`input:${location}`, inputs, element.loc);
         return [...sequence, ...inputs];
       }
       if (event !== "onChange" || index === 0) return [...sequence, ...reached];
@@ -978,32 +918,30 @@ class HandlerCollector {
   }
 
   #getBubbledCallbacks(
+    element: JsxExpressionValue,
     prop: JsxProp,
     callback: SymbolicValue,
-    ancestors: JsxExpressionValue[],
   ): SymbolicValue[] {
     if (callback.kind === "ObjectExpression") return [];
+    const ancestors = this.#getAncestors(element);
     const events = new Set(
       ancestors.flatMap((ancestor) =>
         ancestor.tag.kind === "BuiltinTag" ? ancestor.props.flatMap(getBubblingEvent) : [],
       ),
     );
-    const groups = [...events].map((event) => {
+    const before: SymbolicValue[] = [];
+    const after: SymbolicValue[] = [];
+    for (const event of events) {
       const reached = this.#getReachedCallbacks(
         this.#getChain(event, [callback], ancestors, prop),
         prop,
       );
       const index = reached.indexOf(callback);
+      if (index === -1) continue;
       const reason = `bubbled ${event} ${getHandlerKey(callback)}`;
-      return index === -1
-        ? { before: [], after: [] }
-        : {
-            before: guardCallbacks(reached.slice(0, index), reason, prop),
-            after: guardCallbacks(reached.slice(index + 1), reason, prop),
-          };
-    });
-    const before = groups.flatMap((group) => group.before);
-    const after = groups.flatMap((group) => group.after);
+      before.push(...guardCallbacks(reached.slice(0, index), reason, prop));
+      after.push(...guardCallbacks(reached.slice(index + 1), reason, prop));
+    }
     return before.length + after.length === 0 ? [] : [...before, callback, ...after];
   }
 
@@ -1029,7 +967,6 @@ class HandlerCollector {
   #getDefaultActionCallbacks(
     element: JsxExpressionValue,
     prop: JsxProp,
-    ancestors: JsxExpressionValue[],
     clicked: SymbolicValue[],
   ): SymbolicValue[] {
     if (prop.name !== "onClick") return [];
@@ -1047,7 +984,7 @@ class HandlerCollector {
         ? guardCallbacks(callbacks, `default ${event} ${getLocationKey(owner.loc)}`, prop)
         : callbacks;
     };
-    const path = [...ancestors, element];
+    const path = [...this.#getAncestors(element), element];
     const activatorIndex = path.findLastIndex(
       (ancestor) => ancestor.tag.kind === "BuiltinTag" && ACTIVATABLE_TAGS.has(ancestor.tag.name),
     );
@@ -1107,6 +1044,10 @@ class HandlerCollector {
     });
   }
 
+  #getAncestors(element: JsxExpressionValue): JsxExpressionValue[] {
+    return this.#ancestorsByElement.get(element) ?? [];
+  }
+
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {
     return ancestor.props
       .flatMap((prop) =>
@@ -1150,18 +1091,15 @@ class HandlerCollector {
       },
     });
     return {
-      argument: createTargetEvent({
-        kind: "ObjectExpression",
-        properties: [{ key: "value", value: createBindingValue(selected) }],
-        spreads: [createUnknown("event", GeneratedSource)],
-      }),
+      argument: createTargetEvent([{ key: "value", value: createBindingValue(selected) }]),
       guards: [],
     };
   }
 
-  #mayCallOutsideEvents(declaration: string | null): boolean {
-    const hirFunction = declaration ? this.#interpreter.loadProjectComponent(declaration) : null;
-    return hirFunction !== null && mayCallPropsOutsideEvents(hirFunction);
+  #loadComponent(element: JsxExpressionValue): HIRFunction | null {
+    return element.tag.kind === "Component" && element.tag.declaration
+      ? this.#interpreter.loadProjectComponent(element.tag.declaration)
+      : null;
   }
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
@@ -1177,8 +1115,6 @@ class HandlerCollector {
   }
 }
 
-const HIDDEN_PROPERTIES = ["stopPropagation", "preventDefault"];
-
 const loadsInHandlers = (
   hirFunction: HIRFunction,
   names: ReadonlySet<string>,
@@ -1188,7 +1124,7 @@ const loadsInHandlers = (
   for (const block of hirFunction.body.blocks.values())
     for (const instruction of block.instructions) {
       const value = instruction.value;
-      if (value.kind === "FunctionExpression" || value.kind === "ObjectMethod") {
+      if (isFunctionCreation(value)) {
         if (loadsInHandlers(value.loweredFunc.func, names, property)) return true;
         functions.set(instruction.lvalue.identifier.id, value.loweredFunc.func);
       }
@@ -1224,8 +1160,7 @@ const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
     for (const instruction of block.instructions) {
       const value = instruction.value;
       if (value.kind === "PropertyLoad" && value.property === property) return true;
-      const isClosure = value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
-      if (isClosure && loadsProperty(value.loweredFunc.func, property)) return true;
+      if (isFunctionCreation(value) && loadsProperty(value.loweredFunc.func, property)) return true;
     }
   return false;
 };
@@ -1241,7 +1176,7 @@ const getElementAncestors = (
     switch (node.kind) {
       case "JsxExpression": {
         ancestorsByElement.set(node, ancestors);
-        for (const prop of node.props) if (prop.kind === "JsxAttribute") walkPropValue(prop.value);
+        forEachPropNode(node, (propNode) => walk(propNode, []));
         for (const child of node.children) walk(child, [...ancestors, node]);
         return;
       }
@@ -1257,18 +1192,6 @@ const getElementAncestors = (
         return;
       default:
         return;
-    }
-  };
-  const walkPropValue = (propValue: SymbolicValue): void => {
-    switch (propValue.kind) {
-      case "ArrayExpression":
-        propValue.elements.forEach(walkPropValue);
-        return;
-      case "ObjectExpression":
-        for (const property of propValue.properties) walkPropValue(property.value);
-        return;
-      default:
-        walk(propValue, []);
     }
   };
   walk(render, []);
@@ -1290,18 +1213,19 @@ const collectWrappedCallbacks = (
   return wrapped;
 };
 
-const getReadBindingIds = (handler: Handler): Set<number> => {
+const getBindingIds = (values: SymbolicValue[]): Set<number> => {
   const bindingIds = new Set<number>();
-  for (const update of handler.updates)
-    for (const read of [update.value, ...update.guards])
-      forEachSymbolicValue(read, (part) => {
-        if (part.kind === "Binding") bindingIds.add(part.binding.id);
-      });
+  for (const value of values)
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding") bindingIds.add(part.binding.id);
+    });
   return bindingIds;
 };
 
 const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
-  const readIds = effects.map(getReadBindingIds);
+  const readIds = effects.map((effect) =>
+    getBindingIds(effect.updates.flatMap((update) => [update.value, ...update.guards])),
+  );
   const interacting = effects.filter((effect, index) =>
     effects.some(
       (other, otherIndex) =>
@@ -1316,14 +1240,6 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
       guards: [createUnknown(`fires ${effect.id}`, effect.loc), ...update.guards],
     })),
   );
-};
-
-const getRenderedBindingIds = (render: SymbolicValue): Set<number> => {
-  const bindingIds = new Set<number>();
-  forEachSymbolicValue(render, (part) => {
-    if (part.kind === "Binding") bindingIds.add(part.binding.id);
-  });
-  return bindingIds;
 };
 
 const getInputClosure = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
@@ -1419,8 +1335,7 @@ const collectHandlersOnce = (
   const effectCalls = interpreter.effectCalls.filter(
     (effectCall) => !wrappedCallbacks.has(effectCall.callback),
   );
-  for (const [element, guards] of renderGuards)
-    collector.planElementHandlers(element, guards, ancestorsByElement.get(element) ?? []);
+  for (const [element, guards] of renderGuards) collector.planElementHandlers(element, guards);
   for (const callback of [
     ...effectCalls.map((effectCall) => effectCall.callback),
     ...collector.plannedCallbacks,
@@ -1449,25 +1364,20 @@ const collectHandlersOnce = (
       ? [{ binding, value: createUnknown("suspense", binding.loc), guards: [], isAsync: true }]
       : [],
   );
-  if (suspenseUpdates.length > 0)
-    collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "Custom", dependencies: null },
-      { updates: suspenseUpdates, delegates: [], pendingMutations: [], assertions: [] },
-      GeneratedSource,
-    );
+  collector.addCollectedHandler(
+    { kind: "Effect", hookKind: "Custom", dependencies: null },
+    { updates: suspenseUpdates, delegates: [], pendingMutations: [], assertions: [] },
+    GeneratedSource,
+  );
   const commitUpdates = getCommitUpdates(collector.handlers);
-  if (commitUpdates.length > 0)
-    collector.addCollectedHandler(
-      { kind: "Effect", hookKind: "useEffect", dependencies: null },
-      { updates: commitUpdates, delegates: [], pendingMutations: [], assertions: [] },
-      GeneratedSource,
-    );
+  collector.addCollectedHandler(
+    { kind: "Effect", hookKind: "useEffect", dependencies: null },
+    { updates: commitUpdates, delegates: [], pendingMutations: [], assertions: [] },
+    GeneratedSource,
+  );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
-  const renderedIds = getInputClosure(
-    getRenderedBindingIds(render),
-    interpreter.bindingTable.bindings,
-  );
+  const renderedIds = getInputClosure(getBindingIds([render]), interpreter.bindingTable.bindings);
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
   forgetPendingReads(

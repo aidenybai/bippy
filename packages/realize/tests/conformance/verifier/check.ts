@@ -1,4 +1,3 @@
-import { isEffectHandler } from "../../../src/core/handlers/handler-predicates";
 import { getValueLabels } from "../../../src/core/model/domains";
 import { containsValue } from "../../../src/core/model/abstract";
 import { and, inValues, or } from "../../../src/core/model/predicates";
@@ -228,7 +227,7 @@ class ComponentCheck {
       analysis.handlers
         .filter(
           (handler) =>
-            isEffectHandler(handler) ||
+            handler.trigger.kind === "Effect" ||
             isSpontaneousHandler(handler) ||
             handler.trigger.kind === "Render",
         )

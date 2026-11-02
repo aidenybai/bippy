@@ -59,8 +59,7 @@ import type {
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
-import { EVENT_ARGUMENT } from "../handlers/handler-predicates";
-import { isHandlerProp } from "../handlers/dom-events";
+import { EVENT_ARGUMENT, isHandlerProp } from "../handlers/dom-events";
 import { PlaceMap } from "../values/place-map";
 import { ALL_HELD_PROPS } from "./get-prop-holds";
 import type { HeldProps } from "./get-prop-holds";

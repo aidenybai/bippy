@@ -1,6 +1,25 @@
 import type { SymbolicValue, JsxExpressionValue } from "../types";
 import { forEachRenderNode } from "./for-each-render-node";
 
+export const forEachPropNode = (
+  element: JsxExpressionValue,
+  visit: (node: SymbolicValue) => void,
+): void => {
+  const walk = (value: SymbolicValue): void => {
+    switch (value.kind) {
+      case "ArrayExpression":
+        value.elements.forEach(walk);
+        return;
+      case "ObjectExpression":
+        for (const property of value.properties) walk(property.value);
+        return;
+      default:
+        visit(value);
+    }
+  };
+  for (const prop of element.props) if (prop.kind === "JsxAttribute") walk(prop.value);
+};
+
 export const forEachJsxElement = (
   value: SymbolicValue,
   visit: (element: JsxExpressionValue) => void,
@@ -11,19 +30,7 @@ export const forEachJsxElement = (
       if (node.kind !== "JsxExpression" || visited.has(node)) return;
       visited.add(node);
       visit(node);
-      for (const prop of node.props) if (prop.kind === "JsxAttribute") walkPropValue(prop.value);
+      forEachPropNode(node, walk);
     });
-  const walkPropValue = (propValue: SymbolicValue): void => {
-    switch (propValue.kind) {
-      case "ArrayExpression":
-        propValue.elements.forEach(walkPropValue);
-        return;
-      case "ObjectExpression":
-        for (const property of propValue.properties) walkPropValue(property.value);
-        return;
-      default:
-        walk(propValue);
-    }
-  };
   walk(value);
 };
