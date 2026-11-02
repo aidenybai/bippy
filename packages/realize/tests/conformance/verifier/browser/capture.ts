@@ -74,7 +74,7 @@ export const createEmptyCapture = (
 ): Capture => ({
   shapes: [],
   stateValues: [],
-  branchHits: takeBranchHits(),
+  branchHits: takeBranchHits(true),
   handlerCalls: takeHandlerCalls(),
   mutationHits: [],
   mutatedOrigins: [],
@@ -101,7 +101,7 @@ export const captureMountedComponent = (): Capture => {
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
     stateValues: getQueuedHooks(fiber).map((hook) => toPlainData(hook.memoizedState)),
-    branchHits: takeBranchHits(),
+    branchHits: takeBranchHits(renderError !== null),
     handlerCalls: takeHandlerCalls(),
     ...takeMutations(fiber),
     error: renderError?.message ?? null,

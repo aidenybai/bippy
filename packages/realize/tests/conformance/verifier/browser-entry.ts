@@ -2,9 +2,10 @@ import "./browser/pending-callbacks";
 import "./stubs/node-globals";
 import "./stubs/tauri-globals";
 import "./stubs/react-shims";
-import { instrument } from "bippy";
+import { didFiberRender, instrument } from "bippy";
 import { collectActions, performAction } from "./browser/actions";
 import { captureMountedComponent } from "./browser/capture";
+import { commitBranchHits } from "./browser/coverage";
 import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
@@ -21,6 +22,7 @@ instrument({
     recordCommitFlags(root.current.flags | root.current.subtreeFlags);
     const fiber = recordCommit(root);
     if (!fiber) return;
+    if (didFiberRender(fiber)) commitBranchHits();
     trackStates(fiber);
   },
   onPostCommitFiberRoot: recordPassiveFlush,

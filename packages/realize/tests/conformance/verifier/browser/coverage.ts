@@ -10,6 +10,7 @@ interface HandlerFunction {
 const EVENT_PROP_PATTERN = /^on[A-Z]/;
 
 let branchHits: BranchHit[] = [];
+let committedBranchHits: BranchHit[] = [];
 let handlerCalls: string[] = [];
 const handlerProxies = new WeakMap<object, Map<string, object>>();
 
@@ -99,12 +100,19 @@ const wrapHandler = (id: string, value: unknown, isEveryCallbackAHandler = false
 
 export const resetCoverage = (): void => {
   branchHits = [];
+  committedBranchHits = [];
   handlerCalls = [];
 };
 
-export const takeBranchHits = (): BranchHit[] => {
-  const hits = branchHits;
+export const commitBranchHits = (): void => {
+  committedBranchHits = branchHits;
   branchHits = [];
+};
+
+export const takeBranchHits = (hasRenderError: boolean): BranchHit[] => {
+  const hits = hasRenderError && branchHits.length > 0 ? branchHits : committedBranchHits;
+  branchHits = [];
+  committedBranchHits = [];
   return hits;
 };
 
