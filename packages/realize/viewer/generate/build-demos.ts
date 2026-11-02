@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
 import type { Demos, ViewFile } from "@/model";
 import { packageRoot, viewerRoot } from "./paths";
-import { getAnalyzerJson, getViewFile } from "./view-model";
+import { analyzeFile } from "./view-model";
 
 const stripRoot = (text: string): string =>
   text.replaceAll(`${packageRoot}/`, "").replaceAll(`${packageRoot.toLowerCase()}/`, "");
@@ -15,9 +15,10 @@ export const buildDemos = (files: string[]): Demos => {
     const absolute = resolve(packageRoot, entry);
     const file = relative(packageRoot, absolute);
     const name = basename(file, ".tsx");
+    const analyzed = analyzeFile(absolute);
     demos.examples.push({ file, name });
-    demos.views[name] = toRelativeView(getViewFile(absolute), file);
-    demos.json[name] = stripRoot(getAnalyzerJson(absolute));
+    demos.views[name] = toRelativeView(analyzed.view, file);
+    demos.json[name] = stripRoot(analyzed.json);
   }
   return demos;
 };
