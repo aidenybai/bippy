@@ -15,6 +15,7 @@ import type {
   SymbolicValue,
 } from "../types";
 import { forEachJsxElement, forEachPropNode } from "../render/for-each-jsx-element";
+import { getRenderChildren } from "../render/get-render-children";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";
@@ -1173,26 +1174,12 @@ const getElementAncestors = (
   const walk = (node: SymbolicValue, ancestors: JsxExpressionValue[]): void => {
     if (visited.has(node)) return;
     visited.add(node);
-    switch (node.kind) {
-      case "JsxExpression": {
-        ancestorsByElement.set(node, ancestors);
-        forEachPropNode(node, (propNode) => walk(propNode, []));
-        for (const child of node.children) walk(child, [...ancestors, node]);
-        return;
-      }
-      case "JsxFragment":
-        for (const child of node.children) walk(child, ancestors);
-        return;
-      case "Conditional":
-        walk(node.consequent, ancestors);
-        walk(node.alternate, ancestors);
-        return;
-      case "ArrayMap":
-        walk(node.item, ancestors);
-        return;
-      default:
-        return;
+    if (node.kind === "JsxExpression") {
+      ancestorsByElement.set(node, ancestors);
+      forEachPropNode(node, (propNode) => walk(propNode, []));
     }
+    const childAncestors = node.kind === "JsxExpression" ? [...ancestors, node] : ancestors;
+    getRenderChildren(node).forEach((child) => walk(child, childAncestors));
   };
   walk(render, []);
   return ancestorsByElement;
