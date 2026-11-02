@@ -98,7 +98,9 @@ export class MemoStaleness {
   bindMutatedMemo(finish: InstructionValueOfKind<"FinishMemoize">): void {
     const memoized = this.#interpreter.read(finish.decl);
     if (memoized.kind !== "ObjectExpression" && memoized.kind !== "ArrayExpression") return;
-    const local = this.#getClosureMutatedLocals().get(finish.decl.identifier.id);
+    const local = getClosureMutatedLocals(this.#interpreter.getCurrentFunction()).get(
+      finish.decl.identifier.id,
+    );
     if (!local) return;
     const binding = this.#interpreter.createBinding(
       getIdentifierName(local) ?? "memo",
@@ -108,10 +110,6 @@ export class MemoStaleness {
     );
     this.#interpreter.addStoredFunctions(createBindingValue(binding), memoized);
     this.#interpreter.write(finish.decl, createBindingValue(binding));
-  }
-
-  #getClosureMutatedLocals(): Map<IdentifierId, Place> {
-    return getClosureMutatedLocals(this.#interpreter.getCurrentFunction());
   }
 
   finishMemoize(finish: InstructionValueOfKind<"FinishMemoize">): void {

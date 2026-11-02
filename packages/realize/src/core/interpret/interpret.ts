@@ -1501,25 +1501,21 @@ export class Interpreter {
       const member = callee.path.at(-1);
       const isElement = member === undefined || !isBuiltinMember(member);
       return isElement
-        ? this.#getSourceFunctions(this.#sourcesByBinding.get(callee.binding.id) ?? [])
+        ? this.getSourceFunctions(this.#sourcesByBinding.get(callee.binding.id) ?? [])
         : [];
     }
     if (callee.kind !== "Unknown") return [];
     const sources = this.#unknownSources.get(callee);
-    if (sources) return this.#getSourceFunctions(sources);
+    if (sources) return this.getSourceFunctions(sources);
     if (!callee.origin) return [];
     if (callee.origin.kind === "Member")
       return isBuiltinMember(callee.origin.property)
         ? []
-        : this.#getSourceFunctions([callee.origin.object]);
-    return callee.origin.kind === "Call" ? this.#getSourceFunctions([callee.origin.callee]) : [];
+        : this.getSourceFunctions([callee.origin.object]);
+    return callee.origin.kind === "Call" ? this.getSourceFunctions([callee.origin.callee]) : [];
   }
 
-  getSourceFunctions(value: SymbolicValue): SymbolicValue[] {
-    return this.#getSourceFunctions([value]);
-  }
-
-  #getSourceFunctions(
+  getSourceFunctions(
     values: SymbolicValue[],
     seen = new Set<SymbolicValue | number>(),
   ): SymbolicValue[] {
@@ -1529,13 +1525,13 @@ export class Interpreter {
       if (isCallableValue(value)) return [value];
       switch (value.kind) {
         case "Conditional":
-          return this.#getSourceFunctions([value.consequent, value.alternate], seen);
+          return this.getSourceFunctions([value.consequent, value.alternate], seen);
         case "ArrayExpression":
-          return this.#getSourceFunctions([...value.elements, ...value.spreads], seen);
+          return this.getSourceFunctions([...value.elements, ...value.spreads], seen);
         case "ArrayMap":
-          return this.#getSourceFunctions([value.item, value.array], seen);
+          return this.getSourceFunctions([value.item, value.array], seen);
         case "Collection":
-          return this.#getSourceFunctions(
+          return this.getSourceFunctions(
             [
               ...(value.source ? [value.source] : []),
               ...value.writes.flatMap((write) => write.argumentValues),
@@ -1543,7 +1539,7 @@ export class Interpreter {
             seen,
           );
         case "ObjectExpression":
-          return this.#getSourceFunctions(
+          return this.getSourceFunctions(
             [...value.properties.map((property) => property.value), ...value.spreads],
             seen,
           );
@@ -1556,25 +1552,25 @@ export class Interpreter {
             value.binding.kind === "call"
               ? (this.#wrappedCallbacksByBinding.get(value.binding.id) ?? [])
               : [];
-          return this.#getSourceFunctions(
+          return this.getSourceFunctions(
             [...sources, ...initial, ...passed, ...this.getStoredFunctions(value)],
             seen,
           );
         }
         case "Unknown": {
           const sources = this.#unknownSources.get(value);
-          if (sources) return this.#getSourceFunctions(sources, seen);
+          if (sources) return this.getSourceFunctions(sources, seen);
           if (value.origin?.kind === "Member")
-            return this.#getSourceFunctions([value.origin.object], seen);
+            return this.getSourceFunctions([value.origin.object], seen);
           if (value.origin?.kind === "Call")
-            return this.#getSourceFunctions(
+            return this.getSourceFunctions(
               value.origin.callee.kind === "Global"
                 ? [value.origin.callee, ...value.origin.argumentValues]
                 : [value.origin.callee],
               seen,
             );
           return value.origin?.kind === "Value"
-            ? this.#getSourceFunctions([value.origin.value], seen)
+            ? this.getSourceFunctions([value.origin.value], seen)
             : [];
         }
         default:
@@ -1738,17 +1734,13 @@ export class Interpreter {
     return createBindingValue(binding);
   }
 
-  #getLongCallKey(callSite: CallSite): string {
-    const valueKeys = [callSite.callee, ...callSite.argumentValues].map(getValueKey);
-    return [getLocationKey(callSite.loc), ...valueKeys].join(",");
-  }
-
-  #getRepeatableCallKey(callSite: CallSite): string | undefined {
+  #getIdentityKey(callSite: CallSite, isLongName: boolean): string | undefined {
     const isRepeatable =
       this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc) &&
       this.#resolver.hasPrimitiveType(callSite.loc);
-    if (!isRepeatable) return undefined;
-    return [callSite.callee, ...callSite.argumentValues].map(getValueKey).join(",");
+    if (!isRepeatable && !isLongName) return undefined;
+    const valueKeys = [callSite.callee, ...callSite.argumentValues].map(getValueKey);
+    return (isRepeatable ? valueKeys : [getLocationKey(callSite.loc), ...valueKeys]).join(",");
   }
 
   #createCallResult(
@@ -1817,9 +1809,7 @@ export class Interpreter {
       {
         inputPlaces: inputPlaces.places(),
         isDerived: isDerivedResult,
-        identityKey:
-          this.#getRepeatableCallKey(callSite) ??
-          (isLongName ? this.#getLongCallKey(callSite) : undefined),
+        identityKey: this.#getIdentityKey(callSite, isLongName),
         initial,
         ...(domain && { domain }),
       },
