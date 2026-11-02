@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("project functions that mutate their parameters", () => {
-  const project = analyzeFixture("symbolic-tree", "mutating-helpers.tsx");
+  const project = analyzeFixture("state-charts", "mutating-helpers.tsx");
 
   it("warns when a prop is handed to a project function that writes into it", () => {
     const { analysis } = getComponent(project, "CardGrid");

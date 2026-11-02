@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("writes through a ref received as a prop", () => {
-  const project = analyzeFixture("symbolic-tree", "ref-props.tsx");
+  const project = analyzeFixture("state-charts", "ref-props.tsx");
 
   it("are not prop mutations when the prop is a ref", () => {
     expect(getComponent(project, "Latest").analysis.warnings).toEqual([]);

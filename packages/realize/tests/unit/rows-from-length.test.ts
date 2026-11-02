@@ -12,7 +12,7 @@ const countMappedRows = (render: SymbolicValue): number => {
 };
 
 describe("rows built from a length", () => {
-  const project = analyzeFixture("symbolic-tree", "rows-from-length.tsx");
+  const project = analyzeFixture("state-charts", "rows-from-length.tsx");
 
   it("maps Array.from with a callback like an array map", () => {
     const list = getComponent(project, "FromLength");
