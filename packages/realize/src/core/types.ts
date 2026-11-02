@@ -292,6 +292,13 @@ export interface ProvidedContext {
 
 export interface ContextSetterFields extends Map<string, Map<string, string>> {}
 
+export interface BranchEvaluation {
+  branch: BranchSite;
+  test: SymbolicValue;
+  outcome: boolean | null;
+  guards: SymbolicValue[];
+}
+
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
@@ -307,6 +314,7 @@ export interface ComponentAnalysis {
   untypedContextBindingIds: Map<string, number>;
   readContextKeys: string[];
   placeDomains: PlaceMap<Domain>;
+  branchEvaluations: BranchEvaluation[];
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];

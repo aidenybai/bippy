@@ -32,6 +32,7 @@ import type { PathState } from "./path-state";
 import type {
   ArrayExpressionValue,
   Binding,
+  BranchEvaluation,
   PrimitiveValue,
   BindingKind,
   BindingPlace,
@@ -490,6 +491,7 @@ export class Interpreter {
   readonly memoStaleness = new MemoStaleness(this);
   readonly iteration = new ArrayIteration(this);
   readonly bindingTable = new BindingTable();
+  readonly branchEvaluations: BranchEvaluation[] = [];
   readonly externalSources: ExternalSources;
   readonly storeReads = new StoreReads(this);
   readonly diagnostics = new Diagnostics();

@@ -217,7 +217,12 @@ export const buildComponentModel = (
 ): ComponentModel => {
   const assertions = collectAssertions(analysis);
   const table = createVariableTable(analysis, collectTests(analysis, assertions));
-  const { views, branches } = collectViews(table, analysis.render, analysis.file);
+  const { views, branches } = collectViews(
+    table,
+    analysis.render,
+    analysis.file,
+    analysis.branchEvaluations,
+  );
   const invariants = assertions.map((assertion, index) =>
     compileInvariant(table, assertion, index),
   );
