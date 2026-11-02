@@ -66,16 +66,16 @@ export const RecursiveMerge = ({ base, override }: { base: any; override: any })
 describe("deep branches", () => {
   const directory = createDeepBranchesProject();
   afterAll(() => rmSync(directory, { recursive: true, force: true }));
-  const getBailoutReasons = (fileFilter: string, name: string): string[] =>
+  const getBailoutReasons = async (fileFilter: string, name: string): Promise<string[]> =>
     getComponent(
-      analyzeProject(join(directory, "tsconfig.json"), fileFilter),
+      await analyzeProject(join(directory, "tsconfig.json"), fileFilter),
       name,
     ).analysis.bailouts.map((bailout) => bailout.reason);
 
   it(
     "bails out instead of overflowing the stack on a long run of branches",
-    () => {
-      expect(getBailoutReasons("sequential-branches", "SequentialBranches")).toContain(
+    async () => {
+      expect(await getBailoutReasons("sequential-branches", "SequentialBranches")).toContain(
         "too-complex",
       );
     },
@@ -84,16 +84,16 @@ describe("deep branches", () => {
 
   it(
     "analyzes a recursive merge without overflowing the stack",
-    () => {
-      expect(() => getBailoutReasons("recursive-merge", "RecursiveMerge")).not.toThrow();
+    async () => {
+      await expect(getBailoutReasons("recursive-merge", "RecursiveMerge")).resolves.toBeDefined();
     },
     TIMEOUT_MS,
   );
 
   it(
     "bails out instead of overflowing the stack on a long run of early returns",
-    () => {
-      expect(getBailoutReasons("early-returns", "EarlyReturns")).toContain("too-complex");
+    async () => {
+      expect(await getBailoutReasons("early-returns", "EarlyReturns")).toContain("too-complex");
     },
     TIMEOUT_MS,
   );

@@ -39,9 +39,7 @@ export const createTracer = (rootDirectory: string): Tracer => {
     events,
     span: (category, name, run, args = {}) => {
       const start = getMicroseconds();
-      try {
-        return run();
-      } finally {
+      const record = (): void => {
         const end = getMicroseconds();
         const { heapUsed, rss } = process.memoryUsage();
         events.push(
@@ -73,6 +71,15 @@ export const createTracer = (rootDirectory: string): Tracer => {
             },
           },
         );
+      };
+      try {
+        const result = run();
+        if (result instanceof Promise) result.then(record, record);
+        else record();
+        return result;
+      } catch (error) {
+        record();
+        throw error;
       }
     },
   };

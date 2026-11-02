@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("pending action state", () => {
-  const project = analyzeFixture("conformance-repros", "action-state-pending");
+describe("pending action state", async () => {
+  const project = await analyzeFixture("conformance-repros", "action-state-pending");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

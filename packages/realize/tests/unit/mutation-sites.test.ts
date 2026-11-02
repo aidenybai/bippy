@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a handler that mutates state after a guarded mutation", () => {
-  const project = analyzeFixture("conformance-repros", "mutation-sites");
+describe("a handler that mutates state after a guarded mutation", async () => {
+  const project = await analyzeFixture("conformance-repros", "mutation-sites");
 
   it.each([
     ["GuardedFirstMutation", [10, 11]],

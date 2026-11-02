@@ -25,8 +25,8 @@ describe("parse errors", () => {
   const directory = createProject();
   afterAll(() => rmSync(directory, { recursive: true, force: true }));
 
-  it("skips a file Babel can't parse and analyzes the rest", () => {
-    const project = analyzeProject(join(directory, "tsconfig.json"), null);
+  it("skips a file Babel can't parse and analyzes the rest", async () => {
+    const project = await analyzeProject(join(directory, "tsconfig.json"), null);
     expect(project.components.map((component) => component.analysis.name)).toEqual(["Fine"]);
   });
 });

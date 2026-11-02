@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("an event prop set twice on one element", () => {
-  const project = analyzeFixture("conformance-repros", "overridden-event-props");
+describe("an event prop set twice on one element", async () => {
+  const project = await analyzeFixture("conformance-repros", "overridden-event-props");
 
   const getUpdateTexts = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

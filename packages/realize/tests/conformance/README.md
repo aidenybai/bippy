@@ -64,7 +64,7 @@ test("pages through comments", async ({ mountComponent }) => {
     props: { discussionId: "first" },
     scenario: ["discussion", "first", 12],
   });
-  comments.expectState("!commentsQuery.isLoading ∧ … ∧ commentsQuery.hasNextPage ∧ …");
+  await comments.expectState("!commentsQuery.isLoading ∧ … ∧ commentsQuery.hasNextPage ∧ …");
   await comments.click("Load More Comments");
 });
 ```

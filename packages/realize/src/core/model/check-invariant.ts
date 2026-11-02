@@ -1,5 +1,5 @@
 import { check, formatValue, type TraceStep as TlaTraceStep } from "tla-ts";
-import { getViewLabel } from "./explore";
+import { getViewLabel } from "./state-graph";
 import { formatTla, type InvariantDefinition } from "./tla";
 import type { ComponentModel, TraceStep } from "./types";
 

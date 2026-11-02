@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
-describe("baseUrl", () => {
-  const project = analyzeFixture("base-url");
+describe("baseUrl", async () => {
+  const project = await analyzeFixture("base-url");
 
   it("resolves bare imports through baseUrl", () => {
     const nav = getComponent(project, "Nav");

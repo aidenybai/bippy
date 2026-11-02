@@ -44,7 +44,7 @@ const checkFixture = (fixture: Fixture, components: AnalyzedComponent[]): Fixtur
 };
 
 const fixtures = writeFixtureProject();
-const project = analyzeProject(join(PROJECT_DIRECTORY, "tsconfig.json"));
+const project = await analyzeProject(join(PROJECT_DIRECTORY, "tsconfig.json"));
 const results = fixtures.map((fixture) => ({
   fixture: fixture.name,
   ...checkFixture(fixture, project.components),

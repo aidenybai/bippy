@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture } from "./helpers";
 
-describe("untyped props from call sites", () => {
-  const project = analyzeFixture("plain-jsx", "badges");
+describe("untyped props from call sites", async () => {
+  const project = await analyzeFixture("plain-jsx", "badges");
   const getTone = (file: string) =>
     project.components
       .find(

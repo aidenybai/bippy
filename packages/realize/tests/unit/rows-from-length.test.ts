@@ -11,8 +11,8 @@ const countMappedRows = (render: SymbolicValue): number => {
   return rows;
 };
 
-describe("rows built from a length", () => {
-  const project = analyzeFixture("state-charts", "rows-from-length.tsx");
+describe("rows built from a length", async () => {
+  const project = await analyzeFixture("state-charts", "rows-from-length.tsx");
 
   it("maps Array.from with a callback like an array map", () => {
     const list = getComponent(project, "FromLength");

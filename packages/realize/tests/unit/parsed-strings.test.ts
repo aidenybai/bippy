@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
-describe("samples of parsed strings", () => {
-  const project = analyzeFixture("conformance-repros", "parsed-strings");
+describe("samples of parsed strings", async () => {
+  const project = await analyzeFixture("conformance-repros", "parsed-strings");
   const receipt = getComponent(project, "Receipt");
 
   it("mounts a string a name marks as a date with a date", () => {

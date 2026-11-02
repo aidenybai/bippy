@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("transition callbacks", () => {
-  const project = analyzeFixture("conformance-repros", "transition-callbacks");
+describe("transition callbacks", async () => {
+  const project = await analyzeFixture("conformance-repros", "transition-callbacks");
 
   const getHandler = (name: string) => {
     const [handler] = getComponent(project, name).analysis.handlers;

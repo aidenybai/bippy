@@ -31,8 +31,8 @@ const countSelfReferences = (text: string): number =>
     ([, id, ref]) => id === ref,
   ).length;
 
-describe("serializeProjectAnalysis", () => {
-  const project = analyzeFixture("state-charts", "dashboard");
+describe("serializeProjectAnalysis", async () => {
+  const project = await analyzeFixture("state-charts", "dashboard");
   const text = serializeProjectAnalysis(project);
 
   it("writes a shared array once, with its items", () => {

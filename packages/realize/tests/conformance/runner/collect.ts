@@ -59,7 +59,7 @@ export const collect = async (
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
-  const projectAnalysis = analyzeProject(configPath);
+  const projectAnalysis = await analyzeProject(configPath);
   const analysisDuration = Math.round(performance.now() - startTime);
   mkdirSync(outputDirectory, { recursive: true });
   writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));

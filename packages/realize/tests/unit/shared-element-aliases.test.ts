@@ -11,8 +11,8 @@ const COPIES = [
   "ReversedSpread",
 ];
 
-describe("an element taken out of a copy of state", () => {
-  const project = analyzeFixture("conformance-repros", "shared-element-aliases");
+describe("an element taken out of a copy of state", async () => {
+  const project = await analyzeFixture("conformance-repros", "shared-element-aliases");
 
   const getWarningKinds = (name: string) =>
     getComponent(project, name).analysis.warnings.map((warning) => warning.kind);

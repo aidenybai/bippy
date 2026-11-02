@@ -2,8 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { formatSymbolicValue } from "../../src/core/values/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("ref snapshots", () => {
-  const project = analyzeFixture("conformance-repros", "ref-snapshots");
+describe("ref snapshots", async () => {
+  const project = await analyzeFixture("conformance-repros", "ref-snapshots");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

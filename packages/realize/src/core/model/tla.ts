@@ -1,5 +1,5 @@
 import { NO_VIEW } from "./views";
-import type { Action, NextValue, ComponentModel, Predicate, Variable } from "./types";
+import type { Action, NextValue, ModelSpec, Predicate, Variable } from "./types";
 
 export interface InvariantDefinition {
   name: string;
@@ -7,6 +7,8 @@ export interface InvariantDefinition {
 }
 
 const quote = (text: string): string => `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+
+const formatComment = (text: string): string => `\\* ${text.replace(/\s+/g, " ")}`;
 
 const formatSet = (values: string[]): string => `{${values.map(quote).join(", ")}}`;
 
@@ -68,7 +70,7 @@ const formatAction = (action: Action, variables: Variable[]): string[] => {
     ...(unchanged.length > 0 ? [`UNCHANGED <<${unchanged.join(", ")}>>`] : []),
   ].filter((conjunct) => conjunct !== "TRUE");
   return [
-    `\\* ${action.label}`,
+    formatComment(action.label),
     `${action.name} ==`,
     ...conjuncts.map((conjunct) => `  /\\ ${conjunct}`),
   ];
@@ -79,7 +81,7 @@ const formatInitial = (variable: Variable): string =>
     ? `${variable.name} = ${quote(variable.initial[0])}`
     : `${variable.name} \\in ${formatSet(variable.initial)}`;
 
-const formatView = (model: ComponentModel): string[] => {
+const formatView = (model: ModelSpec): string[] => {
   if (model.views.length === 0) return [`view == ${quote(NO_VIEW)}`];
   const [first, ...rest] = model.views;
   return [
@@ -96,16 +98,18 @@ const toModuleName = (name: string): string =>
 
 export const formatTla = (
   name: string,
-  model: ComponentModel,
+  model: ModelSpec,
   definitions: InvariantDefinition[] = [],
 ): string => {
   const names = model.variables.map((variable) => variable.name);
-  const variableComments = model.variables.map(
-    (variable) =>
-      `\\* ${variable.name}: ${variable.label} (${variable.source}), ${variable.domain.length} values`,
+  const variableComments = model.variables.map((variable) =>
+    formatComment(
+      `${variable.name}: ${variable.label} (${variable.source}), ${variable.domain.length} values`,
+    ),
   );
   const lines = [
     `---- MODULE ${toModuleName(name)} ----`,
+    ...(definitions.length > 0 ? ["EXTENDS Naturals, TLC"] : []),
     ...variableComments,
     ...(names.length > 0 ? [`VARIABLES ${names.join(", ")}`, ""] : [""]),
     `vars == <<${names.join(", ")}>>`,
@@ -118,12 +122,12 @@ export const formatTla = (
       : ["  TRUE"]),
     "",
     ...model.actions.flatMap((action) => [...formatAction(action, model.variables), ""]),
-    `Next == ${model.actions.length > 0 ? model.actions.map((action) => action.name).join(" \\/ ") : "FALSE"}`,
+    `Next == ${model.actions.length > 0 ? model.actions.map((action) => action.name).join(" \\/ ") : "UNCHANGED vars"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",
     ...model.invariants.flatMap((invariant) => [
       "",
-      `\\* ${invariant.label.replace(/\s+/g, " ")}`,
+      formatComment(invariant.label),
       `${invariant.name} == ${formatPredicate(invariant.predicate)}`,
     ]),
     ...definitions.flatMap((definition) => ["", `${definition.name} == ${definition.expression}`]),

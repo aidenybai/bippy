@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a callback prop that a child component calls", () => {
-  const project = analyzeFixture("conformance-repros", "child-effect-callbacks");
+describe("a callback prop that a child component calls", async () => {
+  const project = await analyzeFixture("conformance-repros", "child-effect-callbacks");
 
   const getEffectUpdates = (name: string) =>
     getComponent(project, name)

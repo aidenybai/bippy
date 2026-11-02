@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("++ on a local that a closure captures, inside a handler", () => {
-  const project = analyzeFixture("conformance-repros", "context-updates");
+describe("++ on a local that a closure captures, inside a handler", async () => {
+  const project = await analyzeFixture("conformance-repros", "context-updates");
 
   it.each([
     ["CapturedIncrement", 2],

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a function kept in a state that has no setter", () => {
-  const project = analyzeFixture("conformance-repros", "unset-state-handlers");
+describe("a function kept in a state that has no setter", async () => {
+  const project = await analyzeFixture("conformance-repros", "unset-state-handlers");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

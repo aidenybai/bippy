@@ -121,7 +121,7 @@ const runAnalyze = async (tsconfig: string, options: AnalyzeCliOptions): Promise
   const rootDirectory = dirname(configPath);
   const tracer = options.trace ? createTracer(rootDirectory) : NO_TRACER;
   const invariants = (options.invariant ?? []).map(parseInvariant);
-  const analysis = analyzeProject(configPath, options.file ?? null, tracer);
+  const analysis = await analyzeProject(configPath, options.file ?? null, tracer);
   if (options.file && analysis.components.length === 0)
     throw new ConfigError(`No component is in a file matching ${options.file}`);
   const componentNames = options.component;

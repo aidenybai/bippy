@@ -9,13 +9,13 @@ const stripRoot = (text: string): string =>
 
 const toRelativeView = (view: ViewFile, file: string): ViewFile => ({ ...view, file });
 
-export const buildDemos = (files: string[]): Demos => {
+export const buildDemos = async (files: string[]): Promise<Demos> => {
   const demos: Demos = { examples: [], views: {}, json: {} };
   for (const entry of files) {
     const absolute = resolve(packageRoot, entry);
     const file = relative(packageRoot, absolute);
     const name = basename(file, ".tsx");
-    const analyzed = analyzeFile(absolute);
+    const analyzed = await analyzeFile(absolute);
     demos.examples.push({ file, name });
     demos.views[name] = toRelativeView(analyzed.view, file);
     demos.json[name] = stripRoot(analyzed.json);

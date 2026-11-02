@@ -122,12 +122,15 @@ export interface Finding {
   trace: TraceStep[] | null;
 }
 
-export interface ComponentModel {
+export interface ModelSpec {
   variables: Variable[];
   actions: Action[];
   views: View[];
-  branches: Branch[];
   invariants: Invariant[];
+}
+
+export interface ComponentModel extends ModelSpec {
+  branches: Branch[];
   stateSpace: StateSpace;
   findings: Finding[];
 }

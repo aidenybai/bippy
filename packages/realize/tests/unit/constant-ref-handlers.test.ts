@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent } from "./helpers";
 
-describe("a function kept in a ref that nothing writes", () => {
-  const project = analyzeFixture("conformance-repros", "constant-ref-handlers");
+describe("a function kept in a ref that nothing writes", async () => {
+  const project = await analyzeFixture("conformance-repros", "constant-ref-handlers");
 
   const getUpdates = (name: string) =>
     getComponent(project, name).analysis.handlers.flatMap((handler) =>

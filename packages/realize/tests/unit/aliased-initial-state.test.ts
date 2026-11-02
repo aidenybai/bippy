@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { analyzeFixture, getComponent, getWarningKinds } from "./helpers";
 
-describe("aliased initial state", () => {
-  const project = analyzeFixture("conformance-repros", "aliased-initial-state");
+describe("aliased initial state", async () => {
+  const project = await analyzeFixture("conformance-repros", "aliased-initial-state");
 
   it("warns when a handler mutates the module value state starts from", () => {
     expect(getComponent(project, "ReversedInbox").analysis.warnings).toMatchObject([
