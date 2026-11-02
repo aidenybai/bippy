@@ -45,6 +45,7 @@ export type Predicate =
 export type NextValue =
   | { kind: "Values"; values: string[] }
   | { kind: "Unchanged" }
+  | { kind: "Copy"; variable: string }
   | { kind: "If"; predicate: Predicate; consequent: NextValue; alternate: NextValue };
 
 export type ActionPhase = "call" | "fulfilled" | "rejected" | "input";

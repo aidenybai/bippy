@@ -41,6 +41,8 @@ const formatNextValue = (next: NextValue, variable: string): string => {
   switch (next.kind) {
     case "Unchanged":
       return `{${variable}}`;
+    case "Copy":
+      return `{${next.variable}}`;
     case "Values":
       return formatSet(next.values);
     case "If":
@@ -48,10 +50,12 @@ const formatNextValue = (next: NextValue, variable: string): string => {
   }
 };
 
-const formatWrite = (variable: string, next: NextValue): string =>
-  next.kind === "Values" && next.values.length === 1
+const formatWrite = (variable: string, next: NextValue): string => {
+  if (next.kind === "Copy") return `${variable}' = ${next.variable}`;
+  return next.kind === "Values" && next.values.length === 1
     ? `${variable}' = ${quote(next.values[0])}`
     : `${variable}' \\in ${formatNextValue(next, variable)}`;
+};
 
 const formatAction = (action: Action, variables: Variable[]): string[] => {
   const written = new Set(action.writes.map((write) => write.variable));
