@@ -162,6 +162,8 @@ export const evaluateNextValue = (
   switch (next.kind) {
     case "Unchanged":
       return [current];
+    case "Copy":
+      return [valueOf(next.variable) ?? current];
     case "Values":
       return next.values;
     case "If":

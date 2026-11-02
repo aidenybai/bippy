@@ -1,10 +1,17 @@
 import type { Handler, StateUpdate, SymbolicValue } from "../types";
 import { getTriggerLabel } from "../labels/trigger-labels";
 import { getValueLabels } from "./domains";
-import { UNCHANGED, TRUE, and, ifThenElse, inValues } from "./predicates";
+import {
+  UNCHANGED,
+  TRUE,
+  and,
+  collectPredicateVariables,
+  ifThenElse,
+  inValues,
+} from "./predicates";
 import { compileNextValue } from "./evaluate";
 import type { VariableTable } from "./variables";
-import type { Action, ActionPhase, NextValue, Predicate, Variable } from "./types";
+import type { Action, ActionPhase, NextValue, Predicate, Variable, VariableSource } from "./types";
 
 type Settlement = "fulfilled" | "rejected";
 
@@ -44,10 +51,9 @@ const compileVariableWrite = (
     return ifThenElse(guard, next, previous);
   }, UNCHANGED);
 
-const compileWrites = (
-  table: VariableTable,
-  updates: StateUpdate[],
-): Array<{ variable: string; next: NextValue }> =>
+type Write = Action["writes"][number];
+
+const compileWrites = (table: VariableTable, updates: StateUpdate[]): Write[] =>
   table.variables.flatMap((variable) => {
     const variableUpdates = updates.filter((update) => update.binding.id === variable.bindingId);
     if (variableUpdates.length === 0 || variable.source !== "state") return [];
@@ -74,13 +80,89 @@ const createPendingVariable = (handler: Handler): Variable => ({
   initial: [IDLE],
 });
 
+const createSnapshotVariable = (handler: Handler, variable: Variable): Variable => ({
+  ...variable,
+  name: `${variable.name}_at_${handler.id}`,
+  label: `${variable.label} when ${handler.id} ran`,
+  source: "control",
+  bindingKind: null,
+  bindingId: null,
+  inputBindingIds: [],
+  initial: variable.initial.slice(0, 1),
+});
+
+const renamePredicate = (predicate: Predicate, names: ReadonlyMap<string, string>): Predicate => {
+  switch (predicate.kind) {
+    case "In":
+      return { ...predicate, variable: names.get(predicate.variable) ?? predicate.variable };
+    case "Not":
+      return { kind: "Not", operand: renamePredicate(predicate.operand, names) };
+    case "And":
+      return {
+        kind: "And",
+        conjuncts: predicate.conjuncts.map((part) => renamePredicate(part, names)),
+      };
+    case "Or":
+      return {
+        kind: "Or",
+        disjuncts: predicate.disjuncts.map((part) => renamePredicate(part, names)),
+      };
+    default:
+      return predicate;
+  }
+};
+
+const renameNextValue = (next: NextValue, names: ReadonlyMap<string, string>): NextValue => {
+  switch (next.kind) {
+    case "If":
+      return {
+        kind: "If",
+        predicate: renamePredicate(next.predicate, names),
+        consequent: renameNextValue(next.consequent, names),
+        alternate: renameNextValue(next.alternate, names),
+      };
+    case "Copy":
+      return { kind: "Copy", variable: names.get(next.variable) ?? next.variable };
+    default:
+      return next;
+  }
+};
+
+const collectNextValueVariables = (next: NextValue, variables: Set<string>): Set<string> => {
+  if (next.kind === "Copy") variables.add(next.variable);
+  if (next.kind === "If") {
+    collectPredicateVariables(next.predicate, variables);
+    collectNextValueVariables(next.consequent, variables);
+    collectNextValueVariables(next.alternate, variables);
+  }
+  return variables;
+};
+
 const isPending = (variable: Variable, value: string): Predicate =>
   inValues(variable.name, [value], getValueLabels(variable.domain));
 
-const setPending = (variable: Variable, value: string): { variable: string; next: NextValue } => ({
+const setPending = (variable: Variable, value: string): Write => ({
   variable: variable.name,
   next: { kind: "Values", values: [value] },
 });
+
+const RENDER_SOURCES: ReadonlySet<VariableSource> = new Set(["state", "input", "derived"]);
+
+const takeSnapshots = (
+  table: VariableTable,
+  handler: Handler,
+  tailWrites: Write[],
+): Array<{ variable: Variable; snapshot: Variable }> => {
+  const reads = tailWrites.reduce(
+    (variables, write) => collectNextValueVariables(write.next, variables),
+    new Set<string>(),
+  );
+  const snapshots = table.variables
+    .filter((variable) => reads.has(variable.name) && RENDER_SOURCES.has(variable.source))
+    .map((variable) => ({ variable, snapshot: createSnapshotVariable(handler, variable) }));
+  for (const { snapshot } of snapshots) table.addVariable(snapshot);
+  return snapshots;
+};
 
 export const compileHandlerActions = (
   table: VariableTable,
@@ -114,7 +196,13 @@ export const compileHandlerActions = (
     loc: handler.loc,
   };
   if (!pendingVariable) return [call];
-  const settle = (phase: Settlement): Action => {
+  const fulfilledWrites = compileWrites(table, updatesByPhase("fulfilled"));
+  const rejectedWrites = compileWrites(table, updatesByPhase("rejected"));
+  const snapshots = takeSnapshots(table, handler, [...fulfilledWrites, ...rejectedWrites]);
+  const snapshotNames = new Map(
+    snapshots.map(({ variable, snapshot }) => [variable.name, snapshot.name]),
+  );
+  const settle = (phase: Settlement, writes: Write[]): Action => {
     const updates = updatesByPhase(phase);
     return {
       name: `${handler.id}_${phase}`,
@@ -122,13 +210,36 @@ export const compileHandlerActions = (
       handlerId: handler.id,
       phase,
       guard: isPending(pendingVariable, PENDING),
-      writes: [...compileWrites(table, updates), setPending(pendingVariable, IDLE)],
+      writes: [
+        ...writes.map((write) => ({
+          variable: write.variable,
+          next: renameNextValue(write.next, snapshotNames),
+        })),
+        setPending(pendingVariable, IDLE),
+        ...snapshots.map(({ snapshot }): Write => ({
+          variable: snapshot.name,
+          next: { kind: "Values", values: snapshot.initial },
+        })),
+      ],
       writtenBindingIds: getBindingIds(updates),
       hasRenderedWrite: hasRenderedWrite(updates),
       loc: handler.loc,
     };
   };
-  return [call, settle("fulfilled"), settle("rejected")];
+  return [
+    {
+      ...call,
+      writes: [
+        ...call.writes,
+        ...snapshots.map(({ variable, snapshot }): Write => ({
+          variable: snapshot.name,
+          next: { kind: "Copy", variable: variable.name },
+        })),
+      ],
+    },
+    settle("fulfilled", fulfilledWrites),
+    settle("rejected", rejectedWrites),
+  ];
 };
 
 const describeInput = (variable: Variable): string => {
