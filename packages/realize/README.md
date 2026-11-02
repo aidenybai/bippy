@@ -34,7 +34,7 @@ The model over-approximates: every render a component can produce should be one 
 | Unreachable | A branch edge the model calls unreachable ran.                                                      |
 | Mutation    | A warned mutation never wrote to its state or prop, or a lost update re-rendered.                   |
 
-A transition path may use each handler the action ran once, plus effects, async results and changes to inputs other than props. A truncated model is not checked for renders or transitions.
+A transition path may use each handler the action ran once, plus effects, async results and changes to inputs other than props. When none of the handlers that ran has a model action, the path may take no step, since the model says those handlers change no variable. A truncated model is not checked for renders or transitions.
 
 A component that **couldn't mount** isn't a counterexample. Its failure is classified, such as `provider`, `env`, `module`, `missing-data`, `server-component`, `too-large` or `unresponsive`, so the next harness fix is clear.
 

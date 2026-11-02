@@ -1,13 +1,19 @@
 import type { ConditionalValue, SymbolicValue } from "../types";
 import { formatNegated, formatSymbolicValue } from "../values/format";
+import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { isNullish } from "../values/is-nullish";
 import { getMemoizedRender } from "../render/get-memoized-render";
-import { TRUE, and, not } from "./predicates";
+import { TRUE, and, not, or } from "./predicates";
 import type { VariableTable } from "./variables";
 import type { Branch, Predicate, View } from "./types";
 
 const MAX_VIEWS = 64;
+
+interface TestContext {
+  node: ConditionalValue;
+  pathCondition: Predicate;
+}
 
 export const NO_VIEW = "nothing";
 
@@ -76,7 +82,8 @@ export const collectViews = (
   render: SymbolicValue,
   file: string,
 ): { views: View[]; branches: Branch[] } => {
-  const branches: Branch[] = [];
+  const branchesByNode = new Map<ConditionalValue, Branch>();
+  const testContexts: TestContext[] = [];
   const visited = new WeakSet<SymbolicValue>();
 
   const recordBranch = (
@@ -84,12 +91,21 @@ export const collectViews = (
     test: Predicate,
     pathCondition: Predicate,
   ): void => {
-    branches.push({
+    const consequent = and([pathCondition, test]);
+    const alternate = and([pathCondition, not(test)]);
+    const existing = branchesByNode.get(node);
+    branchesByNode.set(node, {
       label: formatSymbolicValue(getTestExpression(node)),
       loc: node.branch.loc,
       file: node.branch.file || file,
-      consequent: { predicate: and([pathCondition, test]), isReachable: null },
-      alternate: { predicate: and([pathCondition, not(test)]), isReachable: null },
+      consequent: {
+        predicate: existing ? or([existing.consequent.predicate, consequent]) : consequent,
+        isReachable: null,
+      },
+      alternate: {
+        predicate: existing ? or([existing.alternate.predicate, alternate]) : alternate,
+        isReachable: null,
+      },
     });
   };
 
@@ -136,6 +152,10 @@ export const collectViews = (
       case "Conditional": {
         const test = table.compile(getTestExpression(node));
         recordBranch(node, test, pathCondition);
+        forEachSymbolicValue(getTestExpression(node), (inner) => {
+          if (inner.kind === "Conditional" && inner !== node)
+            testContexts.push({ node: inner, pathCondition });
+        });
         const consequent = walk(node.consequent, and([pathCondition, test]), isSplitting);
         const alternate = walk(node.alternate, and([pathCondition, not(test)]), isSplitting);
         if (!isSplitting) return SINGLE;
@@ -181,5 +201,12 @@ export const collectViews = (
       conditions: renderPath.conditions,
     };
   });
-  return { views, branches };
+  for (const context of testContexts)
+    if (branchesByNode.has(context.node))
+      recordBranch(
+        context.node,
+        table.compile(getTestExpression(context.node)),
+        context.pathCondition,
+      );
+  return { views, branches: [...branchesByNode.values()] };
 };

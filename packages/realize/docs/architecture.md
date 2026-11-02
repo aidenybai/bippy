@@ -136,7 +136,7 @@ A component with more than 64 variables isn't explored.
 
 A view is one way the render can look: a choice of side at each branch, with the predicate that selects it. Its label comes from the elements each side renders, like `form > button "Back"`. Combinations that contradict themselves, like `role = "admin"` with `role = "viewer"`, are dropped. A component has at most 64 views.
 
-Each branch keeps two edges, its consequent and its alternate, each with the predicate under which it renders. Branches include the ones inside lists, which views leave out.
+Each branch keeps two edges, its consequent and its alternate, each with the predicate under which it runs. A branch inside another branch's test runs wherever that test runs, so the `?.` in `user?.name && <i />` runs on every render, not only when the `&&` is false. Branches include the ones inside lists, which views leave out.
 
 ### Actions
 
