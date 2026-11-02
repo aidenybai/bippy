@@ -1,7 +1,6 @@
 import type {
   BasicBlock,
   BlockId,
-  HIRFunction,
   IdentifierId,
   InstructionValue,
   Phi,
@@ -174,7 +173,6 @@ export class ControlFlowWalker {
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
   readonly #loopContextPlaces = new Map<BlockId, Place[]>();
   readonly #unrolledLoopHeaders = new Set<BlockId>();
-  readonly #trackedContextPlaces = new WeakMap<HIRFunction, Place[]>();
   functionScope = createFunctionScope();
   readonly #throwingCatches = new Set<BlockId>();
   #awaitCount = 0;
@@ -567,8 +565,6 @@ export class ControlFlowWalker {
 
   #getTrackedContextPlaces(): Place[] {
     const hirFunction = this.#interpreter.getCurrentFunction();
-    const cached = this.#trackedContextPlaces.get(hirFunction);
-    if (cached) return cached;
     const placesById = new Map<IdentifierId, Place>();
     for (const block of hirFunction.body.blocks.values())
       for (const instruction of block.instructions) {
@@ -583,9 +579,7 @@ export class ControlFlowWalker {
         )
           placesById.set(instruction.value.lvalue.identifier.id, instruction.value.lvalue);
       }
-    const places = [...placesById.values()];
-    this.#trackedContextPlaces.set(hirFunction, places);
-    return places;
+    return [...placesById.values()];
   }
 
   #getContextValues(): ReadonlyMap<IdentifierId, ContextValue> | null {

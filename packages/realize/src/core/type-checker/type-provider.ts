@@ -43,7 +43,6 @@ const COLLECTIONS: Record<MutableCollection, Collection> = {
 export class CompilerTypeProvider implements TypeProvider {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
-  readonly #mutatingMethodsByCollection = new Map<MutableCollection, Set<string>>();
 
   constructor(checker: Checker, sourceFile: SourceFile) {
     this.#checker = checker;
@@ -56,8 +55,6 @@ export class CompilerTypeProvider implements TypeProvider {
   }
 
   isMutatingMethod(collection: MutableCollection, method: string): boolean {
-    const cachedMethods = this.#mutatingMethodsByCollection.get(collection);
-    if (cachedMethods) return cachedMethods.has(method);
     const readonlyMethods = new Set(
       getInterfaceMemberNames(this.#checker, this.#sourceFile, `Readonly${collection}`),
     );
@@ -66,7 +63,6 @@ export class CompilerTypeProvider implements TypeProvider {
         (memberName) => !readonlyMethods.has(memberName),
       ),
     );
-    this.#mutatingMethodsByCollection.set(collection, mutatingMethods);
     return mutatingMethods.has(method);
   }
 

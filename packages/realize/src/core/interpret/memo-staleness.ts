@@ -86,8 +86,6 @@ const getNullishTestPlaces = (
 export class MemoStaleness {
   readonly #interpreter: Interpreter;
   readonly #memoDependencies = new Map<number, Array<ManualMemoDependency> | null>();
-  readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
-  readonly #storedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -113,12 +111,7 @@ export class MemoStaleness {
   }
 
   #getClosureMutatedLocals(): Map<IdentifierId, Place> {
-    const hirFunction = this.#interpreter.getCurrentFunction();
-    const cached = this.#closureMutatedLocals.get(hirFunction);
-    if (cached) return cached;
-    const locals = getClosureMutatedLocals(hirFunction);
-    this.#closureMutatedLocals.set(hirFunction, locals);
-    return locals;
+    return getClosureMutatedLocals(this.#interpreter.getCurrentFunction());
   }
 
   finishMemoize(finish: InstructionValueOfKind<"FinishMemoize">): void {
@@ -149,9 +142,7 @@ export class MemoStaleness {
 
   #createStaleMemo(memoized: SymbolicValue, decl: Place): SymbolicValue {
     const hirFunction = this.#interpreter.getCurrentFunction();
-    const storedLocals = this.#storedLocals.get(hirFunction) ?? getStoredLocals(hirFunction);
-    this.#storedLocals.set(hirFunction, storedLocals);
-    const local = storedLocals.get(decl.identifier.id) ?? decl;
+    const local = getStoredLocals(hirFunction).get(decl.identifier.id) ?? decl;
     const inputPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(memoized, inputPlaces);
     const memo = createBindingValue(

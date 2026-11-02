@@ -38,8 +38,6 @@ interface PropHolds {
   contextLocs: ReadonlyMap<string, SourceLocation>;
 }
 
-const holdsByFunction = new WeakMap<HIRFunction, PropHolds>();
-
 const scanFunction = (hirFunction: HIRFunction): PropHolds => {
   const [props] = hirFunction.params;
   const contextLocs = new Map<string, SourceLocation>();
@@ -174,10 +172,4 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
   return { held, forwards, contextLocs };
 };
 
-export const getPropHolds = (hirFunction: HIRFunction): PropHolds => {
-  const cached = holdsByFunction.get(hirFunction);
-  if (cached) return cached;
-  const holds = scanFunction(hirFunction);
-  holdsByFunction.set(hirFunction, holds);
-  return holds;
-};
+export const getPropHolds = (hirFunction: HIRFunction): PropHolds => scanFunction(hirFunction);
