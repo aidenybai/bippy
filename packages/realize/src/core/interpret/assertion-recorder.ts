@@ -2,18 +2,13 @@ import { describeCases, withNullishCases } from "../type-checker/domains";
 import { formatSymbolicValue } from "../values/format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, foldBinary, hasUnknownPart } from "../values/symbolic-values";
-import type { Assertion, Domain, SourceLocation, SymbolicValue, AbstractValue } from "../types";
+import type { Assertion, Domain, SourceLocation, SymbolicValue } from "../types";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
 import { getAssertionGuards, type PathState } from "./path-state";
-import { isNullish } from "../values/is-nullish";
-
-const isNullishCase = (value: AbstractValue): boolean =>
-  value.kind === "Literal"
-    ? isNullish(value.value)
-    : value.kind === "Type" && (value.text === "undefined" || value.text === "null");
+import { isNullishCase } from "../values/abstract-values";
 
 const ASSERTION_FUNCTIONS = new Set(["invariant", "assert", "console.assert"]);
 
