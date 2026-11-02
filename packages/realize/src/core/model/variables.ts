@@ -148,6 +148,17 @@ const hasCountedLength = (receiver: Domain | null): boolean => {
   );
 };
 
+const getInputBindingIds = (binding: Binding, bindingsById: Map<number, Binding>): number[] => {
+  const ids = new Set<number>();
+  const pending = binding.inputPlaces.map((place) => place.bindingId);
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    if (ids.has(id)) continue;
+    ids.add(id);
+    for (const place of bindingsById.get(id)?.inputPlaces ?? []) pending.push(place.bindingId);
+  }
+  return [...ids];
+};
+
 const BOOLEAN_DOMAIN: Value[] = [
   { label: "false", abstract: { kind: "Exact", value: false } },
   { label: "true", abstract: { kind: "Exact", value: true } },
@@ -194,6 +205,7 @@ export const createVariableTable = (
     path.length === 0
       ? binding.domain
       : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
+  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
 
   for (const [key, entry] of entries) {
     const isLength =
@@ -207,7 +219,7 @@ export const createVariableTable = (
       source: getVariableSource(entry.binding),
       bindingKind: entry.binding.kind,
       bindingId: entry.binding.id,
-      inputBindingIds: [...new Set(entry.binding.inputPlaces.map((place) => place.bindingId))],
+      inputBindingIds: getInputBindingIds(entry.binding, bindingsById),
       path: entry.path,
       domain: values,
       initial: getValueLabels(values),
