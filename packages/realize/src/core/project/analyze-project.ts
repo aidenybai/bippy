@@ -25,8 +25,6 @@ import type { FileContext } from "./analyze-component";
 import { collectExportNames } from "./collect-export-names";
 import { isProjectSourceFile } from "./is-project-source-file";
 import { withProject } from "./with-project";
-import { NO_TRACER } from "./tracer";
-import type { Tracer } from "./tracer";
 import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./declaration-key";
 import { createImportIndex } from "./create-import-index";
@@ -59,11 +57,7 @@ const withContextFileNames = (
   ),
 });
 
-const compileProjectFiles = (
-  project: Project,
-  fileNames: string[],
-  tracer: Tracer,
-): FileContext[] => {
+const compileProjectFiles = (project: Project, fileNames: string[]): FileContext[] => {
   const isStrictNullChecks =
     project.compilerOptions.strictNullChecks ?? project.compilerOptions.strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
@@ -203,11 +197,9 @@ const compileProjectFiles = (
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
     const resolver = new SourceFileResolver(project.checker, sourceFile, isStrictNullChecks);
-    const compiled = tracer.span("compile", fileName, () =>
-      compileFile(fileName, sourceFile.text, {
-        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-      }),
-    );
+    const compiled = compileFile(fileName, sourceFile.text, {
+      typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+    });
     for (const [storeKey, model] of collectStoreModels(sourceFile))
       modelsByStore.set(storeKey, model);
     const exportNames = collectExportNames(sourceFile);
@@ -248,16 +240,10 @@ const compileProjectFiles = (
 const analyzeCompiledComponent = (
   component: CompiledComponent,
   contextSetterFields: ContextSetterFields,
-  tracer: Tracer,
 ): ComponentAnalysis =>
-  tracer.span(
-    "interpret",
-    component.reactFunction.name,
-    () => analyzeComponent(component.reactFunction, component.fileContext, contextSetterFields),
-    { file: component.fileContext.sourceFile.fileName },
-  );
+  analyzeComponent(component.reactFunction, component.fileContext, contextSetterFields);
 
-const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): ComponentAnalysis[] => {
+const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => {
   const compiledComponents = fileContexts.flatMap((fileContext) =>
     fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
       reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
@@ -265,20 +251,18 @@ const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): Compone
   );
   const initialAnalyses = compiledComponents.map((component) => ({
     component,
-    analysis: analyzeCompiledComponent(component, new Map(), tracer),
+    analysis: analyzeCompiledComponent(component, new Map()),
   }));
   const contextSetterFields = collectContextSetterFields(
     initialAnalyses.map((initial) => initial.analysis),
   );
   const analyses = initialAnalyses.map((initial) =>
     initial.analysis.readContextKeys.some((contextKey) => contextSetterFields.has(contextKey))
-      ? analyzeCompiledComponent(initial.component, contextSetterFields, tracer)
+      ? analyzeCompiledComponent(initial.component, contextSetterFields)
       : initial.analysis,
   );
-  tracer.span("props", "infer props", () => {
-    for (const analysis of analyses) addSamplesFromReadPaths(analysis);
-    inferPropsFromCallSites(analyses);
-  });
+  for (const analysis of analyses) addSamplesFromReadPaths(analysis);
+  inferPropsFromCallSites(analyses);
   return analyses;
 };
 
@@ -288,36 +272,28 @@ export interface InterpretedProject {
   unparsedFiles: string[];
 }
 
-export const interpretProject = (
-  configPath: string,
-  tracer: Tracer = NO_TRACER,
-): InterpretedProject =>
-  withProject(
-    configPath,
-    (project) => {
-      const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
-      const fileContexts = compileProjectFiles(project, fileNames, tracer);
-      const fileNamesByPath = new Map(
-        fileContexts.map((fileContext) => [
-          fileContext.sourceFile.path,
-          fileContext.sourceFile.fileName,
-        ]),
-      );
-      const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
-        withContextFileNames(analysis, fileNamesByPath),
-      );
-      const unparsedFiles = fileContexts.flatMap((fileContext) =>
-        fileContext.compiled.parseError === null ? [] : [fileContext.sourceFile.fileName],
-      );
-      return { analyses, fileCount: fileNames.length, unparsedFiles };
-    },
-    tracer,
-  );
+export const interpretProject = (configPath: string): InterpretedProject =>
+  withProject(configPath, (project) => {
+    const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
+    const fileContexts = compileProjectFiles(project, fileNames);
+    const fileNamesByPath = new Map(
+      fileContexts.map((fileContext) => [
+        fileContext.sourceFile.path,
+        fileContext.sourceFile.fileName,
+      ]),
+    );
+    const analyses = analyzeComponents(fileContexts).map((analysis) =>
+      withContextFileNames(analysis, fileNamesByPath),
+    );
+    const unparsedFiles = fileContexts.flatMap((fileContext) =>
+      fileContext.compiled.parseError === null ? [] : [fileContext.sourceFile.fileName],
+    );
+    return { analyses, fileCount: fileNames.length, unparsedFiles };
+  });
 
 export const reportProject = async (
   interpretedProject: InterpretedProject,
   fileFilter: string | null = null,
-  tracer: Tracer = NO_TRACER,
 ): Promise<ProjectAnalysis> => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
@@ -326,12 +302,7 @@ export const reportProject = async (
   for (const analysis of interpretedProject.analyses.filter(isSelected))
     components.push({
       analysis,
-      model: await tracer.span(
-        "model",
-        analysis.name,
-        () => buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
-        { file: analysis.file },
-      ),
+      model: await buildComponentModel(analysis, collectTriggerLabels(analysis, sourceReader)),
     });
   return {
     components,
@@ -343,6 +314,4 @@ export const reportProject = async (
 export const analyzeProject = async (
   configPath: string,
   fileFilter: string | null = null,
-  tracer: Tracer = NO_TRACER,
-): Promise<ProjectAnalysis> =>
-  reportProject(interpretProject(configPath, tracer), fileFilter, tracer);
+): Promise<ProjectAnalysis> => reportProject(interpretProject(configPath), fileFilter);

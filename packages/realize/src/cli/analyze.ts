@@ -1,10 +1,8 @@
-import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { analyzeProject } from "../core/project/analyze-project";
 import { ConfigError } from "../core/project/config-error";
 import { serializeProjectAnalysis } from "../core/project/serialize";
-import { createTracer, NO_TRACER } from "../core/project/tracer";
 import { checkInvariant, type InvariantResult } from "../core/model/check-invariant";
 import { formatTla } from "../core/model/tla";
 import type { InvariantDefinition } from "../core/model/tla";
@@ -21,7 +19,6 @@ interface AnalyzeCliOptions {
   json: boolean;
   tla: boolean;
   invariant?: string[];
-  trace?: string;
 }
 
 const INVARIANT_PATTERN = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/s;
@@ -119,9 +116,8 @@ const runAnalyze = async (tsconfig: string, options: AnalyzeCliOptions): Promise
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
   const rootDirectory = dirname(configPath);
-  const tracer = options.trace ? createTracer(rootDirectory) : NO_TRACER;
   const invariants = (options.invariant ?? []).map(parseInvariant);
-  const analysis = await analyzeProject(configPath, options.file ?? null, tracer);
+  const analysis = await analyzeProject(configPath, options.file ?? null);
   if (options.file && analysis.components.length === 0)
     throw new ConfigError(`No component is in a file matching ${options.file}`);
   const componentNames = options.component;
@@ -136,11 +132,8 @@ const runAnalyze = async (tsconfig: string, options: AnalyzeCliOptions): Promise
   const output =
     invariants.length > 0
       ? await checkInvariants(components, invariants)
-      : tracer.span("output", "output", () =>
-          formatOutput(components, analysis, options, rootDirectory),
-        );
+      : formatOutput(components, analysis, options, rootDirectory);
   console.log(output);
-  if (options.trace) writeFileSync(options.trace, JSON.stringify({ traceEvents: tracer.events }));
   if (options.json || options.tla) return;
   const elapsedMs = Math.round(performance.now() - startTime);
   for (const line of formatTotals({ ...analysis, components }, elapsedMs)) console.error(line);
@@ -169,7 +162,6 @@ new Command()
     "-i, --invariant <invariants...>",
     'check invariants written as "Name: TLA+ expression" over the variables and view',
   )
-  .option("--trace <file>", "write the time and memory of each phase as a Chrome trace")
   .action(async (tsconfig: string, options: AnalyzeCliOptions) => {
     try {
       await runAnalyze(tsconfig, options);
