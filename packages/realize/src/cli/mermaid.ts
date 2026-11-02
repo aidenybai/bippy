@@ -35,7 +35,7 @@ const groupEdges = (
   return groups;
 };
 
-export const formatTitle = (component: AnalyzedComponent, rootDirectory: string): string[] => {
+const formatTitle = (component: AnalyzedComponent, rootDirectory: string): string[] => {
   const analysis = component.analysis;
   const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   return [

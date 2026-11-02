@@ -1,6 +1,4 @@
 import { API, DiagnosticCategory } from "typescript/unstable/sync";
-import { NO_TRACER } from "./tracer";
-import type { Tracer } from "./tracer";
 import { ConfigError } from "./config-error";
 import { resolve, join, dirname } from "node:path";
 import type { Project } from "typescript/unstable/sync";
@@ -56,7 +54,6 @@ const closeAfterFailure = (api: API): void => {
 export const withProject = <Result>(
   configPath: string,
   callback: (project: Project) => Result,
-  tracer: Tracer = NO_TRACER,
 ): Result => {
   const api = new API({ cwd: dirname(configPath) });
   let shimDirectory: string | null = null;
@@ -69,11 +66,7 @@ export const withProject = <Result>(
         projectConfigPath,
         JSON.stringify({ extends: resolve(configPath), compilerOptions: { paths } }),
       );
-    const project = tracer.span(
-      "typescript",
-      "program",
-      () => api.updateSnapshot({ openProjects: [projectConfigPath] }).getProjects()[0],
-    );
+    const project = api.updateSnapshot({ openProjects: [projectConfigPath] }).getProjects()[0];
     if (!project) throw new ConfigError(`no TypeScript project found for ${configPath}`);
     assertConfigParsed(project, configPath);
     const callbackResult = callback(project);

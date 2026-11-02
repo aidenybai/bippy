@@ -1,7 +1,7 @@
 import { NO_VIEW } from "./views";
 import type { Action, NextValue, ModelSpec, Predicate, Variable } from "./types";
 
-export interface InvariantDefinition {
+interface Definition {
   name: string;
   expression: string;
 }
@@ -99,7 +99,7 @@ const toModuleName = (name: string): string =>
 export const formatTla = (
   name: string,
   model: ModelSpec,
-  definitions: InvariantDefinition[] = [],
+  definitions: Definition[] = [],
 ): string => {
   const names = model.variables.map((variable) => variable.name);
   const variableComments = model.variables.map((variable) =>

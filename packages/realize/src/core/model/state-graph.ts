@@ -2,15 +2,7 @@ import { check } from "tla-ts";
 import { evaluatePredicate } from "./predicates";
 import { formatTla } from "./tla";
 import { NO_VIEW } from "./views";
-import type {
-  Action,
-  ModelSpec,
-  Predicate,
-  StateSpace,
-  TraceStep,
-  View,
-  ViewTransition,
-} from "./types";
+import type { Action, ModelSpec, Predicate, StateSpace, TraceStep, ViewTransition } from "./types";
 
 const MAX_STATES = 20_000;
 
@@ -153,12 +145,6 @@ const exploreSpec = async (name: string, spec: ModelSpec): Promise<Graph> => {
     result.distinctStates >= MAX_STATES || result.generatedStates >= MAX_SUCCESSORS;
   return graph;
 };
-
-export const getViewLabel = (
-  views: View[],
-  valueOf: (variable: string) => string | undefined,
-): string =>
-  views.find((view) => evaluatePredicate(view.predicate, valueOf) === true)?.label ?? NO_VIEW;
 
 export const checkStateGraph = async (name: string, spec: ModelSpec): Promise<StateGraph> => {
   const graph = await exploreSpec(name, spec);

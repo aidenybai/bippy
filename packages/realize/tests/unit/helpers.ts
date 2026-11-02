@@ -10,13 +10,7 @@ import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
 import { isFunctionCreation } from "../../src/core/interpret/is-function-creation";
-import type {
-  AnalyzedComponent,
-  Binding,
-  ComponentAnalysis,
-  ProjectAnalysis,
-} from "../../src/core/types";
-import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
+import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/core/types";
 import { collectHandlerCounters } from "../conformance/verifier/handler-counters";
 import type { Capture } from "../conformance/verifier/types";
 
@@ -61,20 +55,6 @@ export const createCapture = (overrides: Partial<Capture>): Capture => ({
   errorDepth: null,
   failure: null,
   ...overrides,
-});
-
-export const createTestAnalysis = (name: string, bindings: Binding[]): ComponentAnalysis => ({
-  ...createEmptyAnalysis(
-    {
-      name,
-      exportName: name,
-      file: `/${name}.tsx`,
-      declaration: `/${name}.tsx#${name}`,
-    },
-    GeneratedSource,
-    { kind: "Primitive", value: null },
-  ),
-  bindings,
 });
 
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {
