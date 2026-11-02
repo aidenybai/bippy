@@ -11,10 +11,12 @@ import { forEachRenderNode } from "../../src/core/render/for-each-render-node";
 import { forEachJsxElement } from "../../src/core/render/for-each-jsx-element";
 import { isRenderingNothing } from "../../src/core/render/is-rendering-nothing";
 import { collectTriggerLabels } from "../../src/core/labels/trigger-labels";
-import { simplifyConditions } from "../../src/cli/simplify-conditions";
-import { describeState } from "../../src/cli/describe-state";
 import { createSourceReader } from "../../src/core/labels/source-text";
+import { exploreModel, type StateGraph } from "../../src/core/model/explore";
+import type { ComponentModel } from "../../src/core/model/types";
+import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
 import type {
+  AnalyzedComponent,
   Binding,
   ConditionalValue,
   Domain,
@@ -24,17 +26,16 @@ import type {
   SymbolicValue,
 } from "../../src/core/types";
 import type {
-  CodeGraph,
   ViewBinding,
   ViewBranch,
   ViewComponent,
   ViewFile,
   ViewHandler,
   ViewLocation,
+  ViewState,
   ViewUpdate,
 } from "@/model";
 import { getUpdateKey } from "@/lib/lookup";
-import { loadAnalyzerOutput, loadAnalyzerText, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
 
 const toViewLocation = (loc: SourceLocation): ViewLocation | null =>
@@ -102,21 +103,27 @@ const formatDomain = (domain: Domain): string => {
   }
 };
 
-const getReachableLabel = (component: AnalyzerJsonComponent, binding: Binding): string | null => {
-  const reachable = component.report.places[String(binding.id)];
-  if (!reachable || binding.domain.kind !== "Cases") return null;
-  if (reachable.length >= binding.domain.cases.length) return null;
-  return reachable.map(formatAbstractValue).join(" | ");
+const getReachableLabel = (
+  model: ComponentModel,
+  stateGraph: StateGraph,
+  binding: Binding,
+): string | null => {
+  const variable = model.variables.find(
+    (candidate) => candidate.bindingId === binding.id && candidate.path.length === 0,
+  );
+  if (!variable || model.stateSpace.isTruncated) return null;
+  const labels = variable.domain.map((value) => value.label);
+  const reachable = labels.filter(
+    (label) =>
+      stateGraph.findTrace({
+        kind: "In",
+        variable: variable.name,
+        values: [label],
+        domain: labels,
+      }) !== null,
+  );
+  return reachable.length < labels.length ? reachable.join(" | ") : null;
 };
-
-const toViewBinding = (component: AnalyzerJsonComponent, binding: Binding): ViewBinding => ({
-  id: binding.id,
-  name: binding.name,
-  domain: formatDomain(binding.domain),
-  initial: binding.initial ? formatSymbolicValue(binding.initial) : null,
-  reachable: getReachableLabel(component, binding),
-  loc: toViewLocation(binding.loc),
-});
 
 const getRestOfLine = (loc: ViewLocation | null): ViewLocation | null =>
   loc && {
@@ -134,18 +141,18 @@ const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
   left.end.index === right.end.index;
 
 const getNeverArm = (
-  component: AnalyzerJsonComponent,
+  model: ComponentModel,
   conditional: ConditionalValue,
 ): "consequent" | "alternate" | null => {
-  const unreachable = component.report.unreachableBranches.find((candidate) =>
-    isSameLocation(candidate.branch.loc, conditional.branch.loc),
+  const branch = model.branches.find((candidate) =>
+    isSameLocation(candidate.loc, conditional.branch.loc),
   );
-  if (!unreachable) return null;
-  return unreachable.isTrueSide ? "consequent" : "alternate";
+  if (branch?.consequent.isReachable === false) return "consequent";
+  return branch?.alternate.isReachable === false ? "alternate" : null;
 };
 
 const toViewBranch = (
-  component: AnalyzerJsonComponent,
+  model: ComponentModel,
   conditional: ConditionalValue,
   id: number,
 ): ViewBranch => {
@@ -159,14 +166,15 @@ const toViewBranch = (
     consequent: getArmLocation(conditional.consequent, loc),
     alternate: getArmLocation(conditional.alternate, loc),
     readsBindingIds: collectBindingIds(test),
-    never: getNeverArm(component, conditional),
+    never: getNeverArm(model, conditional),
   };
 };
 
-const collectBranches = (component: AnalyzerJsonComponent): ViewBranch[] => {
+const collectBranches = (component: AnalyzedComponent): ViewBranch[] => {
   const branches: ViewBranch[] = [];
   forEachRenderNode(component.analysis.render, (node) => {
-    if (node.kind === "Conditional") branches.push(toViewBranch(component, node, branches.length));
+    if (node.kind === "Conditional")
+      branches.push(toViewBranch(component.model, node, branches.length));
   });
   return branches;
 };
@@ -209,7 +217,7 @@ interface TriggerSite {
   name: string;
 }
 
-const collectTriggerSites = (component: AnalyzerJsonComponent): TriggerSite[] => {
+const collectTriggerSites = (component: AnalyzedComponent): TriggerSite[] => {
   const sites: TriggerSite[] = [];
   forEachJsxElement(component.analysis.render, (element) => {
     for (const prop of element.props) {
@@ -225,59 +233,82 @@ const collectTriggerSites = (component: AnalyzerJsonComponent): TriggerSite[] =>
   return sites;
 };
 
-const getViewHandlers = (component: AnalyzerJsonComponent): ViewHandler[] => {
-  const triggerLabels = collectTriggerLabels(component, createSourceReader());
+const getViewHandlers = (component: AnalyzedComponent): ViewHandler[] => {
+  const triggerLabels = collectTriggerLabels(component.analysis, createSourceReader());
   return component.analysis.handlers.map((handler) =>
     toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
   );
 };
 
-const getViewBindings = (component: AnalyzerJsonComponent): ViewBinding[] =>
-  component.analysis.bindings
+const getViewBindings = (component: AnalyzedComponent): ViewBinding[] => {
+  const stateGraph = exploreModel(
+    component.model.variables,
+    component.model.actions,
+    component.model.views,
+  );
+  return component.analysis.bindings
     .filter((binding) => binding.kind !== "item")
-    .map((binding) => toViewBinding(component, binding));
-
-const buildComponentGraph = (component: AnalyzerJsonComponent, source: string): CodeGraph =>
-  buildCodeGraph({
-    idPrefix: `${component.analysis.name}/`,
-    source,
-    componentLoc: toViewLocation(component.analysis.loc),
-    bindings: getViewBindings(component),
-    branches: collectBranches(component),
-    handlers: getViewHandlers(component),
-    triggers: collectTriggerSites(component),
-  });
-
-const getViewStates = (component: AnalyzerJsonComponent): ViewComponent["states"] => {
-  const { analysis, report } = component;
-  const describer = { file: analysis.file, sourceReader: createSourceReader() };
-  return report.states.map((state, index) => {
-    const label = simplifyConditions(state.conditions).join(" ∧ ") || "always";
-    const described = describeState(state, report.regions.length > 1, describer);
-    return {
-      index,
-      conditions: state.conditions,
-      label,
-      render: described.slice(label.length + 3),
-      transitions: state.transitions,
-    };
-  });
+    .map((binding) => ({
+      id: binding.id,
+      name: binding.name,
+      domain: formatDomain(binding.domain),
+      initial: binding.initial ? formatSymbolicValue(binding.initial) : null,
+      reachable: getReachableLabel(component.model, stateGraph, binding),
+      loc: toViewLocation(binding.loc),
+    }));
 };
 
-const toViewComponent = (component: AnalyzerJsonComponent, source: string): ViewComponent => {
-  const { analysis, report } = component;
+const getViewTransitions = (model: ComponentModel, label: string): ViewState["transitions"] => {
+  const transitions: ViewState["transitions"] = [];
+  for (const edge of model.stateSpace.edges) {
+    const target = model.views.findIndex((view) => view.label === edge.to);
+    if (edge.from !== label || edge.handlerId === null || target === -1) continue;
+    const existing = transitions.find(
+      (transition) =>
+        transition.handlerId === edge.handlerId && transition.isAsync === edge.isAsync,
+    );
+    if (!existing)
+      transitions.push({ handlerId: edge.handlerId, targets: [target], isAsync: edge.isAsync });
+    else if (!existing.targets.includes(target)) existing.targets.push(target);
+  }
+  return transitions;
+};
+
+const toViewComponent = (component: AnalyzedComponent, source: string): ViewComponent => {
+  const bindings = getViewBindings(component);
+  const branches = collectBranches(component);
+  const handlers = getViewHandlers(component);
+  const model = component.model;
   return {
-    name: analysis.name,
-    loc: toViewLocation(analysis.loc),
-    bindings: getViewBindings(component),
-    branches: collectBranches(component),
-    handlers: getViewHandlers(component),
-    graph: buildComponentGraph(component, source),
-    states: getViewStates(component),
-    regions: report.regions.map((region) => ({
-      placeNames: region.placeNames,
-      states: region.states,
+    name: component.analysis.name,
+    loc: toViewLocation(component.analysis.loc),
+    bindings,
+    branches,
+    handlers,
+    graph: buildCodeGraph({
+      idPrefix: `${component.analysis.name}/`,
+      source,
+      componentLoc: toViewLocation(component.analysis.loc),
+      bindings,
+      branches,
+      handlers,
+      triggers: collectTriggerSites(component),
+    }),
+    states: model.views.map((view, index) => ({
+      index,
+      conditions: view.conditions,
+      label: view.conditions.join(" ∧ ") || "always",
+      render: view.label,
+      transitions: getViewTransitions(model, view.label),
     })),
+    regions: [
+      {
+        placeNames: model.variables
+          .filter((variable) => variable.source !== "control")
+          .map((variable) => variable.label),
+        states: model.views.map((_view, index) => index),
+      },
+    ],
   };
 };
 
@@ -292,22 +323,17 @@ const findTsconfig = (file: string): string => {
   }
 };
 
-export const getAnalyzerJson = (file: string): string =>
-  JSON.stringify(
-    JSON.parse(loadAnalyzerText({ tsconfig: findTsconfig(file), fileFilter: file })),
-    null,
-    2,
-  );
-
-export const getViewFile = (file: string): ViewFile => {
-  const tsconfig = findTsconfig(file);
-  const components = loadAnalyzerOutput({ tsconfig, fileFilter: file }).filter(
-    (component) => component.analysis.file === file,
-  );
+export const analyzeFile = (file: string): { view: ViewFile; json: string } => {
+  const analysis = analyzeProject(findTsconfig(file), file);
   const source = readFileSync(file, "utf8");
   return {
-    file,
-    source,
-    components: components.map((component) => toViewComponent(component, source)),
+    view: {
+      file,
+      source,
+      components: analysis.components
+        .filter((component) => component.analysis.file === file)
+        .map((component) => toViewComponent(component, source)),
+    },
+    json: JSON.stringify(JSON.parse(serializeProjectAnalysis(analysis)), null, 2),
   };
 };
