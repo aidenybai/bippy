@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
 import { serializeProjectAnalysis } from "../../../src/core/project/serialize";
-import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
+import type { AnalyzedComponent } from "../../../src/core/types";
 import { sum, summarizeVerdicts } from "../verifier/verdict-report";
 import type { VerificationSummary } from "../verifier/verdicts";
 import type { CollectSummary } from "./collect-summary";
@@ -18,7 +18,7 @@ const summarize = (
   durationMs: number,
   verification: VerificationSummary | null,
 ): CollectSummary => {
-  const bailoutCountsByReason: Partial<Record<BailoutReason, number>> = {};
+  const bailoutCountsByReason: CollectSummary["bailoutCountsByReason"] = {};
   for (const component of components)
     for (const bailout of component.analysis.bailouts)
       bailoutCountsByReason[bailout.reason] = (bailoutCountsByReason[bailout.reason] ?? 0) + 1;

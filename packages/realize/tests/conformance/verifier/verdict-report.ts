@@ -1,5 +1,4 @@
 import type { Sample } from "../../../src/core/types";
-import type { MountFailure } from "./reasons";
 import { isMountFailedVerdict } from "./verdicts";
 import type { ComponentVerdict, VerificationSummary } from "./verdicts";
 
@@ -70,7 +69,7 @@ export const formatMountFailures = (
   mountFailureCounts: VerificationSummary["mountFailureCounts"],
 ): string =>
   Object.entries(mountFailureCounts)
-    .sort(([, left], [, right]) => (right ?? 0) - (left ?? 0))
+    .sort(([, left], [, right]) => right - left)
     .map(([failure, count]) => `${failure} ${count}`)
     .join(", ");
 
@@ -80,7 +79,7 @@ export const summarizeVerdicts = (
 ): VerificationSummary => {
   const verifiedVerdicts = verdicts.filter((verdict) => verdict.status === "verified");
   const mountFailedVerdicts = verdicts.filter(isMountFailedVerdict);
-  const mountFailureCounts: Partial<Record<MountFailure, number>> = {};
+  const mountFailureCounts: VerificationSummary["mountFailureCounts"] = {};
   for (const verdict of mountFailedVerdicts) {
     mountFailureCounts[verdict.mountFailure] = (mountFailureCounts[verdict.mountFailure] ?? 0) + 1;
   }
