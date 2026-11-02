@@ -226,7 +226,12 @@ class ComponentCheck {
     this.#handlerIdsByCounterId = getHandlerIdsByCounterId(analysis);
     this.#backgroundIds = new Set(
       analysis.handlers
-        .filter((handler) => isEffectHandler(handler) || isSpontaneousHandler(handler))
+        .filter(
+          (handler) =>
+            isEffectHandler(handler) ||
+            isSpontaneousHandler(handler) ||
+            handler.trigger.kind === "Render",
+        )
         .map((handler) => handler.id),
     );
   }
