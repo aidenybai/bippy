@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-checker/type-provider";
+import { SourceFileResolver } from "../../src/core/type-checker/source-file-resolver";
+import { TypeTable } from "../../src/core/type-checker/type-table";
 import { isProjectSourceFile } from "../../src/core/project/is-project-source-file";
 import { withProject } from "../../src/core/project/with-project";
 import { compileFile } from "../../src/core/compile/compile";
@@ -110,12 +112,15 @@ export const getWarningKinds = (component: AnalyzedComponent): string[] =>
 export const getHirFunctionsByName = (fixture: string): Map<string, HIRFunction> =>
   withProject(getFixtureConfig(fixture), (project) => {
     const functions = new Map<string, HIRFunction>();
+    const types = new TypeTable(project.checker);
     for (const fileName of project.program.getSourceFileNames().filter(isProjectSourceFile)) {
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) continue;
-      const compiled = compileFile(fileName, sourceFile.text, {
-        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-      });
+      const compiled = compileFile(
+        fileName,
+        sourceFile.text,
+        new CompilerTypeProvider(new SourceFileResolver(types, sourceFile, true)),
+      );
       for (const compiledFunction of compiled.functions) {
         if (compiledFunction.hir) functions.set(compiledFunction.name, compiledFunction.hir);
       }

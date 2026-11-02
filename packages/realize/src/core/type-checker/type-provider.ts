@@ -1,9 +1,8 @@
-import type { SourceFile } from "typescript/unstable/ast";
-import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
-import type { Checker, Signature, Type } from "typescript/unstable/sync";
-import type { MutableCollection, TypeProvider } from "../../react-compiler/HIR/Environment";
+import { TypeFlags } from "typescript/unstable/sync";
+import type { Signature, Type } from "typescript/unstable/sync";
+import type { MutableCollection } from "../../react-compiler/HIR/Environment";
 import { Effect, ValueKind, makeType } from "../../react-compiler/HIR/HIR";
-import type { BuiltInType, SourceLocation } from "../../react-compiler/HIR/HIR";
+import type { BuiltInType, HIRFunction, Place, SourceLocation } from "../../react-compiler/HIR/HIR";
 import {
   BuiltInArrayId,
   BuiltInMapId,
@@ -12,75 +11,77 @@ import {
   addFunction,
 } from "../../react-compiler/HIR/ObjectShape";
 import type { ShapeRegistry } from "../../react-compiler/HIR/ObjectShape";
-import { getCollectionName, getInterfaceMemberNames } from "./lib-collections";
-import { findNodeAtLocation } from "./find-node-at-location";
-import { isPrimitiveType } from "./is-primitive-type";
-import { getReactExportName } from "./typescript";
-import { getTypeAtLocation } from "./get-type-at-location";
-import { getTypeArguments } from "./get-type-arguments";
-import { getUnionMembers } from "./get-union-members";
 import {
-  getPropertyOfType,
-  getReturnTypeOfSignature,
-  getSignaturesOfType,
-  getTypeOfSymbol,
-} from "./checker-queries";
+  eachInstructionLValue,
+  eachInstructionValueOperand,
+  eachTerminalOperand,
+} from "../../react-compiler/HIR/visitors";
+import { isFunctionCreation } from "../interpret/is-function-creation";
+import type { SourceFileResolver } from "./source-file-resolver";
 
 const MAX_CONVERSION_DEPTH = 3;
 const NULLISH_FLAGS = TypeFlags.Null | TypeFlags.Undefined | TypeFlags.Void;
 
-interface Collection {
-  shapeId: string;
-  mutatingMethod: string;
-}
-
-const COLLECTIONS: Record<MutableCollection, Collection> = {
-  Array: { shapeId: BuiltInArrayId, mutatingMethod: "push" },
-  Map: { shapeId: BuiltInMapId, mutatingMethod: "set" },
-  Set: { shapeId: BuiltInSetId, mutatingMethod: "add" },
+const COLLECTION_SHAPES: Record<MutableCollection, string> = {
+  Array: BuiltInArrayId,
+  Map: BuiltInMapId,
+  Set: BuiltInSetId,
 };
 
-export class CompilerTypeProvider implements TypeProvider {
-  readonly #checker: Checker;
-  readonly #sourceFile: SourceFile;
-  readonly #mutatingMethodsByCollection = new Map<MutableCollection, Set<string>>();
+const collectLocations = (hirFunction: HIRFunction): SourceLocation[] => {
+  const places: Place[] = [
+    ...hirFunction.params.map((param) => (param.kind === "Identifier" ? param : param.place)),
+    ...hirFunction.context,
+    hirFunction.returns,
+  ];
+  const locations: SourceLocation[] = [];
+  for (const block of hirFunction.body.blocks.values()) {
+    for (const instruction of block.instructions) {
+      places.push(
+        ...eachInstructionLValue(instruction),
+        ...eachInstructionValueOperand(instruction.value),
+      );
+      if (isFunctionCreation(instruction.value))
+        locations.push(...collectLocations(instruction.value.loweredFunc.func));
+    }
+    places.push(...eachTerminalOperand(block.terminal));
+  }
+  return [
+    ...locations,
+    ...places.flatMap((place): SourceLocation[] => [place.loc, place.identifier.loc]),
+  ];
+};
 
-  constructor(checker: Checker, sourceFile: SourceFile) {
-    this.#checker = checker;
-    this.#sourceFile = sourceFile;
+export class CompilerTypeProvider {
+  readonly #resolver: SourceFileResolver;
+
+  constructor(resolver: SourceFileResolver) {
+    this.#resolver = resolver;
+  }
+
+  loadFunction(hirFunction: HIRFunction): void {
+    this.#resolver.load(collectLocations(hirFunction));
   }
 
   getReactExportName(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
-    return node ? getReactExportName(this.#checker, node) : null;
+    return this.#resolver.getReactExportName(loc);
   }
 
   isMutatingMethod(collection: MutableCollection, method: string): boolean {
-    const cachedMethods = this.#mutatingMethodsByCollection.get(collection);
-    if (cachedMethods) return cachedMethods.has(method);
-    const readonlyMethods = new Set(
-      getInterfaceMemberNames(this.#checker, this.#sourceFile, `Readonly${collection}`),
-    );
-    const mutatingMethods = new Set(
-      getInterfaceMemberNames(this.#checker, this.#sourceFile, collection).filter(
-        (memberName) => !readonlyMethods.has(memberName),
-      ),
-    );
-    this.#mutatingMethodsByCollection.set(collection, mutatingMethods);
-    return mutatingMethods.has(method);
+    return this.#resolver.types.isMutatingMethod(collection, method);
   }
 
   getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
-    const type = node ? getTypeAtLocation(this.#checker, node) : undefined;
+    const type = this.#resolver.getType(loc);
     return type ? this.#convertType(type, shapes, 0) : null;
   }
 
   #convertType(type: Type, shapes: ShapeRegistry, depth: number): BuiltInType | null {
+    const types = this.#resolver.types;
     if (type.isErrorType() || type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Never)) return null;
-    if (isPrimitiveType(type)) return { kind: "Primitive" };
+    if (types.isPrimitiveType(type)) return { kind: "Primitive" };
     if (type.isUnionType()) {
-      const [onlyMember, ...otherMembers] = (getUnionMembers(type) ?? []).filter(
+      const [onlyMember, ...otherMembers] = (types.getUnionMembers(type) ?? []).filter(
         (member) => !(member.flags & NULLISH_FLAGS),
       );
       return onlyMember && otherMembers.length === 0
@@ -89,21 +90,21 @@ export class CompilerTypeProvider implements TypeProvider {
     }
     const collectionType = this.#getCollectionType(type);
     if (collectionType) return collectionType;
-    const [signature, ...overloads] = getSignaturesOfType(this.#checker, type, SignatureKind.Call);
-    if (signature && overloads.length === 0 && depth < MAX_CONVERSION_DEPTH) {
+    const [signature, ...overloads] = types.getCallSignatures(type);
+    if (signature && overloads.length === 0 && depth < MAX_CONVERSION_DEPTH)
       return this.#convertSignature(signature, shapes, depth);
-    }
     return null;
   }
 
   #convertSignature(signature: Signature, shapes: ShapeRegistry, depth: number): BuiltInType {
-    const parameterEffects = signature
-      .getParameters()
-      .map((parameter) => this.#getParameterEffect(getTypeOfSymbol(this.#checker, parameter)));
+    const types = this.#resolver.types;
+    const parameterEffects = types
+      .getParameterTypes(signature)
+      .map((parameterType) => this.#getParameterEffect(parameterType));
     const restParameterEffect = signature.hasRestParameter
       ? (parameterEffects.pop() ?? null)
       : null;
-    const signatureReturnType = getReturnTypeOfSignature(this.#checker, signature);
+    const signatureReturnType = types.getReturnType(signature);
     const returnType =
       (signatureReturnType && this.#convertType(signatureReturnType, shapes, depth + 1)) ?? null;
     if (returnType?.kind !== "Primitive") {
@@ -124,27 +125,24 @@ export class CompilerTypeProvider implements TypeProvider {
   }
 
   #getCollectionType(type: Type): BuiltInType | null {
-    const collectionName = getCollectionName(this.#checker, type);
-    const collection = collectionName ? COLLECTIONS[collectionName] : undefined;
+    const types = this.#resolver.types;
+    const collection = types.getCollection(type);
     if (!collection) return null;
+    const isDeeplyReadonly =
+      !types.hasMutatingMethod(type) &&
+      type.isTypeReference() &&
+      types.getTypeArguments(type).every((typeArgument) => types.isPrimitiveType(typeArgument));
     return {
       kind: "Object",
-      shapeId: this.#isDeeplyReadonly(type, collection)
-        ? BuiltInMixedReadonlyId
-        : collection.shapeId,
+      shapeId: isDeeplyReadonly ? BuiltInMixedReadonlyId : COLLECTION_SHAPES[collection],
     };
-  }
-
-  #isDeeplyReadonly(type: Type, collection: Collection): boolean {
-    if (getPropertyOfType(this.#checker, type, collection.mutatingMethod)) return false;
-    return type.isTypeReference() && getTypeArguments(this.#checker, type).every(isPrimitiveType);
   }
 
   #getParameterEffect(type: Type | undefined): Effect {
     if (!type) return Effect.ConditionallyMutate;
     const collection = this.#getCollectionType(type);
     const isReadonly =
-      isPrimitiveType(type) ||
+      this.#resolver.types.isPrimitiveType(type) ||
       (collection?.kind === "Object" && collection.shapeId === BuiltInMixedReadonlyId);
     return isReadonly ? Effect.Read : Effect.ConditionallyMutate;
   }

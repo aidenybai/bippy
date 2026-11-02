@@ -11,7 +11,7 @@ import {
   BuiltInMixedReadonlyId,
   BuiltInSetId,
 } from "../../src/react-compiler/HIR/ObjectShape";
-import { CompilerTypeProvider } from "../../src/core/type-checker/type-provider";
+import { TypeTable } from "../../src/core/type-checker/type-table";
 import { getFixtureConfig, getLocalTypesByName, getHirFunctionsByName } from "./helpers";
 
 const COLLECTIONS: MutableCollection[] = ["Array", "Map", "Set"];
@@ -30,7 +30,7 @@ const getMutatingMembers = (): Map<MutableCollection, CollectionMembers> =>
       .map((fileName) => project.program.getSourceFile(fileName))
       .find((candidate) => candidate !== undefined);
     if (!sourceFile) throw new Error("The types fixture has no source file");
-    const provider = new CompilerTypeProvider(project.checker, sourceFile);
+    const types = new TypeTable(project.checker);
     return new Map(
       COLLECTIONS.map((collection) => {
         const symbol = project.checker.resolveName(collection, SymbolFlags.Type, sourceFile);
@@ -45,8 +45,7 @@ const getMutatingMembers = (): Map<MutableCollection, CollectionMembers> =>
             all,
             mutating: all.filter(
               (name) =>
-                !name.startsWith(SYMBOL_MEMBER_PREFIX) &&
-                provider.isMutatingMethod(collection, name),
+                !name.startsWith(SYMBOL_MEMBER_PREFIX) && types.isMutatingMethod(collection, name),
             ),
           },
         ];

@@ -2,6 +2,7 @@ import { compileFile } from "../compile/compile";
 import type { CompiledFunction } from "../compile/compile";
 import { CompilerTypeProvider } from "../type-checker/type-provider";
 import { SourceFileResolver } from "../type-checker/source-file-resolver";
+import { TypeTable } from "../type-checker/type-table";
 import type { ProjectHook, ProjectLoaders, ProjectModuleDeclaration } from "../interpret/interpret";
 import type { ImportUse } from "../compile/module-values";
 import type { HIRFunction } from "../../react-compiler/HIR/HIR";
@@ -198,14 +199,13 @@ const compileProjectFiles = (
     loadImportUse,
     isReadOnlyDeclaration,
   };
+  const types = new TypeTable(project.checker);
   return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
-    const resolver = new SourceFileResolver(project.checker, sourceFile, isStrictNullChecks);
+    const resolver = new SourceFileResolver(types, sourceFile, isStrictNullChecks);
     const compiled = tracer.span("compile", fileName, () =>
-      compileFile(fileName, sourceFile.text, {
-        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-      }),
+      compileFile(fileName, sourceFile.text, new CompilerTypeProvider(resolver)),
     );
     for (const [storeKey, model] of collectStoreModels(sourceFile))
       modelsByStore.set(storeKey, model);
