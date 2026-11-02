@@ -14,7 +14,6 @@ export default defineConfig({
       "packages/bippy/src/react-internals/generated/**",
       reactDevToolsHookSources,
       reactCompilerSource,
-      "packages/realize/viewer/src/generated/**",
     ],
     semi: true,
     singleQuote: false,

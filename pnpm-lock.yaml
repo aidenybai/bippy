@@ -425,6 +425,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       shadcn:
         specifier: ^4.22.0
         version: 4.22.0(babel-plugin-macros@3.1.0)

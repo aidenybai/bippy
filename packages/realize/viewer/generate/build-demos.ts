@@ -1,10 +1,8 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { basename, dirname, relative, resolve } from "node:path";
+import { basename, relative, resolve } from "node:path";
 import type { Demos } from "@/model";
 import { analyzeFile } from "./view-model";
 
-const viewerRoot = resolve(import.meta.dirname, "..");
-const packageRoot = resolve(viewerRoot, "..");
+const packageRoot = resolve(import.meta.dirname, "../..");
 
 const stripRoot = (text: string): string =>
   text.replaceAll(`${packageRoot}/`, "").replaceAll(`${packageRoot.toLowerCase()}/`, "");
@@ -21,11 +19,4 @@ export const buildDemos = async (files: string[]): Promise<Demos> => {
     demos.json[name] = stripRoot(analyzed.json);
   }
   return demos;
-};
-
-export const writeDemos = (fileName: string, demos: Demos): string => {
-  const output = resolve(viewerRoot, "src/generated", fileName);
-  mkdirSync(dirname(output), { recursive: true });
-  writeFileSync(output, `${JSON.stringify(demos)}\n`);
-  return output;
 };
