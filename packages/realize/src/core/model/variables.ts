@@ -73,6 +73,7 @@ interface PlaceEntry {
 export interface VariableTable {
   variables: Variable[];
   compile: (test: SymbolicValue) => Predicate;
+  compileExisting: (test: SymbolicValue) => Predicate | null;
   getVariable: (binding: Binding, path: string[]) => Variable | null;
   getAbstract: (variable: Variable, label: string) => Abstract;
   addVariable: (variable: Variable) => void;
@@ -279,11 +280,22 @@ export const createVariableTable = (
     }
   };
 
+  const compileExisting = (test: SymbolicValue): Predicate | null => {
+    const count = variables.length;
+    const predicate = compile(test);
+    if (variables.length === count) return predicate;
+    for (const variable of variables.splice(count)) {
+      variablesByName.delete(variable.name);
+      opaqueVariables.delete(variable.label);
+    }
+    return null;
+  };
+
   const getVariable = (binding: Binding, path: string[]): Variable | null =>
     variablesByPlace.get(getPlaceKey(binding.id, path)) ?? null;
 
   const getAbstract = (variable: Variable, label: string): Abstract =>
     variable.domain.find((value) => value.label === label)?.abstract ?? { kind: "Any" };
 
-  return { variables, compile, getVariable, getAbstract, addVariable };
+  return { variables, compile, compileExisting, getVariable, getAbstract, addVariable };
 };

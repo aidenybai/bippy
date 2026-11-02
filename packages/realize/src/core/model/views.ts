@@ -1,19 +1,14 @@
-import type { ConditionalValue, SymbolicValue } from "../types";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
+import type { BranchEvaluation, BranchSite, ConditionalValue, SymbolicValue } from "../types";
 import { formatNegated, formatSymbolicValue } from "../values/format";
-import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { isNullish } from "../values/is-nullish";
 import { getMemoizedRender } from "../render/get-memoized-render";
-import { TRUE, and, not, or } from "./predicates";
+import { FALSE, TRUE, and, not, or } from "./predicates";
 import type { VariableTable } from "./variables";
 import type { Branch, Predicate, View } from "./types";
 
 const MAX_VIEWS = 64;
-
-interface TestContext {
-  node: ConditionalValue;
-  pathCondition: Predicate;
-}
 
 export const NO_VIEW = "nothing";
 
@@ -77,27 +72,32 @@ const multiply = (left: RenderPath[], right: RenderPath[]): RenderPath[] =>
     }),
   );
 
+const getSiteKey = (site: BranchSite, node: ConditionalValue | null): unknown =>
+  site.loc === GeneratedSource
+    ? node
+    : `${site.file}\0${site.loc.start.index}\0${site.loc.end.index}`;
+
 export const collectViews = (
   table: VariableTable,
   render: SymbolicValue,
   file: string,
+  branchEvaluations: BranchEvaluation[],
 ): { views: View[]; branches: Branch[] } => {
-  const branchesByNode = new Map<ConditionalValue, Branch>();
-  const testContexts: TestContext[] = [];
+  const branchesBySite = new Map<unknown, Branch>();
   const visited = new WeakSet<SymbolicValue>();
 
-  const recordBranch = (
-    node: ConditionalValue,
-    test: Predicate,
-    pathCondition: Predicate,
+  const recordEdges = (
+    key: unknown,
+    label: string,
+    site: BranchSite,
+    consequent: Predicate,
+    alternate: Predicate,
   ): void => {
-    const consequent = and([pathCondition, test]);
-    const alternate = and([pathCondition, not(test)]);
-    const existing = branchesByNode.get(node);
-    branchesByNode.set(node, {
-      label: formatSymbolicValue(getTestExpression(node)),
-      loc: node.branch.loc,
-      file: node.branch.file || file,
+    const existing = branchesBySite.get(key);
+    branchesBySite.set(key, {
+      label: existing?.label ?? label,
+      loc: site.loc,
+      file: site.file || file,
       consequent: {
         predicate: existing ? or([existing.consequent.predicate, consequent]) : consequent,
         isReachable: null,
@@ -107,6 +107,38 @@ export const collectViews = (
         isReachable: null,
       },
     });
+  };
+
+  const recordBranch = (node: ConditionalValue, test: Predicate, pathCondition: Predicate): void =>
+    recordEdges(
+      getSiteKey(node.branch, node),
+      formatSymbolicValue(getTestExpression(node)),
+      node.branch,
+      and([pathCondition, test]),
+      and([pathCondition, not(test)]),
+    );
+
+  const getEdgePredicates = (
+    evaluation: BranchEvaluation,
+    pathCondition: Predicate,
+  ): [Predicate, Predicate] => {
+    if (evaluation.outcome !== null)
+      return evaluation.outcome ? [pathCondition, FALSE] : [FALSE, pathCondition];
+    const test = table.compileExisting(evaluation.test);
+    return test
+      ? [and([pathCondition, test]), and([pathCondition, not(test)])]
+      : [pathCondition, pathCondition];
+  };
+
+  const recordEvaluation = (evaluation: BranchEvaluation): void => {
+    const key = getSiteKey(evaluation.branch, null);
+    const existing = branchesBySite.get(key);
+    if (!existing) return;
+    const pathCondition = and(
+      evaluation.guards.flatMap((guard) => table.compileExisting(guard) ?? []),
+    );
+    const [consequent, alternate] = getEdgePredicates(evaluation, pathCondition);
+    recordEdges(key, existing.label, evaluation.branch, consequent, alternate);
   };
 
   const withEdge = (
@@ -152,10 +184,6 @@ export const collectViews = (
       case "Conditional": {
         const test = table.compile(getTestExpression(node));
         recordBranch(node, test, pathCondition);
-        forEachSymbolicValue(getTestExpression(node), (inner) => {
-          if (inner.kind === "Conditional" && inner !== node)
-            testContexts.push({ node: inner, pathCondition });
-        });
         const consequent = walk(node.consequent, and([pathCondition, test]), isSplitting);
         const alternate = walk(node.alternate, and([pathCondition, not(test)]), isSplitting);
         if (!isSplitting) return SINGLE;
@@ -201,12 +229,6 @@ export const collectViews = (
       conditions: renderPath.conditions,
     };
   });
-  for (const context of testContexts)
-    if (branchesByNode.has(context.node))
-      recordBranch(
-        context.node,
-        table.compile(getTestExpression(context.node)),
-        context.pathCondition,
-      );
-  return { views, branches: [...branchesByNode.values()] };
+  for (const evaluation of branchEvaluations) recordEvaluation(evaluation);
+  return { views, branches: [...branchesBySite.values()] };
 };

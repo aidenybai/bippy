@@ -296,6 +296,13 @@ export class ControlFlowWalker {
       this.#walkArm(terminal.consequent, from, armStops, pathState, consequentGuard);
     const walkAlternate = () =>
       this.#walkArm(terminal.alternate, from, armStops, pathState, negate(consequentGuard));
+    if (this.#interpreter.handlerEffects === null)
+      this.#interpreter.branchEvaluations.push({
+        branch,
+        test: testGuard,
+        outcome: branchTest.knownOutcome,
+        guards: pathState.guards,
+      });
     if (branchTest.knownOutcome !== null) {
       const takenArm =
         branchTest.knownOutcome !== isSwapped ? terminal.consequent : terminal.alternate;
