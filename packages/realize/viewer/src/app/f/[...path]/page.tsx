@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { parseFileRoute } from "@/lib/route";
 import { analyzeFile } from "@/server/analyze-file";
-import { demos } from "@/server/demos";
+import { examples } from "@/server/demos";
 import { ClientApp } from "../../client-app";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ const Page = async ({ params }: PageProps) => {
   const json = route.mode === "json" ? (analyzed.json[example.name] ?? null) : null;
   return (
     <ClientApp
-      examples={demos.examples}
+      examples={examples}
       name={`f/${route.file}`}
       mode={route.mode}
       view={view}

@@ -1,19 +1,10 @@
 import { notFound } from "next/navigation";
-import { VIEW_MODES } from "@/lib/view-mode";
 import { parseRoute } from "@/lib/route";
-import { demoNames, demos } from "@/server/demos";
+import { analyzeFile } from "@/server/analyze-file";
+import { demoNames, examples } from "@/server/demos";
 import { ClientApp } from "../client-app";
 
-export const dynamicParams = false;
-
-export const generateStaticParams = () => [
-  { slug: [] },
-  ...demos.examples.flatMap((example) =>
-    VIEW_MODES.map((mode) => ({
-      slug: mode === "code" ? [example.name] : [example.name, mode],
-    })),
-  ),
-];
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug?: string[] }>;
@@ -23,12 +14,14 @@ const Page = async ({ params }: PageProps) => {
   const { slug } = await params;
   const route = parseRoute(slug, demoNames);
   if (!route) notFound();
-  const name = route.name ?? demos.examples[0]?.name;
-  const view = name === undefined ? undefined : demos.views[name];
-  if (name === undefined || view === undefined) notFound();
-  const json = route.mode === "json" ? (demos.json[name] ?? null) : null;
+  const example = examples.find((candidate) => candidate.name === route.name) ?? examples[0];
+  if (!example) notFound();
+  const analyzed = await analyzeFile(example.file);
+  const view = analyzed?.views[example.name];
+  if (!analyzed || !view) notFound();
+  const json = route.mode === "json" ? (analyzed.json[example.name] ?? null) : null;
   return (
-    <ClientApp examples={demos.examples} name={name} mode={route.mode} view={view} json={json} />
+    <ClientApp examples={examples} name={example.name} mode={route.mode} view={view} json={json} />
   );
 };
 

@@ -4,10 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "tsx --tsconfig generate/tsconfig.json generate/generate.ts",
-    "predev": "pnpm generate",
     "dev": "next dev --port 3200",
-    "prebuild": "pnpm generate",
+    "prebuild": "tsx generate/bundle-analyzer.ts",
     "build": "next build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p generate/tsconfig.json"
   },
@@ -41,6 +39,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "babel-plugin-react-compiler": "^1.0.0",
+    "esbuild": "^0.28.2",
     "shadcn": "^4.22.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",

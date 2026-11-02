@@ -1,6 +1,10 @@
-import { demosSchema, type Demos } from "@/model";
-import demosJson from "@/generated/demos.json";
+import type { Example } from "@/model";
 
-export const demos: Demos = demosSchema.parse(demosJson);
+const FIXTURES = "tests/fixtures/state-charts/src";
 
-export const demoNames = new Set(demos.examples.map((example) => example.name));
+export const examples: Example[] = ["dashboard", "reducer", "todo"].map((name) => ({
+  file: `${FIXTURES}/${name}.tsx`,
+  name,
+}));
+
+export const demoNames = new Set(examples.map((example) => example.name));
