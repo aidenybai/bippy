@@ -1,5 +1,12 @@
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
-import type { JsxExpressionValue, JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types";
+import type {
+  JsxExpressionValue,
+  JsxProp,
+  JsxSpreadProp,
+  JsxTag,
+  ObjectExpressionValue,
+  SymbolicValue,
+} from "../types";
 import {
   createUnknown,
   foldUnary,
@@ -7,7 +14,12 @@ import {
   isCallableValue,
 } from "../values/symbolic-values";
 import { isStateBinding } from "../values/is-state-binding";
-import { EVENT_ARGUMENT } from "./handler-predicates";
+
+export const EVENT_ARGUMENT: SymbolicValue = {
+  kind: "Unknown",
+  reason: "event",
+  loc: GeneratedSource,
+};
 
 export const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 export const CAPTURE_SUFFIX = "Capture";
@@ -36,17 +48,14 @@ const FORM_ACTION_EVENTS = new Map([
 
 export const ANY_EVENT = "*";
 
-const isFormActionProp = (tag: JsxTag, prop: JsxProp): boolean =>
-  tag.kind === "BuiltinTag" && FORM_ACTION_PROPS.get(tag.name) === prop.name;
-
 export const getHeldValue = (value: SymbolicValue): SymbolicValue =>
   value.kind === "Binding" && value.path.length === 0 && isStateBinding(value.binding)
     ? (value.binding.initial ?? value)
     : value;
 
-export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
+export const isHandlerProp = (tag: JsxTag, prop: Pick<JsxProp, "name" | "value">): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
-  isFormActionProp(tag, prop) ||
+  (tag.kind === "BuiltinTag" && FORM_ACTION_PROPS.get(tag.name) === prop.name) ||
   (tag.kind !== "BuiltinTag" && getPassedCallbacks([getHeldValue(prop.value)]).length > 0);
 
 export const getTriggerEvent = (prop: JsxProp): string =>
@@ -60,6 +69,32 @@ export const getBubblingEvent = (prop: JsxProp | JsxSpreadProp): string[] => {
   const event = getBaseEvent(prop.name);
   return NON_BUBBLING_EVENTS.has(event) ? [] : [event];
 };
+
+const MOUSE_BLOCKED_EVENTS = new Set([
+  "onClick",
+  "onDoubleClick",
+  "onMouseDown",
+  "onMouseMove",
+  "onMouseUp",
+  "onMouseEnter",
+]);
+
+const DISABLED_EVENTS = new Set([
+  ...MOUSE_BLOCKED_EVENTS,
+  "onFocus",
+  "onKeyDown",
+  "onKeyUp",
+  "onKeyPress",
+  "onChange",
+  "onInput",
+  "onBeforeInput",
+]);
+
+export const isMouseBlockedEvent = (propName: string): boolean =>
+  MOUSE_BLOCKED_EVENTS.has(getBaseEvent(propName));
+
+export const isDisabledEvent = (propName: string): boolean =>
+  DISABLED_EVENTS.has(getBaseEvent(propName));
 
 export const ENTER_EVENTS = new Set(["onMouseEnter", "onPointerEnter"]);
 
@@ -144,9 +179,7 @@ const ENABLEABLE_TAGS = new Set(["button", "input", "select", "textarea"]);
 
 export const getEnabledGuards = (element: JsxExpressionValue): SymbolicValue[] => {
   if (element.tag.kind !== "BuiltinTag" || !ENABLEABLE_TAGS.has(element.tag.name)) return [];
-  const disabled = element.props.find(
-    (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "disabled",
-  );
+  const disabled = getAttribute(element, "disabled");
   return disabled ? [foldUnary("!", disabled.value)] : [];
 };
 
@@ -186,16 +219,11 @@ export const getControlEvent = (
       ? { kind: "Primitive", value: true }
       : foldUnary("!", checked)
     : null;
-  const target: SymbolicValue = {
-    kind: "ObjectExpression",
-    properties: [
+  return {
+    argument: createTargetEvent([
       { key: "value", value },
       ...(nextChecked ? [{ key: "checked", value: nextChecked }] : []),
-    ],
-    spreads: [createUnknown("event", GeneratedSource)],
-  };
-  return {
-    argument: createTargetEvent(target),
+    ]),
     guards: isRadio && checked && prop.name !== "onClick" ? [foldUnary("!", checked)] : [],
   };
 };
@@ -219,14 +247,23 @@ export const getOptionValues = (select: JsxExpressionValue): string[] | null => 
   return values.length > 0 && values.every((value) => value !== null) ? values : null;
 };
 
-export const createTargetEvent = (target: SymbolicValue): SymbolicValue => ({
-  kind: "ObjectExpression",
-  properties: [
-    { key: "target", value: target },
-    { key: "currentTarget", value: target },
-  ],
-  spreads: [EVENT_ARGUMENT],
-});
+export const createTargetEvent = (
+  properties: ObjectExpressionValue["properties"],
+): SymbolicValue => {
+  const target: SymbolicValue = {
+    kind: "ObjectExpression",
+    properties,
+    spreads: [createUnknown("event", GeneratedSource)],
+  };
+  return {
+    kind: "ObjectExpression",
+    properties: [
+      { key: "target", value: target },
+      { key: "currentTarget", value: target },
+    ],
+    spreads: [EVENT_ARGUMENT],
+  };
+};
 
 const SUBMIT_TYPES = new Set(["submit", "image"]);
 

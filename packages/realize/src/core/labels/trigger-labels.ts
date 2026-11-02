@@ -5,12 +5,10 @@ import type {
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
-  SourceLocation,
   SymbolicValue,
 } from "../types";
 import { forEachJsxElement } from "../render/for-each-jsx-element";
 import { formatSymbolicValue } from "../values/format";
-import { isEffectHandler } from "../handlers/handler-predicates";
 import type { SourceReader } from "./source-text";
 import { truncate } from "./text";
 
@@ -38,21 +36,13 @@ const getLiteralText = (value: SymbolicValue): string => {
   }
 };
 
-const formatFunctionValue = (
-  prop: JsxProp,
-  loc: SourceLocation,
-  sourceReader: SourceReader,
-): string | null => {
+const formatHandlerValue = (prop: JsxProp, sourceReader: SourceReader): string | null => {
+  if (prop.value.kind !== "Function") return formatSymbolicValue(prop.value);
+  const loc = prop.value.loc;
   const declaredName = sourceReader.readLineBefore(prop.file, loc)?.match(DECLARED_NAME)?.[1];
   if (declaredName) return declaredName;
   const body = sourceReader.read(prop.file, loc)?.replace(ARROW_FUNCTION_HEAD, "");
   return body && !body.startsWith("{") ? body : null;
-};
-
-const formatHandlerValue = (prop: JsxProp, sourceReader: SourceReader): string | null => {
-  if (prop.value.kind === "Function")
-    return formatFunctionValue(prop, prop.value.loc, sourceReader);
-  return formatSymbolicValue(prop.value);
 };
 
 const getEventTriggerLabel = (
@@ -126,13 +116,11 @@ export const collectTriggerLabels = (
       );
     }
   });
-  const triggerLabelsByHandler = new Map(
-    [...eventLabelsByHandler].map(([handlerId, labels]) => [
-      handlerId,
-      joinTriggerLabels([...labels]),
-    ]),
-  );
-  for (const handler of analysis.handlers.filter(isEffectHandler))
-    triggerLabelsByHandler.set(handler.id, getTriggerLabel(handler));
+  const triggerLabelsByHandler = new Map<string, string>();
+  for (const [handlerId, labels] of eventLabelsByHandler)
+    triggerLabelsByHandler.set(handlerId, joinTriggerLabels([...labels]));
+  for (const handler of analysis.handlers)
+    if (handler.trigger.kind === "Effect")
+      triggerLabelsByHandler.set(handler.id, getTriggerLabel(handler));
   return triggerLabelsByHandler;
 };

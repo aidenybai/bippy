@@ -13,7 +13,6 @@ import type {
 import { formatPlace, formatSymbolicValue } from "../core/values/format";
 import { getTestExpression } from "../core/values/get-test-expression";
 import { isRenderingNothing } from "../core/render/is-rendering-nothing";
-import { isEffectHandler } from "../core/handlers/handler-predicates";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "../core/labels/source-text";
 import { getTriggerLabel } from "../core/labels/trigger-labels";
@@ -213,7 +212,7 @@ export const formatRenderTree = (
   const chart = createFlowchart(component, options);
   const rootId = addNode(chart, analysis.name, "element");
   buildNode(analysis.render, chart, rootId, 0);
-  for (const handler of analysis.handlers.filter(isEffectHandler))
+  for (const handler of analysis.handlers.filter((handler) => handler.trigger.kind === "Effect"))
     addEventNode(chart, rootId, `${getTriggerLabel(handler)} ⇒ ${formatHandlerEffects(handler)}`);
   const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   const location = `${relative(options.rootDirectory, analysis.file)}${lineSuffix}`;
