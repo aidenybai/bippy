@@ -1155,13 +1155,10 @@ export class Interpreter {
     pathState: PathState,
   ): void {
     const collector = this.#getUpdateCollector();
-    const queuedValue = collector.getQueuedValue(setter.binding, pathState);
-    const isPendingValue =
-      queuedValue.kind !== "Binding" || queuedValue.binding.id !== setter.binding.id;
     const previousValue =
-      isPendingValue && this.walker.loopDepth > 0 && setterArgument?.kind === "Function"
+      this.walker.loopDepth > 0 && setterArgument?.kind === "Function"
         ? createUnknown("loop", setter.binding.loc)
-        : queuedValue;
+        : collector.getQueuedValue(setter.binding, pathState);
     const nextValue = this.#getSetterNextValue(
       setterArgument,
       previousValue,
@@ -1185,7 +1182,12 @@ export class Interpreter {
       dispatch.reducer.kind === "Function"
         ? this.callFunction(
             dispatch.reducer,
-            [collector.getQueuedValue(dispatch.binding, pathState), action ?? UNDEFINED_VALUE],
+            [
+              this.walker.loopDepth > 0
+                ? createUnknown("loop", dispatch.binding.loc)
+                : collector.getQueuedValue(dispatch.binding, pathState),
+              action ?? UNDEFINED_VALUE,
+            ],
             loc,
             pathState,
           )
