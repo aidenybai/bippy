@@ -3,7 +3,6 @@ import { SymbolFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { MutableCollection } from "../../react-compiler/HIR/Environment";
 import { LIBRARY_DECLARATION_PATTERN } from "./typescript";
-import { getPropertiesOfType, isArrayType, isTupleType } from "./checker-queries";
 
 const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
   ["Map", "Map"],
@@ -12,17 +11,8 @@ const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
   ["ReadonlySet", "Set"],
 ]);
 
-const collectionNames = new WeakMap<Type, MutableCollection | null>();
-
 export const getCollectionName = (checker: Checker, type: Type): MutableCollection | null => {
-  if (collectionNames.has(type)) return collectionNames.get(type) ?? null;
-  const collectionName = getUncachedCollectionName(checker, type);
-  collectionNames.set(type, collectionName);
-  return collectionName;
-};
-
-const getUncachedCollectionName = (checker: Checker, type: Type): MutableCollection | null => {
-  if (type.isTypeReference() && (isArrayType(checker, type) || isTupleType(checker, type)))
+  if (type.isTypeReference() && (checker.isArrayType(type) || checker.isTupleType(type)))
     return "Array";
   const symbol = type.getSymbol();
   const isLibDeclared = symbol?.declarations.some((declaration) =>
@@ -39,5 +29,5 @@ export const getInterfaceMemberNames = (
   const symbol = checker.resolveName(interfaceName, SymbolFlags.Type, sourceFile);
   if (!symbol) return [];
   const type = checker.getDeclaredTypeOfSymbol(symbol);
-  return getPropertiesOfType(checker, type).map((property) => property.name);
+  return checker.getPropertiesOfType(type).map((property) => property.name);
 };

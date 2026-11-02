@@ -3,7 +3,6 @@ import type { Checker, Type } from "typescript/unstable/sync";
 import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue } from "../types";
 import { formatAbstractValue } from "../values/format";
 import { getUnionMembers } from "./get-union-members";
-import { getTypeText } from "./checker-queries";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 
@@ -19,12 +18,12 @@ export const getAbstractValue = (checker: Checker, type: Type): AbstractValue =>
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return { kind: "Literal", value: type.value };
   if (type.isBooleanLiteralType())
-    return { kind: "Literal", value: getTypeText(checker, type) === "true" };
+    return { kind: "Literal", value: checker.typeToString(type) === "true" };
   if (type.flags & TypeFlags.Null) return { kind: "Literal", value: null };
   if (type.flags & TypeFlags.Undefined) return UNDEFINED_CASE;
   return {
     kind: "Type",
-    text: getTypeText(checker, type),
+    text: checker.typeToString(type),
     primitive: getPrimitiveTypeName(type),
     isArrayLike: checker.isArrayLikeType(type),
   };
