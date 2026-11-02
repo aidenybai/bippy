@@ -3,7 +3,6 @@ import type {
   HIRFunction,
   IdentifierId,
   Instruction,
-  InstructionId,
   InstructionValue,
   ObjectPropertyKey,
   Place,
@@ -35,7 +34,6 @@ import type {
   BranchEvaluation,
   PrimitiveValue,
   BindingKind,
-  BindingPlace,
   BindingValue,
   CollectionValue,
   BranchSite,
@@ -148,6 +146,10 @@ const flattenArrayChildren = (children: SymbolicValue[]): SymbolicValue[] =>
 const isNullishValue = (value: SymbolicValue): boolean =>
   value.kind === "Primitive" && isNullish(value.value);
 
+const dedupeByValueKey = (values: SymbolicValue[]): SymbolicValue[] => [
+  ...new Map(values.map((value) => [getValueKey(value), value])).values(),
+];
+
 const isSameValueZero = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
   left === right || (Number.isNaN(left) && Number.isNaN(right));
 
@@ -229,8 +231,7 @@ const BOUND_RECEIVERS = new Set<string>([...CALLABLE_KINDS, "Binding", "Conditio
 
 const MAX_INLINE_DEPTH = 4;
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-const SHORTENING_METHODS = new Set(["filter", "slice"]);
-const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
+const LENGTH_LIMITING_METHODS = new Set(["filter", "slice", "toReversed", "toSorted", "with"]);
 
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
@@ -279,15 +280,15 @@ const getInvokedArguments = (
     : null;
 };
 
-const BUILTIN_MUTATOR_TARGETS = new Map<string, number>([
-  ["Object.assign", 0],
-  ["Object.defineProperty", 0],
-  ["Object.defineProperties", 0],
-  ["Object.setPrototypeOf", 0],
-  ["Reflect.set", 0],
-  ["Reflect.defineProperty", 0],
-  ["Reflect.deleteProperty", 0],
-  ["Reflect.setPrototypeOf", 0],
+const BUILTIN_MUTATORS = new Set([
+  "Object.assign",
+  "Object.defineProperty",
+  "Object.defineProperties",
+  "Object.setPrototypeOf",
+  "Reflect.set",
+  "Reflect.defineProperty",
+  "Reflect.deleteProperty",
+  "Reflect.setPrototypeOf",
 ]);
 
 const PROTOTYPE_MUTATOR_CALL =
@@ -386,11 +387,6 @@ const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
   return value.kind === "Function" ? [value] : [];
 };
 
-const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
-  ["Set", "Set"],
-  ["Map", "Map"],
-]);
-
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
 const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
@@ -438,35 +434,33 @@ const getCollectionEntries = (
       receiver.collection === "Map" && element.kind === "ArrayExpression"
         ? element.elements
         : [element, element];
-    const isKey =
-      entryKey?.kind === "Primitive" &&
-      !(typeof entryKey.value === "number" && Number.isNaN(entryKey.value));
-    if (!isKey || entryKey.kind !== "Primitive") return null;
+    if (entryKey?.kind !== "Primitive" || Number.isNaN(entryKey.value)) return null;
     entries.set(entryKey.value, entryValue ?? UNDEFINED_VALUE);
   }
   return entries;
 };
 
-const getSourceItems = (source: SymbolicValue | null, loc: SourceLocation): SymbolicValue[] => {
-  if (source === null) return [];
-  if (source.kind !== "ArrayExpression") return [createUnknown("item", loc)];
-  return [...source.elements, ...source.spreads.map(() => createUnknown("item", loc))];
-};
-
 const getSetItems = (receiver: SymbolicValue, loc: SourceLocation): SymbolicValue[] | null => {
   if (receiver.kind !== "Collection" || receiver.collection !== "Set") return null;
+  const source = receiver.source;
+  const sourceItems =
+    source?.kind === "ArrayExpression"
+      ? [...source.elements, ...source.spreads.map(() => createUnknown("item", loc))]
+      : source
+        ? [createUnknown("item", loc)]
+        : [];
   const addedItems = receiver.writes
     .filter((write) => write.method === "add")
     .map((write) => write.argumentValues[0] ?? createUnknown("item", loc));
-  return [...getSourceItems(receiver.source, loc), ...addedItems];
+  return [...sourceItems, ...addedItems];
 };
 
-const getConcatenatedParts = (value: SymbolicValue): SymbolicValue[] | null => {
-  if (value.kind === "Primitive") return typeof value.value === "string" ? [value] : null;
-  if (value.kind !== "BinaryExpression" || value.operator !== "+") return null;
-  const leftParts = getConcatenatedParts(value.left);
-  return leftParts && [...leftParts, value.right];
-};
+const isStringConcatenation = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive"
+    ? typeof value.value === "string"
+    : value.kind === "BinaryExpression" &&
+      value.operator === "+" &&
+      isStringConcatenation(value.left);
 
 export class Interpreter {
   #resolver: SourceFileResolver;
@@ -589,7 +583,9 @@ export class Interpreter {
               }
             : rootPathState;
         const returned = runsCleanup
-          ? this.#getReturnedValue(handlerCallback, argumentValues, pathState)
+          ? this.#withoutEffects(handlerCallback, () =>
+              this.#runCallback(handlerCallback, argumentValues, new Set(), pathState),
+            )
           : null;
         const cleanups = returned ? getReturnedFunctions(returned) : [];
         const updateCountBeforeCleanup = handlerEffects.updateCount;
@@ -624,16 +620,6 @@ export class Interpreter {
     }
   }
 
-  #getReturnedValue(
-    callback: SymbolicValue,
-    argumentValues: SymbolicValue[],
-    pathState: PathState,
-  ): SymbolicValue | null {
-    return this.#withoutEffects(callback, () =>
-      this.#runCallback(callback, argumentValues, new Set(), pathState),
-    );
-  }
-
   #withoutEffects<Result>(callback: SymbolicValue | undefined, run: () => Result): Result {
     const handlerEffects = this.#handlerEffects;
     const cells = this.cells;
@@ -656,13 +642,9 @@ export class Interpreter {
     return this.#handlerEffects ?? this.#renderPhaseEffects;
   }
 
-  #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
-    return this.functions.register(hirFunction, this.#resolver, isSnapshot);
-  }
-
   #createClosure(hirFunction: HIRFunction): FunctionValue {
     const isInlined = this.#inlinedFunctions.size > 0;
-    const closure = this.#registerFunction(hirFunction, isInlined);
+    const closure = this.functions.register(hirFunction, this.#resolver, isInlined);
     if (!isInlined) return closure;
     this.functions.setCapturedValues(
       closure.functionId,
@@ -757,15 +739,12 @@ export class Interpreter {
   #foldLiteralType(value: SymbolicValue, loc: SourceLocation): SymbolicValue {
     if (value.kind !== "Global") return value;
     const domain = this.#resolver.getDomain(loc);
-    const [onlyCase] = domain.kind === "Cases" ? domain.cases : [];
-    return domain.kind === "Cases" && domain.cases.length === 1 && onlyCase?.kind === "Literal"
-      ? { kind: "Primitive", value: onlyCase.value }
-      : value;
+    const [onlyCase] = domain.kind === "Cases" && domain.cases.length === 1 ? domain.cases : [];
+    return onlyCase?.kind === "Literal" ? { kind: "Primitive", value: onlyCase.value } : value;
   }
 
   #getConcatenationLength(text: SymbolicValue, loc: SourceLocation): SymbolicValue {
-    const parts = getConcatenatedParts(text);
-    if (!parts) return createUnknown("member", loc);
+    if (!isStringConcatenation(text)) return createUnknown("member", loc);
     const inputPlaces = new PlaceMap<true>();
     this.collectInputPlaces(text, inputPlaces);
     return createBindingValue(
@@ -839,11 +818,6 @@ export class Interpreter {
       default:
         return createUnknown("member", loc, { kind: "Member", object, property });
     }
-  }
-
-  #getJsxTag(tag: InstructionValueOfKind<"JsxExpression">["tag"]): SymbolicValue {
-    if (tag.kind === "BuiltinTag") return { kind: "Primitive", value: tag.name };
-    return this.read(tag);
   }
 
   #buildSuspense(element: JsxExpressionValue): SymbolicValue {
@@ -969,17 +943,17 @@ export class Interpreter {
     const stored = [...this.#storedFunctions].flatMap(([storedPlace, values]) =>
       isPlacePrefix(prefix, storedPlace) ? values : [],
     );
-    return [...new Map(stored.map((value) => [getValueKey(value), value])).values()];
+    return dedupeByValueKey(stored);
   }
 
   #getCalledFunctions(place: BindingValue): SymbolicValue[] {
     const called = this.#storedFunctions.get(getValuePlace(place)) ?? [];
     const lastSegment = place.path.at(-1);
     if (lastSegment === undefined || !ARRAY_INDEX_PATTERN.test(lastSegment)) return called;
-    const container = this.getStoredFunctions({ ...place, path: place.path.slice(0, -1) });
-    return [
-      ...new Map([...called, ...container].map((value) => [getValueKey(value), value])).values(),
-    ];
+    return dedupeByValueKey([
+      ...called,
+      ...this.getStoredFunctions({ ...place, path: place.path.slice(0, -1) }),
+    ]);
   }
 
   callStoredFunctions(
@@ -1053,33 +1027,29 @@ export class Interpreter {
       : null;
   }
 
-  #getImportedModuleBinding(localName: string, loc: SourceLocation): Binding | null {
-    const declarationKey = this.#resolver.getDeclarationKey(loc);
+  #loadImport(load: InstructionValueOfKind<"LoadGlobal">): SymbolicValue {
+    const declarationKey = this.#resolver.getDeclarationKey(load.loc);
     const declaration = declarationKey
       ? this.#projectLoaders.loadModuleDeclaration(declarationKey)
       : null;
-    if (!declaration) return null;
-    const isWrittenHere =
-      this.#projectLoaders.loadImportUse(createDeclarationKey(this.#resolver.path, localName)) ===
-      "written";
-    return declaration.isWritten || isWrittenHere ? this.#createModuleBinding(declaration) : null;
-  }
-
-  #loadImportedConstant(localName: string, loc: SourceLocation): SymbolicValue | null {
-    const declarationKey = this.#resolver.getDeclarationKey(loc);
-    const declaration = declarationKey
-      ? this.#projectLoaders.loadModuleDeclaration(declarationKey)
+    const use = declaration
+      ? this.#projectLoaders.loadImportUse(
+          createDeclarationKey(this.#resolver.path, load.binding.name),
+        )
       : null;
-    if (!declaration?.initial || declaration.isWritten) return null;
-    const use = this.#projectLoaders.loadImportUse(
-      createDeclarationKey(this.#resolver.path, localName),
-    );
-    return declaration.initial.kind === "Primitive" ||
-      isStatelessRegExp(declaration.initial) ||
-      use === "state" ||
-      (declarationKey !== null && this.#projectLoaders.isReadOnlyDeclaration(declarationKey))
-      ? declaration.initial
-      : null;
+    if (declaration && (declaration.isWritten || use === "written"))
+      return createBindingValue(this.#createModuleBinding(declaration));
+    const initial = declaration?.initial ?? null;
+    const isConstant =
+      initial !== null &&
+      declarationKey !== null &&
+      (initial.kind === "Primitive" ||
+        isStatelessRegExp(initial) ||
+        use === "state" ||
+        this.#projectLoaders.isReadOnlyDeclaration(declarationKey));
+    const imported = isConstant ? initial : this.#foldLiteralType(getGlobalValue(load), load.loc);
+    if (declarationKey) this.#importDeclarationKeys.set(imported, declarationKey);
+    return imported;
   }
 
   #createModuleBinding(declaration: ProjectModuleDeclaration): Binding {
@@ -1117,7 +1087,7 @@ export class Interpreter {
   resolveModuleFunction(value: SymbolicValue): SymbolicValue {
     if (value.kind !== "Global") return value;
     const moduleFunction = this.functions.loadModuleFunction(this.#resolver, value.name);
-    if (moduleFunction) return this.#registerFunction(moduleFunction);
+    if (moduleFunction) return this.functions.register(moduleFunction, this.#resolver);
     const declarationKey = this.#importDeclarationKeys.get(value);
     const imported = declarationKey
       ? this.#projectLoaders.loadProjectFunction(declarationKey)
@@ -1241,48 +1211,26 @@ export class Interpreter {
         : null;
     if (helperTakingCallbacks)
       return { kind: "ModuleFunction", hirFunction: helperTakingCallbacks };
-    const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
-    const isPureHandlerCall =
-      this.#handlerEffects !== null &&
-      callSite.callee.kind === "Global" &&
-      this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
-      declarationKey !== null &&
-      this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
-    const handlerHelper = isPureHandlerCall
-      ? this.#projectLoaders.loadProjectFunction(declarationKey)
-      : null;
-    if (!handlerHelper) return { kind: "Value" };
-    this.functions.addModule(
-      handlerHelper.resolver,
-      handlerHelper.loadModuleFunction,
-      handlerHelper.hirFunction,
-    );
-    return { kind: "ModuleFunction", hirFunction: handlerHelper.hirFunction };
+    const handlerHelper =
+      this.#handlerEffects !== null && callSite.callee.kind === "Global"
+        ? this.#loadUnmutatingHelper(callSite)
+        : null;
+    return handlerHelper
+      ? { kind: "ModuleFunction", hirFunction: handlerHelper.hirFunction }
+      : { kind: "Value" };
   }
 
-  #loadPureHelper(callSite: CallSite): ProjectHook | null {
+  #loadUnmutatingHelper(callSite: CallSite): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
-    const inputPlaces = new PlaceMap<true>();
-    for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
-    const isPure =
+    const helper =
       declarationKey !== null &&
       this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
-      !callSite.argumentValues.some((argument) => isCallableValue(argument)) &&
-      this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
-    const helper = isPure ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
+      this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0
+        ? this.#projectLoaders.loadProjectFunction(declarationKey)
+        : null;
     if (helper)
       this.functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
     return helper;
-  }
-
-  #getPureHelperResult(
-    helper: ProjectHook | null,
-    callSite: CallSite,
-    pathState: PathState,
-  ): SymbolicValue | null {
-    if (!helper) return null;
-    const returned = this.#inlineFunction(helper.hirFunction, callSite, pathState);
-    return hasUnknownPart(returned) ? null : returned;
   }
 
   #findProjectDeclaration(calleePlace: Place, load: ProjectHookLoader): ProjectHook | null {
@@ -1331,8 +1279,11 @@ export class Interpreter {
         return this.#evaluateHookCall(target.hookKind, callSite, pathState);
       case "ModuleFunction":
         return this.#inlineFunction(target.hirFunction, callSite, pathState);
-      case "Transition":
-        return this.#startTransition(callSite, pathState);
+      case "Transition": {
+        const [scope] = callSite.argumentValues;
+        if (scope) this.#callValue({ ...callSite, callee: scope, argumentValues: [] }, pathState);
+        return UNDEFINED_VALUE;
+      }
       case "Value":
         return this.#callValue(callSite, pathState);
       default:
@@ -1346,17 +1297,11 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue {
     return this.callFunction(
-      this.#registerFunction(hirFunction),
+      this.functions.register(hirFunction, this.#resolver),
       callSite.argumentValues,
       callSite.loc,
       pathState,
     );
-  }
-
-  #startTransition(callSite: CallSite, pathState: PathState): SymbolicValue {
-    const [scope] = callSite.argumentValues;
-    if (scope) this.#callValue({ ...callSite, callee: scope, argumentValues: [] }, pathState);
-    return UNDEFINED_VALUE;
   }
 
   #callValue(callSite: CallSite, pathState: PathState): SymbolicValue {
@@ -1485,11 +1430,14 @@ export class Interpreter {
       );
       return createUnknown("call", callSite.loc);
     }
-    const helper = this.#loadPureHelper(callSite);
-    const initial = this.#getPureHelperResult(helper, callSite, pathState);
+    const helper = callSite.argumentValues.some(isCallableValue)
+      ? null
+      : this.#loadUnmutatingHelper(callSite);
+    const returned = helper && this.#inlineFunction(helper.hirFunction, callSite, pathState);
+    const initial = returned && !hasUnknownPart(returned) ? returned : null;
     if (
-      initial &&
       helper &&
+      initial &&
       !hasLoop(helper.hirFunction) &&
       !addsCallResult(initial, callSite.argumentValues)
     )
@@ -1515,20 +1463,20 @@ export class Interpreter {
 
   #trackBuiltinMutation(callSite: CallSite, guards: SymbolicValue[]): void {
     if (callSite.callee.kind !== "Global" || callSite.callee.module !== null) return;
-    const targetIndex =
-      BUILTIN_MUTATOR_TARGETS.get(callSite.callee.name) ??
-      (PROTOTYPE_MUTATOR_CALL.test(callSite.callee.name) ? 0 : null);
-    const argumentPlace = targetIndex === null ? undefined : callSite.argumentPlaces[targetIndex];
-    if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc, guards);
+    const isMutator =
+      BUILTIN_MUTATORS.has(callSite.callee.name) ||
+      PROTOTYPE_MUTATOR_CALL.test(callSite.callee.name);
+    const [target] = callSite.argumentPlaces;
+    if (isMutator && target) this.mutations.trackArgument(target, callSite.loc, guards);
   }
 
   carryWrappedCallbacks(binding: Binding, value: SymbolicValue): void {
     const callbacks = this.#wrappedCallbacks.get(value);
     if (!callbacks) return;
-    const carried = [...(this.#wrappedCallbacksByBinding.get(binding.id) ?? []), ...callbacks];
-    this.#wrappedCallbacksByBinding.set(binding.id, [
-      ...new Map(carried.map((callback) => [getValueKey(callback), callback])).values(),
-    ]);
+    this.#wrappedCallbacksByBinding.set(
+      binding.id,
+      dedupeByValueKey([...(this.#wrappedCallbacksByBinding.get(binding.id) ?? []), ...callbacks]),
+    );
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
@@ -1790,19 +1738,6 @@ export class Interpreter {
     return createBindingValue(binding);
   }
 
-  #getReceiverPlace(callee: SymbolicValue): BindingPlace | null {
-    if (callee.kind !== "Binding" || callee.path.length === 0) return null;
-    return getBindingPlace(callee.binding, callee.path.slice(0, -1));
-  }
-
-  #isLengthLimited(callSite: CallSite, receiverPlace: BindingPlace | null): boolean {
-    const methodName = callSite.callee.kind === "Binding" ? callSite.callee.path.at(-1) : undefined;
-    if (!receiverPlace || methodName === undefined) return false;
-    const isLengthMethod =
-      LENGTH_PRESERVING_METHODS.has(methodName) || SHORTENING_METHODS.has(methodName);
-    return isLengthMethod && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
-  }
-
   #getLongCallKey(callSite: CallSite): string {
     const valueKeys = [callSite.callee, ...callSite.argumentValues].map(getValueKey);
     return [getLocationKey(callSite.loc), ...valueKeys].join(",");
@@ -1818,19 +1753,18 @@ export class Interpreter {
 
   #createCallResult(
     callSite: CallSite,
-    options: {
-      pureCall?: PureCall | null;
-      isDerived?: boolean;
-      initial?: SymbolicValue | null;
-    } = {},
+    options: { pureCall?: PureCall; isDerived?: boolean; initial?: SymbolicValue | null } = {},
   ): SymbolicValue {
-    const pureCall = options.pureCall ?? null;
     const initial = options.initial ?? null;
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
     const inputPlaces = new PlaceMap<true>();
     for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
-    const receiverPlace = this.#getReceiverPlace(callSite.callee);
+    const methodName = callSite.callee.kind === "Binding" ? callSite.callee.path.at(-1) : undefined;
+    const receiverPlace =
+      callSite.callee.kind === "Binding" && methodName !== undefined
+        ? getBindingPlace(callSite.callee.binding, callSite.callee.path.slice(0, -1))
+        : null;
     if (!receiverPlace && callSite.callee.kind !== "Function")
       this.collectInputPlaces(callSite.callee, inputPlaces);
     if (receiverPlace && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
@@ -1840,7 +1774,11 @@ export class Interpreter {
     const hasUnknownReceiver = !receiverPlace && callSite.receiver?.kind === "Unknown";
     if (hasUnknownReceiver && inputPlaces.size === 0) return createUnknown("call", callSite.loc);
     const isDerivedResult =
-      options.isDerived || pureCall !== null || this.#isLengthLimited(callSite, receiverPlace);
+      options.isDerived ||
+      options.pureCall !== undefined ||
+      (methodName !== undefined &&
+        LENGTH_LIMITING_METHODS.has(methodName) &&
+        this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc));
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
     if (!isDerivedResult && !initial && inputPlaces.size === 0 && !hasFiniteResult) {
       const unknownResult = createUnknown("call", callSite.loc);
@@ -1871,7 +1809,7 @@ export class Interpreter {
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     const callText = `${calleeText}(${argumentText})`;
     const isLongName = callText.length > MAX_CALL_NAME_LENGTH;
-    const domain = pureCall ? getPureCallDomain(pureCall) : null;
+    const domain = options.pureCall ? getPureCallDomain(options.pureCall) : null;
     const binding = this.createBinding(
       isLongName ? `${callText.slice(0, MAX_CALL_NAME_LENGTH)}…` : callText,
       "call",
@@ -1959,6 +1897,25 @@ export class Interpreter {
     return [initializer, initialState, ...callSite.argumentValues.slice(3)];
   }
 
+  #matchKey(
+    key: SymbolicValue,
+    cases: Array<[PrimitiveValue, SymbolicValue]>,
+    fallback: SymbolicValue,
+    loc: SourceLocation,
+  ): SymbolicValue {
+    return cases.reduceRight<SymbolicValue>(
+      (alternate, [caseKey, consequent]) => ({
+        kind: "Conditional",
+        test: foldBinary("===", key, { kind: "Primitive", value: caseKey }),
+        testKind: "truthy",
+        consequent,
+        alternate,
+        branch: this.createBranchSite(loc),
+      }),
+      fallback,
+    );
+  }
+
   #getCollectionLookup(
     receiver: SymbolicValue,
     methodName: string,
@@ -1969,19 +1926,14 @@ export class Interpreter {
     if (!key || !entries || (methodName !== "get" && methodName !== "has")) return null;
     if (receiver.kind === "Collection" && receiver.collection === "Set" && methodName === "get")
       return null;
-    const fallback: SymbolicValue =
-      methodName === "has" ? { kind: "Primitive", value: false } : UNDEFINED_VALUE;
-    return [...entries].reduceRight<SymbolicValue>(
-      (rest, [entryKey, entryValue]) => ({
-        kind: "Conditional",
-        test: foldBinary("===", key, { kind: "Primitive", value: entryKey }),
-        testKind: "truthy",
-        consequent: methodName === "has" ? { kind: "Primitive", value: true } : entryValue,
-        alternate: rest,
-        branch: this.createBranchSite(loc),
-      }),
-      fallback,
-    );
+    return methodName === "has"
+      ? this.#matchKey(
+          key,
+          [...entries.keys()].map((entryKey) => [entryKey, { kind: "Primitive", value: true }]),
+          { kind: "Primitive", value: false },
+          loc,
+        )
+      : this.#matchKey(key, [...entries], UNDEFINED_VALUE, loc);
   }
 
   #getMembershipTest(
@@ -2015,14 +1967,13 @@ export class Interpreter {
 
   #evaluateMethodCall(
     methodCall: InstructionValueOfKind<"MethodCall">,
-    instructionId: InstructionId,
     pathState: PathState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const container = this.#getStoredContainer(methodCall, receiver);
     if (container) return container;
     if (!this.#handlerEffects || receiver.kind !== "Binding")
-      return this.#evaluateMethodResult(methodCall, instructionId, pathState);
+      return this.#evaluateMethodResult(methodCall, pathState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
     if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
@@ -2040,7 +1991,7 @@ export class Interpreter {
         methodCall.loc,
         pathState,
       );
-    const result = this.#evaluateMethodResult(methodCall, instructionId, pathState);
+    const result = this.#evaluateMethodResult(methodCall, pathState);
     if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
@@ -2069,9 +2020,9 @@ export class Interpreter {
     const isObjectValues =
       receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
     const container = isObjectValues && argument ? this.read(getPlaceOrSpread(argument)) : receiver;
-    const hasStoredFunctions =
-      container.kind === "Binding" && this.getStoredFunctions(container).length > 0;
-    return hasStoredFunctions && container.kind === "Binding" ? container : null;
+    return container.kind === "Binding" && this.getStoredFunctions(container).length > 0
+      ? container
+      : null;
   }
 
   #callStoredItems(
@@ -2093,7 +2044,6 @@ export class Interpreter {
 
   #evaluateMethodResult(
     methodCall: InstructionValueOfKind<"MethodCall">,
-    instructionId: InstructionId,
     pathState: PathState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
@@ -2117,7 +2067,7 @@ export class Interpreter {
     const [atIndex] = argumentValues;
     const atValue =
       methodName === "at" && atIndex !== undefined
-        ? this.#readAt(receiver, atIndex, methodCall.loc, instructionId, pathState)
+        ? this.#readAt(receiver, atIndex, methodCall.loc)
         : null;
     if (atValue) return atValue;
     const lookup = this.#getCollectionLookup(receiver, methodName, argumentValues, methodCall.loc);
@@ -2170,7 +2120,7 @@ export class Interpreter {
     );
     if (reduced) return reduced;
     const setItems =
-      this.#handlerEffects !== null && methodName === "forEach" && callback?.kind === "Function"
+      this.#handlerEffects !== null && methodName === "forEach"
         ? getSetItems(receiver, methodCall.loc)
         : null;
     if (setItems && callback?.kind === "Function") {
@@ -2184,7 +2134,6 @@ export class Interpreter {
         receiver,
         callback,
         methodCall.loc,
-        instructionId,
         pathState,
       );
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
@@ -2282,12 +2231,10 @@ export class Interpreter {
     receiver: SymbolicValue,
     atIndex: SymbolicValue,
     loc: SourceLocation,
-    instructionId: InstructionId,
-    pathState: PathState,
   ): SymbolicValue | null {
     if (receiver.kind === "Conditional") {
       const readBranchValue = (branchValue: SymbolicValue) =>
-        this.#readAt(branchValue, atIndex, loc, instructionId, pathState) ??
+        this.#readAt(branchValue, atIndex, loc) ??
         this.createDerivedValue([branchValue, atIndex], "computed-member", loc);
       return {
         ...receiver,
@@ -2312,16 +2259,11 @@ export class Interpreter {
             [index - array.elements.length, read],
           ];
     });
-    return positions.reduceRight<SymbolicValue>(
-      (alternate, [position, element]) => ({
-        kind: "Conditional",
-        test: foldBinary("===", atIndex, { kind: "Primitive", value: position }),
-        testKind: "truthy",
-        consequent: element,
-        alternate,
-        branch: this.createBranchSite(loc),
-      }),
+    return this.#matchKey(
+      atIndex,
+      positions,
       this.createDerivedValue([receiver, atIndex], "computed-member", loc),
+      loc,
     );
   }
 
@@ -2330,7 +2272,6 @@ export class Interpreter {
     receiver: SymbolicValue,
     callback: FunctionValue,
     loc: SourceLocation,
-    instructionId: InstructionId,
     pathState: PathState,
   ): SymbolicValue {
     if (receiver.kind !== "Conditional") {
@@ -2362,22 +2303,14 @@ export class Interpreter {
     const test = getTestExpression(receiver);
     return {
       ...receiver,
-      consequent: this.#iterateLiteralBranches(
-        methodName,
-        receiver.consequent,
-        callback,
-        loc,
-        instructionId,
-        { ...pathState, guards: [...pathState.guards, test] },
-      ),
-      alternate: this.#iterateLiteralBranches(
-        methodName,
-        receiver.alternate,
-        callback,
-        loc,
-        instructionId,
-        { ...pathState, guards: [...pathState.guards, negate(test)] },
-      ),
+      consequent: this.#iterateLiteralBranches(methodName, receiver.consequent, callback, loc, {
+        ...pathState,
+        guards: [...pathState.guards, test],
+      }),
+      alternate: this.#iterateLiteralBranches(methodName, receiver.alternate, callback, loc, {
+        ...pathState,
+        guards: [...pathState.guards, negate(test)],
+      }),
     };
   }
 
@@ -2405,10 +2338,9 @@ export class Interpreter {
     if (collectionResult !== null) return { kind: "Primitive", value: collectionResult };
     if (receiver.kind === "Collection")
       return this.#readCollection(receiver, methodName, argumentValues, callSite);
-    if (receiver.kind !== "Binding") return null;
-    return this.#createCallResult(callSite, {
-      isDerived: true,
-    });
+    return receiver.kind === "Binding"
+      ? this.#createCallResult(callSite, { isDerived: true })
+      : null;
   }
 
   #readCollection(
@@ -2481,30 +2413,21 @@ export class Interpreter {
         this.destructurer.destructure(value);
         return this.read(value.value);
       case "LoadGlobal": {
-        const isModuleLocal = value.binding.kind === "ModuleLocal";
-        const isImport =
-          value.binding.kind === "ImportSpecifier" || value.binding.kind === "ImportDefault";
-        const variable = isModuleLocal
-          ? this.#getModuleBinding(value.binding.name)
-          : isImport
-            ? this.#getImportedModuleBinding(value.binding.name, value.loc)
-            : null;
+        if (value.binding.kind === "ImportSpecifier" || value.binding.kind === "ImportDefault")
+          return this.#loadImport(value);
+        const variable =
+          value.binding.kind === "ModuleLocal" ? this.#getModuleBinding(value.binding.name) : null;
         if (variable) return createBindingValue(variable);
         const constant =
-          isModuleLocal || value.binding.kind === "Global"
+          value.binding.kind === "ModuleLocal" || value.binding.kind === "Global"
             ? this.#loadModuleConstant(value.binding.name)
-            : isImport
-              ? this.#loadImportedConstant(value.binding.name, value.loc)
-              : null;
-        const global = constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
-        const declarationKey = isImport ? this.#resolver.getDeclarationKey(value.loc) : null;
-        if (declarationKey) this.#importDeclarationKeys.set(global, declarationKey);
-        return global;
+            : null;
+        return constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
       }
       case "PropertyLoad":
         return this.#evaluatePropertyLoad(value, pathState);
       case "ComputedLoad":
-        return this.#evaluateComputedLoad(value, instruction.id, pathState);
+        return this.#loadComputedMember(this.read(value.object), this.read(value.property), value);
       case "BinaryExpression":
         return foldBinary(value.operator, this.read(value.left), this.read(value.right));
       case "UnaryExpression":
@@ -2529,7 +2452,7 @@ export class Interpreter {
       case "CallExpression":
         return this.#evaluateCallExpression(value, pathState);
       case "MethodCall":
-        return this.#evaluateMethodCall(value, instruction.id, pathState);
+        return this.#evaluateMethodCall(value, pathState);
       case "JsxExpression":
         return this.#evaluateJsxElement(value);
       case "JsxFragment":
@@ -2548,8 +2471,10 @@ export class Interpreter {
         this.callbacks.passCallbacks(argumentValues, value.loc, pathState);
         const constructor = this.read(value.callee);
         const collection =
-          constructor.kind === "Global" && constructor.module === null
-            ? COLLECTION_CONSTRUCTORS.get(constructor.name)
+          constructor.kind === "Global" &&
+          constructor.module === null &&
+          (constructor.name === "Set" || constructor.name === "Map")
+            ? constructor.name
             : undefined;
         const [sourcePlace] = value.args;
         if (collection && value.args.every((argument) => argument.kind === "Identifier"))
@@ -2670,25 +2595,22 @@ export class Interpreter {
   ): SymbolicValue {
     this.callbacks.passStoredCallback(store, pathState);
     const object = this.read(store.object);
+    const property = String(store.property);
     const storedValue = this.read(store.value);
     if (object.kind === "Unknown") this.addUnknownSource(object, storedValue);
-    const setter = getSetterAccessor(object, String(store.property));
+    const setter = getSetterAccessor(object, property);
     if (setter) this.callFunction(setter, [storedValue], store.loc, pathState, object);
-    if (isRefCell(object, String(store.property))) {
-      this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
-      this.carryWrappedCallbacks(object.binding, storedValue);
-    }
     if (object.kind === "Binding" && isRefContents(object))
-      this.addStoredFunctions(
-        { ...object, path: [...object.path, String(store.property)] },
-        storedValue,
-      );
-    if (this.#handlerEffects && isRefCell(object, String(store.property))) {
-      this.cells.store(getRefCellKey(object.binding), storedValue, pathState);
-      this.#handlerEffects.addPossibleMutation(object.binding);
-    }
-    if (!this.#handlerEffects && isRefCell(object, String(store.property)))
+      this.addStoredFunctions({ ...object, path: [...object.path, property] }, storedValue);
+    if (!isRefCell(object, property)) return storedValue;
+    this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
+    this.carryWrappedCallbacks(object.binding, storedValue);
+    if (!this.#handlerEffects) {
       this.bindingTable.forgetInitial(object.binding);
+      return storedValue;
+    }
+    this.cells.store(getRefCellKey(object.binding), storedValue, pathState);
+    this.#handlerEffects.addPossibleMutation(object.binding);
     return storedValue;
   }
 
@@ -2774,44 +2696,16 @@ export class Interpreter {
     return localValue;
   }
 
-  #evaluateComputedLoad(
-    computedLoad: InstructionValueOfKind<"ComputedLoad">,
-    instructionId: InstructionId,
-    pathState: PathState,
-  ): SymbolicValue {
-    return this.#loadComputedMember(
-      this.read(computedLoad.object),
-      this.read(computedLoad.property),
-      computedLoad,
-      instructionId,
-      pathState,
-    );
-  }
-
   #loadComputedMember(
     object: SymbolicValue,
     propertyKey: SymbolicValue,
     computedLoad: InstructionValueOfKind<"ComputedLoad">,
-    instructionId: InstructionId,
-    pathState: PathState,
   ): SymbolicValue {
     if (object.kind === "Conditional" && propertyKey.kind !== "Primitive")
       return {
         ...object,
-        consequent: this.#loadComputedMember(
-          object.consequent,
-          propertyKey,
-          computedLoad,
-          instructionId,
-          pathState,
-        ),
-        alternate: this.#loadComputedMember(
-          object.alternate,
-          propertyKey,
-          computedLoad,
-          instructionId,
-          pathState,
-        ),
+        consequent: this.#loadComputedMember(object.consequent, propertyKey, computedLoad),
+        alternate: this.#loadComputedMember(object.alternate, propertyKey, computedLoad),
       };
     const bindingLiteral =
       object.kind === "Binding" && object.path.length <= 1
@@ -2842,18 +2736,13 @@ export class Interpreter {
           entry,
         ]),
       );
-      return keyedEntries.reduceRight<SymbolicValue>(
-        (alternate, [keyForm, entry]) => ({
-          kind: "Conditional",
-          test: foldBinary("===", propertyKey, { kind: "Primitive", value: keyForm }),
-          testKind: "truthy",
-          consequent: entry,
-          alternate,
-          branch: this.createBranchSite(computedLoad.loc),
-        }),
+      return this.#matchKey(
+        propertyKey,
+        keyedEntries,
         bindingEntries
           ? this.createDerivedValue([object, propertyKey], "computed-member", computedLoad.loc)
           : UNDEFINED_VALUE,
+        computedLoad.loc,
       );
     }
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
@@ -3033,7 +2922,9 @@ export class Interpreter {
     if (declaration)
       this.memoStaleness.captureHeldProps(props, this.#projectLoaders.loadHeldProps(declaration));
     const jsxValue = buildJsx(
-      this.#getJsxTag(element.tag),
+      element.tag.kind === "BuiltinTag"
+        ? { kind: "Primitive", value: element.tag.name }
+        : this.read(element.tag),
       {
         declaration,
         isContext: !isBuiltinTag && this.#resolver.isContext(element.tag.loc),
