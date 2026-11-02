@@ -29,23 +29,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > App keeps its render tree and handlers 1`] = `
-"---
-title: App src/counter.tsx:9
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["App"]
-  n2{"isLoading"}
-  n1 --> n2
-  n3["#lt;Loading#gt;"]
-  n2 -->|✓| n3
-  n4["#lt;Button#gt; {count}"]
-  n2 -->|✗| n4
-  n5(["onClick ⇒ count = count + 1"]):::event
-  n4 -.-> n5"
-`;
-
 exports[`fixture analysis > App keeps its state chart and findings 1`] = `
 "---
 title: App src/counter.tsx:9
@@ -83,19 +66,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
-"---
-title: Box src/ref-props.tsx:21
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Box"]
-  n2["#lt;button#gt; {count}"]
-  n1 --> n2
-  n3(["onClick ⇒ count = count + 1"]):::event
-  n2 -.-> n3"
-`;
-
 exports[`fixture analysis > Box keeps its state chart and findings 1`] = `
 "---
 title: Box src/ref-props.tsx:21
@@ -123,19 +93,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Button keeps its render tree and handlers 1`] = `
-"---
-title: Button src/counter.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Button"]
-  n2["#lt;button#gt; {children}"]
-  n1 --> n2
-  n3(["onClick ⇒ calls onClick"]):::event
-  n2 -.-> n3"
 `;
 
 exports[`fixture analysis > Button keeps its state chart and findings 1`] = `
@@ -171,21 +128,6 @@ Next == change_note
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Card keeps its render tree and handlers 1`] = `
-"---
-title: Card src/chains.tsx:13
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Card"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"note"}
-  n2 --> n3
-  n4["#lt;p#gt; {note}"]
-  n3 -->|✓| n4"
 `;
 
 exports[`fixture analysis > Card keeps its state chart and findings 1`] = `
@@ -226,25 +168,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > CardEditor keeps its render tree and handlers 1`] = `
-"---
-title: CardEditor src/mutating-helpers.tsx:14
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["CardEditor"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ options = Unknown(mutated)"]):::event
-  n2 -.-> n3
-  n4{"options.shape != null"}
-  n2 --> n4
-  n5["{options.shape}"]
-  n4 -->|✓| n5
-  n6["{#quot;auto#quot;}"]
-  n4 -->|✗| n6"
 `;
 
 exports[`fixture analysis > CardEditor keeps its state chart and findings 1`] = `
@@ -288,23 +211,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > CardGrid keeps its render tree and handlers 1`] = `
-"---
-title: CardGrid src/mutating-helpers.tsx:9
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["CardGrid"]
-  n2["#lt;p#gt;"]
-  n1 --> n2
-  n3{"options.shape != null"}
-  n2 --> n3
-  n4["{options.shape}"]
-  n3 -->|✓| n4
-  n5["{#quot;auto#quot;}"]
-  n3 -->|✗| n5"
-`;
-
 exports[`fixture analysis > CardGrid keeps its state chart and findings 1`] = `
 "---
 title: CardGrid src/mutating-helpers.tsx:9
@@ -339,23 +245,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ClickStats keeps its render tree and handlers 1`] = `
-"---
-title: ClickStats src/mutation.tsx:41
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ClickStats"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3{"stats.clicks #gt; 0"}
-  n2 --> n3
-  n4["{#quot;Clicked#quot;}"]
-  n3 -->|✓| n4
-  n5["{#quot;Not clicked#quot;}"]
-  n3 -->|✗| n5"
 `;
 
 exports[`fixture analysis > ClickStats keeps its state chart and findings 1`] = `
@@ -410,25 +299,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Coalesced keeps its render tree and handlers 1`] = `
-"---
-title: Coalesced src/claims.tsx:49
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Coalesced"]
-  n2["#lt;p#gt;"]
-  n1 --> n2
-  n3{"checked"}
-  n2 --> n3
-  n4["{#quot;on#quot;}"]
-  n3 -->|✓| n4
-  n5["{#quot;off#quot;}"]
-  n3 -->|✗| n5
-  n6(["after serverChecked changes ⇒ checked = flags?.some(function) ?? false"]):::event
-  n1 -.-> n6"
-`;
-
 exports[`fixture analysis > Coalesced keeps its state chart and findings 1`] = `
 "---
 title: Coalesced src/claims.tsx:49
@@ -471,25 +341,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > CommandInput keeps its render tree and handlers 1`] = `
-"---
-title: CommandInput src/compared-strings.tsx:16
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["CommandInput"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;input#gt;"]
-  n2 --> n3
-  n4(["onChange ⇒ command = event.target.value"]):::event
-  n3 -.-> n4
-  n5{"command === #quot;help#quot;"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;Type a command#quot;"]
-  n5 -->|✓| n6"
 `;
 
 exports[`fixture analysis > CommandInput keeps its state chart and findings 1`] = `
@@ -544,29 +395,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
-"---
-title: Composer src/guards.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Composer"]
-  n2{"isSent"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Sent#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;div#gt;"]
-  n2 -->|✗| n4
-  n5["#lt;input#gt;"]
-  n4 --> n5
-  n6(["onChange ⇒ draft = event.target.value"]):::event
-  n5 -.-> n6
-  n7["#lt;button#gt; #quot;Send#quot;"]
-  n4 --> n7
-  n8(["onClick ⇒ if draft: isSent = true"]):::event
-  n7 -.-> n8"
-`;
-
 exports[`fixture analysis > Composer keeps its state chart and findings 1`] = `
 "---
 title: Composer src/guards.tsx:3
@@ -605,23 +433,6 @@ Next == change_steps
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Countdown keeps its render tree and handlers 1`] = `
-"---
-title: Countdown src/loops.tsx:39
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Countdown"]
-  n2["#lt;p#gt;"]
-  n1 --> n2
-  n3{"steps === 0"}
-  n2 --> n3
-  n4["{#quot;Done#quot;}"]
-  n3 -->|✓| n4
-  n5["{#quot;Counted#quot;}"]
-  n3 -->|✗| n5"
 `;
 
 exports[`fixture analysis > Countdown keeps its state chart and findings 1`] = `
@@ -674,39 +485,6 @@ Next == change_items_length \\/ change_count
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > CountedList keeps its render tree and handlers 1`] = `
-"---
-title: CountedList src/counted-lists.tsx:1
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["CountedList"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"items.length #gt; 0"}
-  n2 --> n3
-  n4["#lt;ul#gt;"]
-  n3 -->|✓| n4
-  n5[["↻ each of items"]]
-  n4 --> n5
-  n6["#lt;li#gt; {item}"]
-  n5 --> n6
-  n7{"items.length"}
-  n2 --> n7
-  n8["#lt;p#gt; #quot;Has items#quot;"]
-  n7 -->|✓| n8
-  n9["#lt;p#gt; #quot;Empty#quot;"]
-  n7 -->|✗| n9
-  n10{"count #gt; 0"}
-  n2 --> n10
-  n11["#lt;b#gt; {count}"]
-  n10 -->|✓| n11
-  n12{"!count"}
-  n2 --> n12
-  n13["#lt;i#gt; #quot;None#quot;"]
-  n12 -->|✓| n13"
 `;
 
 exports[`fixture analysis > CountedList keeps its state chart and findings 1`] = `
@@ -772,25 +550,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > CountedLoop keeps its render tree and handlers 1`] = `
-"---
-title: CountedLoop src/loops.tsx:49
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["CountedLoop"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ isDone = true"]):::event
-  n2 -.-> n3
-  n4{"isDone"}
-  n2 --> n4
-  n5["{#quot;Done#quot;}"]
-  n4 -->|✓| n5
-  n6["{#quot;Start#quot;}"]
-  n4 -->|✗| n6"
 `;
 
 exports[`fixture analysis > CountedLoop keeps its state chart and findings 1`] = `
@@ -870,39 +629,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
-"---
-title: Dashboard src/dashboard.tsx:12
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Dashboard"]
-  n2{"status === #quot;loading#quot;"}
-  n1 --> n2
-  n3["#lt;Spinner#gt;"]
-  n2 -->|✓| n3
-  n4{"!user"}
-  n2 -->|✗| n4
-  n5["#lt;SignIn#gt;"]
-  n4 -->|✓| n5
-  n6["#lt;main#gt;"]
-  n4 -->|✗| n6
-  n7["#lt;h1#gt; {user.name}"]
-  n6 --> n7
-  n8{"items.length #gt; 0"}
-  n6 --> n8
-  n9["#lt;List#gt;"]
-  n8 -->|✓| n9
-  n10["#lt;Empty#gt;"]
-  n8 -->|✗| n10
-  n11["#lt;button#gt; {count}"]
-  n6 --> n11
-  n12(["onClick ⇒ count = count + 1"]):::event
-  n11 -.-> n12
-  n13(["after first render ⇒ if [{ id: #quot;1#quot;, title: #quot;First#quot; }] resolves: items = await […"]):::event
-  n1 -.-> n13"
-`;
-
 exports[`fixture analysis > Dashboard keeps its state chart and findings 1`] = `
 "---
 title: Dashboard src/dashboard.tsx:12
@@ -963,31 +689,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Deck keeps its render tree and handlers 1`] = `
-"---
-title: Deck src/possible-mutation.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Deck"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"cards.length === 0"}
-  n2 --> n3
-  n4["#lt;p#gt; #quot;Empty#quot;"]
-  n3 -->|✓| n4
-  n5["#lt;p#gt; #quot;Cards#quot;"]
-  n3 -->|✗| n5
-  n6["#lt;button#gt;"]
-  n2 --> n6
-  n7(["onClick ⇒ count = count + 1 · cards = Unknown(mutated)"]):::event
-  n6 -.-> n7
-  n8["#quot;Shuffle #quot;"]
-  n6 --> n8
-  n9["{count}"]
-  n6 --> n9"
-`;
-
 exports[`fixture analysis > Deck keeps its state chart and findings 1`] = `
 "---
 title: Deck src/possible-mutation.tsx:5
@@ -1046,31 +747,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Dialog keeps its render tree and handlers 1`] = `
-"---
-title: Dialog src/expression-defaults.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Dialog"]
-  n2{"!isOpen"}
-  n1 --> n2
-  n3["∅"]
-  n2 -->|✓| n3
-  n4["#lt;div#gt;"]
-  n2 -->|✗| n4
-  n5["#lt;button#gt;"]
-  n4 --> n5
-  n6(["onClick ⇒ isOpen = false"]):::event
-  n5 -.-> n6
-  n7{"icon === undefined"}
-  n5 --> n7
-  n8["#lt;span#gt; #quot;×#quot;"]
-  n7 -->|✓| n8
-  n9["{icon}"]
-  n7 -->|✗| n9"
-`;
-
 exports[`fixture analysis > Dialog keeps its state chart and findings 1`] = `
 "---
 title: Dialog src/expression-defaults.tsx:7
@@ -1115,29 +791,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > EarlyReturn keeps its render tree and handlers 1`] = `
-"---
-title: EarlyReturn src/loops.tsx:82
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["EarlyReturn"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ picked = 3"]):::event
-  n2 -.-> n3
-  n4{"picked === 0"}
-  n2 --> n4
-  n5["{#quot;Pick#quot;}"]
-  n4 -->|✓| n5
-  n6{"picked === 3"}
-  n4 -->|✗| n6
-  n7["{#quot;Third#quot;}"]
-  n6 -->|✓| n7
-  n8["{#quot;Other#quot;}"]
-  n6 -->|✗| n8"
 `;
 
 exports[`fixture analysis > EarlyReturn keeps its state chart and findings 1`] = `
@@ -1196,29 +849,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > EditButton keeps its render tree and handlers 1`] = `
-"---
-title: EditButton src/access.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["EditButton"]
-  n2{"!(role === #quot;admin#quot; || false)"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Read only#quot;"]
-  n2 -->|✓| n3
-  n4{"isEditing"}
-  n2 -->|✗| n4
-  n5["#lt;button#gt; #quot;Save#quot;"]
-  n4 -->|✓| n5
-  n6(["onClick ⇒ isEditing = false"]):::event
-  n5 -.-> n6
-  n7["#lt;button#gt; #quot;Edit#quot;"]
-  n4 -->|✗| n7
-  n8(["onClick ⇒ isEditing = true"]):::event
-  n7 -.-> n8"
-`;
-
 exports[`fixture analysis > EditButton keeps its state chart and findings 1`] = `
 "---
 title: EditButton src/access.tsx:5
@@ -1258,17 +888,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
-"---
-title: Empty src/dashboard.tsx:43
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Empty"]
-  n2["#lt;p#gt; #quot;No items#quot;"]
-  n1 --> n2"
-`;
-
 exports[`fixture analysis > Empty keeps its state chart and findings 1`] = `
 "---
 title: Empty src/dashboard.tsx:43
@@ -1297,17 +916,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > EmptyObjectCast keeps its render tree and handlers 1`] = `
-"---
-title: EmptyObjectCast src/claims.tsx:58
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["EmptyObjectCast"]
-  n2["#lt;p#gt; ⚠ raw"]
-  n1 --> n2"
-`;
-
 exports[`fixture analysis > EmptyObjectCast keeps its state chart and findings 1`] = `
 "---
 title: EmptyObjectCast src/claims.tsx:58
@@ -1334,17 +942,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > FabRow keeps its render tree and handlers 1`] = `
-"---
-title: FabRow src/or-conditions.tsx:6
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FabRow"]
-  n2["#lt;p#gt; {value}"]
-  n1 --> n2"
 `;
 
 exports[`fixture analysis > FabRow keeps its state chart and findings 1`] = `
@@ -1413,27 +1010,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > FeatureBadge keeps its render tree and handlers 1`] = `
-"---
-title: FeatureBadge src/logical-chains.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FeatureBadge"]
-  n2["#lt;p#gt;"]
-  n1 --> n2
-  n3{"isEnabled(#quot;search#quot;) || isEnabled(#quot;sync#quot;) || isEnabled(#quot;share#quot;)"}
-  n2 --> n3
-  n4["{#quot;Features on#quot;}"]
-  n3 -->|✓| n4
-  n5["{#quot;Features off#quot;}"]
-  n3 -->|✗| n5
-  n6{"isEnabled(#quot;sync#quot;) && isEnabled(#quot;offline#quot;)"}
-  n2 --> n6
-  n7["{#quot;Full sync#quot;}"]
-  n6 -->|✓| n7"
-`;
-
 exports[`fixture analysis > FeatureBadge keeps its state chart and findings 1`] = `
 "---
 title: FeatureBadge src/logical-chains.tsx:3
@@ -1496,25 +1072,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
-"---
-title: Feed src/chains.tsx:17
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Feed"]
-  n2{"!pages?.map(…)?.length"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Nothing yet#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;p#gt;"]
-  n2 -->|✗| n4
-  n5["⚠ items.length"]
-  n4 --> n5
-  n6["#quot; items#quot;"]
-  n4 --> n6"
-`;
-
 exports[`fixture analysis > Feed keeps its state chart and findings 1`] = `
 "---
 title: Feed src/chains.tsx:17
@@ -1568,35 +1125,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
-"---
-title: FileRow src/helpers.tsx:6
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FileRow"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ opened = opened + 1"]):::event
-  n2 -.-> n3
-  n4{"path.endsWith(#quot;.ts#quot;)"}
-  n2 --> n4
-  n5["#lt;span#gt; #quot;TS#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;span#gt; #quot;File#quot;"]
-  n4 -->|✗| n6
-  n7["#quot; #quot;"]
-  n2 --> n7
-  n8["{path}"]
-  n2 --> n8
-  n9["#quot; #quot;"]
-  n2 --> n9
-  n10{"opened #gt; 0"}
-  n2 --> n10
-  n11["#lt;b#gt; {opened}"]
-  n10 -->|✓| n11"
-`;
-
 exports[`fixture analysis > FileRow keeps its state chart and findings 1`] = `
 "---
 title: FileRow src/helpers.tsx:6
@@ -1642,27 +1170,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
-"---
-title: FilterLabel src/literals.tsx:6
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FilterLabel"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;p#gt; {filter}"]
-  n2 --> n3
-  n4["#lt;button#gt; #quot;Active#quot;"]
-  n2 --> n4
-  n5(["onClick ⇒ filter = #quot;active#quot;"]):::event
-  n4 -.-> n5
-  n6["#lt;button#gt; #quot;Done#quot;"]
-  n2 --> n6
-  n7(["onClick ⇒ filter = #quot;done#quot;"]):::event
-  n6 -.-> n7"
-`;
-
 exports[`fixture analysis > FilterLabel keeps its state chart and findings 1`] = `
 "---
 title: FilterLabel src/literals.tsx:6
@@ -1697,25 +1204,6 @@ Next == change_found
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > FirstMatch keeps its render tree and handlers 1`] = `
-"---
-title: FirstMatch src/loops.tsx:27
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FirstMatch"]
-  n2{"found === null"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;No match#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;p#gt;"]
-  n2 -->|✗| n4
-  n5["#quot;Found #quot;"]
-  n4 --> n5
-  n6["{found}"]
-  n4 --> n6"
 `;
 
 exports[`fixture analysis > FirstMatch keeps its state chart and findings 1`] = `
@@ -1762,27 +1250,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > FoundOfState keeps its render tree and handlers 1`] = `
-"---
-title: FoundOfState src/loops.tsx:109
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FoundOfState"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; #quot;score#quot;"]
-  n2 --> n3
-  n4(["onClick ⇒ scores = [0, 3]"]):::event
-  n3 -.-> n4
-  n5{"found === null"}
-  n2 --> n5
-  n6["#lt;i#gt; #quot;none#quot;"]
-  n5 -->|✓| n6
-  n7["#lt;b#gt; {found}"]
-  n5 -->|✗| n7"
-`;
-
 exports[`fixture analysis > FoundOfState keeps its state chart and findings 1`] = `
 "---
 title: FoundOfState src/loops.tsx:109
@@ -1818,21 +1285,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > FromLength keeps its render tree and handlers 1`] = `
-"---
-title: FromLength src/rows-from-length.tsx:1
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["FromLength"]
-  n2["#lt;ul#gt;"]
-  n1 --> n2
-  n3[["↻ each of { length: count }"]]
-  n2 --> n3
-  n4["#lt;li#gt; {index}"]
-  n3 --> n4"
-`;
-
 exports[`fixture analysis > FromLength keeps its state chart and findings 1`] = `
 "---
 title: FromLength src/rows-from-length.tsx:1
@@ -1859,21 +1311,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Gallery keeps its render tree and handlers 1`] = `
-"---
-title: Gallery src/linked.tsx:31
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Gallery"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;StatusBadge#gt;"]
-  n2 --> n3
-  n4["#lt;StatusBadge#gt;"]
-  n2 --> n4"
 `;
 
 exports[`fixture analysis > Gallery keeps its state chart and findings 1`] = `
@@ -1909,23 +1346,6 @@ Next == change_auth_user
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Greeting keeps its render tree and handlers 1`] = `
-"---
-title: Greeting src/option-defaults.tsx:21
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Greeting"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"auth.user"}
-  n2 --> n3
-  n4["#lt;p#gt; {auth.user.name}"]
-  n3 -->|✓| n4
-  n5["#lt;p#gt; #quot;Signed out#quot;"]
-  n3 -->|✗| n5"
 `;
 
 exports[`fixture analysis > Greeting keeps its state chart and findings 1`] = `
@@ -1971,19 +1391,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
-"---
-title: GuardedCast src/claims.tsx:26
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["GuardedCast"]
-  n2["#lt;button#gt; {status}"]
-  n1 --> n2
-  n3(["onClick ⇒ if next: status = Unknown(cast) · checks next as #quot;idle#quot; | #quot;saving#quot;"]):::event
-  n2 -.-> n3"
-`;
-
 exports[`fixture analysis > GuardedCast keeps its state chart and findings 1`] = `
 "---
 title: GuardedCast src/claims.tsx:26
@@ -2022,19 +1429,6 @@ Next == t1 \\/ change_next
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > GuardedWrite keeps its render tree and handlers 1`] = `
-"---
-title: GuardedWrite src/claims.tsx:41
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["GuardedWrite"]
-  n2["#lt;button#gt; {status}"]
-  n1 --> n2
-  n3(["onClick ⇒ if next: status = next"]):::event
-  n2 -.-> n3"
 `;
 
 exports[`fixture analysis > GuardedWrite keeps its state chart and findings 1`] = `
@@ -2079,23 +1473,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > HiddenHandler keeps its render tree and handlers 1`] = `
-"---
-title: HiddenHandler src/claims.tsx:35
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["HiddenHandler"]
-  n2{"kind === #quot;c#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;c#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;button#gt; {picked}"]
-  n2 -->|✗| n4
-  n5(["onClick ⇒ picked = kind · checks kind as #quot;a#quot; | #quot;b#quot;"]):::event
-  n4 -.-> n5"
-`;
-
 exports[`fixture analysis > HiddenHandler keeps its state chart and findings 1`] = `
 "---
 title: HiddenHandler src/claims.tsx:35
@@ -2137,27 +1514,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > HintField keeps its render tree and handlers 1`] = `
-"---
-title: HintField src/narrowed-strings.tsx:1
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["HintField"]
-  n2["#lt;label#gt;"]
-  n1 --> n2
-  n3{"!hint"}
-  n2 --> n3
-  n4["#lt;p#gt; #quot;Add a hint#quot;"]
-  n3 -->|✓| n4
-  n5{"hint"}
-  n2 --> n5
-  n6["#lt;small#gt; {hint}"]
-  n5 -->|✓| n6
-  n7["#lt;small#gt; #quot;No hint yet#quot;"]
-  n5 -->|✗| n7"
-`;
-
 exports[`fixture analysis > HintField keeps its state chart and findings 1`] = `
 "---
 title: HintField src/narrowed-strings.tsx:1
@@ -2189,19 +1545,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
-"---
-title: Inbox src/literals.tsx:17
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Inbox"]
-  n2["#lt;section#gt;"]
-  n1 --> n2
-  n3["#lt;em#gt; #quot;Empty#quot;"]
-  n2 --> n3"
 `;
 
 exports[`fixture analysis > Inbox keeps its state chart and findings 1`] = `
@@ -2248,35 +1591,6 @@ Assertion1 == ~(kind = "fab" \\/ kind = "extendedFab") \\/ kind = "extendedFab" 
 ===="
 `;
 
-exports[`fixture analysis > KindSwitch keeps its render tree and handlers 1`] = `
-"---
-title: KindSwitch src/or-conditions.tsx:8
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["KindSwitch"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; #quot;FAB#quot;"]
-  n2 --> n3
-  n4(["onClick ⇒ kind = #quot;fab#quot;"]):::event
-  n3 -.-> n4
-  n5["#lt;button#gt; #quot;Extended#quot;"]
-  n2 --> n5
-  n6(["onClick ⇒ kind = #quot;extendedFab#quot;"]):::event
-  n5 -.-> n6
-  n7{"kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;"}
-  n2 --> n7
-  n8["#lt;FabRow#gt;"]
-  n7 -->|✓| n8
-  n9["#lt;p#gt; #quot;Chip#quot;"]
-  n7 -->|✗| n9
-  n10{"kind !== #quot;chip#quot; && !(kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;)"}
-  n2 --> n10
-  n11["#lt;p#gt; #quot;Unreachable#quot;"]
-  n10 -->|✓| n11"
-`;
-
 exports[`fixture analysis > KindSwitch keeps its state chart and findings 1`] = `
 "---
 title: KindSwitch src/or-conditions.tsx:8
@@ -2313,19 +1627,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Latest keeps its render tree and handlers 1`] = `
-"---
-title: Latest src/ref-props.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Latest"]
-  n2["#lt;button#gt; {count}"]
-  n1 --> n2
-  n3(["onClick ⇒ count = count + 1"]):::event
-  n2 -.-> n3"
-`;
-
 exports[`fixture analysis > Latest keeps its state chart and findings 1`] = `
 "---
 title: Latest src/ref-props.tsx:3
@@ -2355,21 +1656,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > List keeps its render tree and handlers 1`] = `
-"---
-title: List src/dashboard.tsx:47
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["List"]
-  n2["#lt;ul#gt;"]
-  n1 --> n2
-  n3[["↻ each of items"]]
-  n2 --> n3
-  n4["#lt;li#gt; {item.title}"]
-  n3 --> n4"
-`;
-
 exports[`fixture analysis > List keeps its state chart and findings 1`] = `
 "---
 title: List src/dashboard.tsx:47
@@ -2396,17 +1682,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ListSummary keeps its render tree and handlers 1`] = `
-"---
-title: ListSummary src/option-defaults.tsx:26
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ListSummary"]
-  n2["#lt;p#gt; {#quot;some#quot;}"]
-  n1 --> n2"
 `;
 
 exports[`fixture analysis > ListSummary keeps its state chart and findings 1`] = `
@@ -2443,27 +1718,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Loader keeps its render tree and handlers 1`] = `
-"---
-title: Loader src/linked.tsx:15
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Loader"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;StatusBadge#gt;"]
-  n2 --> n3
-  n4["#lt;button#gt; #quot;Start#quot;"]
-  n2 --> n4
-  n5(["onClick ⇒ status = #quot;loading#quot; · count = count + 1"]):::event
-  n4 -.-> n5
-  n6["#lt;button#gt; #quot;Finish#quot;"]
-  n2 --> n6
-  n7(["onClick ⇒ status = #quot;done#quot;"]):::event
-  n6 -.-> n7"
-`;
-
 exports[`fixture analysis > Loader keeps its state chart and findings 1`] = `
 "---
 title: Loader src/linked.tsx:15
@@ -2491,17 +1745,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
-"---
-title: Loading src/counter.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Loading"]
-  n2["#lt;p#gt; #quot;Loading…#quot;"]
-  n1 --> n2"
 `;
 
 exports[`fixture analysis > Loading keeps its state chart and findings 1`] = `
@@ -2545,25 +1788,6 @@ Next == t1 \\/ change_total
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > LongLoop keeps its render tree and handlers 1`] = `
-"---
-title: LongLoop src/loops.tsx:95
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["LongLoop"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ isFull = total === 100"]):::event
-  n2 -.-> n3
-  n4{"isFull"}
-  n2 --> n4
-  n5["{#quot;Full#quot;}"]
-  n4 -->|✓| n5
-  n6["{#quot;Fill#quot;}"]
-  n4 -->|✗| n6"
 `;
 
 exports[`fixture analysis > LongLoop keeps its state chart and findings 1`] = `
@@ -2623,37 +1847,6 @@ Next == t1 \\/ change_hasLong \\/ change_item
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > LoopList keeps its render tree and handlers 1`] = `
-"---
-title: LoopList src/loops.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["LoopList"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;ul#gt;"]
-  n2 --> n3
-  n4[["↻ each of Unknown(mutation)"]]
-  n3 --> n4
-  n5["#lt;li#gt; {item}"]
-  n4 --> n5
-  n6{"hasLong"}
-  n2 --> n6
-  n7["#lt;p#gt; #quot;Long#quot;"]
-  n6 -->|✓| n7
-  n8["#lt;button#gt;"]
-  n2 --> n8
-  n9(["onClick ⇒ if item && item: isSelected = true"]):::event
-  n8 -.-> n9
-  n10{"isSelected"}
-  n8 --> n10
-  n11["{#quot;Selected#quot;}"]
-  n10 -->|✓| n11
-  n12["{#quot;Select#quot;}"]
-  n10 -->|✗| n12"
 `;
 
 exports[`fixture analysis > LoopList keeps its state chart and findings 1`] = `
@@ -2731,33 +1924,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > NameForm keeps its render tree and handlers 1`] = `
-"---
-title: NameForm src/form-actions.tsx:29
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["NameForm"]
-  n2["#lt;form#gt;"]
-  n1 --> n2
-  n3(["action ⇒ name = typeof data.get(#quot;name#quot;) === #quot;string#quot; ? data.get(#quot;name#quot;) : name"]):::event
-  n2 -.-> n3
-  n4{"isPending"}
-  n2 --> n4
-  n5["#lt;p#gt; #quot;Saving…#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;p#gt;"]
-  n4 -->|✗| n6
-  n7{"name === #quot;#quot;"}
-  n6 --> n7
-  n8["{#quot;No name yet#quot;}"]
-  n7 -->|✓| n8
-  n9["{name}"]
-  n7 -->|✗| n9
-  n10["#lt;button#gt; #quot;Save#quot;"]
-  n2 --> n10"
-`;
-
 exports[`fixture analysis > NameForm keeps its state chart and findings 1`] = `
 "---
 title: NameForm src/form-actions.tsx:29
@@ -2809,35 +1975,6 @@ Next == change_pathname
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > NavLinks keeps its render tree and handlers 1`] = `
-"---
-title: NavLinks src/compared-strings.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["NavLinks"]
-  n2["#lt;nav#gt;"]
-  n1 --> n2
-  n3{"pathname === #quot;/#quot;"}
-  n2 --> n3
-  n4["#lt;b#gt; #quot;Home#quot;"]
-  n3 -->|✓| n4
-  n5["#lt;a#gt; #quot;Home#quot;"]
-  n3 -->|✗| n5
-  n6{"pathname === #quot;/blog#quot;"}
-  n2 --> n6
-  n7["#lt;b#gt; #quot;Blog#quot;"]
-  n6 -->|✓| n7
-  n8["#lt;a#gt; #quot;Blog#quot;"]
-  n6 -->|✗| n8
-  n9{"pathname === #quot;/about#quot;"}
-  n2 --> n9
-  n10["#lt;b#gt; #quot;About#quot;"]
-  n9 -->|✓| n10
-  n11["#lt;a#gt; #quot;About#quot;"]
-  n9 -->|✗| n11"
 `;
 
 exports[`fixture analysis > NavLinks keeps its state chart and findings 1`] = `
@@ -2903,25 +2040,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
-"---
-title: OpaqueCallback src/claims.tsx:60
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["OpaqueCallback"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"user?.name"}
-  n2 --> n3
-  n4["#lt;i#gt; #quot;named#quot;"]
-  n3 -->|✓| n4
-  n5["⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…"]
-  n2 --> n5
-  n6(["hook callback ⇒ checks user!"]):::event
-  n1 -.-> n6"
-`;
-
 exports[`fixture analysis > OpaqueCallback keeps its state chart and findings 1`] = `
 "---
 title: OpaqueCallback src/claims.tsx:60
@@ -2965,23 +2083,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > OptionRow keeps its render tree and handlers 1`] = `
-"---
-title: OptionRow src/claims.tsx:82
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["OptionRow"]
-  n2["#lt;li#gt;"]
-  n1 --> n2
-  n3{"options[index].icon"}
-  n2 --> n3
-  n4["#lt;i#gt; {options[index].icon}"]
-  n3 -->|✓| n4
-  n5["{options[index].label}"]
-  n2 --> n5"
-`;
-
 exports[`fixture analysis > OptionRow keeps its state chart and findings 1`] = `
 "---
 title: OptionRow src/claims.tsx:82
@@ -3011,17 +2112,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
-"---
-title: Page src/plain.jsx:13
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Page"]
-  n2["#lt;Toggle#gt;"]
-  n1 --> n2"
 `;
 
 exports[`fixture analysis > Page keeps its state chart and findings 1`] = `
@@ -3067,35 +2157,6 @@ Next == t1 \\/ t2
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Panels keeps its render tree and handlers 1`] = `
-"---
-title: Panels src/chains.tsx:23
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Panels"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; #quot;Details#quot;"]
-  n2 --> n3
-  n4(["onClick ⇒ isOpen = !isOpen"]):::event
-  n3 -.-> n4
-  n5{"isOpen"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;More details#quot;"]
-  n5 -->|✓| n6
-  n7["#lt;button#gt; #quot;Theme#quot;"]
-  n2 --> n7
-  n8(["onClick ⇒ isDark = !isDark"]):::event
-  n7 -.-> n8
-  n9{"isDark"}
-  n2 --> n9
-  n10["#lt;span#gt; #quot;Dark#quot;"]
-  n9 -->|✓| n10
-  n11["#lt;span#gt; #quot;Light#quot;"]
-  n9 -->|✗| n11"
 `;
 
 exports[`fixture analysis > Panels keeps its state chart and findings 1`] = `
@@ -3155,31 +2216,6 @@ Next == t1 \\/ change_data
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Picker keeps its render tree and handlers 1`] = `
-"---
-title: Picker src/mapped-rows.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Picker"]
-  n2["#lt;ul#gt;"]
-  n1 --> n2
-  n3{"data != null"}
-  n2 --> n3
-  n4[["↻ each of data.rows"]]
-  n3 -->|✓| n4
-  n5["#lt;li#gt;"]
-  n4 --> n5
-  n6["#lt;button#gt; {row.id}"]
-  n5 --> n6
-  n7(["onClick ⇒ selected = row.id"]):::event
-  n6 -.-> n7
-  n8{"selected"}
-  n2 --> n8
-  n9["#lt;p#gt; {selected}"]
-  n8 -->|✓| n9"
 `;
 
 exports[`fixture analysis > Picker keeps its state chart and findings 1`] = `
@@ -3247,31 +2283,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > PlanForm keeps its render tree and handlers 1`] = `
-"---
-title: PlanForm src/watched-form.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["PlanForm"]
-  n2["#lt;form#gt;"]
-  n1 --> n2
-  n3["#lt;select#gt;"]
-  n2 --> n3
-  n4(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
-  n3 -.-> n4
-  n5["#lt;option#gt; #quot;Free#quot;"]
-  n3 --> n5
-  n6["#lt;option#gt; #quot;Pro#quot;"]
-  n3 --> n6
-  n7{"watch(#quot;plan#quot;) === #quot;pro#quot;"}
-  n2 --> n7
-  n8["#lt;p#gt; #quot;Billed monthly#quot;"]
-  n7 -->|✓| n8
-  n9["#lt;p#gt; #quot;No charge#quot;"]
-  n7 -->|✗| n9"
-`;
-
 exports[`fixture analysis > PlanForm keeps its state chart and findings 1`] = `
 "---
 title: PlanForm src/watched-form.tsx:7
@@ -3335,29 +2346,6 @@ Next == change_price \\/ change_opaque_typeof_price_string \\/ change_opaque_typ
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > PriceTag keeps its render tree and handlers 1`] = `
-"---
-title: PriceTag src/typeof-checks.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["PriceTag"]
-  n2["#lt;p#gt;"]
-  n1 --> n2
-  n3{"typeof price === #quot;string#quot;"}
-  n2 --> n3
-  n4["#lt;b#gt; {price}"]
-  n3 -->|✓| n4
-  n5{"typeof price === #quot;number#quot;"}
-  n2 --> n5
-  n6["#lt;i#gt; ⚠ price.toFixed(2)"]
-  n5 -->|✓| n6
-  n7{"price === null"}
-  n2 --> n7
-  n8["#lt;s#gt; #quot;Free#quot;"]
-  n7 -->|✓| n8"
 `;
 
 exports[`fixture analysis > PriceTag keeps its state chart and findings 1`] = `
@@ -3465,39 +2453,6 @@ Assertion2 == status = "saving"
 ===="
 `;
 
-exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
-"---
-title: Profile src/claims.tsx:11
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Profile"]
-  n2{"status === #quot;saving#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt;"]
-  n2 -->|✓| n3
-  n4["#quot;Saving #quot;"]
-  n3 --> n4
-  n5["{user.name}"]
-  n3 --> n5
-  n6["#lt;div#gt;"]
-  n2 -->|✗| n6
-  n7["#lt;p#gt; {step}"]
-  n6 --> n7
-  n8["#lt;button#gt; #quot;Save#quot;"]
-  n6 --> n8
-  n9(["onClick ⇒ status = user.name ? #quot;saving#quot; : #quot;idle#quot; · checks user!"]):::event
-  n8 -.-> n9
-  n10["#lt;button#gt; #quot;Next#quot;"]
-  n6 --> n10
-  n11(["onClick ⇒ step = #quot;b#quot;"]):::event
-  n10 -.-> n11
-  n12["#lt;button#gt; #quot;Finish#quot;"]
-  n6 --> n12
-  n13(["onClick ⇒ status = #quot;done#quot; · checks #quot;done#quot; as #quot;idle#quot; | #quot;saving#quot;"]):::event
-  n12 -.-> n13"
-`;
-
 exports[`fixture analysis > Profile keeps its state chart and findings 1`] = `
 "---
 title: Profile src/claims.tsx:11
@@ -3555,35 +2510,6 @@ Next == change_query_isPending \\/ change_query_isError \\/ change_query_data_is
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ProfileCard keeps its render tree and handlers 1`] = `
-"---
-title: ProfileCard src/query.tsx:10
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ProfileCard"]
-  n2{"query.isPending"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Loading#quot;"]
-  n2 -->|✓| n3
-  n4{"query.isError"}
-  n2 -->|✗| n4
-  n5["#lt;p#gt;"]
-  n4 -->|✓| n5
-  n6["#quot;Error: #quot;"]
-  n5 --> n6
-  n7["{query.error.message}"]
-  n5 --> n7
-  n8["#lt;div#gt;"]
-  n4 -->|✗| n8
-  n9["{query.data.name}"]
-  n8 --> n9
-  n10{"query.data.isAdmin"}
-  n8 --> n10
-  n11["#lt;span#gt; #quot;Admin#quot;"]
-  n10 -->|✓| n11"
 `;
 
 exports[`fixture analysis > ProfileCard keeps its state chart and findings 1`] = `
@@ -3661,29 +2587,6 @@ Next == change_useQuery_isPending \\/ change_useQuery_isError \\/ change_useQuer
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ProfileStatus keeps its render tree and handlers 1`] = `
-"---
-title: ProfileStatus src/query.tsx:22
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ProfileStatus"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"useQuery().isPending"}
-  n2 --> n3
-  n4["#lt;p#gt; #quot;Loading#quot;"]
-  n3 -->|✓| n4
-  n5{"useQuery().isError"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;Error#quot;"]
-  n5 -->|✓| n6
-  n7{"useQuery().data"}
-  n2 --> n7
-  n8["#lt;p#gt; {useQuery().data.name}"]
-  n7 -->|✓| n8"
 `;
 
 exports[`fixture analysis > ProfileStatus keeps its state chart and findings 1`] = `
@@ -3777,29 +2680,6 @@ Assertion1 == success = "null" \\/ success = "Success"
 ===="
 `;
 
-exports[`fixture analysis > PublishResult keeps its render tree and handlers 1`] = `
-"---
-title: PublishResult src/and-guards.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["PublishResult"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; {step}"]
-  n2 --> n3
-  n4(["onClick ⇒ if isReady: step = #quot;done#quot;"]):::event
-  n3 -.-> n4
-  n5["#lt;button#gt; #quot;Publish#quot;"]
-  n2 --> n5
-  n6(["onClick ⇒ success.authorName = #quot;Ada#quot;"]):::event
-  n5 -.-> n6
-  n7{"success"}
-  n2 --> n7
-  n8["#lt;p#gt; {success.authorName}"]
-  n7 -->|✓| n8"
-`;
-
 exports[`fixture analysis > PublishResult keeps its state chart and findings 1`] = `
 "---
 title: PublishResult src/and-guards.tsx:7
@@ -3848,31 +2728,6 @@ Next == change_user \\/ change_renderExtra
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ResourceDetails keeps its render tree and handlers 1`] = `
-"---
-title: ResourceDetails src/claims.tsx:71
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ResourceDetails"]
-  n2{"user === null"}
-  n1 --> n2
-  n3["#lt;p#gt;"]
-  n2 -->|✓| n3
-  n4["#quot;Loading #quot;"]
-  n3 --> n4
-  n5{"renderExtra"}
-  n3 --> n5
-  n6["{renderExtra(user)}"]
-  n5 -->|✓| n6
-  n7["#lt;p#gt;"]
-  n2 -->|✗| n7
-  n8{"renderExtra"}
-  n7 --> n8
-  n9["{renderExtra(user)}"]
-  n8 -->|✓| n9"
 `;
 
 exports[`fixture analysis > ResourceDetails keeps its state chart and findings 1`] = `
@@ -3947,25 +2802,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > RetryForm keeps its render tree and handlers 1`] = `
-"---
-title: RetryForm src/catch-after-await.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["RetryForm"]
-  n2["#lt;form#gt;"]
-  n1 --> n2
-  n3(["action ⇒ error = null · if Unknown(throws): error = #quot;Failed#quot; (async)"]):::event
-  n2 -.-> n3
-  n4["#lt;button#gt; #quot;Save#quot;"]
-  n2 --> n4
-  n5{"error"}
-  n2 --> n5
-  n6["#lt;p#gt; {error}"]
-  n5 -->|✓| n6"
-`;
-
 exports[`fixture analysis > RetryForm keeps its state chart and findings 1`] = `
 "---
 title: RetryForm src/catch-after-await.tsx:7
@@ -4007,21 +2843,6 @@ Next == change_role
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > RoleBadge keeps its render tree and handlers 1`] = `
-"---
-title: RoleBadge src/literals.tsx:30
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["RoleBadge"]
-  n2{"role === #quot;admin#quot;"}
-  n1 --> n2
-  n3["#lt;strong#gt; #quot;Admin#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;span#gt; #quot;Member#quot;"]
-  n2 -->|✗| n4"
 `;
 
 exports[`fixture analysis > RoleBadge keeps its state chart and findings 1`] = `
@@ -4089,27 +2910,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SaveForm keeps its render tree and handlers 1`] = `
-"---
-title: SaveForm src/form-actions.tsx:7
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SaveForm"]
-  n2["#lt;form#gt;"]
-  n1 --> n2
-  n3(["action ⇒ loading = true · if Unknown(throws): loading = false (async) · if !Un…"]):::event
-  n2 -.-> n3
-  n4{"loading"}
-  n2 --> n4
-  n5["#lt;p#gt; #quot;Saving…#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;button#gt; #quot;Save#quot;"]
-  n4 -->|✗| n6
-  n7(["formAction ⇒ loading = true · if Unknown(throws): loading = false (async) · if …"]):::event
-  n6 -.-> n7"
-`;
-
 exports[`fixture analysis > SaveForm keeps its state chart and findings 1`] = `
 "---
 title: SaveForm src/form-actions.tsx:7
@@ -4161,33 +2961,6 @@ Next == t1 \\/ change_items_length
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > SearchList keeps its render tree and handlers 1`] = `
-"---
-title: SearchList src/search.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SearchList"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;input#gt;"]
-  n2 --> n3
-  n4(["onChange ⇒ query = event.target.value"]):::event
-  n3 -.-> n4
-  n5{"items.length === 0"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;No items#quot;"]
-  n5 -->|✓| n6
-  n7{"items.filter(function).length #gt; 0"}
-  n2 --> n7
-  n8["#lt;ul#gt;"]
-  n7 -->|✓| n8
-  n9[["↻ each of items.filter(function)"]]
-  n8 --> n9
-  n10["#lt;li#gt; {match}"]
-  n9 --> n10"
 `;
 
 exports[`fixture analysis > SearchList keeps its state chart and findings 1`] = `
@@ -4261,29 +3034,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SearchPanel keeps its render tree and handlers 1`] = `
-"---
-title: SearchPanel src/or-conditions.tsx:23
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SearchPanel"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;input#gt;"]
-  n2 --> n3
-  n4(["onFocus ⇒ isFocused = true"]):::event
-  n3 -.-> n4
-  n5["#lt;button#gt; {count}"]
-  n2 --> n5
-  n6(["onClick ⇒ count = count + 1"]):::event
-  n5 -.-> n6
-  n7{"isFocused && Unknown(call).enoughChars"}
-  n2 --> n7
-  n8["#lt;ul#gt;"]
-  n7 -->|✓| n8"
-`;
-
 exports[`fixture analysis > SearchPanel keeps its state chart and findings 1`] = `
 "---
 title: SearchPanel src/or-conditions.tsx:23
@@ -4326,25 +3076,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Seen keeps its render tree and handlers 1`] = `
-"---
-title: Seen src/ref-props.tsx:12
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Seen"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ shown = true · calls seen.current.add"]):::event
-  n2 -.-> n3
-  n4{"shown"}
-  n2 --> n4
-  n5["{#quot;shown#quot;}"]
-  n4 -->|✓| n5
-  n6["{#quot;show#quot;}"]
-  n4 -->|✗| n6"
-`;
-
 exports[`fixture analysis > Seen keeps its state chart and findings 1`] = `
 "---
 title: Seen src/ref-props.tsx:12
@@ -4383,23 +3114,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ShareButton keeps its render tree and handlers 1`] = `
-"---
-title: ShareButton src/share-dialog.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ShareButton"]
-  n2{"!dialog.isOpen"}
-  n1 --> n2
-  n3["#lt;button#gt; #quot;Share#quot;"]
-  n2 -->|✓| n3
-  n4(["onClick ⇒ dialog.isOpen = true, dialog.type = #quot;share#quot;"]):::event
-  n3 -.-> n4
-  n5["#lt;p#gt; {dialog.type}"]
-  n2 -->|✗| n5"
 `;
 
 exports[`fixture analysis > ShareButton keeps its state chart and findings 1`] = `
@@ -4508,40 +3222,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SignIn keeps its render tree and handlers 1`] = `
-"---
-title: SignIn src/dashboard.tsx:39
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SignIn"]
-  n2["#lt;a#gt; #quot;Sign in#quot;"]
-  n1 --> n2"
-`;
-
-exports[`fixture analysis > SignIn keeps its render tree and handlers 2`] = `
-"---
-title: SignIn src/submit-wrapper.tsx:8
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SignIn"]
-  n2{"status === #quot;sent#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Check your inbox#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;form#gt;"]
-  n2 -->|✗| n4
-  n5(["onSubmit ⇒ if Unknown(wrapped-call): form = Unknown(external) (async) · if Unkn…"]):::event
-  n4 -.-> n5
-  n6["#lt;input#gt;"]
-  n4 --> n6
-  n7(["{...} ⇒ form = Unknown(external) (async) · calls form"]):::event
-  n6 -.-> n7
-  n8["#lt;button#gt; #quot;Send#quot;"]
-  n4 --> n8"
-`;
-
 exports[`fixture analysis > SignIn keeps its state chart and findings 1`] = `
 "---
 title: SignIn src/dashboard.tsx:39
@@ -4630,40 +3310,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SizeLabel keeps its render tree and handlers 1`] = `
-"---
-title: SizeLabel src/expression-defaults.tsx:29
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SizeLabel"]
-  n2{"size === sizes.small"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Small#quot;"]
-  n2 -->|✓| n3
-  n4{"size === sizes.large"}
-  n2 -->|✗| n4
-  n5["#lt;p#gt; #quot;Large#quot;"]
-  n4 -->|✓| n5"
-`;
-
-exports[`fixture analysis > SizeLabel keeps its render tree and handlers 2`] = `
-"---
-title: SizeLabel src/literal-constants.tsx:12
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SizeLabel"]
-  n2{"size === #quot;sm#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Small#quot;"]
-  n2 -->|✓| n3
-  n4{"size === #quot;lg#quot;"}
-  n2 -->|✗| n4
-  n5["#lt;p#gt; #quot;Large#quot;"]
-  n4 -->|✓| n5"
-`;
-
 exports[`fixture analysis > SizeLabel keeps its state chart and findings 1`] = `
 "---
 title: SizeLabel src/expression-defaults.tsx:29
@@ -4725,29 +3371,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SkippedSteps keeps its render tree and handlers 1`] = `
-"---
-title: SkippedSteps src/loops.tsx:63
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SkippedSteps"]
-  n2["#lt;button#gt;"]
-  n1 --> n2
-  n3(["onClick ⇒ steps = 3"]):::event
-  n2 -.-> n3
-  n4{"steps === 0"}
-  n2 --> n4
-  n5["{#quot;None#quot;}"]
-  n4 -->|✓| n5
-  n6{"steps === 3"}
-  n4 -->|✗| n6
-  n7["{#quot;Three#quot;}"]
-  n6 -->|✓| n7
-  n8["{#quot;Other#quot;}"]
-  n6 -->|✗| n8"
-`;
-
 exports[`fixture analysis > SkippedSteps keeps its state chart and findings 1`] = `
 "---
 title: SkippedSteps src/loops.tsx:63
@@ -4788,23 +3411,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Slot keeps its render tree and handlers 1`] = `
-"---
-title: Slot src/typeof-checks.tsx:11
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Slot"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"typeof render === #quot;function#quot;"}
-  n2 --> n3
-  n4["⚠ render()"]
-  n3 -->|✓| n4
-  n5["{render}"]
-  n3 -->|✗| n5"
-`;
-
 exports[`fixture analysis > Slot keeps its state chart and findings 1`] = `
 "---
 title: Slot src/typeof-checks.tsx:11
@@ -4838,21 +3444,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
-"---
-title: SortedList src/mutation.tsx:30
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SortedList"]
-  n2["#lt;ul#gt;"]
-  n1 --> n2
-  n3[["↻ each of items"]]
-  n2 --> n3
-  n4["#lt;li#gt; {item}"]
-  n3 --> n4"
-`;
-
 exports[`fixture analysis > SortedList keeps its state chart and findings 1`] = `
 "---
 title: SortedList src/mutation.tsx:30
@@ -4881,17 +3472,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Spinner keeps its render tree and handlers 1`] = `
-"---
-title: Spinner src/dashboard.tsx:35
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Spinner"]
-  n2["#lt;div#gt;"]
-  n1 --> n2"
-`;
-
 exports[`fixture analysis > Spinner keeps its state chart and findings 1`] = `
 "---
 title: Spinner src/dashboard.tsx:35
@@ -4918,21 +3498,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > SpreadArray keeps its render tree and handlers 1`] = `
-"---
-title: SpreadArray src/rows-from-length.tsx:9
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["SpreadArray"]
-  n2["#lt;ul#gt;"]
-  n1 --> n2
-  n3[["↻ each of [...Array(count)]"]]
-  n2 --> n3
-  n4["#lt;li#gt; {index}"]
-  n3 --> n4"
 `;
 
 exports[`fixture analysis > SpreadArray keeps its state chart and findings 1`] = `
@@ -4970,35 +3535,6 @@ Next == change_status
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > StatusBadge keeps its render tree and handlers 1`] = `
-"---
-title: StatusBadge src/linked.tsx:5
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["StatusBadge"]
-  n2{"status === #quot;error#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Failed#quot;"]
-  n2 -->|✓| n3
-  n4{"status === #quot;loading#quot;"}
-  n2 -->|✗| n4
-  n5["#lt;p#gt; #quot;Loading…#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;p#gt;"]
-  n4 -->|✗| n6
-  n7{"status === #quot;done#quot;"}
-  n6 --> n7
-  n8["{#quot;Done#quot;}"]
-  n7 -->|✓| n8
-  n9["{#quot;Idle#quot;}"]
-  n7 -->|✗| n9
-  n10["#quot; #quot;"]
-  n6 --> n10
-  n11["{count}"]
-  n6 --> n11"
 `;
 
 exports[`fixture analysis > StatusBadge keeps its state chart and findings 1`] = `
@@ -5049,21 +3585,6 @@ Next == UNCHANGED vars
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
-"---
-title: StatusBanner src/literals.tsx:22
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["StatusBanner"]
-  n2{"status === #quot;error#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Error#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;p#gt; #quot;Fine#quot;"]
-  n2 -->|✗| n4"
 `;
 
 exports[`fixture analysis > StatusBanner keeps its state chart and findings 1`] = `
@@ -5144,29 +3665,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Subscribe keeps its render tree and handlers 1`] = `
-"---
-title: Subscribe src/submit-wrapper.tsx:23
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Subscribe"]
-  n2["#lt;form#gt;"]
-  n1 --> n2
-  n3(["onSubmit ⇒ if Unknown(wrapped-call): useForm() = Unknown(external) (async) · if…"]):::event
-  n2 -.-> n3
-  n4["#lt;input#gt;"]
-  n2 --> n4
-  n5(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
-  n4 -.-> n5
-  n6{"useForm().formState.errors.email"}
-  n2 --> n6
-  n7["#lt;p#gt; {useForm().formState.errors.email.message}"]
-  n6 -->|✓| n7
-  n8["#lt;button#gt; #quot;Subscribe#quot;"]
-  n2 --> n8"
-`;
-
 exports[`fixture analysis > Subscribe keeps its state chart and findings 1`] = `
 "---
 title: Subscribe src/submit-wrapper.tsx:23
@@ -5206,19 +3704,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Switch keeps its render tree and handlers 1`] = `
-"---
-title: Switch src/callback-arguments.tsx:8
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Switch"]
-  n2["#lt;input#gt;"]
-  n1 --> n2
-  n3(["onChange ⇒ calls onChange"]):::event
-  n2 -.-> n3"
-`;
-
 exports[`fixture analysis > Switch keeps its state chart and findings 1`] = `
 "---
 title: Switch src/callback-arguments.tsx:8
@@ -5252,29 +3737,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
-"---
-title: TagEditor src/local-mutations.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["TagEditor"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;h2#gt; {title}"]
-  n2 --> n3
-  n4{"tags.length === 0"}
-  n2 --> n4
-  n5["#lt;p#gt; #quot;No tags#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;p#gt; #quot;Some tags#quot;"]
-  n4 -->|✗| n6
-  n7["#lt;button#gt; #quot;Add#quot;"]
-  n2 --> n7
-  n8(["onClick ⇒ tags = [...tags, #quot;tag#quot;]"]):::event
-  n7 -.-> n8"
 `;
 
 exports[`fixture analysis > TagEditor keeps its state chart and findings 1`] = `
@@ -5316,33 +3778,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > TagList keeps its render tree and handlers 1`] = `
-"---
-title: TagList src/mutation.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["TagList"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; #quot;Push#quot;"]
-  n2 --> n3
-  n4["#lt;button#gt; #quot;Copy#quot;"]
-  n2 --> n4
-  n5(["onClick ⇒ tags = [...Unknown(mutated)]"]):::event
-  n4 -.-> n5
-  n6{"tags.length === 0"}
-  n2 --> n6
-  n7["#lt;p#gt; #quot;No tags#quot;"]
-  n6 -->|✓| n7
-  n8["#lt;ul#gt;"]
-  n6 -->|✗| n8
-  n9[["↻ each of tags"]]
-  n8 --> n9
-  n10["#lt;li#gt; {tag}"]
-  n9 --> n10"
-`;
-
 exports[`fixture analysis > TagList keeps its state chart and findings 1`] = `
 "---
 title: TagList src/mutation.tsx:3
@@ -5382,21 +3817,6 @@ Next == change_title
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > TitleCard keeps its render tree and handlers 1`] = `
-"---
-title: TitleCard src/literals.tsx:27
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["TitleCard"]
-  n2{"title === #quot;#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Untitled#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;h1#gt; {title}"]
-  n2 -->|✗| n4"
 `;
 
 exports[`fixture analysis > TitleCard keeps its state chart and findings 1`] = `
@@ -5492,67 +3912,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > TodoApp keeps its render tree and handlers 1`] = `
-"---
-title: TodoApp src/todo.tsx:11
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["TodoApp"]
-  n2["#lt;section#gt;"]
-  n1 --> n2
-  n3["#lt;input#gt;"]
-  n2 --> n3
-  n4(["onChange ⇒ draft = event.target.value"]):::event
-  n3 -.-> n4
-  n5["#lt;button#gt; #quot;Add#quot;"]
-  n2 --> n5
-  n6(["onClick ⇒ if draft.trim(): todos = [...todos, { id: Date.now(), text: draft, is…"]):::event
-  n5 -.-> n6
-  n7{"todos.length === 0"}
-  n2 --> n7
-  n8["#lt;p#gt; #quot;Nothing to do#quot;"]
-  n7 -->|✓| n8
-  n9["#lt;ul#gt;"]
-  n2 --> n9
-  n10[["↻ each of todos.filter(function)"]]
-  n9 --> n10
-  n11["#lt;li#gt;"]
-  n10 --> n11
-  n12(["onClick ⇒ todos = todos.map(…)"]):::event
-  n11 -.-> n12
-  n13{"todo.isDone"}
-  n11 --> n13
-  n14["#lt;s#gt; {todo.text}"]
-  n13 -->|✓| n14
-  n15["{todo.text}"]
-  n13 -->|✗| n15
-  n16["#lt;footer#gt;"]
-  n2 --> n16
-  n17["#lt;button#gt; #quot;All#quot;"]
-  n16 --> n17
-  n18(["onClick ⇒ filter = #quot;all#quot;"]):::event
-  n17 -.-> n18
-  n19["#lt;button#gt; #quot;Active#quot;"]
-  n16 --> n19
-  n20(["onClick ⇒ filter = #quot;active#quot;"]):::event
-  n19 -.-> n20
-  n21["#lt;button#gt; #quot;Done#quot;"]
-  n16 --> n21
-  n22(["onClick ⇒ filter = #quot;done#quot;"]):::event
-  n21 -.-> n22
-  n23{"isEditing"}
-  n2 --> n23
-  n24["#lt;button#gt; #quot;Save#quot;"]
-  n23 -->|✓| n24
-  n25(["onClick ⇒ isEditing = false"]):::event
-  n24 -.-> n25
-  n26["#lt;button#gt; #quot;Edit#quot;"]
-  n23 -->|✗| n26
-  n27(["onClick ⇒ isEditing = true"]):::event
-  n26 -.-> n27"
-`;
-
 exports[`fixture analysis > TodoApp keeps its state chart and findings 1`] = `
 "---
 title: TodoApp src/todo.tsx:11
@@ -5606,25 +3965,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > Toggle keeps its render tree and handlers 1`] = `
-"---
-title: Toggle src/plain.jsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Toggle"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; {label}"]
-  n2 --> n3
-  n4(["onClick ⇒ isOpen = !isOpen"]):::event
-  n3 -.-> n4
-  n5{"isOpen"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;Details#quot;"]
-  n5 -->|✓| n6"
-`;
-
 exports[`fixture analysis > Toggle keeps its state chart and findings 1`] = `
 "---
 title: Toggle src/plain.jsx:3
@@ -5663,25 +4003,6 @@ Next == change_tone
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ToneBadge keeps its render tree and handlers 1`] = `
-"---
-title: ToneBadge src/narrowed-strings.tsx:8
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ToneBadge"]
-  n2["#lt;span#gt;"]
-  n1 --> n2
-  n3{"tone === #quot;info#quot;"}
-  n2 --> n3
-  n4["#lt;b#gt; #quot;Info#quot;"]
-  n3 -->|✓| n4
-  n5{"tone === #quot;warning#quot;"}
-  n2 --> n5
-  n6["#lt;i#gt; #quot;Warning#quot;"]
-  n5 -->|✓| n6"
 `;
 
 exports[`fixture analysis > ToneBadge keeps its state chart and findings 1`] = `
@@ -5747,39 +4068,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > ToneCounter keeps its render tree and handlers 1`] = `
-"---
-title: ToneCounter src/unchanged-props.tsx:3
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ToneCounter"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"tone === #quot;info#quot;"}
-  n2 --> n3
-  n4["#lt;b#gt;"]
-  n3 -->|✓| n4
-  n5{"count #gt; 0"}
-  n4 --> n5
-  n6["{#quot;Info again#quot;}"]
-  n5 -->|✓| n6
-  n7["{#quot;Info#quot;}"]
-  n5 -->|✗| n7
-  n8["#lt;i#gt;"]
-  n3 -->|✗| n8
-  n9{"count #gt; 0"}
-  n8 --> n9
-  n10["{#quot;Other again#quot;}"]
-  n9 -->|✓| n10
-  n11["{#quot;Other#quot;}"]
-  n9 -->|✗| n11
-  n12["#lt;button#gt; {count}"]
-  n2 --> n12
-  n13(["onClick ⇒ count = count + 1"]):::event
-  n12 -.-> n13"
-`;
-
 exports[`fixture analysis > ToneCounter keeps its state chart and findings 1`] = `
 "---
 title: ToneCounter src/unchanged-props.tsx:3
@@ -5828,21 +4116,6 @@ Next == change_opaque__tone_undefined_calm_tone_loud
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `
-"---
-title: ToneLabel src/literal-constants.tsx:21
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["ToneLabel"]
-  n2{"(tone === undefined ? #quot;calm#quot; : tone) === #quot;loud#quot;"}
-  n1 --> n2
-  n3["#lt;strong#gt; #quot;Loud#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;span#gt; #quot;Calm#quot;"]
-  n2 -->|✗| n4"
 `;
 
 exports[`fixture analysis > ToneLabel keeps its state chart and findings 1`] = `
@@ -5919,43 +4192,6 @@ Next == t1 \\/ change_role \\/ change_status_isSaving \\/ change_status_error
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
-"---
-title: Toolbar src/groups.tsx:12
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Toolbar"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3{"role === #quot;admin#quot;"}
-  n2 --> n3
-  n4["#lt;span#gt; #quot;Admin#quot;"]
-  n3 -->|✓| n4
-  n5{"role === #quot;admin#quot; || false"}
-  n2 --> n5
-  n6["#lt;button#gt; #quot;Edit#quot;"]
-  n5 -->|✓| n6
-  n7["#lt;span#gt; #quot;Read only#quot;"]
-  n5 -->|✗| n7
-  n8{"status.isSaving"}
-  n2 --> n8
-  n9["#lt;span#gt; #quot;Saving#quot;"]
-  n8 -->|✓| n9
-  n10{"status.error"}
-  n2 --> n10
-  n11["#lt;p#gt; {status.error}"]
-  n10 -->|✓| n11
-  n12["#lt;button#gt; #quot;Help#quot;"]
-  n2 --> n12
-  n13(["onClick ⇒ isHelpOpen = !isHelpOpen"]):::event
-  n12 -.-> n13
-  n14{"isHelpOpen"}
-  n2 --> n14
-  n15["#lt;p#gt; #quot;Press E to edit#quot;"]
-  n14 -->|✓| n15"
 `;
 
 exports[`fixture analysis > Toolbar keeps its state chart and findings 1`] = `
@@ -6107,27 +4343,6 @@ Spec == Init /\\ [][Next]_vars
 ===="
 `;
 
-exports[`fixture analysis > UploadForm keeps its render tree and handlers 1`] = `
-"---
-title: UploadForm src/catch-after-await.tsx:25
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["UploadForm"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;button#gt; #quot;Upload#quot;"]
-  n2 --> n3
-  n4(["onClick ⇒ step = #quot;uploading#quot; · if !Unknown(throws): step = #quot;processing#quot; (async)…"]):::event
-  n3 -.-> n4
-  n5["#lt;p#gt; {step}"]
-  n2 --> n5
-  n6{"error"}
-  n2 --> n6
-  n7["#lt;p#gt; {error}"]
-  n6 -->|✓| n7"
-`;
-
 exports[`fixture analysis > UploadForm keeps its state chart and findings 1`] = `
 "---
 title: UploadForm src/catch-after-await.tsx:25
@@ -6169,27 +4384,6 @@ Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > WarningFilter keeps its render tree and handlers 1`] = `
-"---
-title: WarningFilter src/callback-arguments.tsx:16
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["WarningFilter"]
-  n2["#lt;div#gt;"]
-  n1 --> n2
-  n3["#lt;Switch#gt;"]
-  n2 --> n3
-  n4(["onChange ⇒ isChecked = checked"]):::event
-  n3 -.-> n4
-  n5{"isChecked"}
-  n2 --> n5
-  n6["#lt;p#gt; #quot;Warnings only#quot;"]
-  n5 -->|✓| n6
-  n7["#lt;p#gt; #quot;All events#quot;"]
-  n5 -->|✗| n7"
 `;
 
 exports[`fixture analysis > WarningFilter keeps its state chart and findings 1`] = `
@@ -6244,41 +4438,6 @@ Next == t1 \\/ t2
 
 Spec == Init /\\ [][Next]_vars
 ===="
-`;
-
-exports[`fixture analysis > Wizard keeps its render tree and handlers 1`] = `
-"---
-title: Wizard src/reducer.tsx:21
----
-flowchart TD
-  classDef event stroke-dasharray: 4 2
-  n1["Wizard"]
-  n2{"state.step === #quot;done#quot;"}
-  n1 --> n2
-  n3["#lt;p#gt; #quot;Thanks!#quot;"]
-  n2 -->|✓| n3
-  n4["#lt;form#gt;"]
-  n2 -->|✗| n4
-  n5{"state.hasError"}
-  n4 --> n5
-  n6["#lt;p#gt; #quot;Something went wrong#quot;"]
-  n5 -->|✓| n6
-  n7{"state.step === #quot;details#quot;"}
-  n4 --> n7
-  n8["#lt;input#gt;"]
-  n7 -->|✓| n8
-  n9["#lt;input#gt;"]
-  n7 -->|✗| n9
-  n10{"state.step === #quot;payment#quot;"}
-  n4 --> n10
-  n11["#lt;button#gt; #quot;Back#quot;"]
-  n10 -->|✓| n11
-  n12(["onClick ⇒ state.step = #quot;details#quot;"]):::event
-  n11 -.-> n12
-  n13["#lt;button#gt; #quot;Next#quot;"]
-  n4 --> n13
-  n14(["onClick ⇒ state.step = state.step === #quot;details#quot; ? #quot;payment#quot; : #quot;done#quot;, state.has…"]):::event
-  n13 -.-> n14"
 `;
 
 exports[`fixture analysis > Wizard keeps its state chart and findings 1`] = `

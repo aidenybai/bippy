@@ -1,6 +1,6 @@
 # Architecture
 
-realize reads a React project with the TypeScript 7 checker and builds a model of each component: a small state machine whose states decide what renders. It never runs the code. You can print the model as Mermaid, JSON or a TLA+ module, and check your own invariants against it with [tla-ts](https://www.npmjs.com/package/tla-ts).
+realize reads a React project with the TypeScript 7 checker and builds a model of each component: a small state machine whose states decide what renders. It never runs the code. You can print the model as Mermaid, JSON or a TLA+ module, and check that module with [tla-ts](https://www.npmjs.com/package/tla-ts) or TLC.
 
 The source is the spec here. The model is an over-approximation of what the code can do, so it can't prove the code right. It can show you a path to a state you didn't expect, a branch that never renders, or an assertion the code itself makes that can fail.
 
@@ -10,24 +10,19 @@ The source is the spec here. The model is an over-approximation of what the code
 pnpm analyze tests/fixtures/state-charts/tsconfig.json              # every component
 pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard    # one component
 pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard --tla
-pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard -i 'NoAlert: state_hasError = "false"'
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
 Run these from `packages/realize`.
 
-| Option                       | Effect                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `-c, --component <names...>` | Show only these components                                                   |
-| `-f, --file <filter>`        | Model only components in files whose path contains this text                 |
-| `-d, --depth <n>`            | Cut the render tree off at this depth (default: 12)                          |
-| `--json`                     | Print the analyses and models as JSON                                        |
-| `--tla`                      | Print each model as a TLA+ module                                            |
-| `-i, --invariant <...>`      | Check invariants written as `Name: expression` over the variables and `view` |
+| Option                       | Effect                                                       |
+| ---------------------------- | ------------------------------------------------------------ |
+| `-c, --component <names...>` | Show only these components                                   |
+| `-f, --file <filter>`        | Model only components in files whose path contains this text |
+| `--json`                     | Print the analyses and models as JSON                        |
+| `--tla`                      | Print each model as a TLA+ module                            |
 
-By default you get two Mermaid diagrams per component. The first is a `flowchart` of the render tree. It shows every element the component can render, a diamond at each branch with its `✓` and `✗` edges, and a dashed pill for what each handler does to state, like `onClick ⇒ step = "details"`. An expression the analyzer couldn't evaluate is shown as written and marked `⚠`.
-
-The second is a `stateDiagram-v2` of the model's reachable views. Each arrow is labelled with the button text or handler that causes it, and `[*]` points at the views the component can first render. Comments list each variable with its domain and each finding. The counts go to stderr.
+By default you get a Mermaid `stateDiagram-v2` per component, of the model's reachable views. Each arrow is labelled with the button text or handler that causes it, and `[*]` points at the views the component can first render. Comments list each variable with its domain and each finding. The counts go to stderr.
 
 ## Pipeline
 
@@ -45,7 +40,7 @@ Read `src/core` in this order. Each stage has its own folder, with its helpers n
 | `model/actions.ts`, `model/evaluate.ts`      | Each handler as a guarded action that writes variables                         |
 | `model/state-graph.ts`                       | Checks the TLA+ module with tla-ts and reads back the state graph and traces   |
 | `model/build-model.ts`                       | Puts the model together and reports findings                                   |
-| `model/tla.ts`, `model/check-invariant.ts`   | The TLA+ module and invariant checks through tla-ts                            |
+| `model/tla.ts`                               | The TLA+ module                                                                |
 | `render/`, `labels/`                         | Walks render trees, and reads button text to label handlers                    |
 | `values/`, `shared/`, `project/serialize.ts` | Symbolic values, printing, JSON output and small shared helpers                |
 | `types.ts`, `model/types.ts`                 | The data passed between stages                                                 |
@@ -162,7 +157,7 @@ An assertion is something the code states that TypeScript takes on faith: `x!`, 
 
 An assertion is checked only when it reads `useState` or `useReducer` values alone. An assertion on a prop says the parent never passes that value, which the model can't know. So `user!` behind `status === "ready"` is reported when a handler can set `user` to `null` while `status` stays `"ready"`.
 
-## TLA+ and invariants
+## TLA+
 
 `--tla` prints each model as a TLA+ module:
 
@@ -172,15 +167,7 @@ An assertion is checked only when it reads `useState` or `useReducer` values alo
 - one operator per action, with `Next` as their disjunction, and `Spec`
 - one `AssertionN` operator per assertion
 
-`-i 'Name: expression'` checks an invariant on every reachable state with tla-ts, a TypeScript port of TLC. The expression can use the variable names, `view` and the assertion operators. A violation prints the shortest trace:
-
-```text
-$ pnpm analyze tests/fixtures/state-charts/tsconfig.json -c Wizard -i 'NeverDone: state_step /= "done"'
-Wizard NeverDone: violated
-  1. start: state_step=details, state_hasError=false → form > input
-  2. "Next": state_step=payment, state_hasError=false → form > input > button "Back"
-  3. "Next": state_step=done, state_hasError=false → p "Thanks!"
-```
+To check your own invariant, add it to the module and check the module with tla-ts or TLC. It can use the variable names, `view` and the assertion operators.
 
 ## Conformance
 

@@ -1,8 +1,8 @@
 # realize
 
-Builds a model of every state a React component can be in by reading its source, checks invariants against it with TLA+, and checks the model against real renders. See [GOAL.md](GOAL.md) for why.
+Builds a model of every state a React component can be in by reading its source, checks it as a TLA+ spec with tla-ts, and checks the model against real renders. See [GOAL.md](GOAL.md) for why.
 
-- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it builds a model of variables, views and actions, then prints Mermaid, JSON or a TLA+ module. It checks invariants with [tla-ts](https://www.npmjs.com/package/tla-ts). See [docs/architecture.md](docs/architecture.md).
+- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it builds a model of variables, views and actions, then prints Mermaid, JSON or a TLA+ module. It explores each model with [tla-ts](https://www.npmjs.com/package/tla-ts). See [docs/architecture.md](docs/architecture.md).
 - **Viewer** (`viewer`) shows a component's source with the analysis over it. It still reads the old state report and needs porting to the model. See [viewer/README.md](viewer/README.md).
 - **Verifier** (`tests/conformance/verifier`) checks in a real browser that the model covers every render and transition.
 - **Conformance** (`tests/conformance`) runs both on pinned open-source repos. See [tests/conformance/README.md](tests/conformance/README.md).
