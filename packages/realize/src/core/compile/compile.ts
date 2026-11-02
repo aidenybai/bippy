@@ -33,6 +33,7 @@ import type {
 import { getLocationKey } from "../shared/get-location-key";
 import { getClassName, isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
 import { isModuleLevel } from "./is-module-level";
+import type { CompilerTypeProvider } from "../type-checker/type-provider";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
@@ -167,17 +168,18 @@ const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFun
 };
 
 const createLoweringLogger =
-  (capture: LoweringCapture) =>
+  (capture: LoweringCapture, typeProvider: CompilerTypeProvider | null) =>
   (pipelineValue: CompilerPipelineValue): void => {
     if (pipelineValue.kind !== "hir") return;
     const hirFunction = pipelineValue.value;
+    if (pipelineValue.name === "HIR") typeProvider?.loadFunction(hirFunction);
     const hasErrors = pipelineValue.name === "HIR" && hirFunction.env.hasErrors();
     if (!hasErrors && pipelineValue.name !== STOP_PASS) return;
     if (capture(hirFunction, hasErrors)) throw STOP;
   };
 
 const createPluginOptions = (
-  environment: PluginOptions["environment"],
+  typeProvider: CompilerTypeProvider | null,
   logger: PluginOptions["logger"],
 ): ParsedPluginOptions =>
   parsePluginOptions({
@@ -187,7 +189,7 @@ const createPluginOptions = (
     flowSuppressions: false,
     eslintSuppressionRules: [],
     environment: {
-      ...environment,
+      typeProvider,
       moduleTypeProvider: (moduleName: string): TypeConfig | null => {
         const moduleType = defaultModuleTypeProvider(moduleName);
         return moduleType
@@ -228,6 +230,7 @@ const createModuleFunctionLowerer =
     code: string,
     pluginOptions: ParsedPluginOptions,
     programFunctions: ProgramFunctions,
+    typeProvider: CompilerTypeProvider | null,
   ): ModuleFunctionLoader =>
   (functionName) => {
     const functionPath = programFunctions.moduleFunctionPaths.get(functionName);
@@ -246,7 +249,7 @@ const createModuleFunctionLowerer =
       debugLogIRs: createLoweringLogger((hirFunction, hasErrors) => {
         if (!hasErrors) hir = hirFunction;
         return true;
-      }),
+      }, typeProvider),
     };
     try {
       compileFn(
@@ -373,18 +376,24 @@ const compileProgramFunctions = (
 export const compileFile = (
   fileName: string,
   code: string,
-  environment: PluginOptions["environment"] = {},
+  typeProvider: CompilerTypeProvider | null = null,
 ): CompiledFile => {
   const { ast, error } = parseFile(fileName, code);
   if (!ast) return { ...EMPTY_COMPILED_FILE, parseError: error };
   lowerClassComponents(ast);
   const collector = new CompiledFunctionCollector();
-  const pluginOptions = createPluginOptions(environment, {
+  const pluginOptions = createPluginOptions(typeProvider, {
     logEvent: collector.recordEvent,
-    debugLogIRs: createLoweringLogger(collector.recordLowering),
+    debugLogIRs: createLoweringLogger(collector.recordLowering, typeProvider),
   });
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
-  const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
+  const lower = createModuleFunctionLowerer(
+    fileName,
+    code,
+    pluginOptions,
+    programFunctions,
+    typeProvider,
+  );
   const loadModuleDeclaration = createModuleDeclarationLoader(ast);
   return {
     parseError: null,
