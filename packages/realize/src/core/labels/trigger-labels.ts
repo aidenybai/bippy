@@ -16,7 +16,6 @@ const MAX_TEXT_WIDTH = 24;
 const MAX_HANDLER_WIDTH = 40;
 const UNLABELED_CHILDREN_TAGS = new Set(["select", "textarea"]);
 const ARROW_FUNCTION_HEAD = /^(\(\s*\)|\(?\w+\)?)\s*=>\s*/;
-const DECLARED_NAME = /(?:const|let|var|function)\s+(\w+)\s*=?\s*$/;
 
 const getChildrenText = (value: JsxContainerValue): string =>
   value.children.map(getLiteralText).filter(Boolean).join(" ");
@@ -39,9 +38,9 @@ const getLiteralText = (value: SymbolicValue): string => {
 const formatHandlerValue = (prop: JsxProp, sourceReader: SourceReader): string | null => {
   if (prop.value.kind !== "Function") return formatSymbolicValue(prop.value);
   const loc = prop.value.loc;
-  const declaredName = sourceReader.readLineBefore(prop.file, loc)?.match(DECLARED_NAME)?.[1];
-  if (declaredName) return declaredName;
-  const body = sourceReader.read(prop.file, loc)?.replace(ARROW_FUNCTION_HEAD, "");
+  const name = sourceReader.getDeclaredName(prop.file, loc);
+  if (name) return name;
+  const body = sourceReader.readFunction(prop.file, loc)?.replace(ARROW_FUNCTION_HEAD, "");
   return body && !body.startsWith("{") ? body : null;
 };
 

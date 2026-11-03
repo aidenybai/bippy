@@ -44,6 +44,7 @@ export interface CompiledFile {
   loadModuleFunction: ModuleFunctionLoader;
   lowerModuleFunction: ModuleFunctionLoader;
   moduleValues: ModuleValues;
+  declaredNames: ReadonlyMap<string, string | null>;
   comparedComponents: ReadonlySet<string>;
 }
 
@@ -66,14 +67,28 @@ const describeEvent = (event: LoggerEvent): string | null => {
   }
 };
 
+const getWrapper = (path: NodePath): NodePath | null =>
+  path.findParent((candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression());
+
 const getWrapperName = (path: NodePath): string | null => {
-  const ancestor = path.findParent(
-    (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
-  );
+  const ancestor = getWrapper(path);
   if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
     return ancestor.node.id.name;
   return ancestor?.isExportDefaultDeclaration() ? "default" : null;
 };
+
+const getDeclaredId = (path: NodePath<types.Function>): types.Identifier | null => {
+  if (types.isFunctionDeclaration(path.node)) return path.node.id ?? null;
+  const ancestor = getWrapper(path);
+  return ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id)
+    ? ancestor.node.id
+    : null;
+};
+
+const getSourceName = (id: types.Identifier, code: string): string =>
+  typeof id.start === "number" && typeof id.end === "number"
+    ? code.slice(id.start, id.end)
+    : id.name;
 
 const getFunctionName = (path: NodePath<types.Function>, code: string): string => {
   if (types.isFunctionDeclaration(path.node) && path.node.id) return path.node.id.name;
@@ -98,6 +113,7 @@ interface LoweringCapture {
 interface ProgramFunctions {
   programPath: NodePath<types.Program> | null;
   namesByLocation: Map<string, string>;
+  declaredNames: Map<string, string | null>;
   moduleFunctionPaths: Map<string, BabelFunction>;
   comparedComponents: Set<string>;
 }
@@ -117,6 +133,7 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
       isReadOnly: () => false,
     },
   },
+  declaredNames: new Map(),
   comparedComponents: new Set(),
 };
 
@@ -316,6 +333,7 @@ const compileProgramFunctions = (
   const programFunctions: ProgramFunctions = {
     programPath: null,
     namesByLocation: new Map(),
+    declaredNames: new Map(),
     moduleFunctionPaths: new Map(),
     comparedComponents: new Set(),
   };
@@ -331,8 +349,15 @@ const compileProgramFunctions = (
     },
     Function(path) {
       const functionName = getFunctionName(path, code);
-      if (path.node.loc)
-        programFunctions.namesByLocation.set(getLocationKey(path.node.loc), functionName);
+      const declaredId = getDeclaredId(path);
+      if (path.node.loc) {
+        const locationKey = getLocationKey(path.node.loc);
+        programFunctions.namesByLocation.set(locationKey, functionName);
+        programFunctions.declaredNames.set(
+          locationKey,
+          declaredId ? getSourceName(declaredId, code) : null,
+        );
+      }
       if (isModuleScopeFunction(path)) programFunctions.moduleFunctionPaths.set(functionName, path);
     },
     CallExpression(path) {
@@ -371,6 +396,7 @@ export const compileFile = (
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
     moduleValues: collectModuleValues(ast),
+    declaredNames: programFunctions.declaredNames,
     comparedComponents: programFunctions.comparedComponents,
   };
 };
