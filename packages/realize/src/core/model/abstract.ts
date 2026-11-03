@@ -26,7 +26,7 @@ const isNullish = (value: PrimitiveValue): value is null | undefined =>
 const isNaNValue = (value: PrimitiveValue): boolean =>
   typeof value === "number" && Number.isNaN(value);
 
-const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
+export const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
   left === right || (isNaNValue(left) && isNaNValue(right));
 
 const isLooselyEqual = (left: PrimitiveValue, right: PrimitiveValue): boolean => {
