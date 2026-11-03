@@ -1093,10 +1093,9 @@ exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
 "---- MODULE FileRow ----
 \\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 values
 \\* opened: opened (state), 4 values
-\\* opaque_opened_1: opened + 1 (opaque), 2 values
-VARIABLES path_endsWith_ts, opened, opaque_opened_1
+VARIABLES path_endsWith_ts, opened
 
-vars == <<path_endsWith_ts, opened, opaque_opened_1>>
+vars == <<path_endsWith_ts, opened>>
 
 view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
           [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
@@ -1107,19 +1106,13 @@ view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS
 Init ==
   /\\ path_endsWith_ts \\in {"false", "true"}
   /\\ opened = "0"
-  /\\ opaque_opened_1 \\in {"false", "true"}
 
 \\* setOpened(opened + 1)
 t1 ==
   /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE (IF opened \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
-  /\\ UNCHANGED <<path_endsWith_ts, opaque_opened_1>>
+  /\\ UNCHANGED <<path_endsWith_ts>>
 
-\\* opened + 1 changes
-change_opaque_opened_1 ==
-  /\\ opaque_opened_1' \\in {"false", "true"}
-  /\\ UNCHANGED <<path_endsWith_ts, opened>>
-
-Next == t1 \\/ change_opaque_opened_1
+Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1131,10 +1124,9 @@ title: FileRow src/helpers.tsx:6
 ---
 stateDiagram-v2
   direction LR
-  %% 8 states
+  %% 4 states
   %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
   %% opened = opened (state): <0 | 0 | >0 | NaN
-  %% opaque_opened_1 = opened + 1 (opaque): false | true
   S1: button #gt; span "TS" #gt; b
   S2: button #gt; span "TS"
   S3: button #gt; span "File" #gt; b
@@ -1882,10 +1874,9 @@ exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
 \\* isPending: isPending (input), 2 values
 \\* name: name (state), 2 values
 \\* opaque_typeof_data_get_name_string: typeof data.get("name") === "string" (opaque), 2 values
-\\* opaque_typeof_data_get_name: typeof data.get("name") (opaque), 2 values
-VARIABLES isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name
+VARIABLES isPending, name, opaque_typeof_data_get_name_string
 
-vars == <<isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+vars == <<isPending, name, opaque_typeof_data_get_name_string>>
 
 view == CASE isPending = "true" -> "form > p \\"Saving…\\""
           [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
@@ -1896,29 +1887,23 @@ Init ==
   /\\ isPending \\in {"false", "true"}
   /\\ name = "empty"
   /\\ opaque_typeof_data_get_name_string \\in {"false", "true"}
-  /\\ opaque_typeof_data_get_name \\in {"false", "true"}
 
 \\* "Save"
 t1 ==
   /\\ name' \\in (IF name = "empty" /\\ opaque_typeof_data_get_name_string = "false" THEN {"empty"} ELSE (IF (name = "empty" /\\ opaque_typeof_data_get_name_string = "true") \\/ (name = "other string" /\\ opaque_typeof_data_get_name_string = "true") THEN {"empty", "other string"} ELSE {"other string"}))
-  /\\ UNCHANGED <<isPending, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+  /\\ UNCHANGED <<isPending, opaque_typeof_data_get_name_string>>
 
 \\* isPending changes
 change_isPending ==
   /\\ isPending' \\in {"false", "true"}
-  /\\ UNCHANGED <<name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+  /\\ UNCHANGED <<name, opaque_typeof_data_get_name_string>>
 
 \\* typeof data.get("name") === "string" changes
 change_opaque_typeof_data_get_name_string ==
   /\\ opaque_typeof_data_get_name_string' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name>>
+  /\\ UNCHANGED <<isPending, name>>
 
-\\* typeof data.get("name") changes
-change_opaque_typeof_data_get_name ==
-  /\\ opaque_typeof_data_get_name' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name_string>>
-
-Next == t1 \\/ change_isPending \\/ change_opaque_typeof_data_get_name_string \\/ change_opaque_typeof_data_get_name
+Next == t1 \\/ change_isPending \\/ change_opaque_typeof_data_get_name_string
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1930,11 +1915,10 @@ title: NameForm src/form-actions.tsx:29
 ---
 stateDiagram-v2
   direction LR
-  %% 16 states
+  %% 8 states
   %% isPending = isPending (input): false | true
   %% name = name (state): empty | other string
   %% opaque_typeof_data_get_name_string = typeof data.get("name") === "string" (opaque): false | true
-  %% opaque_typeof_data_get_name = typeof data.get("name") (opaque): false | true
   S1: form #gt; p "Saving…"
   S2: form #gt; p #gt; "No name yet"
   S3: form #gt; p
@@ -4031,10 +4015,9 @@ exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
 "---- MODULE ToneCounter ----
 \\* tone: tone (input), 3 values
 \\* count: count (state), 4 values
-\\* opaque_count_1: count + 1 (opaque), 2 values
-VARIABLES tone, count, opaque_count_1
+VARIABLES tone, count
 
-vars == <<tone, count, opaque_count_1>>
+vars == <<tone, count>>
 
 view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
           [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
@@ -4045,24 +4028,18 @@ view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
 Init ==
   /\\ tone \\in {"undefined", "info", "other string"}
   /\\ count = "0"
-  /\\ opaque_count_1 \\in {"false", "true"}
 
 \\* setCount(count + 1)
 t1 ==
   /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE (IF count \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
-  /\\ UNCHANGED <<tone, opaque_count_1>>
+  /\\ UNCHANGED <<tone>>
 
 \\* parent changes tone
 change_tone ==
   /\\ tone' \\in {"undefined", "info", "other string"}
-  /\\ UNCHANGED <<count, opaque_count_1>>
+  /\\ UNCHANGED <<count>>
 
-\\* count + 1 changes
-change_opaque_count_1 ==
-  /\\ opaque_count_1' \\in {"false", "true"}
-  /\\ UNCHANGED <<tone, count>>
-
-Next == t1 \\/ change_tone \\/ change_opaque_count_1
+Next == t1 \\/ change_tone
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4074,10 +4051,9 @@ title: ToneCounter src/unchanged-props.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  %% 12 states
+  %% 6 states
   %% tone = tone (input): undefined | info | other string
   %% count = count (state): <0 | 0 | >0 | NaN
-  %% opaque_count_1 = count + 1 (opaque): false | true
   S1: div #gt; b #gt; "Info again"
   S2: div #gt; b #gt; "Info"
   S3: div #gt; i #gt; "Other again"

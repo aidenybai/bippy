@@ -2,7 +2,7 @@ import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
 import { getChildValues } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
-import { ANY, addAbstract, mayOverlap } from "./abstract";
+import { ANY, COMPARISONS, addAbstract, mayOverlap } from "./abstract";
 import {
   UNCHANGED,
   and,
@@ -192,7 +192,10 @@ const collectDependencies = (table: VariableTable, value: SymbolicValue): Variab
     if (node.kind === "Binding") bindingIds.add(node.binding.id);
     if (node.kind === "Conditional")
       collectPredicateVariables(table.compile(getTestExpression(node)), names);
-    if (node.kind === "BinaryExpression" || node.kind === "UnaryExpression")
+    if (
+      (node.kind === "BinaryExpression" && COMPARISONS.has(node.operator)) ||
+      (node.kind === "UnaryExpression" && node.operator === "!")
+    )
       collectPredicateVariables(table.compile(node), names);
   });
   return table.variables.filter(
