@@ -1,7 +1,7 @@
 import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
 import { isComparison } from "../values/comparison";
-import { getChildValues } from "../values/for-each-symbolic-value";
+import { forEachSymbolicValue, getChildValues } from "../values/for-each-symbolic-value";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
@@ -167,19 +167,13 @@ export const evaluateInitialValues = (
     evaluate({ table, valueOf: () => undefined }, initial, variable.path.slice(0)),
   );
 
+const getEvaluatedChildren = (value: SymbolicValue): SymbolicValue[] =>
+  value.kind === "ArrayMap" ? [value.array] : getChildValues(value).toReversed();
+
 export const forEachEvaluatedValue = (
   root: SymbolicValue,
   visit: (value: SymbolicValue) => void,
-): void => {
-  const visited = new WeakSet<SymbolicValue>();
-  const pending = [root];
-  for (let value = pending.pop(); value !== undefined; value = pending.pop()) {
-    if (visited.has(value)) continue;
-    visited.add(value);
-    visit(value);
-    pending.push(...(value.kind === "ArrayMap" ? [value.array] : getChildValues(value)));
-  }
-};
+): void => forEachSymbolicValue(root, visit, getEvaluatedChildren);
 
 const collectDependencies = (table: VariableTable, value: SymbolicValue): Variable[] => {
   const names = new Set<string>();

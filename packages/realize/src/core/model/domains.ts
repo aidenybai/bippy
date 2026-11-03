@@ -1,5 +1,6 @@
 import type { AbstractValue, Domain, PrimitiveValue } from "../types";
 import type { Abstract, Value } from "./types";
+import { createUniqueLabel } from "./unique-label";
 
 export interface PlaceTests {
   literals: PrimitiveValue[];
@@ -152,8 +153,7 @@ export const createDomain = (
   for (const abstract of createAbstractValues(typeDomain, tests, isLength)) {
     const baseLabel = formatAbstract(abstract);
     if (usedLabels.has(baseLabel) && abstract.kind === "Exact") continue;
-    let label = baseLabel;
-    for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} ${suffix}`;
+    const label = createUniqueLabel(baseLabel, usedLabels, (suffix) => ` ${suffix}`);
     usedLabels.add(label);
     values.push({ label, abstract });
   }

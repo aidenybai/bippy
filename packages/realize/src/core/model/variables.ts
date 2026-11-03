@@ -20,6 +20,7 @@ import { compareAbstract, compareAbstracts, getAbstractTruthiness } from "./abst
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
+import { createUniqueLabel } from "./unique-label";
 
 export const STATE_KINDS = new Set(["state", "reducer"]);
 
@@ -215,12 +216,8 @@ export const createVariableTable = (
   const variablesByName = new Map<string, Variable>();
   const opaqueVariables = new Map<string, Variable>();
 
-  const createName = (label: string): string => {
-    const base = toIdentifier(label);
-    let name = base;
-    for (let suffix = 2; variablesByName.has(name); suffix++) name = `${base}_${suffix}`;
-    return name;
-  };
+  const createName = (label: string): string =>
+    createUniqueLabel(toIdentifier(label), variablesByName, (suffix) => `_${suffix}`);
 
   const addVariable = (variable: Variable): void => {
     variables.push(variable);
