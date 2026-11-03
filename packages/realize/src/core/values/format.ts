@@ -65,23 +65,26 @@ const getLogicalOperator = (value: ConditionalValue): "||" | "&&" | "??" | null 
   return null;
 };
 
-const getPrecedence = (value: SymbolicValue): number => {
-  if (value.kind === "BinaryExpression") return BINARY_PRECEDENCE.get(value.operator) ?? 0;
-  if (value.kind !== "Conditional") return ATOMIC_PRECEDENCE;
-  if (formatOptionalChain(value)) return ATOMIC_PRECEDENCE;
-  const logicalOperator = getLogicalOperator(value);
-  return logicalOperator ? (BINARY_PRECEDENCE.get(logicalOperator) ?? 0) : 0;
-};
+interface Formatted {
+  text: string;
+  precedence: number;
+}
 
-const formatLogical = (value: ConditionalValue, operator: "||" | "&&" | "??"): string => {
-  const precedence = BINARY_PRECEDENCE.get(operator) ?? 0;
-  const right = operator === "&&" ? value.consequent : value.alternate;
-  return `${formatWithPrecedence(value.test, precedence)} ${operator} ${formatWithPrecedence(right, precedence + 1)}`;
-};
+const atomic = (text: string): Formatted => ({ text, precedence: ATOMIC_PRECEDENCE });
+
+const formatText = (value: SymbolicValue): string => formatValue(value).text;
 
 const formatWithPrecedence = (value: SymbolicValue, minimumPrecedence: number): string => {
-  const text = formatSymbolicValue(value);
-  return getPrecedence(value) < minimumPrecedence ? `(${text})` : text;
+  const { text, precedence } = formatValue(value);
+  return precedence < minimumPrecedence ? `(${text})` : text;
+};
+
+const formatBinary = (left: SymbolicValue, operator: string, right: SymbolicValue): Formatted => {
+  const precedence = BINARY_PRECEDENCE.get(operator) ?? 0;
+  return {
+    text: `${formatWithPrecedence(left, precedence)} ${operator} ${formatWithPrecedence(right, precedence + 1)}`,
+    precedence,
+  };
 };
 
 const formatOptionalChain = (value: ConditionalValue): string | null => {
@@ -93,27 +96,36 @@ const formatOptionalChain = (value: ConditionalValue): string | null => {
     return null;
   const test = formatWithPrecedence(value.test, ATOMIC_PRECEDENCE);
   const plainTest = test.replaceAll("?.", ".");
-  const consequent = formatSymbolicValue(value.consequent).replaceAll("?.", ".");
+  const consequent = formatText(value.consequent).replaceAll("?.", ".");
   const rest = consequent.slice(plainTest.length);
   return consequent.startsWith(plainTest) && /^[.[(]/.test(rest)
     ? `${test}?${rest.startsWith(".") ? "" : "."}${rest}`
     : null;
 };
 
-const isTooLargeToFormat = (root: SymbolicValue): boolean => {
-  const pending = [root];
-  let count = 0;
-  for (let value = pending.pop(); value !== undefined; value = pending.pop()) {
-    count++;
-    if (count > MAX_FORMATTED_NODES) return true;
-    pending.push(...getChildValues(value));
-    if (value.kind === "Unknown" && value.origin) pending.push(...getOriginValues(value.origin));
-  }
-  return false;
+const formatConditional = (value: ConditionalValue): Formatted => {
+  const optionalChain = formatOptionalChain(value);
+  if (optionalChain) return atomic(optionalChain);
+  const logicalOperator = getLogicalOperator(value);
+  if (logicalOperator)
+    return formatBinary(
+      value.test,
+      logicalOperator,
+      logicalOperator === "&&" ? value.consequent : value.alternate,
+    );
+  const test =
+    value.testKind === "nullish"
+      ? `${formatWithPrecedence(value.test, COMPARED_OPERAND_PRECEDENCE)} != null`
+      : formatWithPrecedence(value.test, TERNARY_TEST_PRECEDENCE);
+  return {
+    text: `${test} ? ${formatText(value.consequent)} : ${formatText(value.alternate)}`,
+    precedence: 0,
+  };
 };
 
-export const formatSymbolicValue = (value: SymbolicValue): string => {
-  if (isTooLargeToFormat(value)) return ELIDED_TEXT;
+const formatAtomic = (
+  value: Exclude<SymbolicValue, { kind: "BinaryExpression" | "Conditional" }>,
+): string => {
   switch (value.kind) {
     case "Primitive":
       return formatPrimitive(value.value);
@@ -121,42 +133,21 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return formatPlace(value.binding, value.path);
     case "UnaryExpression": {
       const resolvedPromise = value.operator === "!" ? getResolvedPromise(value.value) : null;
-      if (resolvedPromise) return `${formatSymbolicValue(resolvedPromise)} resolves`;
+      if (resolvedPromise) return `${formatText(resolvedPromise)} resolves`;
       const separator = WORD_OPERATOR_PATTERN.test(value.operator) ? " " : "";
       return `${value.operator}${separator}${formatWithPrecedence(value.value, ATOMIC_PRECEDENCE)}`;
     }
-    case "BinaryExpression": {
-      const precedence = BINARY_PRECEDENCE.get(value.operator) ?? 0;
-      const left = formatWithPrecedence(value.left, precedence);
-      const right = formatWithPrecedence(value.right, precedence + 1);
-      return `${left} ${value.operator} ${right}`;
-    }
-    case "Conditional": {
-      const optionalChain = formatOptionalChain(value);
-      if (optionalChain) return optionalChain;
-      const logicalOperator = getLogicalOperator(value);
-      if (logicalOperator) return formatLogical(value, logicalOperator);
-      const test =
-        value.testKind === "nullish"
-          ? `${formatWithPrecedence(value.test, COMPARED_OPERAND_PRECEDENCE)} != null`
-          : formatWithPrecedence(value.test, TERNARY_TEST_PRECEDENCE);
-      const consequent = formatSymbolicValue(value.consequent);
-      const alternate = formatSymbolicValue(value.alternate);
-      return `${test} ? ${consequent} : ${alternate}`;
-    }
     case "ObjectExpression": {
       const entries = [
-        ...value.spreads.map((spread) => `...${formatSymbolicValue(spread)}`),
-        ...value.properties.map(
-          (property) => `${property.key}: ${formatSymbolicValue(property.value)}`,
-        ),
+        ...value.spreads.map((spread) => `...${formatText(spread)}`),
+        ...value.properties.map((property) => `${property.key}: ${formatText(property.value)}`),
       ];
       return `{ ${entries.join(", ")} }`;
     }
     case "ArrayExpression": {
       const entries = [
-        ...value.spreads.map((spread) => `...${formatSymbolicValue(spread)}`),
-        ...value.elements.map(formatSymbolicValue),
+        ...value.spreads.map((spread) => `...${formatText(spread)}`),
+        ...value.elements.map(formatText),
       ];
       return `[${entries.join(", ")}]`;
     }
@@ -185,10 +176,10 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
     case "Global":
       return value.name;
     case "Collection": {
-      const source = value.source ? formatSymbolicValue(value.source) : "";
+      const source = value.source ? formatText(value.source) : "";
       const writes = value.writes.map((write) => {
-        const call = `.${write.method}(${write.argumentValues.map(formatSymbolicValue).join(", ")})`;
-        const guards = write.guards.map(formatSymbolicValue).join(" && ");
+        const call = `.${write.method}(${write.argumentValues.map(formatText).join(", ")})`;
+        const guards = write.guards.map(formatText).join(" && ");
         return write.guards.length > 0 ? ` (${call} if ${guards})` : call;
       });
       return `new ${value.collection}(${source})${writes.join("")}`;
@@ -203,6 +194,27 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return assertExhaustive(value, "Unhandled symbolic value");
   }
 };
+
+const formatValue = (value: SymbolicValue): Formatted => {
+  if (value.kind === "BinaryExpression")
+    return formatBinary(value.left, value.operator, value.right);
+  return value.kind === "Conditional" ? formatConditional(value) : atomic(formatAtomic(value));
+};
+
+const isTooLargeToFormat = (root: SymbolicValue): boolean => {
+  const pending = [root];
+  let count = 0;
+  for (let value = pending.pop(); value !== undefined; value = pending.pop()) {
+    count++;
+    if (count > MAX_FORMATTED_NODES) return true;
+    pending.push(...getChildValues(value));
+    if (value.kind === "Unknown" && value.origin) pending.push(...getOriginValues(value.origin));
+  }
+  return false;
+};
+
+export const formatSymbolicValue = (value: SymbolicValue): string =>
+  isTooLargeToFormat(value) ? ELIDED_TEXT : formatText(value);
 
 const MAX_ORIGIN_LENGTH = 80;
 
@@ -220,13 +232,13 @@ const formatOrigin = (origin: UnknownOrigin): string => {
     case "Member":
       return `${formatWithPrecedence(origin.object, ATOMIC_PRECEDENCE)}${formatMember(origin.property)}`;
     case "Call":
-      return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatSymbolicValue).join(", ")})`;
+      return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatText).join(", ")})`;
     case "Settled":
       return origin.settlement === "fulfilled"
         ? `await ${formatWithPrecedence(origin.promise, ATOMIC_PRECEDENCE)}`
-        : `${formatSymbolicValue(origin.promise)} rejects`;
+        : `${formatText(origin.promise)} rejects`;
     case "Value":
-      return formatSymbolicValue(origin.value);
+      return formatText(origin.value);
     default:
       return assertExhaustive(origin, "Unhandled unknown origin");
   }
