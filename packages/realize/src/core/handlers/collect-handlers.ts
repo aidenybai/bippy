@@ -249,6 +249,70 @@ interface TargetCallbacks {
   bubbled: SymbolicValue[];
 }
 
+type Load = "always" | "maybe" | null;
+
+interface EventLoads {
+  stops: Load;
+  prevents: Load;
+}
+
+interface Dispatch extends EventLoads {
+  callback: SymbolicValue;
+}
+
+const NO_LOADS: EventLoads = { stops: null, prevents: null };
+
+const getBranchLoad = (consequent: Load, alternate: Load): Load => {
+  if (consequent === "always" && alternate === "always") return "always";
+  return consequent !== null || alternate !== null ? "maybe" : null;
+};
+
+const getSequenceLoad = (loads: Load[]): Load => {
+  if (loads.includes("always")) return "always";
+  return loads.includes("maybe") ? "maybe" : null;
+};
+
+const getPreventLoad = (dispatches: Dispatch[]): Load =>
+  getSequenceLoad(dispatches.map((dispatch) => dispatch.prevents));
+
+const weaken = (load: Load): Load => (load === null ? null : "maybe");
+
+const gateByLoad = <Item>(load: Load, items: Item[], guard: (items: Item[]) => Item[]): Item[] => {
+  if (load === "always") return [];
+  return load === "maybe" ? guard(items) : items;
+};
+
+const getCallbacks = (dispatches: Dispatch[]): SymbolicValue[] =>
+  dispatches.map((dispatch) => dispatch.callback);
+
+const guardDispatches = (dispatches: Dispatch[], reason: string, prop: JsxProp): Dispatch[] =>
+  dispatches.map((dispatch) => ({
+    callback: createGuardedConditional(
+      createUnknown(reason, prop.loc),
+      dispatch.callback,
+      UNDEFINED_VALUE,
+      prop,
+    ),
+    stops: weaken(dispatch.stops),
+    prevents: weaken(dispatch.prevents),
+  }));
+
+const getReachedDispatches = (chain: Dispatch[], prop: JsxProp): Dispatch[] => {
+  const stopIndex = chain.findIndex((dispatch) => dispatch.stops !== null);
+  const stopper = chain[stopIndex];
+  if (!stopper) return chain;
+  const reached = chain.slice(0, stopIndex + 1);
+  if (stopper.stops === "always") return reached;
+  return [
+    ...reached,
+    ...guardDispatches(
+      getReachedDispatches(chain.slice(stopIndex + 1), prop),
+      `propagation ${getHandlerKey(stopper.callback)}`,
+      prop,
+    ),
+  ];
+};
+
 const getValueKeys = (values: SymbolicValue[]): string => values.map(getValueKey).join(",");
 
 const getHandlerContentKey = (handler: Handler): string =>
@@ -295,7 +359,6 @@ class HandlerCollector {
   readonly #consumerCallbacks: Map<JsxExpressionValue, Set<SymbolicValue>>;
   readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
   readonly #renderGuards: Map<JsxExpressionValue, SymbolicValue[]>;
-  readonly #wrapperLoads = new Map<SymbolicValue, Set<string>>();
 
   constructor(
     interpreter: Interpreter,
@@ -411,7 +474,7 @@ class HandlerCollector {
     this.#addCommitCallbacks(
       `toggle:${location}`,
       guardCallbacks(
-        this.#getDispatchCallbacks(element, "onToggle", toggleProp),
+        getCallbacks(this.#getDispatches(element, "onToggle", toggleProp)),
         `toggle ${location}`,
         toggleProp,
       ),
@@ -607,36 +670,37 @@ class HandlerCollector {
     const descendants = [...this.#ancestorsByElement].flatMap(([candidate, path]) =>
       path.includes(element) ? [candidate] : [],
     );
-    const getDescendantLoads = (property: string) =>
-      descendants
-        .flatMap((descendant) => [
-          ...this.#getWrapperMarkers(descendant, [
-            eventProp.name,
-            `${eventProp.name}${CAPTURE_SUFFIX}`,
-          ]),
-          ...this.#getAncestorCallbacks(descendant, eventProp.name),
-          ...this.#getAncestorCallbacks(descendant, `${eventProp.name}${CAPTURE_SUFFIX}`),
-        ])
-        .map((descendantCallback) => this.#getPropertyLoad(descendantCallback, property));
-    const index = clicked.indexOf(callback);
+    const getDescendantDispatches = () =>
+      descendants.flatMap((descendant) => [
+        ...this.#getWrapperDispatches(descendant, [
+          eventProp.name,
+          `${eventProp.name}${CAPTURE_SUFFIX}`,
+        ]),
+        ...this.#getAncestorCallbacks(descendant, eventProp.name).map(this.#dispatch),
+        ...this.#getAncestorCallbacks(descendant, `${eventProp.name}${CAPTURE_SUFFIX}`).map(
+          this.#dispatch,
+        ),
+      ]);
+    const index = clicked.findIndex((dispatch) => dispatch.callback === callback);
     const isStoppedBelow =
       isCapture &&
       index !== -1 &&
-      getDescendantLoads("stopPropagation").some((load) => load !== null);
+      getDescendantDispatches().some((dispatch) => dispatch.stops !== null);
     const isRetargeted =
       descendants.some(
         (descendant) =>
           descendant.tag.kind === "BuiltinTag" && INTERACTIVE_TAGS.has(descendant.tag.name),
-      ) || getDescendantLoads("preventDefault").some((load) => load !== null);
+      ) || getDescendantDispatches().some((dispatch) => dispatch.prevents !== null);
     const reason = `descendant ${prop.name} ${getLocationKey(element.loc)}`;
     const defaults = this.#getDefaultActionCallbacks(element, eventProp, clicked);
+    const callbacks = getCallbacks(clicked);
     const propagated = [
       ...(isStoppedBelow
         ? [
-            ...clicked.slice(0, index + 1),
-            ...guardCallbacks(clicked.slice(index + 1), reason, prop),
+            ...callbacks.slice(0, index + 1),
+            ...guardCallbacks(callbacks.slice(index + 1), reason, prop),
           ]
-        : clicked),
+        : callbacks),
       ...(isRetargeted ? guardCallbacks(defaults, reason, prop) : defaults),
     ];
     return propagated.length === 1 ? [] : propagated;
@@ -705,11 +769,9 @@ class HandlerCollector {
 
   #getActivationCallbacks(
     label: JsxExpressionValue,
-    clicked: SymbolicValue[],
+    prevents: Load,
     prop: JsxProp,
   ): SymbolicValue[] {
-    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
-    if (prevents.includes("always")) return [];
     const labelKeys = new Set((this.#renderGuards.get(label) ?? []).map(getValueKey));
     const getControlGuards = (control: JsxExpressionValue) =>
       (this.#renderGuards.get(control) ?? []).filter((guard) => !labelKeys.has(getValueKey(guard)));
@@ -733,9 +795,9 @@ class HandlerCollector {
             ),
         ),
       );
-    return prevents.includes("maybe")
-      ? guardCallbacks(sequence, `activated ${getLocationKey(label.loc)}`, prop)
-      : sequence;
+    return gateByLoad(prevents, sequence, (callbacks) =>
+      guardCallbacks(callbacks, `activated ${getLocationKey(label.loc)}`, prop),
+    );
   }
 
   #getControlActivation(
@@ -746,7 +808,7 @@ class HandlerCollector {
     const location = getLocationKey(control.loc);
     const clickProp = { ...prop, name: "onClick" };
     const focused = guardCallbacks(
-      this.#getDispatchCallbacks(control, "onFocus", prop),
+      getCallbacks(this.#getDispatches(control, "onFocus", prop)),
       `activated onFocus ${location}`,
       prop,
     );
@@ -760,7 +822,7 @@ class HandlerCollector {
       }),
     );
     const activated = [
-      ...dispatched,
+      ...getCallbacks(dispatched),
       ...this.#getDefaultActionCallbacks(control, clickProp, dispatched),
     ];
     if (focused.length > 0)
@@ -786,7 +848,7 @@ class HandlerCollector {
     targetCallbacks: SymbolicValue[],
     ancestors: JsxExpressionValue[],
     prop: JsxProp,
-  ): SymbolicValue[] {
+  ): Dispatch[] {
     const getEnabledCallbacks = (ancestor: JsxExpressionValue, eventName: string) =>
       this.#getAncestorCallbacks(ancestor, eventName).map((callback) =>
         isMouseBlockedEvent(eventName)
@@ -796,45 +858,51 @@ class HandlerCollector {
     return [
       ...ancestors.flatMap((ancestor) =>
         ancestor.tag.kind === "BuiltinTag"
-          ? getEnabledCallbacks(ancestor, `${name}${CAPTURE_SUFFIX}`)
-          : this.#getWrapperMarkers(ancestor, [`${name}${CAPTURE_SUFFIX}`]),
+          ? getEnabledCallbacks(ancestor, `${name}${CAPTURE_SUFFIX}`).map(this.#dispatch)
+          : this.#getWrapperDispatches(ancestor, [`${name}${CAPTURE_SUFFIX}`]),
       ),
-      ...targetCallbacks,
+      ...targetCallbacks.map(this.#dispatch),
       ...[...ancestors].reverse().flatMap((ancestor) => {
         if (ancestor.tag.kind !== "BuiltinTag")
           return [
-            ...this.#getWrapperMarkers(ancestor, [name]),
+            ...this.#getWrapperDispatches(ancestor, [name]),
             ...guardCallbacks(
               this.#getComponentCallbacks(ancestor),
               `wrapper ${name} ${getLocationKey(ancestor.loc)}`,
               prop,
-            ),
+            ).map(this.#dispatch),
           ];
         const callbacks = getEnabledCallbacks(ancestor, name);
-        return MAYBE_BUBBLING_EVENTS.has(name)
-          ? guardCallbacks(callbacks, `bubbled ${name} ${getLocationKey(ancestor.loc)}`, prop)
-          : callbacks;
+        return (
+          MAYBE_BUBBLING_EVENTS.has(name)
+            ? guardCallbacks(callbacks, `bubbled ${name} ${getLocationKey(ancestor.loc)}`, prop)
+            : callbacks
+        ).map(this.#dispatch);
       }),
     ];
   }
 
-  #getWrapperMarkers(component: JsxExpressionValue, names: string[]): SymbolicValue[] {
+  #getWrapperDispatches(component: JsxExpressionValue, names: string[]): Dispatch[] {
     const hirFunction = this.#loadComponent(component);
     if (!hirFunction) return [];
-    const loads = ["stopPropagation", "preventDefault"].filter((property) =>
-      loadsInHandlers(hirFunction, new Set(names), property),
-    );
-    if (loads.length === 0) return [];
+    const isStopped = loadsInHandlers(hirFunction, new Set(names), "stopPropagation");
+    const isPrevented = loadsInHandlers(hirFunction, new Set(names), "preventDefault");
+    if (!isStopped && !isPrevented) return [];
     const marker = createUnknown(
       `wrapper ${names.join(" ")} ${getLocationKey(component.loc)}`,
       component.loc,
     );
-    this.#wrapperLoads.set(marker, new Set(loads));
-    return [marker];
+    return [
+      {
+        callback: marker,
+        stops: isStopped ? "maybe" : null,
+        prevents: isPrevented ? "maybe" : null,
+      },
+    ];
   }
 
-  #getDispatchCallbacks(target: JsxExpressionValue, event: string, prop: JsxProp): SymbolicValue[] {
-    return this.#getReachedCallbacks(
+  #getDispatches(target: JsxExpressionValue, event: string, prop: JsxProp): Dispatch[] {
+    return getReachedDispatches(
       this.#getChain(
         event,
         [
@@ -853,54 +921,48 @@ class HandlerCollector {
     events: string[],
     prop: JsxProp,
     getTargetCallbacks: (event: string) => TargetCallbacks,
-  ): SymbolicValue[] {
+  ): Dispatch[] {
     const ancestors = this.#getAncestors(element);
     const location = getLocationKey(element.loc);
     const isRadio = getCheckableType(element) === "radio";
-    return events.reduce<SymbolicValue[]>((sequence, event, index) => {
+    return events.reduce<Dispatch[]>((sequence, event, index) => {
       const target = getTargetCallbacks(event);
-      const reached = this.#getReachedCallbacks(
+      const reached = getReachedDispatches(
         this.#getChain(event, [...target.captured, ...target.bubbled], ancestors, prop),
         prop,
       );
       if (event === "onInput" && index > 0) {
-        const inputs = guardCallbacks(
-          this.#getUnpreventedCallbacks(sequence, reached, `input ${location}`, prop),
-          `input ${location}`,
+        const reason = `input ${location}`;
+        const inputs = guardDispatches(
+          gateByLoad(getPreventLoad(sequence), reached, (dispatches) =>
+            guardDispatches(dispatches, reason, prop),
+          ),
+          reason,
           prop,
         );
-        this.#addCommitCallbacks(`input:${location}`, inputs, element.loc);
+        this.#addCommitCallbacks(`input:${location}`, getCallbacks(inputs), element.loc);
         return [...sequence, ...inputs];
       }
       if (event !== "onChange" || index === 0) return [...sequence, ...reached];
       const previous = events[index - 1];
-      const stops = [
-        ...ancestors.flatMap((ancestor) =>
-          ancestor.tag.kind === "BuiltinTag"
-            ? this.#getAncestorCallbacks(ancestor, `${previous}${CAPTURE_SUFFIX}`)
-            : [],
-        ),
-        ...getTargetCallbacks(previous).captured,
-      ].map((callback) => this.#getPropertyLoad(callback, "stopPropagation"));
-      if (stops.includes("always")) return sequence;
+      const stops = getSequenceLoad(
+        [
+          ...ancestors.flatMap((ancestor) =>
+            ancestor.tag.kind === "BuiltinTag"
+              ? this.#getAncestorCallbacks(ancestor, `${previous}${CAPTURE_SUFFIX}`)
+              : [],
+          ),
+          ...getTargetCallbacks(previous).captured,
+        ].map((callback) => this.#getEventLoads(callback).stops),
+      );
+      const isChangeHidden = stops === null && (isRadio || isTextInput(element));
       return [
         ...sequence,
-        ...(stops.includes("maybe") || isRadio || isTextInput(element)
-          ? guardCallbacks(reached, `changed ${location}`, prop)
-          : reached),
+        ...gateByLoad(isChangeHidden ? "maybe" : stops, reached, (dispatches) =>
+          guardDispatches(dispatches, `changed ${location}`, prop),
+        ),
       ];
     }, []);
-  }
-
-  #getUnpreventedCallbacks(
-    clicked: SymbolicValue[],
-    callbacks: SymbolicValue[],
-    reason: string,
-    prop: JsxProp,
-  ): SymbolicValue[] {
-    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
-    if (prevents.includes("always")) return [];
-    return prevents.includes("maybe") ? guardCallbacks(callbacks, reason, prop) : callbacks;
   }
 
   #getComponentCallbacks(component: JsxExpressionValue): SymbolicValue[] {
@@ -933,9 +995,8 @@ class HandlerCollector {
     const before: SymbolicValue[] = [];
     const after: SymbolicValue[] = [];
     for (const event of events) {
-      const reached = this.#getReachedCallbacks(
-        this.#getChain(event, [callback], ancestors, prop),
-        prop,
+      const reached = getCallbacks(
+        getReachedDispatches(this.#getChain(event, [callback], ancestors, prop), prop),
       );
       const index = reached.indexOf(callback);
       if (index === -1) continue;
@@ -946,33 +1007,14 @@ class HandlerCollector {
     return before.length + after.length === 0 ? [] : [...before, callback, ...after];
   }
 
-  #getReachedCallbacks(chain: SymbolicValue[], prop: JsxProp): SymbolicValue[] {
-    const stopIndex = chain.findIndex(
-      (entry) => this.#getPropertyLoad(entry, "stopPropagation") !== null,
-    );
-    const stopper = chain[stopIndex];
-    if (!stopper) return chain;
-    const reached = chain.slice(0, stopIndex + 1);
-    return this.#getPropertyLoad(stopper, "stopPropagation") === "always"
-      ? reached
-      : [
-          ...reached,
-          ...guardCallbacks(
-            this.#getReachedCallbacks(chain.slice(stopIndex + 1), prop),
-            `propagation ${getHandlerKey(stopper)}`,
-            prop,
-          ),
-        ];
-  }
-
   #getDefaultActionCallbacks(
     element: JsxExpressionValue,
     prop: JsxProp,
-    clicked: SymbolicValue[],
+    clicked: Dispatch[],
   ): SymbolicValue[] {
     if (prop.name !== "onClick") return [];
-    const prevents = clicked.map((callback) => this.#getPropertyLoad(callback, "preventDefault"));
-    if (prevents.includes("always")) return [];
+    const prevents = getPreventLoad(clicked);
+    if (prevents === "always") return [];
     const getDefaultCallbacks = (
       owner: JsxExpressionValue | undefined,
       control: "always" | "maybe" | null,
@@ -980,10 +1022,10 @@ class HandlerCollector {
       extra: SymbolicValue[] = [],
     ): SymbolicValue[] => {
       if (owner === undefined || control === null) return [];
-      const callbacks = [...this.#getDispatchCallbacks(owner, event, prop), ...extra];
-      return prevents.includes("maybe") || control === "maybe"
-        ? guardCallbacks(callbacks, `default ${event} ${getLocationKey(owner.loc)}`, prop)
-        : callbacks;
+      const callbacks = [...getCallbacks(this.#getDispatches(owner, event, prop)), ...extra];
+      return gateByLoad(control === "maybe" ? "maybe" : prevents, callbacks, (gated) =>
+        guardCallbacks(gated, `default ${event} ${getLocationKey(owner.loc)}`, prop),
+      );
     };
     const path = [...this.#getAncestors(element), element];
     const activatorIndex = path.findLastIndex(
@@ -992,7 +1034,7 @@ class HandlerCollector {
     const activator = path[activatorIndex];
     if (!activator) return [];
     if (activator.tag.name === "label")
-      return this.#getActivationCallbacks(activator, clicked, prop);
+      return this.#getActivationCallbacks(activator, prevents, prop);
     const form = this.#getOwnerForm(activator, path.slice(0, activatorIndex));
     return [
       ...getDefaultCallbacks(
@@ -1016,11 +1058,10 @@ class HandlerCollector {
     const actions =
       submitterActions.length > 0 ? submitterActions : this.#getAncestorCallbacks(form, "action");
     const prop = this.#getEventProp(form, "requestSubmit");
-    return this.#getUnpreventedCallbacks(
-      this.#getDispatchCallbacks(form, "onSubmit", prop),
+    return gateByLoad(
+      getPreventLoad(this.#getDispatches(form, "onSubmit", prop)),
       actions,
-      `action ${getLocationKey(form.loc)}`,
-      prop,
+      (callbacks) => guardCallbacks(callbacks, `action ${getLocationKey(form.loc)}`, prop),
     );
   }
 
@@ -1059,25 +1100,24 @@ class HandlerCollector {
       .filter((callback) => getHandlerKey(callback) !== null);
   }
 
-  #getPropertyLoad(callback: SymbolicValue, property: string): "always" | "maybe" | null {
-    if (this.#wrapperLoads.get(callback)?.has(property)) return "maybe";
-    if (callback.kind === "Bound") return this.#getPropertyLoad(callback.callee, property);
+  readonly #dispatch = (callback: SymbolicValue): Dispatch => ({
+    callback,
+    ...this.#getEventLoads(callback),
+  });
+
+  #getEventLoads(callback: SymbolicValue): EventLoads {
+    if (callback.kind === "Bound") return this.#getEventLoads(callback.callee);
     if (callback.kind === "Conditional") {
-      const loads = [callback.consequent, callback.alternate].map((branch) =>
-        this.#getPropertyLoad(branch, property),
-      );
-      if (loads.every((load) => load === "always")) return "always";
-      return loads.some((load) => load !== null) ? "maybe" : null;
+      const consequent = this.#getEventLoads(callback.consequent);
+      const alternate = this.#getEventLoads(callback.alternate);
+      return {
+        stops: getBranchLoad(consequent.stops, alternate.stops),
+        prevents: getBranchLoad(consequent.prevents, alternate.prevents),
+      };
     }
-    if (callback.kind !== "Function") return null;
+    if (callback.kind !== "Function") return NO_LOADS;
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
-    if (hirFunction === null || !loadsProperty(hirFunction, property)) return null;
-    const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
-    const isAlways = entry?.instructions.some(
-      (instruction) =>
-        instruction.value.kind === "PropertyLoad" && instruction.value.property === property,
-    );
-    return isAlways ? "always" : "maybe";
+    return hirFunction === null ? NO_LOADS : getFunctionLoads(hirFunction);
   }
 
   #getSelectEvent(element: JsxExpressionValue, prop: JsxProp): ControlEvent | null {
@@ -1165,6 +1205,21 @@ const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
     }
   return false;
 };
+
+const getFunctionLoad = (hirFunction: HIRFunction, property: string): Load => {
+  if (!loadsProperty(hirFunction, property)) return null;
+  const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
+  const isAlways = entry?.instructions.some(
+    (instruction) =>
+      instruction.value.kind === "PropertyLoad" && instruction.value.property === property,
+  );
+  return isAlways ? "always" : "maybe";
+};
+
+const getFunctionLoads = (hirFunction: HIRFunction): EventLoads => ({
+  stops: getFunctionLoad(hirFunction, "stopPropagation"),
+  prevents: getFunctionLoad(hirFunction, "preventDefault"),
+});
 
 const getElementAncestors = (
   render: SymbolicValue,
