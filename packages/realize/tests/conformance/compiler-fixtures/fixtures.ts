@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { extname, join } from "node:path";
 import { parseSync } from "@babel/core";
+import { getCheckoutArguments } from "../runner/checkout";
 import { CACHE_DIRECTORY, PACKAGE_DIRECTORY } from "../runner/repos";
 
 interface FixtureSource {
@@ -60,20 +61,21 @@ const SOURCE = JSON.parse(
 const CHECKOUT_DIRECTORY = join(CACHE_DIRECTORY, "react-compiler-fixtures");
 export const PROJECT_DIRECTORY = join(CACHE_DIRECTORY, "react-compiler-fixtures-project");
 
-const git = (...args: string[]): string =>
-  execFileSync("git", ["-C", CHECKOUT_DIRECTORY, ...args], { encoding: "utf8" }).trim();
-
 const ensureCheckout = (): void => {
   const isCurrent =
-    existsSync(join(CHECKOUT_DIRECTORY, ".git")) && git("rev-parse", "HEAD") === SOURCE.revision;
+    existsSync(join(CHECKOUT_DIRECTORY, ".git")) &&
+    execFileSync("git", ["-C", CHECKOUT_DIRECTORY, "rev-parse", "HEAD"], {
+      encoding: "utf8",
+    }).trim() === SOURCE.revision;
   if (isCurrent) return;
   rmSync(CHECKOUT_DIRECTORY, { recursive: true, force: true });
-  mkdirSync(CHECKOUT_DIRECTORY, { recursive: true });
-  git("init", "--quiet");
-  git("remote", "add", "origin", SOURCE.repository);
-  git("sparse-checkout", "set", SOURCE.fixtures, SOURCE.runtime);
-  git("fetch", "--quiet", "--depth", "1", "--filter=blob:none", "origin", SOURCE.revision);
-  git("checkout", "--quiet", "FETCH_HEAD");
+  execFileSync(
+    "bash",
+    getCheckoutArguments(CHECKOUT_DIRECTORY, { ...SOURCE, patchFile: null }, [
+      SOURCE.fixtures,
+      SOURCE.runtime,
+    ]),
+  );
 };
 
 const getParseError = (file: string, code: string): string | null => {
