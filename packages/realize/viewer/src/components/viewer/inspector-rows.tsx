@@ -58,7 +58,7 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => (
 );
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  if (state.label === "always") return <span className="text-foreground">always</span>;
+  if (state.conditions.length === 0) return <span className="text-foreground">always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
       {state.conditions.map((condition, index) => (
@@ -78,7 +78,7 @@ export const StateRow = ({ state }: { state: ViewState }) => (
     nodeIds={[...state.conditions.flatMap((condition) => condition.nodeIds), ...state.armNodeIds]}
   >
     <Cell className={KEY_CELL}>
-      <Badge variant="outline">S{state.index + 1}</Badge>
+      <Badge variant="outline">{state.name}</Badge>
     </Cell>
     <Cell>
       <Conditions state={state} />

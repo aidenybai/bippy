@@ -158,7 +158,7 @@ const addBindingNodes = (
       id: getNodeId(input, `binding:${binding.id}`),
       component: input.component,
       kind: "binding",
-      label: `${binding.name} · ${binding.domain}`,
+      label: `${binding.name} · ${binding.domain.join(" | ")}`,
       loc,
       bindingId: binding.id,
     });

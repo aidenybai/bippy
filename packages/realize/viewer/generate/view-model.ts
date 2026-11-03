@@ -96,12 +96,12 @@ const collectBindingIds = (value: SymbolicValue, ids: Set<number> = new Set()): 
   return [...ids];
 };
 
-const formatDomain = (domain: Domain): string => {
+const formatDomain = (domain: Domain): string[] => {
   switch (domain.kind) {
     case "Cases":
-      return domain.cases.map(formatAbstractValue).join(" | ");
+      return domain.cases.map(formatAbstractValue);
     case "Unknown":
-      return `Unknown(${domain.reason})`;
+      return [`Unknown(${domain.reason})`];
   }
 };
 
@@ -298,8 +298,8 @@ const toViewState = (
   const conditions = view.conditions.map((text) => toViewCondition(text, branches, graph));
   return {
     index,
+    name: view.name,
     conditions,
-    label: view.conditions.join(" ∧ ") || "always",
     render: view.label,
     armNodeIds: branches.flatMap((branch) => {
       const arm = conditions.find((condition) => condition.branchId === branch.id)?.arm;

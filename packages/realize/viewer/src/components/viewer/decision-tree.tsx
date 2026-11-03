@@ -229,7 +229,7 @@ const NodeView = ({ laid }: { laid: LaidOutNode }) => {
       style={{ ...style, height }}
     >
       <Badge variant="outline" className="w-fit">
-        S{node.state.index + 1}
+        {node.state.name}
       </Badge>
       <Code className="truncate text-muted-foreground">{node.state.render || "∅"}</Code>
     </div>

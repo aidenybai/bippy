@@ -9,7 +9,7 @@ const armSchema = z.enum(["consequent", "alternate"]);
 const viewBindingSchema = z.object({
   id: z.number(),
   name: z.string(),
-  domain: z.string(),
+  domain: z.array(z.string()),
   initial: z.string().nullable(),
   reachable: z.string().nullable(),
   loc: viewLocationSchema.nullable(),
@@ -58,8 +58,8 @@ const viewConditionSchema = z.object({
 
 const viewStateSchema = z.object({
   index: z.number(),
+  name: z.string(),
   conditions: z.array(viewConditionSchema),
-  label: z.string(),
   render: z.string(),
   armNodeIds: z.array(z.string()),
 });

@@ -9,12 +9,13 @@ import type {
   ViewState,
   ViewUpdate,
 } from "@/model";
+import { getPreviewCount } from "./domain";
 
 const getArmOutcome = (branch: ViewBranch, state: ViewState): ViewCondition["arm"] =>
   state.conditions.find((condition) => condition.branchId === branch.id)?.arm ?? null;
 
 const formatStateList = (states: ViewState[]): string =>
-  states.map((state) => `S${state.index + 1}`).join(", ");
+  states.map((state) => state.name).join(", ");
 
 const getSourceText = (view: ViewFile, loc: ViewLocation): string =>
   view.source.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ");
@@ -24,12 +25,10 @@ const formatUpdate = (update: ViewUpdate): string =>
     update.isAsync ? " async" : ""
   }`;
 
-const DOMAIN_PREVIEW = 8;
-
-const summarizeDomain = (domain: string): string => {
-  const values = domain.split(" | ");
-  if (values.length <= DOMAIN_PREVIEW + 1) return domain;
-  return `${values.slice(0, DOMAIN_PREVIEW).join(" | ")} … +${values.length - DOMAIN_PREVIEW}`;
+const summarizeDomain = (values: string[]): string => {
+  const count = getPreviewCount(values);
+  const shown = values.slice(0, count).join(" | ");
+  return count < values.length ? `${shown} … +${values.length - count}` : shown;
 };
 
 const describeBinding = (component: ViewComponent, binding: ViewBinding): string => {
@@ -51,7 +50,10 @@ const describeWrite = (component: ViewComponent, node: GraphNode): string => {
 export const getTransitionLabels = (component: ViewComponent, handlerId: string): string[] =>
   component.transitions
     .filter((transition) => transition.handlerId === handlerId && transition.from !== transition.to)
-    .map((transition) => `S${transition.from + 1} → S${transition.to + 1}`);
+    .map(
+      (transition) =>
+        `${component.states[transition.from].name} → ${component.states[transition.to].name}`,
+    );
 
 const describeHandler = (component: ViewComponent, node: GraphNode): string => {
   const transitions =

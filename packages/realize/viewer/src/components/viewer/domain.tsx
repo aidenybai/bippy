@@ -1,10 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { getDomainValues, shortenType } from "@/lib/state-chart";
+import { getPreviewCount, isLongDomain, shortenType } from "@/lib/domain";
 import type { ViewBinding } from "@/model";
-
-const PREVIEW_COUNT = 6;
-const LONG_PREVIEW_COUNT = 3;
-const LONG_VALUE = 24;
 
 interface DomainProps {
   binding: ViewBinding;
@@ -32,12 +28,12 @@ const MoreButton = ({
 
 export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
   const [isExpanded, setExpanded] = useState(false);
-  const values = getDomainValues(binding);
-  const isLong = values.some((value) => value.length > LONG_VALUE);
-  const preview = isLong ? LONG_PREVIEW_COUNT : PREVIEW_COUNT;
-  const hidden = values.length - preview;
-  const shown = isExpanded || hidden <= 1 ? values : values.slice(0, preview);
-  const toggle = hidden > 1 && (
+  const values = binding.domain;
+  const isLong = isLongDomain(values);
+  const count = getPreviewCount(values);
+  const hidden = values.length - count;
+  const shown = isExpanded ? values : values.slice(0, count);
+  const toggle = hidden > 0 && (
     <MoreButton hidden={hidden} isExpanded={isExpanded} onToggle={() => setExpanded((c) => !c)} />
   );
   if (isLong)
