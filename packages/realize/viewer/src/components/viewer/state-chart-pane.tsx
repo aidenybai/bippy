@@ -22,16 +22,7 @@ const ComponentStateChart = ({ view, component }: { view: ViewFile; component: V
     >
       <CodeLine text={getSourceLine(view, start.line)} />
       <div className="ml-3 grid gap-2 border-l pl-4">
-        {component.regions.map((region) => (
-          <div key={region.states.join(",")} className="grid gap-2">
-            {component.regions.length > 1 && (
-              <span className="text-muted-foreground">
-                States of {region.placeNames.join(", ")}
-              </span>
-            )}
-            <DecisionTree component={component} region={region} />
-          </div>
-        ))}
+        <DecisionTree component={component} />
       </div>
       {end.line !== start.line && <CodeLine text={getSourceLine(view, end.line)} />}
     </section>

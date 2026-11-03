@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { getTransitionLabels } from "@/lib/describe";
 import { cn } from "@/lib/utils";
 import {
   getBindingNodeId,
@@ -9,7 +10,6 @@ import {
   getHandlerNodeId,
   getStateArmNodeIds,
   getStateNodeIds,
-  getTransitions,
   getUpdateKey,
 } from "@/lib/lookup";
 import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
@@ -131,7 +131,7 @@ const Transitions = ({ transitions }: { transitions: string[] }) => (
 export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   const component = useInspectorComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
-  const transitions = getTransitions(component, handler.id);
+  const transitions = getTransitionLabels(component, handler.id);
   return (
     <Row nodeIds={nodeId ? [nodeId] : []}>
       <Cell className="grid gap-2 py-3">

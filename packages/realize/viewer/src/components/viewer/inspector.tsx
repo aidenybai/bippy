@@ -181,19 +181,13 @@ const Variables = () => {
 
 const States = () => {
   const component = useInspectorComponent();
-  const hasRegions = component.regions.length > 1;
-  return component.regions.map((region) => (
-    <Section
-      key={region.states.join(",")}
-      title={hasRegions ? `States of ${region.placeNames.join(", ")}` : "States"}
-      count={region.states.length}
-    >
-      {region.states.map((stateIndex) => {
-        const state = component.states[stateIndex];
-        return state ? <StateRow key={stateIndex} state={state} /> : null;
-      })}
+  return (
+    <Section title="States" count={component.states.length}>
+      {component.states.map((state) => (
+        <StateRow key={state.index} state={state} />
+      ))}
     </Section>
-  ));
+  );
 };
 
 const Actions = () => {

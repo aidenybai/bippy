@@ -32,7 +32,7 @@ import type {
   ViewFile,
   ViewHandler,
   ViewLocation,
-  ViewState,
+  ViewTransition,
   ViewUpdate,
 } from "@/model";
 import { getUpdateKey } from "@/lib/lookup";
@@ -252,20 +252,19 @@ const getViewBindings = async (component: AnalyzedComponent): Promise<ViewBindin
     }));
 };
 
-const getViewTransitions = (model: ComponentModel, label: string): ViewState["transitions"] => {
-  const transitions: ViewState["transitions"] = [];
-  for (const edge of model.stateSpace.edges) {
-    const target = model.views.findIndex((view) => view.label === edge.to);
-    if (edge.from !== label || edge.handlerId === null || target === -1) continue;
-    const existing = transitions.find(
-      (transition) =>
-        transition.handlerId === edge.handlerId && transition.isAsync === edge.isAsync,
-    );
-    if (!existing)
-      transitions.push({ handlerId: edge.handlerId, targets: [target], isAsync: edge.isAsync });
-    else if (!existing.targets.includes(target)) existing.targets.push(target);
-  }
-  return transitions;
+const getViewTransitions = (model: ComponentModel): ViewTransition[] => {
+  const indexByLabel = new Map(model.views.map((view, index) => [view.label, index]));
+  const seen = new Set<string>();
+  return model.views.flatMap((view, from) =>
+    model.stateSpace.edges.flatMap((edge) => {
+      const to = indexByLabel.get(edge.to);
+      const key = `${from}:${to}:${edge.handlerId}:${edge.isAsync}`;
+      if (edge.from !== view.label || edge.handlerId === null || to === undefined || seen.has(key))
+        return [];
+      seen.add(key);
+      return [{ from, to, handlerId: edge.handlerId, isAsync: edge.isAsync }];
+    }),
+  );
 };
 
 const toViewComponent = async (
@@ -296,16 +295,8 @@ const toViewComponent = async (
       conditions: view.conditions,
       label: view.conditions.join(" ∧ ") || "always",
       render: view.label,
-      transitions: getViewTransitions(model, view.label),
     })),
-    regions: [
-      {
-        placeNames: model.variables
-          .filter((variable) => variable.source !== "control")
-          .map((variable) => variable.label),
-        states: model.views.map((_view, index) => index),
-      },
-    ],
+    transitions: getViewTransitions(model),
   };
 };
 

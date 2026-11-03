@@ -9,7 +9,7 @@ import type {
   ViewUpdate,
 } from "@/model";
 import { getComponentName } from "./graph";
-import { getTransitions, getArmOutcome } from "./lookup";
+import { getArmOutcome } from "./lookup";
 
 const formatStateList = (states: ViewState[]): string =>
   states.map((state) => `S${state.index + 1}`).join(", ");
@@ -46,8 +46,14 @@ const describeWrite = (component: ViewComponent, node: GraphNode): string => {
   return updates.length === 0 ? node.label : updates.map(formatUpdate).join(" · ");
 };
 
+export const getTransitionLabels = (component: ViewComponent, handlerId: string): string[] =>
+  component.transitions
+    .filter((transition) => transition.handlerId === handlerId && transition.from !== transition.to)
+    .map((transition) => `S${transition.from + 1} → S${transition.to + 1}`);
+
 const describeHandler = (component: ViewComponent, node: GraphNode): string => {
-  const transitions = node.handlerId === undefined ? [] : getTransitions(component, node.handlerId);
+  const transitions =
+    node.handlerId === undefined ? [] : getTransitionLabels(component, node.handlerId);
   return `${node.label} · ${transitions.length === 0 ? "no state change" : transitions.join(", ")}`;
 };
 
