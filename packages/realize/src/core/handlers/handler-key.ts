@@ -1,7 +1,35 @@
-import type { SymbolicValue } from "../types";
+import type { Binding, SymbolicValue } from "../types";
 import { getValueKey } from "../values/get-value-key";
 import { isStateBinding } from "../values/is-state-binding";
 import { isExternalSource } from "./is-external-source";
+
+const isHandlerBinding = (binding: Binding): boolean =>
+  binding.kind === "prop" ||
+  binding.kind === "ref" ||
+  binding.hookKind === "useMemo" ||
+  isStateBinding(binding) ||
+  isExternalSource(binding);
+
+export const isHandlerValue = (value: SymbolicValue): boolean => {
+  switch (value.kind) {
+    case "Function":
+    case "Setter":
+    case "Dispatch":
+    case "ArrayExpression":
+    case "ObjectExpression":
+    case "Unknown":
+    case "Global":
+      return true;
+    case "Bound":
+      return isHandlerValue(value.callee);
+    case "Binding":
+      return isHandlerBinding(value.binding);
+    case "Conditional":
+      return isHandlerValue(value.consequent) || isHandlerValue(value.alternate);
+    default:
+      return false;
+  }
+};
 
 export const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
@@ -24,11 +52,7 @@ export const getHandlerKey = (value: SymbolicValue): string | null => {
         .map((property) => `${property.key}=${getHandlerKey(property.value)}`)
         .join(",")}`;
     case "Binding":
-      return value.binding.kind === "prop" ||
-        value.binding.kind === "ref" ||
-        value.binding.hookKind === "useMemo" ||
-        isStateBinding(value.binding) ||
-        isExternalSource(value.binding)
+      return isHandlerBinding(value.binding)
         ? `binding:${value.binding.id}:${value.path.join(".")}`
         : null;
     case "Conditional": {

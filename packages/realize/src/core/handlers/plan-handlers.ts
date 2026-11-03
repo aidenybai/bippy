@@ -18,7 +18,7 @@ import { getLocationKey } from "../shared/get-location-key";
 import { UNDEFINED_VALUE, createUnknown } from "../values/symbolic-values";
 import { intersectGuards } from "./render-tree";
 import { mayCallPropsOutsideEvents } from "./may-call-props-outside-events";
-import { getHandlerKey } from "./handler-key";
+import { getHandlerKey, isHandlerValue } from "./handler-key";
 import { getCallbacks } from "./event-loads";
 import {
   addCommitCallbacks,
@@ -361,12 +361,9 @@ export class HandlerCollector {
     const unwrapped = unwrapCallback(this.#context, prop.value);
     const resolved =
       element.tag.kind === "BuiltinTag" ? unwrapped : getIndependentCallbacks(unwrapped);
-    const reachable =
-      getHandlerKey(resolved) === null
-        ? this.#interpreter
-            .getSourceFunctions([prop.value])
-            .filter((candidate) => getHandlerKey(candidate) !== null)
-        : [];
+    const reachable = !isHandlerValue(resolved)
+      ? this.#interpreter.getSourceFunctions([prop.value]).filter(isHandlerValue)
+      : [];
     const callback = reachable.length > 0 ? chooseReachableCallback(reachable, prop) : resolved;
     const callbackKey = getHandlerKey(callback);
     if (callbackKey === null) return;

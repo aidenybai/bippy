@@ -7,7 +7,7 @@ import { UNDEFINED_VALUE, createUnknown, getContainedValues } from "../values/sy
 import { getAncestors, getDescendants } from "./render-tree";
 import type { RenderTree } from "./render-tree";
 import { getTargetMethodCalls } from "./get-target-method-calls";
-import { getHandlerKey } from "./handler-key";
+import { getHandlerKey, isHandlerValue } from "./handler-key";
 import {
   NO_LOADS,
   gateByLoad,
@@ -566,7 +566,7 @@ const getComponentCallbacks = (
         ? getContainedValues(getIndependentCallbacks(unwrapCallback(context, prop.value)))
         : [],
     )
-    .filter((callback) => getHandlerKey(callback) !== null);
+    .filter(isHandlerValue);
 };
 
 export const getBubbledCallbacks = (
@@ -695,7 +695,7 @@ const getAncestorCallbacks = (
         ? [unwrapCallback(context, prop.value)]
         : [],
     )
-    .filter((callback) => getHandlerKey(callback) !== null);
+    .filter(isHandlerValue);
 };
 
 const dispatch = (context: DomContext, callback: SymbolicValue): Dispatch => ({
