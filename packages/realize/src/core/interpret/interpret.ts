@@ -71,7 +71,8 @@ import {
 } from "../interpret/literal-receivers";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { getLiteralRead } from "./literal-reads";
+import { OBJECT_READS, getLiteralRead, readObjectEntries } from "./literal-reads";
+import { isArrayIndex } from "./is-array-index";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
 import { isNullish } from "../values/is-nullish";
@@ -136,7 +137,7 @@ const dedupeByValueKey = (values: SymbolicValue[]): SymbolicValue[] => [
 ];
 
 const isSameValueZero = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
-  left === right || (Number.isNaN(left) && Number.isNaN(right));
+  [left].includes(right);
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
@@ -271,8 +272,6 @@ const BUILTIN_MUTATORS = new Set([
 const PROTOTYPE_MUTATOR_CALL =
   /^Array\.prototype\.(push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin)\.(call|apply)$/;
 
-const BINDING_OBJECT_READS = new Set(["keys", "values", "entries"]);
-
 const getLiteralPathValue = (value: SymbolicValue | null, path: string[]): SymbolicValue | null => {
   const [key, ...rest] = path;
   if (key === undefined) return value;
@@ -332,11 +331,9 @@ const getArrayLiteralMember = (
   loc: SourceLocation,
 ): SymbolicValue => {
   if (property === "length") return { kind: "Primitive", value: array.elements.length };
-  const index = Number(property);
-  const isArrayIndex = Number.isInteger(index) && index >= 0 && String(index) === property;
-  if (!isArrayIndex)
+  if (!isArrayIndex(property))
     return createUnknown("member", loc, { kind: "Member", object: array, property });
-  return array.elements[index] ?? UNDEFINED_VALUE;
+  return array.elements[Number(property)] ?? UNDEFINED_VALUE;
 };
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
@@ -2158,18 +2155,19 @@ export class Interpreter {
       receiver.kind === "Global" &&
       receiver.module === null &&
       receiver.name === "Object" &&
-      BINDING_OBJECT_READS.has(methodName);
+      OBJECT_READS.has(methodName);
     if (!isObjectRead || target?.kind !== "Binding" || target.path.length > 1) return null;
     const literal = getLiteralPathValue(target.binding.initial, target.path);
     if (literal?.kind !== "ObjectExpression" || literal.spreads.length > 0) return null;
-    const elements = literal.properties.map(({ key }): SymbolicValue => {
-      const keyValue: SymbolicValue = { kind: "Primitive", value: key };
-      const member = this.evaluatePropertyLoad(target, key, loc);
-      if (methodName === "keys") return keyValue;
-      if (methodName === "values") return member;
-      return { kind: "ArrayExpression", elements: [keyValue, member], spreads: [] };
-    });
-    return { kind: "ArrayExpression", elements, spreads: [createUnknown("object-read", loc)] };
+    const entries = literal.properties.map(({ key }): [string, SymbolicValue] => [
+      key,
+      this.evaluatePropertyLoad(target, key, loc),
+    ]);
+    return {
+      kind: "ArrayExpression",
+      elements: readObjectEntries(methodName, entries),
+      spreads: [createUnknown("object-read", loc)],
+    };
   }
 
   #readAt(
