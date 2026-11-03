@@ -15,10 +15,6 @@ import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
 import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/values/format";
 
-interface VerifyProject extends ProjectHarness {
-  components: AnalyzedComponent[];
-}
-
 interface MountOptions {
   props?: Record<string, unknown>;
   scenario?: Scenario;
@@ -47,7 +43,7 @@ interface VerifyFixtures {
 
 interface VerifyWorkerFixtures {
   repo: string;
-  project: VerifyProject;
+  project: ProjectHarness;
 }
 
 interface FixtureContext {
@@ -154,7 +150,7 @@ const createComponentFixture = (fixtureContext: FixtureContext): ComponentFixtur
 };
 
 const findExportedComponent = (
-  project: VerifyProject,
+  project: ProjectHarness,
   componentName: string,
 ): ExportedComponent => {
   for (const component of project.components) {
@@ -176,7 +172,7 @@ const getMountProps = (
 
 const startSession = async (
   page: Page,
-  project: VerifyProject,
+  project: ProjectHarness,
   componentName: string,
   options: MountOptions,
 ): Promise<FixtureContext> => {
@@ -231,7 +227,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
         components,
         repo.setupDirectory,
       );
-      await use({ ...harness, components });
+      await use(harness);
       await harness.close();
     },
     { scope: "worker" },

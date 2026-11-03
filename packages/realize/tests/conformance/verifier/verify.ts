@@ -8,7 +8,7 @@ import {
   createDeclarationKey,
   parseDeclarationKey,
 } from "../../../src/core/project/declaration-key";
-import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
+import type { ComponentModule, ModuleSummary, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectHandlerCounters } from "./handler-counters";
 import { collectMutationCounters } from "./mutation";
@@ -18,12 +18,14 @@ import { createEmptyVerdict } from "./verdicts";
 import type { ComponentVerdict } from "./verdicts";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
-import { getTopLevelNames, toLocalExportName } from "./harness/local-exports";
-import { getCycleImporters } from "./source-index";
+import { toLocalExportName } from "./harness/local-exports";
+import { collectSourceReferences } from "./harness/source-references";
+import { getCycleImporters, getModuleSummary } from "./source-index";
 import { startHarness } from "./server";
 import type { Harness } from "./server";
 
 export interface ProjectHarness extends Harness {
+  components: AnalyzedComponent[];
   getComponentModule: (file: string) => ComponentModule;
   projectIndex: ProjectIndex;
 }
@@ -53,16 +55,16 @@ interface MountableComponents {
   localNamesByFile: Map<string, string[]>;
 }
 
-const exposeLocalComponents = (components: AnalyzedComponent[]): MountableComponents => {
-  const topLevelNamesByFile = new Map<string, Set<string>>();
+const exposeLocalComponents = (
+  components: AnalyzedComponent[],
+  summaries: Map<string, ModuleSummary>,
+): MountableComponents => {
   const localNamesByFile = new Map<string, string[]>();
   const mountable = components.map((component) => {
     const analysis = component.analysis;
     if (analysis.exportName) return component;
     const { name } = parseDeclarationKey(analysis.declaration);
-    const topLevelNames = topLevelNamesByFile.get(analysis.file) ?? getTopLevelNames(analysis.file);
-    topLevelNamesByFile.set(analysis.file, topLevelNames);
-    if (!topLevelNames.has(name)) return component;
+    if (!getModuleSummary(summaries, analysis.file).localNames.has(name)) return component;
     localNamesByFile.set(analysis.file, [...(localNamesByFile.get(analysis.file) ?? []), name]);
     return { ...component, analysis: { ...analysis, exportName: toLocalExportName(name) } };
   });
@@ -74,9 +76,10 @@ export const startProjectHarness = async (
   analyzed: AnalyzedComponent[],
   verifiedComponents: AnalyzedComponent[],
   setupDirectory: string | null,
-  localNamesByFile: Map<string, string[]> = new Map(),
 ): Promise<ProjectHarness> => {
-  const exported = verifiedComponents.filter((component) => component.analysis.exportName);
+  const references = collectSourceReferences(appDirectory);
+  const mountable = exposeLocalComponents(verifiedComponents, references.summaries);
+  const exported = mountable.components.filter((component) => component.analysis.exportName);
   const harness = await startHarness(
     appDirectory,
     exported.flatMap((component) => [
@@ -86,11 +89,13 @@ export const startProjectHarness = async (
     ]),
     [...new Set(exported.map((component) => component.analysis.file))],
     readHarnessSetup(setupDirectory),
-    localNamesByFile,
+    references,
+    mountable.localNamesByFile,
   );
   const cycleImporters = getCycleImporters(harness.sourceIndex.imports);
   return {
     ...harness,
+    components: mountable.components,
     getComponentModule: (file) => ({
       url: harness.getModuleUrl(file),
       importerUrls: (cycleImporters.get(file) ?? []).map(harness.getModuleUrl),
@@ -310,20 +315,16 @@ export const verifyProject = async (
   const configPath = resolve(tsconfigPath);
   const analyzed = options.analyzed ?? (await analyzeProject(configPath)).components;
   const componentNames = options.componentNames;
-  const mountable = exposeLocalComponents(
-    componentNames
-      ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
-      : analyzed,
-  );
   const harness = await startProjectHarness(
     dirname(configPath),
     analyzed,
-    mountable.components,
+    componentNames
+      ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
+      : analyzed,
     options.setupDirectory ?? null,
-    mountable.localNamesByFile,
   );
   try {
-    const verdicts = await verifyOnPages(harness, mountable.components, options);
+    const verdicts = await verifyOnPages(harness, harness.components, options);
     return { verdicts, durationMs: Math.round(performance.now() - startTime) };
   } finally {
     await harness.close();
