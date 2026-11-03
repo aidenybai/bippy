@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Code } from "@/components/ui/code";
 import { getSourceLine } from "@/lib/state-chart";
 import type { ViewComponent, ViewFile } from "@/model";
-import { useFocusRequest, useHoverStore } from "@/store/hover";
+import { useFocusListener, useViewerStore } from "@/store/viewer";
 import { useViewer } from "./context";
 import { DecisionTree } from "./decision-tree";
 
@@ -11,7 +11,7 @@ const CodeLine = ({ text }: { text: string }) => (
 );
 
 const ComponentStateChart = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
-  const activate = useHoverStore((state) => state.activate);
+  const activate = useViewerStore((state) => state.activate);
   if (!component.loc) return null;
   const { start, end } = component.loc;
   return (
@@ -32,7 +32,7 @@ const ComponentStateChart = ({ view, component }: { view: ViewFile; component: V
 export const StateChartPane = () => {
   const { view } = useViewer();
   const paneRef = useRef<HTMLDivElement>(null);
-  useFocusRequest((name) =>
+  useFocusListener((name) =>
     paneRef.current
       ?.querySelector(`[data-component="${CSS.escape(name)}"]`)
       ?.scrollIntoView({ block: "start", behavior: "smooth" }),

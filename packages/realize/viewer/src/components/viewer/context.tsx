@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
-import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
+import { getDefaultComponent } from "@/lib/graph";
 import { getPathMode, getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
-import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
-import { useHoverStore } from "@/store/hover";
+import type { Example, ViewComponent, ViewFile } from "@/model";
+import { ViewerStoreContext, createViewerStore, useViewerStore } from "@/store/viewer";
 
 interface ViewerState {
   examples: Example[];
@@ -14,7 +14,6 @@ interface ViewerState {
   view: ViewFile;
   json: string;
   setMode: (mode: ViewMode) => void;
-  index: GraphIndex;
   colorByNodeId: Map<string, string>;
 }
 
@@ -30,15 +29,13 @@ interface ViewerProviderProps {
 
 export const ViewerProvider = ({ examples, name, view, json, children }: ViewerProviderProps) => {
   const mode = getPathMode(usePathname());
-  const setIndex = useHoverStore((state) => state.setIndex);
-  const index = buildGraphIndex(view);
+  const [store] = useState(() => createViewerStore(view));
   const colorByNodeId = getColorByNodeId(view);
-  useEffect(() => setIndex(index), [index, setIndex]);
   const setMode = (next: ViewMode) =>
     window.history.replaceState(null, "", getRouteHref(name, next));
   return (
-    <ViewerContext value={{ examples, name, mode, view, json, setMode, index, colorByNodeId }}>
-      {children}
+    <ViewerContext value={{ examples, name, mode, view, json, setMode, colorByNodeId }}>
+      <ViewerStoreContext value={store}>{children}</ViewerStoreContext>
     </ViewerContext>
   );
 };
@@ -51,14 +48,8 @@ export const useViewer = (): ViewerState => {
 
 export const useActiveComponent = (): ViewComponent | null => {
   const { view } = useViewer();
-  const activeName = useHoverStore((state) => state.activeName);
+  const activeName = useViewerStore((state) => state.activeName);
   return (
     view.components.find((component) => component.name === activeName) ?? getDefaultComponent(view)
   );
-};
-
-export const useHoveredNode = (): GraphNode | null => {
-  const { index } = useViewer();
-  const hoveredNodeId = useHoverStore((state) => state.hoveredNodeId);
-  return hoveredNodeId !== null ? (index.nodes.get(hoveredNodeId) ?? null) : null;
 };

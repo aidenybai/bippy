@@ -11,7 +11,7 @@ import {
   type ViewState,
   type ViewUpdate,
 } from "@/model";
-import { useIsDimmed } from "@/store/hover";
+import { useIsDimmed } from "@/store/viewer";
 import { Chip } from "./chip";
 import { Domain } from "./domain";
 import { useInspectorComponent } from "./inspector";

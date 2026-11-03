@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getSolidColor } from "@/lib/colors";
-import { useHoverStore, useIsDimmed } from "@/store/hover";
+import { useViewerStore, useIsDimmed } from "@/store/viewer";
 import { useViewer } from "./context";
 
 interface ChipProps {
@@ -11,9 +11,9 @@ interface ChipProps {
 
 const ColoredChip = ({ nodeIds, canDim, color, children }: ChipProps & { color: string }) => {
   const [first] = nodeIds;
-  const hover = useHoverStore((state) => state.hover);
-  const leave = useHoverStore((state) => state.leave);
-  const isHovered = useHoverStore(
+  const hover = useViewerStore((state) => state.hover);
+  const leave = useViewerStore((state) => state.leave);
+  const isHovered = useViewerStore(
     (state) => state.hoveredNodeId !== null && nodeIds.includes(state.hoveredNodeId),
   );
   const isDimmed = useIsDimmed(nodeIds) && canDim;

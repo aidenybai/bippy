@@ -1,7 +1,7 @@
 import { getSolidColor } from "@/lib/colors";
 import type { Box } from "@/lib/positions";
 import type { GraphEdge } from "@/model";
-import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/hover";
+import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/viewer";
 import { ArrowHead, type Point } from "./arrow-head";
 
 const SIDE_GAP = 24;

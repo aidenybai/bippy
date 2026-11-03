@@ -24,7 +24,7 @@ import {
 } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useFocusRequest, useHasHover, useHoverStore } from "@/store/hover";
+import { useFocusListener, useHasHover, useViewerStore } from "@/store/viewer";
 import { Arc } from "./arc";
 import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
@@ -40,9 +40,9 @@ const usePointerTracking = (
   layout: TokenLayout,
 ): ((event: MouseEvent) => void) => {
   const { view } = useViewer();
-  const activate = useHoverStore((state) => state.activate);
-  const hover = useHoverStore((state) => state.hover);
-  const leave = useHoverStore((state) => state.leave);
+  const activate = useViewerStore((state) => state.activate);
+  const hover = useViewerStore((state) => state.hover);
+  const leave = useViewerStore((state) => state.leave);
   return (event: MouseEvent) => {
     const wrapper = wrapperRef.current;
     if (!wrapper || event.buttons !== 0) return;
@@ -69,7 +69,7 @@ const useColoredNodes = (): GraphNode[] => {
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
   const { view } = useViewer();
-  useFocusRequest((name) => {
+  useFocusListener((name) => {
     const host = wrapperRef.current?.querySelector<HTMLElement>("diffs-container");
     const component = view.components.find((candidate) => candidate.name === name);
     if (host && component?.loc) scrollToLine(host, component.loc.start.line);
@@ -84,7 +84,7 @@ const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
 
 const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
   const { view, colorByNodeId } = useViewer();
-  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
+  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
   const arcs =
     causalNodeIds === null
       ? []
@@ -104,13 +104,13 @@ interface OverlayProps {
 }
 
 const useFocusRows = (wrapperRef: RefObject<HTMLDivElement | null>, layout: TokenLayout): Box[] => {
-  const index = useHoverStore((state) => state.index);
-  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
+  const index = useViewerStore((state) => state.index);
+  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
   const [rows, setRows] = useState<Box[]>([]);
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
     const host = wrapper?.querySelector<HTMLElement>("diffs-container");
-    if (!wrapper || !host || !index || causalNodeIds === null) return;
+    if (!wrapper || !host || causalNodeIds === null) return;
     const lookup = createLineLookup(host, wrapper);
     const rowByKey = new Map<string, Box>();
     for (const nodeId of causalNodeIds) {
@@ -186,7 +186,7 @@ const CodeView = () => {
   const file = { name: getFileTitle(view.file), contents: view.source };
   const layout = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
   const trackPointer = usePointerTracking(wrapperRef, layout);
-  const leave = useHoverStore((state) => state.leave);
+  const leave = useViewerStore((state) => state.leave);
   useFocusScroll(wrapperRef);
   return (
     <div

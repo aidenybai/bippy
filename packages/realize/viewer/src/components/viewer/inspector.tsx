@@ -10,7 +10,7 @@ import { ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody } from "@/components/ui/table";
 import type { ViewComponent } from "@/model";
-import { useHoverStore } from "@/store/hover";
+import { useViewerStore } from "@/store/viewer";
 import { useIsPanelChosen, useIsPanelOpen, useUiStore } from "@/store/ui";
 import { useActiveComponent, useViewer } from "./context";
 import { BindingRow, HandlerRow, StateRow } from "./inspector-rows";
@@ -120,7 +120,7 @@ interface InspectorPanelProps {
 }
 
 const InspectorPanel = ({ component, activeName, children }: InspectorPanelProps) => {
-  const focus = useHoverStore((state) => state.focus);
+  const focus = useViewerStore((state) => state.focus);
   const choosePanel = useUiStore((state) => state.choosePanel);
   const isOpen = useIsPanelOpen(component.name, activeName);
   return (

@@ -3,7 +3,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { describeNode } from "@/lib/describe";
 import { hasInspectorContent } from "@/lib/graph";
 import { ArcKey } from "./arc-key";
-import { useHoveredNode, useViewer } from "./context";
+import { useHoveredNode } from "@/store/viewer";
+import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
 
 const Root = ({ children }: { children: ReactNode }) => (

@@ -2,7 +2,7 @@ import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import type { PlacedToken } from "@/hooks/use-token-boxes";
 import { getSolidColor } from "@/lib/colors";
 import type { Box } from "@/lib/positions";
-import { useIsDimmed, useIsHovered, useIsInactive } from "@/store/hover";
+import { useIsDimmed, useIsHovered, useIsInactive } from "@/store/viewer";
 
 interface TokenVisibility {
   isDimmed: boolean;

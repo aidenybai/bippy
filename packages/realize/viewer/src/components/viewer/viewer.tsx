@@ -49,7 +49,7 @@ interface RootProps {
 }
 
 const Root = ({ children, ...props }: RootProps) => (
-  <ViewerProvider {...props}>
+  <ViewerProvider key={props.name} {...props}>
     <Shell>{children}</Shell>
   </ViewerProvider>
 );
