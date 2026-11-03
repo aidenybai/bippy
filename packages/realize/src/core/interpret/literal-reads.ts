@@ -3,8 +3,7 @@ import { UNDEFINED_VALUE } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isArrayIndex } from "./is-array-index";
-
-export const OBJECT_READS = new Set(["keys", "values", "entries"]);
+import { isBuiltinMethod } from "./builtin-methods";
 
 const getLiteralEntries = (value: SymbolicValue): Array<[string, SymbolicValue]> | null => {
   if (value.kind === "ArrayExpression")
@@ -101,7 +100,7 @@ export const getLiteralRead = (
     receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
   if (isObject && argument && methodName === "hasOwn")
     return hasOwnKey(argument, argumentValues[1]);
-  return isObject && argument && OBJECT_READS.has(methodName)
+  return isObject && argument && isBuiltinMethod(methodName, "objectRead")
     ? readObject(methodName, argument)
     : null;
 };

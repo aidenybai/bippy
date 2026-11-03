@@ -12,7 +12,8 @@ import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import { eachCallArgument } from "../../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
-import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
+import { ArrayIteration } from "./array-iteration";
+import { isBuiltinMethod } from "./builtin-methods";
 import { CallbackPasser } from "./callback-passer";
 import { AssertionRecorder } from "./assertion-recorder";
 import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
@@ -63,15 +64,11 @@ import { getLocationKey } from "../shared/get-location-key";
 import { getPropertyKeyForms } from "./get-property-key-forms";
 import { getDomainPrimitive, isEnumerated } from "../type-checker/domains";
 import { isRefOnlyRead } from "./is-ref-only-read";
-import { applyStringMethod, isStringMethod } from "../interpret/string-methods";
-import {
-  applyCollectionMethod,
-  getCollectionSize,
-  isCollectionRead,
-} from "../interpret/literal-receivers";
+import { applyStringMethod } from "./string-methods";
+import { applyCollectionMethod, getCollectionSize } from "../interpret/literal-receivers";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { OBJECT_READS, getLiteralRead, readObjectEntries } from "./literal-reads";
+import { getLiteralRead, readObjectEntries } from "./literal-reads";
 import { isArrayIndex } from "./is-array-index";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
@@ -241,8 +238,6 @@ export interface ProjectLoaders {
 const BOUND_RECEIVERS = new Set<string>([...CALLABLE_KINDS, "Binding", "Conditional"]);
 
 const MAX_INLINE_DEPTH = 4;
-const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-const LENGTH_LIMITING_METHODS = new Set(["filter", "slice", "toReversed", "toSorted", "with"]);
 
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
@@ -372,10 +367,6 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
   };
 };
 
-const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
-
-const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
-
 const nameUnknownArgument = (argument: SymbolicValue, name: string | null): SymbolicValue =>
   argument.kind === "Unknown" && !argument.origin && name !== null
     ? { ...argument, origin: { kind: "Name", name } }
@@ -400,8 +391,6 @@ const getStoredLabel = (value: BindingValue): string =>
   `${formatPlace(value.binding, value.path)}@${value.binding.id}`;
 
 const ARRAY_INDEX_PATTERN = /^\d+$/;
-
-const REF_CONTAINER_WRITES = new Set(["push", "unshift", "add", "set"]);
 
 const isRefContents = (value: BindingValue): boolean =>
   value.binding.kind === "ref" && value.path[0] === "current";
@@ -1367,7 +1356,7 @@ export class Interpreter {
       this.#handlerEffects &&
       callee.kind === "Unknown" &&
       callee.origin?.kind === "Member" &&
-      ITERATION_METHODS.has(callee.origin.property)
+      isBuiltinMethod(callee.origin.property, "iteration")
         ? callee.origin.object
         : null;
     const [callback] = callSite.argumentValues;
@@ -1746,7 +1735,7 @@ export class Interpreter {
       options.isDerived ||
       options.pureCall !== undefined ||
       (methodName !== undefined &&
-        LENGTH_LIMITING_METHODS.has(methodName) &&
+        isBuiltinMethod(methodName, "lengthLimiting") &&
         this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc));
     const hasFiniteResult = isEnumerated(this.#resolver.getDomain(callSite.loc));
     if (!isDerivedResult && !initial && inputPlaces.size === 0 && !hasFiniteResult) {
@@ -1942,13 +1931,13 @@ export class Interpreter {
       return this.#evaluateMethodResult(methodCall, pathState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentValues = [...eachCallArgument(methodCall.args)].map((place) => this.read(place));
-    if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
+    if (isRefContents(receiver) && isBuiltinMethod(methodName, "refContainerWrite"))
       for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
     if (isRefContents(receiver) && receiver.path.length === 1)
       this.#dispatchRefEvent(receiver.binding, methodName, pathState);
     const storedFunctions = this.getStoredFunctions(receiver);
     const [callback] = argumentValues;
-    if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
+    if (isBuiltinMethod(methodName, "iteration") && callback?.kind === "Function")
       this.#callStoredItems(
         callback,
         [...storedFunctions, ...this.#getCalledSourceFunctions(receiver)],
@@ -1958,7 +1947,7 @@ export class Interpreter {
         pathState,
       );
     const result = this.#evaluateMethodResult(methodCall, pathState);
-    if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
+    if (isBuiltinMethod(methodName, "storedItemRead") && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
   }
@@ -2024,7 +2013,7 @@ export class Interpreter {
       pathState,
     );
     if (storeResult) return storeResult;
-    if (receiver.kind === "Collection" && CHAINED_COLLECTION_WRITES.has(methodName))
+    if (receiver.kind === "Collection" && isBuiltinMethod(methodName, "chainedCollectionWrite"))
       return receiver;
     const literalRead =
       getLiteralRead(receiver, methodName, argumentValues) ??
@@ -2062,11 +2051,11 @@ export class Interpreter {
     if (instanceCallbacks)
       this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, pathState);
     const [callback] = argumentValues;
-    if (ITERATION_METHODS.has(methodName))
+    if (isBuiltinMethod(methodName, "iteration"))
       this.iteration.visitItemCallback(methodName, callback, methodCall, pathState);
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
-      ITERATION_METHODS.has(methodName) &&
+      isBuiltinMethod(methodName, "iteration") &&
       getConditionalLeaves(receiver).some((leaf) => leaf.kind === "ArrayExpression") &&
       callback?.kind === "Function";
     const found = this.iteration.evaluateArrayFind(
@@ -2102,7 +2091,7 @@ export class Interpreter {
         methodCall.loc,
         pathState,
       );
-    if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
+    if (isBuiltinMethod(methodName, "renderedIteration") && callback?.kind === "Function")
       return this.iteration.evaluateArrayMap(
         receiver,
         callback,
@@ -2110,7 +2099,7 @@ export class Interpreter {
         pathState,
         methodName === "flatMap",
       );
-    if (PROMISE_METHODS.has(methodName)) {
+    if (isBuiltinMethod(methodName, "promise")) {
       this.callbacks.visitPromiseCallbacks(
         methodName,
         receiver,
@@ -2179,7 +2168,7 @@ export class Interpreter {
       receiver.kind === "Global" &&
       receiver.module === null &&
       receiver.name === "Object" &&
-      OBJECT_READS.has(methodName);
+      isBuiltinMethod(methodName, "objectRead");
     if (!isObjectRead || target?.kind !== "Binding" || target.path.length > 1) return null;
     const literal = getLiteralPathValue(target.binding.initial, target.path);
     if (literal?.kind !== "ObjectExpression" || literal.spreads.length > 0) return null;
@@ -2276,8 +2265,9 @@ export class Interpreter {
     callSite: CallSite,
   ): SymbolicValue | null {
     const isReadOnlyCollectionCall =
-      isCollectionRead(methodName) && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
-    if (!isStringMethod(methodName) && !isReadOnlyCollectionCall) return null;
+      isBuiltinMethod(methodName, "collectionRead") &&
+      this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
+    if (!isBuiltinMethod(methodName, "string") && !isReadOnlyCollectionCall) return null;
     const argumentValues = callSite.argumentValues.flatMap((argument) =>
       argument.kind === "Primitive" ? [argument.value] : [],
     );

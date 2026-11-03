@@ -14,22 +14,9 @@ import { getConditionalLeaves } from "../values/conditional";
 import { PlaceMap } from "../values/place-map";
 import { getPlaceOrSpread } from "./get-place-or-spread";
 import type { PathState } from "./path-state";
-
-export const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
+import { isBuiltinMethod } from "./builtin-methods";
 
 const MAX_LITERAL_ROWS = 32;
-
-export const ITERATION_METHODS = new Set([
-  "forEach",
-  "map",
-  "filter",
-  "some",
-  "every",
-  "find",
-  "flatMap",
-]);
-
-const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter", "reduce"]);
 
 const SHORT_CIRCUIT_OUTCOMES = new Map([
   ["some", true],
@@ -139,7 +126,11 @@ export class ArrayIteration {
     const initial =
       receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
-    if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
+    if (
+      !isLiteralArray ||
+      callback?.kind !== "Function" ||
+      !isBuiltinMethod(methodName, "firstValue")
+    )
       return null;
     if (methodName === "reduce")
       return this.#reduce(initial.elements, callback, accumulator, loc, pathState, []);
@@ -160,7 +151,7 @@ export class ArrayIteration {
     tests: SymbolicValue[],
     loc: SourceLocation,
   ): SymbolicValue | null {
-    if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
+    if (array.spreads.length > 0 || !isBuiltinMethod(methodName, "firstValue")) return null;
     const select = (
       test: SymbolicValue,
       consequent: SymbolicValue,
@@ -414,7 +405,7 @@ export class ArrayIteration {
     const isRenderedMap =
       this.#interpreter.handlerEffects === null &&
       methodName !== null &&
-      RENDERED_ITERATION_METHODS.has(methodName) &&
+      isBuiltinMethod(methodName, "renderedIteration") &&
       receiverPlace !== undefined &&
       callback?.kind === "Function";
     return isRenderedMap

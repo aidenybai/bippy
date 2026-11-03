@@ -18,7 +18,7 @@ import type {
 import { getConditionallyMutatedPlace, getMutatedPlace } from "./get-mutated-place";
 import { isFunctionCreation } from "./is-function-creation";
 import { isStateBinding } from "../values/is-state-binding";
-import { isCollectionWrite } from "../interpret/literal-receivers";
+import { isBuiltinMethod } from "./builtin-methods";
 import type { PathState } from "./path-state";
 
 interface CreationPath {
@@ -28,21 +28,6 @@ interface CreationPath {
 }
 
 const MAX_ALIAS_CHAIN_LENGTH = 32;
-
-const ELEMENT_METHODS = new Set(["find", "findLast", "at"]);
-
-const COPYING_METHODS = new Set([
-  "filter",
-  "slice",
-  "toSorted",
-  "toReversed",
-  "toSpliced",
-  "concat",
-  "with",
-  "reverse",
-  "sort",
-  "flat",
-]);
 
 const COPYING_STATICS = new Set(["Array.from", "Object.values", "Object.entries"]);
 
@@ -321,11 +306,11 @@ export class MutationTracker {
     }
     if (value.kind !== "MethodCall") return;
     const methodName = facts.propertyNames[value.property.identifier.id] ?? "";
-    if (ELEMENT_METHODS.has(methodName))
+    if (isBuiltinMethod(methodName, "element"))
       aliasSources.set(resultId, getElementSource(value.receiver));
     const flattenedItem =
       methodName === "flat" ? facts.itemSources[value.receiver.identifier.id] : null;
-    if (COPYING_METHODS.has(methodName))
+    if (isBuiltinMethod(methodName, "copying"))
       elementSources.set(resultId, getElementSource(flattenedItem ?? value.receiver));
     const receiver = this.#interpreter.read(value.receiver);
     const [source] = value.args;
@@ -435,7 +420,7 @@ export class MutationTracker {
       return writeGuards &&
         value.kind === "MethodCall" &&
         methodName !== null &&
-        isCollectionWrite(methodName)
+        isBuiltinMethod(methodName, "collectionWrite")
         ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
         : createUnknown("mutation", instruction.loc);
     if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")
