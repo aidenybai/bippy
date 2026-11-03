@@ -136,7 +136,9 @@ const getSnapshotKey = (repo: RepoConfig): string =>
 
 const listFiles = (path: string): string[] =>
   statSync(path).isDirectory()
-    ? readdirSync(path).flatMap((entry) => listFiles(join(path, entry)))
+    ? readdirSync(path, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => join(entry.parentPath, entry.name))
     : [path];
 
 const waitForCommand = async (
