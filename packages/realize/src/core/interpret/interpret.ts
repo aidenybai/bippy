@@ -2451,7 +2451,11 @@ export class Interpreter {
         return createUnknown(value.kind, value.loc);
       }
       case "IteratorNext":
-        return this.iteration.createLoopItem(this.read(value.collection), value.loc);
+        return this.iteration.createLoopItem(
+          this.read(value.collection),
+          this.currentFacts.loopTargets[instruction.lvalue.identifier.id],
+          value.loc,
+        );
       case "RegExpLiteral":
         return { kind: "RegExp", pattern: value.pattern, flags: value.flags };
       case "TaggedTemplateExpression":

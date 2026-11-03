@@ -44,35 +44,11 @@ const TRUE_VALUE: SymbolicValue = { kind: "Primitive", value: true };
 
 const FALSE_VALUE: SymbolicValue = { kind: "Primitive", value: false };
 
-const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
-
 const getLoopElements = (collection: SymbolicValue): SymbolicValue[] =>
   getConditionalLeaves(collection).flatMap((leaf) => {
     const literal = leaf.kind === "Binding" && leaf.path.length === 0 ? leaf.binding.initial : leaf;
     return literal?.kind === "ArrayExpression" ? [...literal.elements, ...literal.spreads] : [leaf];
   });
-
-const getDeclaredNameLoc = (
-  sourceText: string | null,
-  loc: SourceLocation,
-): { name: string; loc: SourceLocation } | null => {
-  const name = sourceText?.trim().match(DECLARED_NAME_PATTERN)?.[1];
-  if (!name || !sourceText || typeof loc === "symbol" || loc.start.line !== loc.end.line)
-    return null;
-  const offset = sourceText.lastIndexOf(name);
-  return {
-    name,
-    loc: {
-      ...loc,
-      start: { ...loc.start, column: loc.start.column + offset, index: loc.start.index + offset },
-      end: {
-        ...loc.end,
-        column: loc.start.column + offset + name.length,
-        index: loc.start.index + offset + name.length,
-      },
-    },
-  };
-};
 
 export class ArrayIteration {
   readonly #interpreter: Interpreter;
@@ -399,16 +375,22 @@ export class ArrayIteration {
     return createBindingValue(binding);
   }
 
-  createLoopItem(collection: SymbolicValue, loc: SourceLocation): SymbolicValue {
-    const declaredLoc = getDeclaredNameLoc(this.#interpreter.resolver.getSourceText(loc), loc);
-    if (!declaredLoc) {
+  createLoopItem(
+    collection: SymbolicValue,
+    target: Place | undefined,
+    loc: SourceLocation,
+  ): SymbolicValue {
+    const name = target ? getIdentifierName(target) : null;
+    const nameLoc = target?.identifier.loc ?? GeneratedSource;
+    if (name === null || typeof loc === "symbol" || typeof nameLoc === "symbol") {
       const unknownItem = createUnknown("IteratorNext", loc);
       this.#interpreter.addUnknownSource(unknownItem, collection);
       return unknownItem;
     }
     const inputPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(collection, inputPlaces);
-    const binding = this.#interpreter.createBinding(declaredLoc.name, "item", declaredLoc.loc, {
+    const declaredLoc = { ...loc, start: { ...nameLoc.start }, end: { ...nameLoc.end } };
+    const binding = this.#interpreter.createBinding(name, "item", declaredLoc, {
       inputPlaces: inputPlaces.places(),
     });
     this.#interpreter.addItemSource(binding, collection);

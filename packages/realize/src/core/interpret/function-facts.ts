@@ -45,6 +45,7 @@ export interface FunctionFacts {
   storedLocals: Map<IdentifierId, Place>;
   closureMutatedLocals: Map<IdentifierId, Place>;
   hasLoop: boolean;
+  loopTargets: Place[];
   branchContextStores: Place[][];
   loops: LoopFacts[];
 }
@@ -225,6 +226,24 @@ export const buildEnvironmentFacts = (rootFunction: HIRFunction): EnvironmentFac
   return facts;
 };
 
+const getLoopTargets = (hirFunction: HIRFunction): Place[] => {
+  const iteratorIds: IdentifierId[] = [];
+  const loopTargets: Place[] = [];
+  for (const instruction of getInstructions(hirFunction)) {
+    const value = instruction.value;
+    const resultId = instruction.lvalue.identifier.id;
+    if (value.kind === "IteratorNext") iteratorIds[resultId] = resultId;
+    if (value.kind === "Await" && iteratorIds[value.value.identifier.id] !== undefined)
+      iteratorIds[resultId] = iteratorIds[value.value.identifier.id];
+    const isDeclaration =
+      (value.kind === "StoreLocal" || value.kind === "StoreContext") &&
+      value.lvalue.kind !== InstructionKind.Reassign;
+    const iteratorId = isDeclaration ? iteratorIds[value.value.identifier.id] : undefined;
+    if (isDeclaration && iteratorId !== undefined) loopTargets[iteratorId] = value.lvalue.place;
+  }
+  return loopTargets;
+};
+
 const getBlock = (hirFunction: HIRFunction, blockId: BlockId): BasicBlock => {
   const block = hirFunction.body.blocks.get(blockId);
   if (!block) throw new Error(`Block bb${blockId} is missing`);
@@ -323,6 +342,7 @@ export const buildFunctionFacts = (hirFunction: HIRFunction): FunctionFacts => {
       [...storedLocals].filter(([, local]) => closureMutatedIds.has(local.identifier.id)),
     ),
     hasLoop: blocks.some((block) => isLoopTerminal(block.terminal)),
+    loopTargets: getLoopTargets(hirFunction),
     branchContextStores,
     loops,
   };
