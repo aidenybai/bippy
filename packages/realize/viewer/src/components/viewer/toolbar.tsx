@@ -1,7 +1,6 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   DropdownMenu,
@@ -13,19 +12,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRouteHref } from "@/lib/route";
 import { getFileTitle } from "@/lib/source";
 import { cn } from "@/lib/utils";
-import { VIEW_MODES, isViewMode } from "@/lib/view-mode";
+import { isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
 
-const usePrefetchModes = (name: string): void => {
-  const router = useRouter();
-  useEffect(() => {
-    for (const mode of VIEW_MODES) router.prefetch(getRouteHref(name, mode));
-  }, [router, name]);
-};
-
 const Modes = () => {
-  const { name, mode, setMode } = useViewer();
-  usePrefetchModes(name);
+  const { mode, setMode } = useViewer();
   return (
     <Tabs
       value={mode}

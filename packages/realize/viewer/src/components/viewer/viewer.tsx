@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import { Activity, type ComponentType, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   Sidebar,
@@ -8,7 +8,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { hasInspectorContent } from "@/lib/graph";
-import type { ViewMode } from "@/lib/view-mode";
+import { VIEW_MODES, type ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
@@ -43,9 +43,8 @@ const Shell = ({ children }: { children: ReactNode }) => {
 interface RootProps {
   examples: Example[];
   name: string;
-  mode: ViewMode;
   view: ViewFile;
-  json: string | null;
+  json: string;
   children: ReactNode;
 }
 
@@ -69,12 +68,18 @@ const PANES: Record<ViewMode, ComponentType> = {
 
 const Source = () => {
   const { mode } = useViewer();
-  const Pane = PANES[mode];
   return (
     <SidebarInset>
-      <ErrorBoundary FallbackComponent={Crash}>
-        <Pane />
-      </ErrorBoundary>
+      {VIEW_MODES.map((paneMode) => {
+        const Pane = PANES[paneMode];
+        return (
+          <Activity key={paneMode} mode={paneMode === mode ? "visible" : "hidden"}>
+            <ErrorBoundary FallbackComponent={Crash}>
+              <Pane />
+            </ErrorBoundary>
+          </Activity>
+        );
+      })}
     </SidebarInset>
   );
 };

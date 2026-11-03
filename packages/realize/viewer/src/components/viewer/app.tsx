@@ -1,4 +1,3 @@
-import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { Inspector } from "./inspector";
 import { Status } from "./status";
@@ -8,9 +7,8 @@ import { Viewer } from "./viewer";
 export interface AppProps {
   examples: Example[];
   name: string;
-  mode: ViewMode;
   view: ViewFile;
-  json: string | null;
+  json: string;
 }
 
 export const App = (props: AppProps) => (

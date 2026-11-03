@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
-import { getRouteHref } from "@/lib/route";
+import { getPathMode, getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
@@ -12,7 +12,7 @@ interface ViewerState {
   name: string;
   mode: ViewMode;
   view: ViewFile;
-  json: string | null;
+  json: string;
   setMode: (mode: ViewMode) => void;
   index: GraphIndex;
   colorByNodeId: Map<string, string>;
@@ -23,28 +23,20 @@ const ViewerContext = createContext<ViewerState | null>(null);
 interface ViewerProviderProps {
   examples: Example[];
   name: string;
-  mode: ViewMode;
   view: ViewFile;
-  json: string | null;
+  json: string;
   children: ReactNode;
 }
 
-export const ViewerProvider = ({
-  examples,
-  name,
-  mode,
-  view,
-  json,
-  children,
-}: ViewerProviderProps) => {
-  const router = useRouter();
+export const ViewerProvider = ({ examples, name, view, json, children }: ViewerProviderProps) => {
+  const mode = getPathMode(usePathname());
   const setIndex = useHoverStore((state) => state.setIndex);
   const index = useMemo(() => buildGraphIndex(view), [view]);
   const colorByNodeId = useMemo(() => getColorByNodeId(view), [view]);
   useEffect(() => setIndex(index), [index, setIndex]);
   const setMode = useCallback(
-    (next: ViewMode) => router.replace(getRouteHref(name, next)),
-    [router, name],
+    (next: ViewMode) => window.history.replaceState(null, "", getRouteHref(name, next)),
+    [name],
   );
   const value = useMemo<ViewerState>(
     () => ({ examples, name, mode, view, json, setMode, index, colorByNodeId }),

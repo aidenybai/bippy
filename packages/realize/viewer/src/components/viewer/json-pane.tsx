@@ -23,7 +23,6 @@ const JsonView = ({ json }: { json: string }) => {
 export const JsonPane = () => {
   const { json } = useViewer();
   const isClient = useIsClient();
-  if (json === null) return null;
   const spinner = <Spinner className="h-full" />;
   if (!isClient) return spinner;
   return (
