@@ -2,6 +2,7 @@ import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
 import { isComparison } from "../values/comparison";
 import { getChildValues } from "../values/for-each-symbolic-value";
+import { getBindingPlace } from "../values/get-binding-place";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
 import {
@@ -37,7 +38,9 @@ const fromPredicate = (evaluator: Evaluator, predicate: Predicate): Abstract[] =
 
 const lookupPlace = (evaluator: Evaluator, value: SymbolicValue, path: string[]): Abstract[] => {
   if (value.kind !== "Binding") return [ANY];
-  const variable = evaluator.table.getVariable(value.binding, [...value.path, ...path]);
+  const variable = evaluator.table.getVariable(
+    getBindingPlace(value.binding, [...value.path, ...path]),
+  );
   if (!variable) return [ANY];
   const label = evaluator.valueOf(variable.name);
   return label === undefined ? [ANY] : [evaluator.table.getAbstract(variable, label)];

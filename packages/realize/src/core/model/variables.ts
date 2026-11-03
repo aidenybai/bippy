@@ -1,6 +1,7 @@
 import type {
   AbstractValue,
   Binding,
+  BindingPlace,
   ComponentAnalysis,
   ConditionalValue,
   Domain,
@@ -12,6 +13,8 @@ import { isNullishCase } from "../values/abstract-values";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
+import { getValuePlace } from "../values/get-value-place";
+import { PlaceMap } from "../values/place-map";
 import { FLIPPED, isComparison, type Comparison } from "../values/comparison";
 import { compareAbstract, compareAbstracts, getAbstractTruthiness } from "./abstract";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
@@ -48,60 +51,43 @@ const TLA_KEYWORDS = new Set([
   "view",
 ]);
 
-interface Place {
-  binding: Binding;
-  path: string[];
-}
-
 type Atom =
-  | { kind: "Relate"; left: Place; operator: Comparison; right: Place }
-  | {
-      kind: "Compare";
-      binding: Binding;
-      path: string[];
-      operator: Comparison;
-      literal: PrimitiveValue;
-    }
-  | { kind: "Truthy"; binding: Binding; path: string[] }
+  | { kind: "Relate"; left: BindingPlace; operator: Comparison; right: BindingPlace }
+  | { kind: "Compare"; place: BindingPlace; operator: Comparison; literal: PrimitiveValue }
+  | { kind: "Truthy"; place: BindingPlace }
   | { kind: "Opaque"; value: SymbolicValue };
-
-interface PlaceEntry {
-  binding: Binding;
-  path: string[];
-  tests: PlaceTests;
-}
 
 export interface VariableTable {
   variables: Variable[];
   compile: (test: SymbolicValue) => Predicate;
   compileExisting: (test: SymbolicValue) => Predicate | null;
-  getVariable: (binding: Binding, path: string[]) => Variable | null;
+  getVariable: (place: BindingPlace) => Variable | null;
   getAbstract: (variable: Variable, label: string) => Abstract;
   addVariable: (variable: Variable) => void;
 }
 
-export const getPlaceKey = (bindingId: number, path: string[]): string =>
-  [bindingId, ...path].join("\0");
-
 const toAtom = (value: SymbolicValue): Atom | null => {
-  if (value.kind === "Binding") return { kind: "Truthy", binding: value.binding, path: value.path };
+  if (value.kind === "Binding") return { kind: "Truthy", place: getValuePlace(value) };
   if (value.kind !== "BinaryExpression" || !isComparison(value.operator)) return null;
   const operator = value.operator;
   if (value.left.kind === "Binding" && value.right.kind === "Binding")
-    return { kind: "Relate", left: value.left, operator, right: value.right };
+    return {
+      kind: "Relate",
+      left: getValuePlace(value.left),
+      operator,
+      right: getValuePlace(value.right),
+    };
   if (value.left.kind === "Binding" && value.right.kind === "Primitive")
     return {
       kind: "Compare",
-      binding: value.left.binding,
-      path: value.left.path,
+      place: getValuePlace(value.left),
       operator,
       literal: value.right.value,
     };
   if (value.right.kind === "Binding" && value.left.kind === "Primitive")
     return {
       kind: "Compare",
-      binding: value.right.binding,
-      path: value.right.path,
+      place: getValuePlace(value.right),
       operator: FLIPPED[operator],
       literal: value.left.value,
     };
@@ -199,15 +185,16 @@ const getAttachedRefIds = (analysis: ComponentAnalysis): ReadonlySet<number> | n
 };
 
 const withAttachedRef = (
-  entry: PlaceEntry,
+  binding: Binding,
+  path: string[],
   domain: Domain | null,
   attachedRefIds: ReadonlySet<number> | null,
 ): Domain | null => {
   const isAttachable =
-    entry.binding.kind === "ref" &&
-    entry.path.length === 1 &&
-    entry.path[0] === "current" &&
-    (attachedRefIds === null || attachedRefIds.has(entry.binding.id));
+    binding.kind === "ref" &&
+    path.length === 1 &&
+    path[0] === "current" &&
+    (attachedRefIds === null || attachedRefIds.has(binding.id));
   return isAttachable && domain?.kind === "Cases" && domain.cases.every(isNullishCase)
     ? { ...domain, cases: [...domain.cases, ATTACHED] }
     : domain;
@@ -222,9 +209,9 @@ export const createVariableTable = (
   analysis: ComponentAnalysis,
   tests: SymbolicValue[],
 ): VariableTable => {
-  const entries = new Map<string, PlaceEntry>();
+  const testsByPlace = new PlaceMap<PlaceTests>();
   const variables: Variable[] = [];
-  const variablesByPlace = new Map<string, Variable>();
+  const variablesByPlace = new PlaceMap<Variable>();
   const variablesByName = new Map<string, Variable>();
   const opaqueVariables = new Map<string, Variable>();
 
@@ -240,15 +227,12 @@ export const createVariableTable = (
     variablesByName.set(variable.name, variable);
   };
 
-  const getEntry = ({ binding, path }: Place): PlaceEntry => {
-    const key = getPlaceKey(binding.id, path);
-    const entry = entries.get(key) ?? {
-      binding,
-      path,
-      tests: { literals: [], isTruthinessTested: false },
-    };
-    entries.set(key, entry);
-    return entry;
+  const getTests = (place: BindingPlace): PlaceTests => {
+    const existing = testsByPlace.get(place);
+    if (existing) return existing;
+    const tests: PlaceTests = { literals: [], isTruthinessTested: false };
+    testsByPlace.set(place, tests);
+    return tests;
   };
 
   const relations: Array<[PlaceTests, PlaceTests]> = [];
@@ -258,13 +242,13 @@ export const createVariableTable = (
       case "Opaque":
         return;
       case "Truthy":
-        getEntry(atom).tests.isTruthinessTested = true;
+        getTests(atom.place).isTruthinessTested = true;
         return;
       case "Compare":
-        getEntry(atom).tests.literals.push(atom.literal);
+        getTests(atom.place).literals.push(atom.literal);
         return;
       case "Relate":
-        relations.push([getEntry(atom.left).tests, getEntry(atom.right).tests]);
+        relations.push([getTests(atom.left), getTests(atom.right)]);
         return;
     }
   };
@@ -272,37 +256,37 @@ export const createVariableTable = (
   for (const test of tests) forEachAtom(test, record);
   shareLiterals(relations);
 
-  const getPlaceDomain = (binding: Binding, path: string[]): Domain | null =>
-    path.length === 0
-      ? binding.domain
-      : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
+  const getPlaceDomain = (bindingId: number, path: string[]): Domain | null =>
+    analysis.placeDomains.get({ bindingId, path }) ?? null;
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
 
   const attachedRefIds = getAttachedRefIds(analysis);
-  for (const [key, entry] of entries) {
+  for (const [place, tests] of testsByPlace) {
+    const { bindingId, path } = place;
+    const binding = analysis.bindings[bindingId];
     const isLength =
-      entry.path.at(-1) === "length" &&
-      hasCountedLength(getPlaceDomain(entry.binding, entry.path.slice(0, -1)));
+      path.at(-1) === "length" && hasCountedLength(getPlaceDomain(bindingId, path.slice(0, -1)));
     const typeDomain = withAttachedRef(
-      entry,
-      getPlaceDomain(entry.binding, entry.path),
+      binding,
+      path,
+      getPlaceDomain(bindingId, path),
       attachedRefIds,
     );
-    const values = createDomain(typeDomain, entry.tests, isLength);
-    const label = formatPlace(entry.binding, entry.path);
+    const values = createDomain(typeDomain, tests, isLength);
+    const label = formatPlace(binding, path);
     const variable: Variable = {
       name: createName(label),
       label,
-      source: getVariableSource(entry.binding),
-      bindingKind: entry.binding.kind,
-      bindingId: entry.binding.id,
-      inputBindingIds: getInputBindingIds(entry.binding, bindingsById),
-      path: entry.path,
+      source: getVariableSource(binding),
+      bindingKind: binding.kind,
+      bindingId,
+      inputBindingIds: getInputBindingIds(binding, bindingsById),
+      path,
       domain: values,
       initial: getValueLabels(values),
     };
     addVariable(variable);
-    variablesByPlace.set(key, variable);
+    variablesByPlace.set(place, variable);
   }
 
   const getOpaqueVariable = (value: SymbolicValue): Variable => {
@@ -347,8 +331,8 @@ export const createVariableTable = (
     value: SymbolicValue,
     atom: Extract<Atom, { kind: "Relate" }>,
   ): Predicate => {
-    const left = getVariable(atom.left.binding, atom.left.path);
-    const right = getVariable(atom.right.binding, atom.right.path);
+    const left = getVariable(atom.left);
+    const right = getVariable(atom.right);
     if (!left || !right) return opaque(value);
     const leftLabels = getValueLabels(left.domain);
     const rightLabels = getValueLabels(right.domain);
@@ -379,7 +363,7 @@ export const createVariableTable = (
     const atom = toAtom(value);
     if (!atom || atom.kind === "Opaque") return opaque(value);
     if (atom.kind === "Relate") return compileRelation(value, atom);
-    const variable = variablesByPlace.get(getPlaceKey(atom.binding.id, atom.path));
+    const variable = getVariable(atom.place);
     if (!variable) return opaque(value);
     const predicate =
       atom.kind === "Truthy"
@@ -428,8 +412,7 @@ export const createVariableTable = (
     return null;
   };
 
-  const getVariable = (binding: Binding, path: string[]): Variable | null =>
-    variablesByPlace.get(getPlaceKey(binding.id, path)) ?? null;
+  const getVariable = (place: BindingPlace): Variable | null => variablesByPlace.get(place) ?? null;
 
   const getAbstract = (variable: Variable, label: string): Abstract =>
     variable.domain.find((value) => value.label === label)?.abstract ?? { kind: "Any" };
