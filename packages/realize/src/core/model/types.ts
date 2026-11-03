@@ -31,7 +31,7 @@ export interface Variable {
   inputBindingIds: number[];
   path: string[];
   domain: Value[];
-  initial: string[];
+  initial: Initial;
 }
 
 export type Predicate =
@@ -42,11 +42,23 @@ export type Predicate =
   | { kind: "And"; conjuncts: Predicate[] }
   | { kind: "Or"; disjuncts: Predicate[] };
 
+export type Term =
+  | { kind: "Constant"; value: Abstract }
+  | { kind: "Read"; variable: string }
+  | { kind: "Plus"; left: Term; right: Term }
+  | { kind: "Minus"; left: Term; right: Term }
+  | { kind: "Negative"; operand: Term }
+  | { kind: "If"; predicate: Predicate; consequent: Term; alternate: Term }
+  | { kind: "Either"; terms: Term[] };
+
 export type NextValue =
   | { kind: "Values"; values: string[] }
   | { kind: "Unchanged" }
   | { kind: "Copy"; variable: string }
+  | { kind: "Evaluate"; term: Term }
   | { kind: "If"; predicate: Predicate; consequent: NextValue; alternate: NextValue };
+
+export type Initial = Extract<NextValue, { kind: "Values" | "Evaluate" }>;
 
 export type ActionPhase = "call" | "fulfilled" | "rejected" | "input";
 

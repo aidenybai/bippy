@@ -3,7 +3,7 @@ import { Command } from "commander";
 import { analyzeProject } from "../core/project/analyze-project";
 import { ConfigError } from "../core/project/config-error";
 import { serializeProjectAnalysis } from "../core/project/serialize";
-import { formatTla } from "../core/model/tla";
+import { formatLibrary, formatTla } from "../core/model/tla";
 import { formatMermaid } from "./mermaid";
 import type { AnalyzedComponent, ProjectAnalysis } from "../core/types";
 
@@ -53,9 +53,10 @@ const formatOutput = (
 ): string => {
   if (options.json) return serializeProjectAnalysis({ ...analysis, components });
   if (options.tla)
-    return components
-      .map((component) => formatTla(component.analysis.name, component.model))
-      .join("\n\n");
+    return [
+      ...formatLibrary(components.map((component) => component.model)),
+      ...components.map((component) => formatTla(component.analysis.name, component.model)),
+    ].join("\n\n");
   return components.map((component) => formatMermaid(component, { rootDirectory })).join("\n\n");
 };
 

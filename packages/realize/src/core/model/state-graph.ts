@@ -1,4 +1,5 @@
 import { check } from "tla-ts";
+import { LIBRARY_MODULES } from "./abstraction";
 import { evaluatePredicate } from "./predicates";
 import { formatTla } from "./tla";
 import { NO_VIEW } from "./views";
@@ -57,7 +58,14 @@ const unescape = (text: string): string =>
 
 const countInitialStates = (spec: ModelSpec): number =>
   spec.variables.reduce(
-    (count, variable) => Math.min(count * variable.initial.length, MAX_STATES),
+    (count, variable) =>
+      Math.min(
+        count *
+          (variable.initial.kind === "Values"
+            ? variable.initial.values.length
+            : variable.domain.length),
+        MAX_STATES,
+      ),
     1,
   );
 
@@ -151,6 +159,7 @@ const exploreSpec = async (name: string, spec: ModelSpec): Promise<Graph> => {
   const result = await check({
     source: formatTla(name, spec, [...BOUNDS, createAlias(spec)]),
     config: "INIT Init\nNEXT Next\nCONSTRAINT IsBounded\nALIAS Alias\nCHECK_DEADLOCK FALSE",
+    loadModule: (module) => LIBRARY_MODULES.get(module),
     dump: { path: "states.dot", dot: true, actionLabels: true },
     writeFile: (_path, content) => {
       dot = content;

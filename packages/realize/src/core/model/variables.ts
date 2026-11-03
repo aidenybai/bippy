@@ -20,6 +20,7 @@ import {
   getAbstractTruthiness,
   type Comparison,
 } from "./abstract";
+import { ABSTRACTION_NAMES } from "./abstraction";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
@@ -52,6 +53,7 @@ const TLA_KEYWORDS = new Set([
   "Spec",
   "vars",
   "view",
+  ...ABSTRACTION_NAMES,
 ]);
 
 interface Place {
@@ -305,7 +307,7 @@ export const createVariableTable = (
       inputBindingIds: getInputBindingIds(entry.binding, bindingsById),
       path: entry.path,
       domain: values,
-      initial: getValueLabels(values),
+      initial: { kind: "Values", values: getValueLabels(values) },
     };
     addVariable(variable);
     variablesByPlace.set(key, variable);
@@ -324,7 +326,7 @@ export const createVariableTable = (
       inputBindingIds: [],
       path: [],
       domain: BOOLEAN_DOMAIN,
-      initial: ["false", "true"],
+      initial: { kind: "Values", values: ["false", "true"] },
     };
     addVariable(variable);
     opaqueVariables.set(label, variable);

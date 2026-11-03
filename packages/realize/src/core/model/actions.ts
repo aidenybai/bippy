@@ -9,9 +9,17 @@ import {
   ifThenElse,
   inValues,
 } from "./predicates";
-import { compileNextValue } from "./evaluate";
+import { compileNextValue, forEachTerm } from "./terms";
 import type { VariableTable } from "./variables";
-import type { Action, ActionPhase, NextValue, Predicate, Variable, VariableSource } from "./types";
+import type {
+  Action,
+  ActionPhase,
+  NextValue,
+  Predicate,
+  Term,
+  Variable,
+  VariableSource,
+} from "./types";
 
 type Settlement = "fulfilled" | "rejected";
 
@@ -77,7 +85,7 @@ const createPendingVariable = (handler: Handler): Variable => ({
     { label: IDLE, abstract: { kind: "Exact", value: false } },
     { label: PENDING, abstract: { kind: "Exact", value: true } },
   ],
-  initial: [IDLE],
+  initial: { kind: "Values", values: [IDLE] },
 });
 
 const createSnapshotVariable = (handler: Handler, variable: Variable): Variable => ({
@@ -88,7 +96,7 @@ const createSnapshotVariable = (handler: Handler, variable: Variable): Variable 
   bindingKind: null,
   bindingId: null,
   inputBindingIds: [],
-  initial: variable.initial.slice(0, 1),
+  initial: { kind: "Values", values: getValueLabels(variable.domain).slice(0, 1) },
 });
 
 const renamePredicate = (predicate: Predicate, names: ReadonlyMap<string, string>): Predicate => {
@@ -112,8 +120,37 @@ const renamePredicate = (predicate: Predicate, names: ReadonlyMap<string, string
   }
 };
 
+const renameTerm = (term: Term, names: ReadonlyMap<string, string>): Term => {
+  switch (term.kind) {
+    case "Read":
+      return { kind: "Read", variable: names.get(term.variable) ?? term.variable };
+    case "Plus":
+    case "Minus":
+      return {
+        kind: term.kind,
+        left: renameTerm(term.left, names),
+        right: renameTerm(term.right, names),
+      };
+    case "Negative":
+      return { kind: "Negative", operand: renameTerm(term.operand, names) };
+    case "If":
+      return {
+        kind: "If",
+        predicate: renamePredicate(term.predicate, names),
+        consequent: renameTerm(term.consequent, names),
+        alternate: renameTerm(term.alternate, names),
+      };
+    case "Either":
+      return { kind: "Either", terms: term.terms.map((part) => renameTerm(part, names)) };
+    case "Constant":
+      return term;
+  }
+};
+
 const renameNextValue = (next: NextValue, names: ReadonlyMap<string, string>): NextValue => {
   switch (next.kind) {
+    case "Evaluate":
+      return { kind: "Evaluate", term: renameTerm(next.term, names) };
     case "If":
       return {
         kind: "If",
@@ -128,8 +165,15 @@ const renameNextValue = (next: NextValue, names: ReadonlyMap<string, string>): N
   }
 };
 
+const collectTermVariables = (root: Term, variables: Set<string>): void =>
+  forEachTerm(root, (term) => {
+    if (term.kind === "Read") variables.add(term.variable);
+    if (term.kind === "If") collectPredicateVariables(term.predicate, variables);
+  });
+
 const collectNextValueVariables = (next: NextValue, variables: Set<string>): Set<string> => {
   if (next.kind === "Copy") variables.add(next.variable);
+  if (next.kind === "Evaluate") collectTermVariables(next.term, variables);
   if (next.kind === "If") {
     collectPredicateVariables(next.predicate, variables);
     collectNextValueVariables(next.consequent, variables);
@@ -218,7 +262,7 @@ export const compileHandlerActions = (
         setPending(pendingVariable, IDLE),
         ...snapshots.map(({ snapshot }): Write => ({
           variable: snapshot.name,
-          next: { kind: "Values", values: snapshot.initial },
+          next: snapshot.initial,
         })),
       ],
       writtenBindingIds: getBindingIds(updates),

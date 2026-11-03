@@ -148,17 +148,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > CardEditor keeps its TLA+ module 1`] = `
 "---- MODULE CardEditor ----
+EXTENDS Abstraction
 \\* options_shape: options.shape (state), 2 values
 VARIABLES options_shape
 
 vars == <<options_shape>>
+
+Values == [
+  options_shape |-> "undefined" :> Undefined @@ "other string" :> OtherString({})
+]
 
 view == CASE options_shape = "other string" -> "button"
           [] options_shape = "undefined" -> "button > \\"auto\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ options_shape = "undefined"
+  /\\ options_shape \\in Labels(Values.options_shape, Undefined)
 
 \\* fillDefaults(options, 120)
 t1 ==
@@ -229,17 +234,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > ClickStats keeps its TLA+ module 1`] = `
 "---- MODULE ClickStats ----
+EXTENDS Abstraction
 \\* stats_clicks: stats.clicks (state), 4 values
 VARIABLES stats_clicks
 
 vars == <<stats_clicks>>
+
+Values == [
+  stats_clicks |-> "<0" :> Range(-Infinity, 0, TRUE, FALSE) @@ "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, TRUE) @@ "NaN" :> NaN
+]
 
 view == CASE stats_clicks = ">0" -> "button > \\"Clicked\\""
           [] stats_clicks /= ">0" -> "button > \\"Not clicked\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ stats_clicks = "0"
+  /\\ stats_clicks \\in Labels(Values.stats_clicks, Num(0))
 
 Next == UNCHANGED vars
 
@@ -262,6 +272,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Coalesced keeps its TLA+ module 1`] = `
 "---- MODULE Coalesced ----
+EXTENDS Abstraction
 \\* checked: checked (state), 2 values
 \\* flags: flags (input), 2 values
 \\* opaque_flags_some_function_null: flags?.some(function) != null (opaque), 2 values
@@ -269,18 +280,22 @@ VARIABLES checked, flags, opaque_flags_some_function_null
 
 vars == <<checked, flags, opaque_flags_some_function_null>>
 
+Values == [
+  checked |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
+
 view == CASE checked = "true" -> "p > \\"on\\""
           [] checked = "false" -> "p > \\"off\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ checked \\in {"false", "true"}
+  /\\ checked \\in Labels(Values.checked, ((Unknown \\cup Undefined) \\cup Bool(FALSE)))
   /\\ flags \\in {"undefined", "{ ok: boolean; }[]"}
   /\\ opaque_flags_some_function_null \\in {"false", "true"}
 
 \\* after serverChecked changes
 t1 ==
-  /\\ checked' \\in (IF opaque_flags_some_function_null = "false" THEN {"false"} ELSE {"false", "true"})
+  /\\ checked' \\in Labels(Values.checked, (IF opaque_flags_some_function_null = "true" THEN (IF flags = "{ ok: boolean; }[]" THEN Unknown ELSE Undefined) ELSE Bool(FALSE)))
   /\\ UNCHANGED <<flags, opaque_flags_some_function_null>>
 
 \\* parent changes flags
@@ -363,19 +378,25 @@ stateDiagram-v2
 
 exports[`fixture analysis > Composer keeps its TLA+ module 1`] = `
 "---- MODULE Composer ----
+EXTENDS Abstraction
 \\* isSent: isSent (state), 2 values
 \\* draft: draft (state), 2 values
 VARIABLES isSent, draft
 
 vars == <<isSent, draft>>
 
+Values == [
+  isSent |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE),
+  draft |-> "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
+
 view == CASE isSent = "true" -> "p \\"Sent\\""
           [] isSent = "false" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isSent = "false"
-  /\\ draft = "empty"
+  /\\ isSent \\in Labels(Values.isSent, Bool(FALSE))
+  /\\ draft \\in Labels(Values.draft, Str(""))
 
 \\* setDraft(event.target.value)
 t1 ==
@@ -386,7 +407,7 @@ t1 ==
 \\* "Send"
 t2 ==
   /\\ isSent = "false"
-  /\\ isSent' \\in (IF draft = "other string" THEN {"true"} ELSE {isSent})
+  /\\ isSent' \\in (IF draft = "other string" THEN Labels(Values.isSent, Bool(TRUE)) ELSE {isSent})
   /\\ UNCHANGED <<draft>>
 
 Next == t1 \\/ t2
@@ -530,21 +551,26 @@ stateDiagram-v2
 
 exports[`fixture analysis > CountedLoop keeps its TLA+ module 1`] = `
 "---- MODULE CountedLoop ----
+EXTENDS Abstraction
 \\* isDone: isDone (state), 2 values
 VARIABLES isDone
 
 vars == <<isDone>>
+
+Values == [
+  isDone |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE isDone = "true" -> "button > \\"Done\\""
           [] isDone = "false" -> "button > \\"Start\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isDone = "false"
+  /\\ isDone \\in Labels(Values.isDone, Bool(FALSE))
 
 \\* finish
 t1 ==
-  /\\ isDone' = "true"
+  /\\ isDone' \\in Labels(Values.isDone, Bool(TRUE))
 
 Next == t1
 
@@ -569,6 +595,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
 "---- MODULE Dashboard ----
+EXTENDS Abstraction
 \\* status: status (input), 3 values
 \\* user: user (input), 2 values
 \\* items_length: items.length (state), 2 values
@@ -576,6 +603,10 @@ exports[`fixture analysis > Dashboard keeps its TLA+ module 1`] = `
 VARIABLES status, user, items_length, pending_t1
 
 vars == <<status, user, items_length, pending_t1>>
+
+Values == [
+  items_length |-> "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, FALSE)
+]
 
 view == CASE status = "loading" -> "Spinner"
           [] status /= "loading" /\\ user = "null" -> "SignIn"
@@ -586,7 +617,7 @@ view == CASE status = "loading" -> "Spinner"
 Init ==
   /\\ status \\in {"error", "idle", "loading"}
   /\\ user \\in {"null", "User"}
-  /\\ items_length = "0"
+  /\\ items_length \\in Labels(Values.items_length, Num(0))
   /\\ pending_t1 = "idle"
 
 \\* after first render
@@ -598,7 +629,7 @@ t1 ==
 \\* after first render resolves
 t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ items_length' = ">0"
+  /\\ items_length' \\in Labels(Values.items_length, Num(1))
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<status, user>>
 
@@ -667,17 +698,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > Deck keeps its TLA+ module 1`] = `
 "---- MODULE Deck ----
+EXTENDS Abstraction
 \\* cards_length: cards.length (state), 2 values
 VARIABLES cards_length
 
 vars == <<cards_length>>
+
+Values == [
+  cards_length |-> "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, FALSE)
+]
 
 view == CASE cards_length = "0" -> "div > p \\"Empty\\""
           [] cards_length = ">0" -> "div > p \\"Cards\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ cards_length = "0"
+  /\\ cards_length \\in Labels(Values.cards_length, Num(0))
 
 \\* "Shuffle"
 t1 ==
@@ -708,6 +744,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Dialog keeps its TLA+ module 1`] = `
 "---- MODULE Dialog ----
+EXTENDS Abstraction
 \\* isOpen: isOpen (state), 2 values
 \\* icon: icon (input), 12 values
 \\* opaque_icon_undefined: icon === undefined (opaque), 2 values
@@ -715,20 +752,24 @@ VARIABLES isOpen, icon, opaque_icon_undefined
 
 vars == <<isOpen, icon, opaque_icon_undefined>>
 
+Values == [
+  isOpen |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
+
 view == CASE isOpen = "false" -> "nothing"
           [] isOpen = "true" /\\ opaque_icon_undefined = "true" -> "div > span \\"×\\""
           [] isOpen = "true" /\\ opaque_icon_undefined = "false" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isOpen = "true"
+  /\\ isOpen \\in Labels(Values.isOpen, Bool(TRUE))
   /\\ icon \\in {"null", "other string", "any number", "NaN", "other", "false", "true", "Iterable<ReactNode>", "Promise<AwaitedReactNode>", "ReactElement<unknown, string | JSXElementConstructor<any>>", "ReactPortal", "undefined"}
   /\\ opaque_icon_undefined \\in {"false", "true"}
 
 \\* setIsOpen(false)
 t1 ==
   /\\ isOpen = "true"
-  /\\ isOpen' = "false"
+  /\\ isOpen' \\in Labels(Values.isOpen, Bool(FALSE))
   /\\ UNCHANGED <<icon, opaque_icon_undefined>>
 
 \\* parent changes icon
@@ -770,10 +811,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > EarlyReturn keeps its TLA+ module 1`] = `
 "---- MODULE EarlyReturn ----
+EXTENDS Abstraction
 \\* picked: picked (state), 6 values
 VARIABLES picked
 
 vars == <<picked>>
+
+Values == [
+  picked |-> "<0" :> Range(-Infinity, 0, TRUE, FALSE) @@ "0" :> Num(0) @@ "(0, 3)" :> Range(0, 3, FALSE, FALSE) @@ "3" :> Num(3) @@ ">3" :> Range(3, Infinity, FALSE, TRUE) @@ "NaN" :> NaN
+]
 
 view == CASE picked = "0" -> "button > \\"Pick\\""
           [] picked = "3" -> "button > \\"Third\\""
@@ -781,11 +827,11 @@ view == CASE picked = "0" -> "button > \\"Pick\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ picked = "0"
+  /\\ picked \\in Labels(Values.picked, Num(0))
 
 \\* setPicked(findFirstSquare())
 t1 ==
-  /\\ picked' = "3"
+  /\\ picked' \\in Labels(Values.picked, Num(3))
 
 Next == t1
 
@@ -811,11 +857,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > EditButton keeps its TLA+ module 1`] = `
 "---- MODULE EditButton ----
+EXTENDS Abstraction
 \\* role: role (input), 2 values
 \\* isEditing: isEditing (state), 2 values
 VARIABLES role, isEditing
 
 vars == <<role, isEditing>>
+
+Values == [
+  isEditing |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE role = "viewer" -> "p \\"Read only\\""
           [] role = "admin" /\\ isEditing = "true" -> "button \\"Save\\""
@@ -824,18 +875,18 @@ view == CASE role = "viewer" -> "p \\"Read only\\""
 
 Init ==
   /\\ role \\in {"admin", "viewer"}
-  /\\ isEditing = "false"
+  /\\ isEditing \\in Labels(Values.isEditing, Bool(FALSE))
 
 \\* "Save"
 t1 ==
   /\\ role = "admin" /\\ isEditing = "true"
-  /\\ isEditing' = "false"
+  /\\ isEditing' \\in Labels(Values.isEditing, Bool(FALSE))
   /\\ UNCHANGED <<role>>
 
 \\* "Edit"
 t2 ==
   /\\ role = "admin" /\\ isEditing = "false"
-  /\\ isEditing' = "true"
+  /\\ isEditing' \\in Labels(Values.isEditing, Bool(TRUE))
   /\\ UNCHANGED <<role>>
 
 \\* parent changes role
@@ -1091,12 +1142,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > FileRow keeps its TLA+ module 1`] = `
 "---- MODULE FileRow ----
+EXTENDS Arithmetic
 \\* path_endsWith_ts: path.endsWith(".ts") (derived), 2 values
 \\* opened: opened (state), 4 values
-\\* opaque_opened_1: opened + 1 (opaque), 2 values
-VARIABLES path_endsWith_ts, opened, opaque_opened_1
+VARIABLES path_endsWith_ts, opened
 
-vars == <<path_endsWith_ts, opened, opaque_opened_1>>
+vars == <<path_endsWith_ts, opened>>
+
+Values == [
+  opened |-> "<0" :> Range(-Infinity, 0, TRUE, FALSE) @@ "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, TRUE) @@ "NaN" :> NaN
+]
 
 view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS\\" > b"
           [] path_endsWith_ts = "true" /\\ opened /= ">0" -> "button > span \\"TS\\""
@@ -1106,20 +1161,14 @@ view == CASE path_endsWith_ts = "true" /\\ opened = ">0" -> "button > span \\"TS
 
 Init ==
   /\\ path_endsWith_ts \\in {"false", "true"}
-  /\\ opened = "0"
-  /\\ opaque_opened_1 \\in {"false", "true"}
+  /\\ opened \\in Labels(Values.opened, Num(0))
 
 \\* setOpened(opened + 1)
 t1 ==
-  /\\ opened' \\in (IF opened = "<0" THEN {"<0", "0", ">0"} ELSE (IF opened \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
-  /\\ UNCHANGED <<path_endsWith_ts, opaque_opened_1>>
+  /\\ opened' \\in Labels(Values.opened, Plus(Values.opened[opened], Num(1)))
+  /\\ UNCHANGED <<path_endsWith_ts>>
 
-\\* opened + 1 changes
-change_opaque_opened_1 ==
-  /\\ opaque_opened_1' \\in {"false", "true"}
-  /\\ UNCHANGED <<path_endsWith_ts, opened>>
-
-Next == t1 \\/ change_opaque_opened_1
+Next == t1
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1131,10 +1180,9 @@ title: FileRow src/helpers.tsx:6
 ---
 stateDiagram-v2
   direction LR
-  %% 8 states
+  %% 4 states
   %% path_endsWith_ts = path.endsWith(".ts") (derived): false | true
   %% opened = opened (state): <0 | 0 | >0 | NaN
-  %% opaque_opened_1 = opened + 1 (opaque): false | true
   S1: button #gt; span "TS" #gt; b
   S2: button #gt; span "TS"
   S3: button #gt; span "File" #gt; b
@@ -1560,10 +1608,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > KindSwitch keeps its TLA+ module 1`] = `
 "---- MODULE KindSwitch ----
+EXTENDS Abstraction
 \\* kind: kind (state), 3 values
 VARIABLES kind
 
 vars == <<kind>>
+
+Values == [
+  kind |-> "chip" :> Str("chip") @@ "extendedFab" :> Str("extendedFab") @@ "fab" :> Str("fab")
+]
 
 view == CASE (kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab") -> "div > FabRow > p \\"Unreachable\\""
           [] (kind = "fab" \\/ kind = "extendedFab") /\\ ~(kind /= "chip" /\\ ~(kind = "fab" \\/ kind = "extendedFab")) -> "div > FabRow"
@@ -1572,15 +1625,15 @@ view == CASE (kind = "fab" \\/ kind = "extendedFab") /\\ kind /= "chip" /\\ ~(ki
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ kind = "chip"
+  /\\ kind \\in Labels(Values.kind, Str("chip"))
 
 \\* "FAB"
 t1 ==
-  /\\ kind' = "fab"
+  /\\ kind' \\in Labels(Values.kind, Str("fab"))
 
 \\* "Extended"
 t2 ==
-  /\\ kind' = "extendedFab"
+  /\\ kind' \\in Labels(Values.kind, Str("extendedFab"))
 
 Next == t1 \\/ t2
 
@@ -1760,23 +1813,28 @@ stateDiagram-v2
 
 exports[`fixture analysis > LongLoop keeps its TLA+ module 1`] = `
 "---- MODULE LongLoop ----
+EXTENDS Abstraction
 \\* isFull: isFull (state), 2 values
 \\* total: total (input), 4 values
 VARIABLES isFull, total
 
 vars == <<isFull, total>>
 
+Values == [
+  isFull |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
+
 view == CASE isFull = "true" -> "button > \\"Full\\""
           [] isFull = "false" -> "button > \\"Fill\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isFull = "false"
+  /\\ isFull \\in Labels(Values.isFull, Bool(FALSE))
   /\\ total \\in {"<100", "100", ">100", "NaN"}
 
 \\* fill
 t1 ==
-  /\\ isFull' \\in (IF total /= "100" THEN {"false"} ELSE {"true"})
+  /\\ isFull' \\in Labels(Values.isFull, (IF total = "100" THEN Bool(TRUE) ELSE Bool(FALSE)))
   /\\ UNCHANGED <<total>>
 
 \\* total changes
@@ -1810,12 +1868,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > LoopList keeps its TLA+ module 1`] = `
 "---- MODULE LoopList ----
+EXTENDS Abstraction
 \\* hasLong: hasLong (input), 2 values
 \\* isSelected: isSelected (state), 2 values
 \\* item: item (input), 2 values
 VARIABLES hasLong, isSelected, item
 
 vars == <<hasLong, isSelected, item>>
+
+Values == [
+  isSelected |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE hasLong = "true" /\\ isSelected = "true" -> "div > p \\"Long\\" > \\"Selected\\""
           [] hasLong = "true" /\\ isSelected = "false" -> "div > p \\"Long\\" > \\"Select\\""
@@ -1825,12 +1888,12 @@ view == CASE hasLong = "true" /\\ isSelected = "true" -> "div > p \\"Long\\" > \
 
 Init ==
   /\\ hasLong \\in {"false", "true"}
-  /\\ isSelected = "false"
+  /\\ isSelected \\in Labels(Values.isSelected, Bool(FALSE))
   /\\ item \\in {"empty", "other string"}
 
 \\* selectAll
 t1 ==
-  /\\ isSelected' \\in (IF item = "other string" THEN {"true"} ELSE {isSelected})
+  /\\ isSelected' \\in (IF item = "other string" THEN Labels(Values.isSelected, Bool(TRUE)) ELSE {isSelected})
   /\\ UNCHANGED <<hasLong, item>>
 
 \\* hasLong changes
@@ -1879,13 +1942,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > NameForm keeps its TLA+ module 1`] = `
 "---- MODULE NameForm ----
+EXTENDS Abstraction
 \\* isPending: isPending (input), 2 values
 \\* name: name (state), 2 values
 \\* opaque_typeof_data_get_name_string: typeof data.get("name") === "string" (opaque), 2 values
-\\* opaque_typeof_data_get_name: typeof data.get("name") (opaque), 2 values
-VARIABLES isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name
+VARIABLES isPending, name, opaque_typeof_data_get_name_string
 
-vars == <<isPending, name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+vars == <<isPending, name, opaque_typeof_data_get_name_string>>
+
+Values == [
+  name |-> "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
 
 view == CASE isPending = "true" -> "form > p \\"Saving…\\""
           [] isPending = "false" /\\ name = "empty" -> "form > p > \\"No name yet\\""
@@ -1894,31 +1961,25 @@ view == CASE isPending = "true" -> "form > p \\"Saving…\\""
 
 Init ==
   /\\ isPending \\in {"false", "true"}
-  /\\ name = "empty"
+  /\\ name \\in Labels(Values.name, Str(""))
   /\\ opaque_typeof_data_get_name_string \\in {"false", "true"}
-  /\\ opaque_typeof_data_get_name \\in {"false", "true"}
 
 \\* "Save"
 t1 ==
-  /\\ name' \\in (IF name = "empty" /\\ opaque_typeof_data_get_name_string = "false" THEN {"empty"} ELSE (IF (name = "empty" /\\ opaque_typeof_data_get_name_string = "true") \\/ (name = "other string" /\\ opaque_typeof_data_get_name_string = "true") THEN {"empty", "other string"} ELSE {"other string"}))
-  /\\ UNCHANGED <<isPending, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+  /\\ name' \\in Labels(Values.name, (IF opaque_typeof_data_get_name_string = "true" THEN Unknown ELSE Values.name[name]))
+  /\\ UNCHANGED <<isPending, opaque_typeof_data_get_name_string>>
 
 \\* isPending changes
 change_isPending ==
   /\\ isPending' \\in {"false", "true"}
-  /\\ UNCHANGED <<name, opaque_typeof_data_get_name_string, opaque_typeof_data_get_name>>
+  /\\ UNCHANGED <<name, opaque_typeof_data_get_name_string>>
 
 \\* typeof data.get("name") === "string" changes
 change_opaque_typeof_data_get_name_string ==
   /\\ opaque_typeof_data_get_name_string' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name>>
+  /\\ UNCHANGED <<isPending, name>>
 
-\\* typeof data.get("name") changes
-change_opaque_typeof_data_get_name ==
-  /\\ opaque_typeof_data_get_name' \\in {"false", "true"}
-  /\\ UNCHANGED <<isPending, name, opaque_typeof_data_get_name_string>>
-
-Next == t1 \\/ change_isPending \\/ change_opaque_typeof_data_get_name_string \\/ change_opaque_typeof_data_get_name
+Next == t1 \\/ change_isPending \\/ change_opaque_typeof_data_get_name_string
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -1930,11 +1991,10 @@ title: NameForm src/form-actions.tsx:29
 ---
 stateDiagram-v2
   direction LR
-  %% 16 states
+  %% 8 states
   %% isPending = isPending (input): false | true
   %% name = name (state): empty | other string
   %% opaque_typeof_data_get_name_string = typeof data.get("name") === "string" (opaque): false | true
-  %% opaque_typeof_data_get_name = typeof data.get("name") (opaque): false | true
   S1: form #gt; p "Saving…"
   S2: form #gt; p #gt; "No name yet"
   S3: form #gt; p
@@ -2127,11 +2187,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > Panels keeps its TLA+ module 1`] = `
 "---- MODULE Panels ----
+EXTENDS Abstraction
 \\* isOpen: isOpen (state), 2 values
 \\* isDark: isDark (state), 2 values
 VARIABLES isOpen, isDark
 
 vars == <<isOpen, isDark>>
+
+Values == [
+  isOpen |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE),
+  isDark |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE isOpen = "true" /\\ isDark = "true" -> "div > p \\"More details\\" > span \\"Dark\\""
           [] isOpen = "true" /\\ isDark = "false" -> "div > p \\"More details\\" > span \\"Light\\""
@@ -2140,17 +2206,17 @@ view == CASE isOpen = "true" /\\ isDark = "true" -> "div > p \\"More details\\" 
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isOpen = "false"
-  /\\ isDark = "false"
+  /\\ isOpen \\in Labels(Values.isOpen, Bool(FALSE))
+  /\\ isDark \\in Labels(Values.isDark, Bool(FALSE))
 
 \\* "Details"
 t1 ==
-  /\\ isOpen' \\in (IF isOpen = "false" THEN {"true"} ELSE {"false"})
+  /\\ isOpen' \\in Labels(Values.isOpen, (IF isOpen = "false" THEN Bool(TRUE) ELSE Bool(FALSE)))
   /\\ UNCHANGED <<isDark>>
 
 \\* "Theme"
 t2 ==
-  /\\ isDark' \\in (IF isDark = "false" THEN {"true"} ELSE {"false"})
+  /\\ isDark' \\in Labels(Values.isDark, (IF isDark = "false" THEN Bool(TRUE) ELSE Bool(FALSE)))
   /\\ UNCHANGED <<isOpen>>
 
 Next == t1 \\/ t2
@@ -2185,11 +2251,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Picker keeps its TLA+ module 1`] = `
 "---- MODULE Picker ----
+EXTENDS Abstraction
 \\* data: data (input), 2 values
 \\* selected: selected (state), 3 values
 VARIABLES data, selected
 
 vars == <<data, selected>>
+
+Values == [
+  selected |-> "null" :> Null @@ "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
 
 view == CASE data = "{ rows: Row[]; }" /\\ selected = "other string" -> "ul > list > p"
           [] data = "{ rows: Row[]; }" /\\ selected /= "other string" -> "ul > list"
@@ -2199,7 +2270,7 @@ view == CASE data = "{ rows: Row[]; }" /\\ selected = "other string" -> "ul > li
 
 Init ==
   /\\ data \\in {"null", "{ rows: Row[]; }"}
-  /\\ selected = "null"
+  /\\ selected \\in Labels(Values.selected, Null)
 
 \\* setSelected(row.id)
 t1 ==
@@ -2402,6 +2473,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Profile keeps its TLA+ module 1`] = `
 "---- MODULE Profile ----
+EXTENDS Abstraction
 \\* status: status (state), 2 values
 \\* user_name: user.name (input), 3 values
 \\* step: step (state), 3 values
@@ -2409,31 +2481,36 @@ VARIABLES status, user_name, step
 
 vars == <<status, user_name, step>>
 
+Values == [
+  status |-> "idle" :> Str("idle") @@ "saving" :> Str("saving"),
+  step |-> "a" :> Str("a") @@ "b" :> Str("b") @@ "c" :> Str("c")
+]
+
 view == CASE status = "saving" -> "p \\"Saving\\""
           [] status = "idle" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ status = "idle"
+  /\\ status \\in Labels(Values.status, Str("idle"))
   /\\ user_name \\in {"undefined", "empty", "other string"}
-  /\\ step = "a"
+  /\\ step \\in Labels(Values.step, Str("a"))
 
 \\* "Save"
 t1 ==
   /\\ status = "idle"
-  /\\ status' \\in (IF user_name /= "other string" THEN {"idle"} ELSE {"saving"})
+  /\\ status' \\in Labels(Values.status, (IF user_name = "other string" THEN Str("saving") ELSE Str("idle")))
   /\\ UNCHANGED <<user_name, step>>
 
 \\* "Next"
 t2 ==
   /\\ status = "idle"
-  /\\ step' = "b"
+  /\\ step' \\in Labels(Values.step, Str("b"))
   /\\ UNCHANGED <<status, user_name>>
 
 \\* "Finish"
 t3 ==
   /\\ status = "idle"
-  /\\ status' \\in {"idle", "saving"}
+  /\\ status' \\in Labels(Values.status, Str("done"))
   /\\ UNCHANGED <<user_name, step>>
 
 \\* parent changes user.name
@@ -2643,18 +2720,23 @@ stateDiagram-v2
 
 exports[`fixture analysis > PublishResult keeps its TLA+ module 1`] = `
 "---- MODULE PublishResult ----
+EXTENDS Abstraction
 \\* success: success (state), 2 values
 \\* isReady: isReady (input), 2 values
 VARIABLES success, isReady
 
 vars == <<success, isReady>>
 
+Values == [
+  success |-> "null" :> Null @@ "Success" :> Object
+]
+
 view == CASE success = "Success" -> "div > p"
           [] success = "null" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ success = "null"
+  /\\ success \\in Labels(Values.success, Null)
   /\\ isReady \\in {"false", "true"}
 
 \\* isReady && setStep("done")
@@ -2663,7 +2745,7 @@ t1 ==
 
 \\* "Publish"
 t2 ==
-  /\\ success' = "Success"
+  /\\ success' \\in Labels(Values.success, Object)
   /\\ UNCHANGED <<isReady>>
 
 \\* parent changes isReady
@@ -2755,6 +2837,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > RetryForm keeps its TLA+ module 1`] = `
 "---- MODULE RetryForm ----
+EXTENDS Abstraction
 \\* error: error (state), 3 values
 \\* pending_t1: t1 pending (control), 2 values
 \\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
@@ -2762,26 +2845,30 @@ VARIABLES error, pending_t1, opaque_Unknown_throws
 
 vars == <<error, pending_t1, opaque_Unknown_throws>>
 
+Values == [
+  error |-> "null" :> Null @@ "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
+
 view == CASE error = "other string" -> "form > p"
           [] error /= "other string" -> "form"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ error = "null"
+  /\\ error \\in Labels(Values.error, Null)
   /\\ pending_t1 = "idle"
   /\\ opaque_Unknown_throws \\in {"false", "true"}
 
 \\* "Save"
 t1 ==
   /\\ pending_t1 = "idle"
-  /\\ error' = "null"
+  /\\ error' \\in Labels(Values.error, Null)
   /\\ pending_t1' = "pending"
   /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* "Save" resolves
 t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN Labels(Values.error, Str("Failed")) ELSE {error})
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<opaque_Unknown_throws>>
 
@@ -2863,6 +2950,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > SaveForm keeps its TLA+ module 1`] = `
 "---- MODULE SaveForm ----
+EXTENDS Abstraction
 \\* loading: loading (state), 2 values
 \\* pending_t1: t1 pending (control), 2 values
 \\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
@@ -2870,26 +2958,30 @@ VARIABLES loading, pending_t1, opaque_Unknown_throws
 
 vars == <<loading, pending_t1, opaque_Unknown_throws>>
 
+Values == [
+  loading |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
+
 view == CASE loading = "true" -> "form > p \\"Saving…\\""
           [] loading = "false" -> "form > button \\"Save\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ loading = "false"
+  /\\ loading \\in Labels(Values.loading, Bool(FALSE))
   /\\ pending_t1 = "idle"
   /\\ opaque_Unknown_throws \\in {"false", "true"}
 
 \\* submit, "Save"
 t1 ==
   /\\ pending_t1 = "idle"
-  /\\ loading' = "true"
+  /\\ loading' \\in Labels(Values.loading, Bool(TRUE))
   /\\ pending_t1' = "pending"
   /\\ UNCHANGED <<opaque_Unknown_throws>>
 
 \\* submit, "Save" resolves
 t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ loading' \\in (IF opaque_Unknown_throws = "false" THEN {"false"} ELSE (IF opaque_Unknown_throws = "true" THEN {"false"} ELSE {loading}))
+  /\\ loading' \\in (IF opaque_Unknown_throws = "false" THEN Labels(Values.loading, Bool(FALSE)) ELSE (IF opaque_Unknown_throws = "true" THEN Labels(Values.loading, Bool(FALSE)) ELSE {loading}))
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<opaque_Unknown_throws>>
 
@@ -3000,23 +3092,28 @@ stateDiagram-v2
 
 exports[`fixture analysis > SearchPanel keeps its TLA+ module 1`] = `
 "---- MODULE SearchPanel ----
+EXTENDS Abstraction
 \\* isFocused: isFocused (state), 2 values
 \\* opaque_Unknown_call_enoughChars: Unknown(call).enoughChars (opaque), 2 values
 VARIABLES isFocused, opaque_Unknown_call_enoughChars
 
 vars == <<isFocused, opaque_Unknown_call_enoughChars>>
 
+Values == [
+  isFocused |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
+
 view == CASE isFocused = "true" /\\ opaque_Unknown_call_enoughChars = "true" -> "div > ul"
           [] ~(isFocused = "true" /\\ opaque_Unknown_call_enoughChars = "true") -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isFocused = "false"
+  /\\ isFocused \\in Labels(Values.isFocused, Bool(FALSE))
   /\\ opaque_Unknown_call_enoughChars \\in {"false", "true"}
 
 \\* setIsFocused(true)
 t1 ==
-  /\\ isFocused' = "true"
+  /\\ isFocused' \\in Labels(Values.isFocused, Bool(TRUE))
   /\\ UNCHANGED <<opaque_Unknown_call_enoughChars>>
 
 \\* setCount(count + 1)
@@ -3054,21 +3151,26 @@ stateDiagram-v2
 
 exports[`fixture analysis > Seen keeps its TLA+ module 1`] = `
 "---- MODULE Seen ----
+EXTENDS Abstraction
 \\* shown: shown (state), 2 values
 VARIABLES shown
 
 vars == <<shown>>
+
+Values == [
+  shown |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE shown = "true" -> "button > \\"shown\\""
           [] shown = "false" -> "button > \\"show\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ shown = "false"
+  /\\ shown \\in Labels(Values.shown, Bool(FALSE))
 
 \\* show
 t1 ==
-  /\\ shown' = "true"
+  /\\ shown' \\in Labels(Values.shown, Bool(TRUE))
 
 Next == t1
 
@@ -3093,22 +3195,27 @@ stateDiagram-v2
 
 exports[`fixture analysis > ShareButton keeps its TLA+ module 1`] = `
 "---- MODULE ShareButton ----
+EXTENDS Abstraction
 \\* dialog_isOpen: dialog.isOpen (state), 2 values
 VARIABLES dialog_isOpen
 
 vars == <<dialog_isOpen>>
+
+Values == [
+  dialog_isOpen |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE dialog_isOpen = "false" -> "button \\"Share\\""
           [] dialog_isOpen = "true" -> "p"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ dialog_isOpen = "false"
+  /\\ dialog_isOpen \\in Labels(Values.dialog_isOpen, Bool(FALSE))
 
 \\* "Share"
 t1 ==
   /\\ dialog_isOpen = "false"
-  /\\ dialog_isOpen' = "true"
+  /\\ dialog_isOpen' \\in Labels(Values.dialog_isOpen, Bool(TRUE))
 
 Next == t1
 
@@ -3149,6 +3256,7 @@ Spec == Init /\\ [][Next]_vars
 
 exports[`fixture analysis > SignIn keeps its TLA+ module 2`] = `
 "---- MODULE SignIn ----
+EXTENDS Abstraction
 \\* status: status (state), 2 values
 \\* pending_t1: t1 pending (control), 2 values
 \\* opaque_Unknown_wrapped_call: Unknown(wrapped-call) (opaque), 2 values
@@ -3158,12 +3266,16 @@ VARIABLES status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email, 
 
 vars == <<status, pending_t1, opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
+Values == [
+  status |-> "editing" :> Str("editing") @@ "sent" :> Str("sent")
+]
+
 view == CASE status = "sent" -> "p \\"Check your inbox\\""
           [] status = "editing" -> "form"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ status = "editing"
+  /\\ status \\in Labels(Values.status, Str("editing"))
   /\\ pending_t1 = "idle"
   /\\ opaque_Unknown_wrapped_call \\in {"false", "true"}
   /\\ opaque_values_email \\in {"false", "true"}
@@ -3172,7 +3284,7 @@ Init ==
 \\* "Send"
 t1 ==
   /\\ status = "editing" /\\ pending_t1 = "idle"
-  /\\ status' \\in (IF opaque_Unknown_wrapped_call = "true" /\\ opaque_values_email = "true" THEN {"sent"} ELSE {status})
+  /\\ status' \\in (IF opaque_Unknown_wrapped_call = "true" /\\ opaque_values_email = "true" THEN Labels(Values.status, Str("sent")) ELSE {status})
   /\\ pending_t1' = "pending"
   /\\ UNCHANGED <<opaque_Unknown_wrapped_call, opaque_values_email, pending_t2>>
 
@@ -3348,10 +3460,15 @@ stateDiagram-v2
 
 exports[`fixture analysis > SkippedSteps keeps its TLA+ module 1`] = `
 "---- MODULE SkippedSteps ----
+EXTENDS Abstraction
 \\* steps: steps (state), 6 values
 VARIABLES steps
 
 vars == <<steps>>
+
+Values == [
+  steps |-> "<0" :> Range(-Infinity, 0, TRUE, FALSE) @@ "0" :> Num(0) @@ "(0, 3)" :> Range(0, 3, FALSE, FALSE) @@ "3" :> Num(3) @@ ">3" :> Range(3, Infinity, FALSE, TRUE) @@ "NaN" :> NaN
+]
 
 view == CASE steps = "0" -> "button > \\"None\\""
           [] steps = "3" -> "button > \\"Three\\""
@@ -3359,11 +3476,11 @@ view == CASE steps = "0" -> "button > \\"None\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ steps = "0"
+  /\\ steps \\in Labels(Values.steps, Num(0))
 
 \\* advance
 t1 ==
-  /\\ steps' = "3"
+  /\\ steps' \\in Labels(Values.steps, Num(3))
 
 Next == t1
 
@@ -3569,17 +3686,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > StatusBanner keeps its TLA+ module 1`] = `
 "---- MODULE StatusBanner ----
+EXTENDS Abstraction
 \\* status: status (state), 2 values
 VARIABLES status
 
 vars == <<status>>
+
+Values == [
+  status |-> "error" :> Str("error") @@ "ok" :> Str("ok")
+]
 
 view == CASE status = "error" -> "p \\"Error\\""
           [] status = "ok" -> "p \\"Fine\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ status = "ok"
+  /\\ status \\in Labels(Values.status, Str("ok"))
 
 Next == UNCHANGED vars
 
@@ -3717,21 +3839,26 @@ stateDiagram-v2
 
 exports[`fixture analysis > TagEditor keeps its TLA+ module 1`] = `
 "---- MODULE TagEditor ----
+EXTENDS Arithmetic
 \\* tags_length: tags.length (state), 2 values
 VARIABLES tags_length
 
 vars == <<tags_length>>
+
+Values == [
+  tags_length |-> "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, FALSE)
+]
 
 view == CASE tags_length = "0" -> "div > p \\"No tags\\""
           [] tags_length = ">0" -> "div > p \\"Some tags\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ tags_length = "0"
+  /\\ tags_length \\in Labels(Values.tags_length, Num(0))
 
 \\* "Add"
 t1 ==
-  /\\ tags_length' = ">0"
+  /\\ tags_length' \\in Labels(Values.tags_length, Plus(Num(1), Values.tags_length[tags_length]))
 
 Next == t1
 
@@ -3756,17 +3883,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > TagList keeps its TLA+ module 1`] = `
 "---- MODULE TagList ----
+EXTENDS Abstraction
 \\* tags_length: tags.length (state), 2 values
 VARIABLES tags_length
 
 vars == <<tags_length>>
+
+Values == [
+  tags_length |-> "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, FALSE)
+]
 
 view == CASE tags_length = "0" -> "div > p \\"No tags\\""
           [] tags_length = ">0" -> "div > ul"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ tags_length = "0"
+  /\\ tags_length \\in Labels(Values.tags_length, Num(0))
 
 \\* "Copy"
 t1 ==
@@ -3837,6 +3969,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > TodoApp keeps its TLA+ module 1`] = `
 "---- MODULE TodoApp ----
+EXTENDS Arithmetic
 \\* todos_length: todos.length (state), 2 values
 \\* todo_isDone: todo.isDone (input), 2 values
 \\* isEditing: isEditing (state), 2 values
@@ -3846,6 +3979,12 @@ VARIABLES todos_length, todo_isDone, isEditing, draft, draft_trim
 
 vars == <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
 
+Values == [
+  todos_length |-> "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, FALSE),
+  isEditing |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE),
+  draft |-> "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
+
 view == CASE todos_length = "0" /\\ isEditing = "true" -> "section > p \\"Nothing to do\\" > button \\"Save\\""
           [] todos_length = "0" /\\ isEditing = "false" -> "section > p \\"Nothing to do\\" > button \\"Edit\\""
           [] todos_length = ">0" /\\ isEditing = "true" -> "section > button \\"Save\\""
@@ -3853,10 +3992,10 @@ view == CASE todos_length = "0" /\\ isEditing = "true" -> "section > p \\"Nothin
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ todos_length = "0"
+  /\\ todos_length \\in Labels(Values.todos_length, Num(0))
   /\\ todo_isDone \\in {"false", "true"}
-  /\\ isEditing = "false"
-  /\\ draft = "empty"
+  /\\ isEditing \\in Labels(Values.isEditing, Bool(FALSE))
+  /\\ draft \\in Labels(Values.draft, Str(""))
   /\\ draft_trim \\in {"empty", "other string"}
 
 \\* setDraft(event.target.value)
@@ -3868,14 +4007,15 @@ t1 ==
 \\* "Add"
 t2 ==
   /\\ draft = "other string"
-  /\\ todos_length' \\in (IF draft_trim = "other string" THEN {">0"} ELSE {todos_length})
-  /\\ draft' \\in (IF draft_trim = "other string" THEN {"empty"} ELSE {draft})
+  /\\ todos_length' \\in (IF draft_trim = "other string" THEN Labels(Values.todos_length, Plus(Num(1), Values.todos_length[todos_length])) ELSE {todos_length})
+  /\\ draft' \\in (IF draft_trim = "other string" THEN Labels(Values.draft, Str("")) ELSE {draft})
   /\\ draft_trim' \\in {"empty", "other string"}
   /\\ UNCHANGED <<todo_isDone, isEditing>>
 
 \\* setTodos( todos.map((other) => other.id…
 t3 ==
-  /\\ UNCHANGED <<todos_length, todo_isDone, isEditing, draft, draft_trim>>
+  /\\ todos_length' \\in Labels(Values.todos_length, Values.todos_length[todos_length])
+  /\\ UNCHANGED <<todo_isDone, isEditing, draft, draft_trim>>
 
 \\* "All"
 t4 ==
@@ -3892,13 +4032,13 @@ t6 ==
 \\* "Save"
 t7 ==
   /\\ isEditing = "true"
-  /\\ isEditing' = "false"
+  /\\ isEditing' \\in Labels(Values.isEditing, Bool(FALSE))
   /\\ UNCHANGED <<todos_length, todo_isDone, draft, draft_trim>>
 
 \\* "Edit"
 t8 ==
   /\\ isEditing = "false"
-  /\\ isEditing' = "true"
+  /\\ isEditing' \\in Labels(Values.isEditing, Bool(TRUE))
   /\\ UNCHANGED <<todos_length, todo_isDone, draft, draft_trim>>
 
 \\* todo.isDone changes
@@ -3943,21 +4083,26 @@ stateDiagram-v2
 
 exports[`fixture analysis > Toggle keeps its TLA+ module 1`] = `
 "---- MODULE Toggle ----
+EXTENDS Abstraction
 \\* isOpen: isOpen (state), 2 values
 VARIABLES isOpen
 
 vars == <<isOpen>>
+
+Values == [
+  isOpen |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE isOpen = "true" -> "div > p \\"Details\\""
           [] isOpen = "false" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isOpen = "false"
+  /\\ isOpen \\in Labels(Values.isOpen, Bool(FALSE))
 
 \\* setIsOpen(!isOpen)
 t1 ==
-  /\\ isOpen' \\in (IF isOpen = "false" THEN {"true"} ELSE {"false"})
+  /\\ isOpen' \\in Labels(Values.isOpen, (IF isOpen = "false" THEN Bool(TRUE) ELSE Bool(FALSE)))
 
 Next == t1
 
@@ -4029,12 +4174,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > ToneCounter keeps its TLA+ module 1`] = `
 "---- MODULE ToneCounter ----
+EXTENDS Arithmetic
 \\* tone: tone (input), 3 values
 \\* count: count (state), 4 values
-\\* opaque_count_1: count + 1 (opaque), 2 values
-VARIABLES tone, count, opaque_count_1
+VARIABLES tone, count
 
-vars == <<tone, count, opaque_count_1>>
+vars == <<tone, count>>
+
+Values == [
+  count |-> "<0" :> Range(-Infinity, 0, TRUE, FALSE) @@ "0" :> Num(0) @@ ">0" :> Range(0, Infinity, FALSE, TRUE) @@ "NaN" :> NaN
+]
 
 view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
           [] tone = "info" /\\ count /= ">0" -> "div > b > \\"Info\\""
@@ -4044,25 +4193,19 @@ view == CASE tone = "info" /\\ count = ">0" -> "div > b > \\"Info again\\""
 
 Init ==
   /\\ tone \\in {"undefined", "info", "other string"}
-  /\\ count = "0"
-  /\\ opaque_count_1 \\in {"false", "true"}
+  /\\ count \\in Labels(Values.count, Num(0))
 
 \\* setCount(count + 1)
 t1 ==
-  /\\ count' \\in (IF count = "<0" THEN {"<0", "0", ">0"} ELSE (IF count \\in {"0", ">0"} THEN {">0"} ELSE {"NaN"}))
-  /\\ UNCHANGED <<tone, opaque_count_1>>
+  /\\ count' \\in Labels(Values.count, Plus(Values.count[count], Num(1)))
+  /\\ UNCHANGED <<tone>>
 
 \\* parent changes tone
 change_tone ==
   /\\ tone' \\in {"undefined", "info", "other string"}
-  /\\ UNCHANGED <<count, opaque_count_1>>
+  /\\ UNCHANGED <<count>>
 
-\\* count + 1 changes
-change_opaque_count_1 ==
-  /\\ opaque_count_1' \\in {"false", "true"}
-  /\\ UNCHANGED <<tone, count>>
-
-Next == t1 \\/ change_tone \\/ change_opaque_count_1
+Next == t1 \\/ change_tone
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4074,10 +4217,9 @@ title: ToneCounter src/unchanged-props.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  %% 12 states
+  %% 6 states
   %% tone = tone (input): undefined | info | other string
   %% count = count (state): <0 | 0 | >0 | NaN
-  %% opaque_count_1 = count + 1 (opaque): false | true
   S1: div #gt; b #gt; "Info again"
   S2: div #gt; b #gt; "Info"
   S3: div #gt; i #gt; "Other again"
@@ -4136,6 +4278,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Toolbar keeps its TLA+ module 1`] = `
 "---- MODULE Toolbar ----
+EXTENDS Abstraction
 \\* role: role (input), 2 values
 \\* status_isSaving: status.isSaving (input), 2 values
 \\* status_error: status.error (input), 3 values
@@ -4143,6 +4286,10 @@ exports[`fixture analysis > Toolbar keeps its TLA+ module 1`] = `
 VARIABLES role, status_isSaving, status_error, isHelpOpen
 
 vars == <<role, status_isSaving, status_error, isHelpOpen>>
+
+Values == [
+  isHelpOpen |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "true" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p > p \\"Press E to edit\\""
           [] role = "admin" /\\ status_isSaving = "true" /\\ status_error = "other string" /\\ isHelpOpen = "false" -> "div > span \\"Admin\\" > button \\"Edit\\" > span \\"Saving\\" > p"
@@ -4166,11 +4313,11 @@ Init ==
   /\\ role \\in {"admin", "viewer"}
   /\\ status_isSaving \\in {"false", "true"}
   /\\ status_error \\in {"null", "empty", "other string"}
-  /\\ isHelpOpen = "false"
+  /\\ isHelpOpen \\in Labels(Values.isHelpOpen, Bool(FALSE))
 
 \\* "Help"
 t1 ==
-  /\\ isHelpOpen' \\in (IF isHelpOpen = "false" THEN {"true"} ELSE {"false"})
+  /\\ isHelpOpen' \\in Labels(Values.isHelpOpen, (IF isHelpOpen = "false" THEN Bool(TRUE) ELSE Bool(FALSE)))
   /\\ UNCHANGED <<role, status_isSaving, status_error>>
 
 \\* parent changes role
@@ -4297,6 +4444,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
 "---- MODULE UploadForm ----
+EXTENDS Abstraction
 \\* error: error (state), 3 values
 \\* pending_t1: t1 pending (control), 2 values
 \\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
@@ -4304,12 +4452,16 @@ VARIABLES error, pending_t1, opaque_Unknown_throws
 
 vars == <<error, pending_t1, opaque_Unknown_throws>>
 
+Values == [
+  error |-> "null" :> Null @@ "empty" :> Str("") @@ "other string" :> OtherString(Str(""))
+]
+
 view == CASE error = "other string" -> "div > p"
           [] error /= "other string" -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ error = "null"
+  /\\ error \\in Labels(Values.error, Null)
   /\\ pending_t1 = "idle"
   /\\ opaque_Unknown_throws \\in {"false", "true"}
 
@@ -4322,7 +4474,7 @@ t1 ==
 \\* "Upload" resolves
 t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN Labels(Values.error, Str("Failed")) ELSE {error})
   /\\ pending_t1' = "idle"
   /\\ UNCHANGED <<opaque_Unknown_throws>>
 
@@ -4364,17 +4516,22 @@ stateDiagram-v2
 
 exports[`fixture analysis > WarningFilter keeps its TLA+ module 1`] = `
 "---- MODULE WarningFilter ----
+EXTENDS Abstraction
 \\* isChecked: isChecked (state), 2 values
 VARIABLES isChecked
 
 vars == <<isChecked>>
+
+Values == [
+  isChecked |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE isChecked = "true" -> "div > p \\"Warnings only\\""
           [] isChecked = "false" -> "div > p \\"All events\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ isChecked = "false"
+  /\\ isChecked \\in Labels(Values.isChecked, Bool(FALSE))
 
 \\* (_event, checked) => setIsChecked(check…
 t1 ==
@@ -4405,11 +4562,17 @@ stateDiagram-v2
 
 exports[`fixture analysis > Wizard keeps its TLA+ module 1`] = `
 "---- MODULE Wizard ----
+EXTENDS Abstraction
 \\* state_step: state.step (state), 3 values
 \\* state_hasError: state.hasError (state), 2 values
 VARIABLES state_step, state_hasError
 
 vars == <<state_step, state_hasError>>
+
+Values == [
+  state_step |-> "details" :> Str("details") @@ "done" :> Str("done") @@ "payment" :> Str("payment"),
+  state_hasError |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE state_step = "done" -> "p \\"Thanks!\\""
           [] state_step = "details" /\\ state_hasError = "true" -> "form > p \\"Something went wrong\\" > input"
@@ -4419,20 +4582,20 @@ view == CASE state_step = "done" -> "p \\"Thanks!\\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\\ state_step = "details"
-  /\\ state_hasError = "false"
+  /\\ state_step \\in Labels(Values.state_step, Str("details"))
+  /\\ state_hasError \\in Labels(Values.state_hasError, Bool(FALSE))
 
 \\* "Back"
 t1 ==
   /\\ state_step = "payment"
-  /\\ state_step' = "details"
-  /\\ UNCHANGED <<state_hasError>>
+  /\\ state_step' \\in Labels(Values.state_step, Str("details"))
+  /\\ state_hasError' \\in Labels(Values.state_hasError, Values.state_hasError[state_hasError])
 
 \\* "Next"
 t2 ==
   /\\ state_step /= "done"
-  /\\ state_step' \\in (IF state_step = "details" THEN {"payment"} ELSE {"done"})
-  /\\ state_hasError' = "false"
+  /\\ state_step' \\in Labels(Values.state_step, (IF state_step = "details" THEN Str("payment") ELSE Str("done")))
+  /\\ state_hasError' \\in Labels(Values.state_hasError, Bool(FALSE))
 
 Next == t1 \\/ t2
 

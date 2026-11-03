@@ -37,7 +37,8 @@ Read `src/core` in this order. Each stage has its own folder, with its helpers n
 | `handlers/collect-handlers.ts`               | What each event handler and effect updates                                     |
 | `model/variables.ts`, `model/domains.ts`     | One variable per tested place, with its domain of abstract values              |
 | `model/views.ts`                             | The views a render can show and the predicate of each branch edge              |
-| `model/actions.ts`, `model/evaluate.ts`      | Each handler as a guarded action that writes variables                         |
+| `model/actions.ts`, `model/terms.ts`         | Each handler as a guarded action that writes variables                         |
+| `model/abstraction.ts`                       | The TLA+ modules that add and compare abstract values                          |
 | `model/state-graph.ts`                       | Checks the TLA+ module with tla-ts and reads back the state graph and traces   |
 | `model/build-model.ts`                       | Puts the model together and reports findings                                   |
 | `model/tla.ts`                               | The TLA+ module                                                                |
@@ -133,13 +134,15 @@ Each branch keeps two edges, its consequent and its alternate, each with the pre
 
 ### Actions
 
-Each handler becomes an action: a guard over the variables and a write to each variable it sets. A write lists the values the variable can take next, and depends only on the variables that change the next value. So `dispatch({ type: "next" })` in the wizard writes `IF state_step = "details" THEN {"payment"} ELSE {"done"}`.
+Each handler becomes an action: a guard over the variables and a write to each variable it sets. A write is a TLA+ expression over abstract values, and TLC evaluates it in each state. So `setCount(count + 1)` writes `count' \in Labels(Values.count, Plus(Values.count[count], Num(1)))`. `Values.count[count]` is the abstract value of the current label, `Plus` adds `1` to it, and `Labels` returns every label of `count` the sum can fall in. A write that reads no variable, like `setStatus("saving")`, is evaluated the same way, and so is the initial value of each `useState` and `useReducer` variable.
+
+Numbers are TLA+ integers, which TLC limits to 32 bits. An integer between -1,000,000,000 and 1,000,000,000 is exact. A decimal widens to the integers around it, and a larger number widens to `Infinity`, so a write with `0.5` or `1e16` can reach more labels than the code can.
 
 An async handler gets a `control` variable and three actions: the call, then `fulfilled` or `rejected`, with the updates after `await` in the matching action. Each `input` and `opaque` variable with more than one value also gets an action that changes it, since the parent or the outside world can.
 
 ### State space and findings
 
-tla-ts, a TypeScript port of TLC, checks the TLA+ module breadth first from every initial state and dumps the state graph, which realize reads back. Each state keeps the step that first reached it, so any reachable state comes with a shortest trace. A state constraint stops the search at 20,000 distinct states or 400,000 generated states, and the model is marked truncated. A model whose `Init` alone has 20,000 states is marked truncated without a check.
+tla-ts, a TypeScript port of TLC, checks the TLA+ module breadth first from every initial state and dumps the state graph, which realize reads back. Each state keeps the step that first reached it, so any reachable state comes with a shortest trace. A state constraint stops the search at 20,000 distinct states or 400,000 generated states, and the model is marked truncated. A model whose `Init` alone may have 20,000 states is marked truncated without a check, counting a state variable's whole domain when its initial value is an expression.
 
 A complete model reports three kinds of findings:
 
@@ -162,10 +165,13 @@ An assertion is checked only when it reads `useState` or `useReducer` values alo
 `--tla` prints each model as a TLA+ module:
 
 - one variable per model variable, whose values are the labels in its domain
+- `Values`, the abstract value of each label, for the variables that writes read or set
 - `view`, the label of the view the variables select
 - `Init`, the initial values
 - one operator per action, with `Next` as their disjunction, and `Spec`
 - one `AssertionN` operator per assertion
+
+A module with an expression write extends `Abstraction`, or `Arithmetic` when a write adds or negates numbers. `--tla` prints those modules first. `Abstraction` defines the abstract values, such as `Num(3)`, `Str("idle")` and `Range(-Infinity, 3, TRUE, FALSE)`, and `Labels`. `Arithmetic` defines `Plus`, `Minus` and `Negative` on them, with the rules of `+` and `-` on ranges, `NaN` and infinities.
 
 To check your own invariant, add it to the module and check the module with tla-ts or TLC. It can use the variable names, `view` and the assertion operators.
 
@@ -223,15 +229,21 @@ stateDiagram-v2
   %% ⚠ state.hasError is never true here (L26)
 ```
 
-The error alert can never show, because nothing dispatches `fail`. The TLA+ module for the same component:
+The error alert can never show, because nothing dispatches `fail`. The TLA+ module for the same component, which extends the `Abstraction` module that `--tla` prints first:
 
 ```tla
 ---- MODULE Wizard ----
+EXTENDS Abstraction
 \* state_step: state.step (state), 3 values
 \* state_hasError: state.hasError (state), 2 values
 VARIABLES state_step, state_hasError
 
 vars == <<state_step, state_hasError>>
+
+Values == [
+  state_step |-> "details" :> Str("details") @@ "done" :> Str("done") @@ "payment" :> Str("payment"),
+  state_hasError |-> "false" :> Bool(FALSE) @@ "true" :> Bool(TRUE)
+]
 
 view == CASE state_step = "done" -> "p \"Thanks!\""
           [] state_step = "details" /\ state_hasError = "true" -> "form > p \"Something went wrong\" > input"
@@ -241,20 +253,20 @@ view == CASE state_step = "done" -> "p \"Thanks!\""
           [] OTHER -> "nothing"
 
 Init ==
-  /\ state_step = "details"
-  /\ state_hasError = "false"
+  /\ state_step \in Labels(Values.state_step, Str("details"))
+  /\ state_hasError \in Labels(Values.state_hasError, Bool(FALSE))
 
 \* "Back"
 t1 ==
   /\ state_step = "payment"
-  /\ state_step' = "details"
-  /\ UNCHANGED <<state_hasError>>
+  /\ state_step' \in Labels(Values.state_step, Str("details"))
+  /\ state_hasError' \in Labels(Values.state_hasError, Values.state_hasError[state_hasError])
 
 \* "Next"
 t2 ==
   /\ state_step /= "done"
-  /\ state_step' \in (IF state_step = "details" THEN {"payment"} ELSE {"done"})
-  /\ state_hasError' = "false"
+  /\ state_step' \in Labels(Values.state_step, (IF state_step = "details" THEN Str("payment") ELSE Str("done")))
+  /\ state_hasError' \in Labels(Values.state_hasError, Bool(FALSE))
 
 Next == t1 \/ t2
 

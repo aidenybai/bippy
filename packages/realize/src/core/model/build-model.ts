@@ -7,7 +7,7 @@ import { foldBinary } from "../values/symbolic-values";
 import { COMPARISONS } from "./abstract";
 import { compileHandlerActions, compileInputActions } from "./actions";
 import { and, collectPredicateVariables, not, or } from "./predicates";
-import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
+import { compileInitialValue, forEachEvaluatedValue } from "./terms";
 import { checkStateGraph, type StateGraph } from "./state-graph";
 import { STATE_KINDS, createVariableTable, type VariableTable } from "./variables";
 import { collectViews } from "./views";
@@ -244,7 +244,7 @@ export const buildComponentModel = async (
   for (const variable of table.variables) {
     if (variable.source !== "state" || variable.bindingId === null) continue;
     const initial = bindingsById.get(variable.bindingId)?.initial;
-    if (initial) variable.initial = evaluateInitialValues(table, variable, initial);
+    if (initial) variable.initial = compileInitialValue(table, variable, initial);
   }
   const stateGraph = await checkStateGraph(analysis.name, {
     variables: table.variables,
