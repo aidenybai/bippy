@@ -1,5 +1,4 @@
 import type {
-  BlockId,
   HIRFunction,
   IdentifierId,
   Instruction,
@@ -9,12 +8,7 @@ import type {
   SourceLocation,
 } from "../../react-compiler/HIR/HIR";
 import { addsCallResult } from "./adds-call-result";
-import {
-  GeneratedSource,
-  InstructionKind,
-  SETTER_KEY_PREFIX,
-  getHookKind,
-} from "../../react-compiler/HIR/HIR";
+import { GeneratedSource, SETTER_KEY_PREFIX, getHookKind } from "../../react-compiler/HIR/HIR";
 import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
@@ -25,7 +19,6 @@ import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MemoStaleness } from "./memo-staleness";
 import { MutationTracker } from "./mutation-tracker";
-import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_PATH_STATE, getAsyncPathState } from "./path-state";
 import type { PathState } from "./path-state";
 import type {
@@ -124,17 +117,9 @@ import type { CapturedValue, ModuleFunctionLoader } from "../compile/function-re
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./get-identifier-name";
 import { getPlaceOrSpread } from "./get-place-or-spread";
-import {
-  getStoredContextPlaces,
-  getReassignedIds,
-  getWrittenContextPlaces,
-} from "./get-written-context-places";
 import { getHookTraits } from "./hook-traits";
-
-const LOOP_KINDS = new Set(["for", "for-of", "for-in", "while", "do-while"]);
-
-const hasLoop = (hirFunction: HIRFunction): boolean =>
-  [...hirFunction.body.blocks.values()].some((block) => LOOP_KINDS.has(block.terminal.kind));
+import { buildEnvironmentFacts, buildFunctionFacts } from "./function-facts";
+import type { EnvironmentFacts, FunctionFacts } from "./function-facts";
 
 const flattenArrayChildren = (children: SymbolicValue[]): SymbolicValue[] =>
   children.flatMap((child) =>
@@ -182,13 +167,10 @@ export interface CallSite {
 
 interface CompilationTables {
   values: Map<IdentifierId, SymbolicValue>;
-  propertyNames: Map<IdentifierId, string>;
-  propertyObjects: Map<IdentifierId, Place>;
-  branchOperators: Map<BlockId, BranchOperator>;
   aliasSources: Map<IdentifierId, Place>;
   elementSources: Map<IdentifierId, Place>;
   frozenSources: Map<IdentifierId, Place>;
-  itemSources: Map<IdentifierId, Place>;
+  facts: EnvironmentFacts;
 }
 
 type CallTarget =
@@ -343,13 +325,6 @@ const getContextCellKey = (place: Place): string => `context:${place.identifier.
 
 const MAX_CALL_NAME_LENGTH = 200;
 
-const CONSTANT_DECLARATION_KINDS = new Set([
-  InstructionKind.Const,
-  InstructionKind.HoistedConst,
-  InstructionKind.Function,
-  InstructionKind.HoistedFunction,
-]);
-
 const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
   object.kind === "Binding" &&
   object.binding.kind === "ref" &&
@@ -467,7 +442,6 @@ export class Interpreter {
   readonly #projectLoaders: ProjectLoaders;
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
-  readonly #constantContextIds = new Set<IdentifierId>();
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
   readonly #itemSources = new Map<number, PlaceMap<true>>();
@@ -504,6 +478,7 @@ export class Interpreter {
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
+  #currentFacts: FunctionFacts | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #thisValues = new Map<HIRFunction, SymbolicValue>();
   readonly #mountClosureIds = new Set<number>();
@@ -661,10 +636,9 @@ export class Interpreter {
     const capturedValues = isCreatingFrameActive
       ? []
       : this.functions.getCapturedValues(functionId);
-    const hirFunction = functionId === null ? undefined : this.functions.get(functionId);
     const writtenPlaces =
-      this.#handlerEffects && hirFunction && !isCreatingFrameActive
-        ? getStoredContextPlaces(hirFunction)
+      this.#handlerEffects && functionId !== null && !isCreatingFrameActive
+        ? this.functions.getFacts(functionId).capturedContextStores
         : [];
     const liveValues = [...capturedValues.map(([place]) => place), ...writtenPlaces].map(
       (place): CapturedValue => [place, this.read(place)],
@@ -709,13 +683,10 @@ export class Interpreter {
   getCompilationTables(hirFunction: HIRFunction = this.getCurrentFunction()): CompilationTables {
     const compilationTables = this.#tablesByEnvironment.get(hirFunction.env) ?? {
       values: new Map(),
-      propertyNames: new Map(),
-      propertyObjects: new Map(),
-      branchOperators: new Map(),
       aliasSources: new Map(),
       elementSources: new Map(),
       frozenSources: new Map(),
-      itemSources: new Map(),
+      facts: buildEnvironmentFacts(hirFunction),
     };
     this.#tablesByEnvironment.set(hirFunction.env, compilationTables);
     return compilationTables;
@@ -1109,7 +1080,7 @@ export class Interpreter {
   ): SymbolicValue {
     const updaterValue = setterArgument && this.resolveModuleFunction(setterArgument);
     if (updaterValue?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
-    const reassignedIds = getReassignedIds(this.getCurrentFunction());
+    const reassignedIds = this.currentFacts.reassignedIds;
     const updater = this.functions.get(updaterValue.functionId);
     return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
       ? createUnknown("deferred-updater", loc)
@@ -1433,12 +1404,15 @@ export class Interpreter {
     const helper = callSite.argumentValues.some(isCallableValue)
       ? null
       : this.#loadUnmutatingHelper(callSite);
-    const returned = helper && this.#inlineFunction(helper.hirFunction, callSite, pathState);
+    const helperClosure = helper && this.functions.register(helper.hirFunction, this.#resolver);
+    const returned =
+      helperClosure &&
+      this.callFunction(helperClosure, callSite.argumentValues, callSite.loc, pathState);
     const initial = returned && !hasUnknownPart(returned) ? returned : null;
     if (
-      helper &&
+      helperClosure &&
       initial &&
-      !hasLoop(helper.hirFunction) &&
+      !this.functions.getFacts(helperClosure.functionId).hasLoop &&
       !addsCallResult(initial, callSite.argumentValues)
     )
       return initial;
@@ -1591,7 +1565,7 @@ export class Interpreter {
       const hirFunction = this.functions.get(callback.functionId);
       if (!hirFunction) continue;
       const { values } = this.getCompilationTables(hirFunction);
-      for (const place of getStoredContextPlaces(hirFunction))
+      for (const place of this.functions.getFacts(callback.functionId).capturedContextStores)
         values.set(place.identifier.id, createUnknown("handler-write", callback.loc));
     }
   }
@@ -1599,8 +1573,7 @@ export class Interpreter {
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
     for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
-      const hirFunction = this.functions.get(callback.functionId);
-      for (const place of hirFunction ? getWrittenContextPlaces(hirFunction) : [])
+      for (const place of this.functions.getFacts(callback.functionId).capturedContextWrites)
         this.write(place, createUnknown("callback-write", loc));
     }
   }
@@ -2367,7 +2340,6 @@ export class Interpreter {
   }
 
   evaluateInstruction(instruction: Instruction, pathState: PathState): void {
-    this.#recordLoadedProperty(instruction);
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, pathState);
     const instructionResult = this.#evaluateInstructionValue(instruction, pathState);
@@ -2609,7 +2581,8 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue {
     const loaded = this.read(load.place);
-    const isConstant = this.#constantContextIds.has(load.place.identifier.id);
+    const isConstant =
+      this.getCompilationTables().facts.constantContextIds[load.place.identifier.id] ?? false;
     return this.#handlerEffects && !isConstant
       ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, pathState)
       : loaded;
@@ -2658,8 +2631,6 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue {
     const storedValue = this.read(store.value);
-    if (store.kind === "StoreContext" && CONSTANT_DECLARATION_KINDS.has(store.lvalue.kind))
-      this.#constantContextIds.add(store.lvalue.place.identifier.id);
     const [initialRef] = storedValue.kind === "HookResult" ? storedValue.argumentValues : [];
     const isConstantRef =
       storedValue.kind === "HookResult" &&
@@ -2837,34 +2808,16 @@ export class Interpreter {
   }
 
   getPropertyName(place: Place): string | null {
-    return this.getCompilationTables().propertyNames.get(place.identifier.id) ?? null;
+    return this.getCompilationTables().facts.propertyNames[place.identifier.id] ?? null;
   }
 
   getPropertyObject(place: Place): Place | undefined {
-    return this.getCompilationTables().propertyObjects.get(place.identifier.id);
+    return this.getCompilationTables().facts.propertyObjects[place.identifier.id];
   }
 
-  #recordLoadedProperty(instruction: Instruction): void {
-    const tables = this.getCompilationTables();
-    if (instruction.value.kind === "PropertyLoad") {
-      tables.propertyNames.set(
-        instruction.lvalue.identifier.id,
-        String(instruction.value.property),
-      );
-      tables.propertyObjects.set(instruction.lvalue.identifier.id, instruction.value.object);
-      return;
-    }
-    const [from, to] =
-      instruction.value.kind === "StoreLocal"
-        ? [instruction.value.value, instruction.value.lvalue.place]
-        : instruction.value.kind === "LoadLocal"
-          ? [instruction.value.place, instruction.lvalue]
-          : [null, null];
-    if (!from || !to) return;
-    const name = tables.propertyNames.get(from.identifier.id);
-    const object = tables.propertyObjects.get(from.identifier.id);
-    if (name !== undefined) tables.propertyNames.set(to.identifier.id, name);
-    if (object) tables.propertyObjects.set(to.identifier.id, object);
+  get currentFacts(): FunctionFacts {
+    if (!this.#currentFacts) throw new Error("No function is being evaluated");
+    return this.#currentFacts;
   }
 
   #readJsxProps(element: InstructionValueOfKind<"JsxExpression">): Array<JsxProp | JsxSpreadProp> {
@@ -3000,10 +2953,13 @@ export class Interpreter {
     thisValue?: SymbolicValue,
   ): SymbolicValue {
     const previousFunction = this.#currentFunction;
+    const previousFacts = this.#currentFacts;
     const previousResolver = this.#resolver;
     const previousFunctionScope = this.walker.functionScope;
     this.walker.functionScope = createFunctionScope();
     this.#currentFunction = hirFunction;
+    this.#currentFacts =
+      functionId === null ? buildFunctionFacts(hirFunction) : this.functions.getFacts(functionId);
     if (thisValue) this.#thisValues.set(hirFunction, thisValue);
     this.#resolver = this.functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
@@ -3051,6 +3007,7 @@ export class Interpreter {
       restoreLiveValues();
       if (thisValue) this.#thisValues.delete(hirFunction);
       this.#currentFunction = previousFunction;
+      this.#currentFacts = previousFacts;
       this.#resolver = previousResolver;
       this.walker.functionScope = previousFunctionScope;
     }

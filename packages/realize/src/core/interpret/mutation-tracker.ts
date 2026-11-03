@@ -304,7 +304,7 @@ export class MutationTracker {
   }
 
   recordAliasSources(instruction: Instruction): void {
-    const { aliasSources, elementSources, frozenSources, itemSources, propertyNames } =
+    const { aliasSources, elementSources, frozenSources, facts } =
       this.#interpreter.getCompilationTables();
     const getElementSource = (place: Place): Place =>
       elementSources.get(place.identifier.id) ?? place;
@@ -325,16 +325,14 @@ export class MutationTracker {
       const [item] = value.elements;
       if (value.elements.length === 1 && item?.kind === "Spread")
         elementSources.set(resultId, getElementSource(item.place));
-      if (value.elements.length === 1 && item?.kind === "Identifier")
-        itemSources.set(resultId, item);
       return;
     }
     if (value.kind !== "MethodCall") return;
-    const methodName = propertyNames.get(value.property.identifier.id) ?? "";
+    const methodName = facts.propertyNames[value.property.identifier.id] ?? "";
     if (ELEMENT_METHODS.has(methodName))
       aliasSources.set(resultId, getElementSource(value.receiver));
     const flattenedItem =
-      methodName === "flat" ? itemSources.get(value.receiver.identifier.id) : null;
+      methodName === "flat" ? facts.itemSources[value.receiver.identifier.id] : null;
     if (COPYING_METHODS.has(methodName))
       elementSources.set(resultId, getElementSource(flattenedItem ?? value.receiver));
     const receiver = this.#interpreter.read(value.receiver);
@@ -439,12 +437,12 @@ export class MutationTracker {
     const value = instruction.value;
     const methodName =
       value.kind === "MethodCall" && value.receiver.identifier.id === mutatedPlace.identifier.id
-        ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
-        : undefined;
+        ? this.#interpreter.getPropertyName(value.property)
+        : null;
     if (literal.kind === "Collection")
       return writeGuards &&
         value.kind === "MethodCall" &&
-        methodName !== undefined &&
+        methodName !== null &&
         isCollectionWrite(methodName)
         ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
         : createUnknown("mutation", instruction.loc);
