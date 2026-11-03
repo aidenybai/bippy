@@ -429,7 +429,7 @@ export class Interpreter {
   readonly #loadModuleVariable: ModuleVariableLoader;
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
-  readonly #itemSources = new Map<number, PlaceMap<true>>();
+  readonly #itemSources: PlaceMap<true>[] = [];
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -452,11 +452,11 @@ export class Interpreter {
     this.warn(kind, message, loc),
   );
   readonly renderedComponents = new Set<string>();
-  readonly #renderMutatedIds = new Set<number>();
+  readonly #isRenderMutated: boolean[] = [];
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
-  readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
-  readonly #sourcesByBinding = new Map<number, SymbolicValue[]>();
+  readonly #wrappedCallbacksByBinding: SymbolicValue[][] = [];
+  readonly #sourcesByBinding: SymbolicValue[][] = [];
   readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #unknownSourceKeys = new WeakMap<SymbolicValue, Set<string>>();
   #wholePropsSample: Sample | null = null;
@@ -470,7 +470,7 @@ export class Interpreter {
   readonly #storedFunctions = new PlaceMap<SymbolicValue[]>();
   #storedFunctionCount = 0;
   readonly #frameClosureIds: number[][] = [];
-  readonly #bindingScopes: string[] = [];
+  #bindingScope = "";
 
   constructor(
     resolver: SourceFileResolver,
@@ -508,7 +508,7 @@ export class Interpreter {
   }
 
   markRenderMutation(binding: Binding): void {
-    this.#renderMutatedIds.add(binding.id);
+    this.#isRenderMutated[binding.id] = true;
   }
 
   finishRenderPhaseEffects(): CollectedEffects {
@@ -649,17 +649,18 @@ export class Interpreter {
     options: InterpreterBindingOptions = {},
   ): Binding {
     return this.bindingTable.createBinding(options.resolver ?? this.#resolver, name, kind, loc, {
-      scope: this.#bindingScopes.join(">"),
+      scope: this.#bindingScope,
       ...options,
     });
   }
 
   withBindingScope<Result>(scope: string, run: () => Result): Result {
-    this.#bindingScopes.push(scope);
+    const outerScope = this.#bindingScope;
+    this.#bindingScope = outerScope === "" ? scope : `${outerScope}>${scope}`;
     try {
       return run();
     } finally {
-      this.#bindingScopes.pop();
+      this.#bindingScope = outerScope;
     }
   }
 
@@ -720,7 +721,7 @@ export class Interpreter {
   ): SymbolicValue {
     switch (object.kind) {
       case "Binding":
-        return this.#renderMutatedIds.has(object.binding.id) && !this.#handlerEffects
+        return this.#isRenderMutated[object.binding.id] && !this.#handlerEffects
           ? createUnknown("mutated", loc)
           : this.readField(object.binding, [...object.path, property], loc);
       case "Props":
@@ -846,13 +847,13 @@ export class Interpreter {
   }
 
   getItemSources(item: Binding): PlaceMap<true> | undefined {
-    return this.#itemSources.get(item.id);
+    return this.#itemSources[item.id];
   }
 
   addItemSource(item: Binding, array: SymbolicValue): void {
-    const sources = this.#itemSources.get(item.id) ?? new PlaceMap<true>();
+    const sources = this.#itemSources[item.id] ?? new PlaceMap<true>();
     this.collectInputPlaces(array, sources);
-    this.#itemSources.set(item.id, sources);
+    this.#itemSources[item.id] = sources;
   }
 
   addMountClosure(closure: FunctionValue): void {
@@ -1401,7 +1402,7 @@ export class Interpreter {
     const wrapped = isExternalWrapper ? [callee, ...callbacks] : callbacks;
     if (callbacks.length > 0) this.#wrappedCallbacks.set(result, wrapped);
     if (callbacks.length > 0 && result.kind === "Binding")
-      this.#wrappedCallbacksByBinding.set(result.binding.id, wrapped);
+      this.#wrappedCallbacksByBinding[result.binding.id] = wrapped;
     return result;
   }
 
@@ -1426,15 +1427,15 @@ export class Interpreter {
   carryWrappedCallbacks(binding: Binding, value: SymbolicValue): void {
     const callbacks = this.#wrappedCallbacks.get(value);
     if (!callbacks) return;
-    this.#wrappedCallbacksByBinding.set(
-      binding.id,
-      dedupeByValueKey([...(this.#wrappedCallbacksByBinding.get(binding.id) ?? []), ...callbacks]),
-    );
+    this.#wrappedCallbacksByBinding[binding.id] = dedupeByValueKey([
+      ...(this.#wrappedCallbacksByBinding[binding.id] ?? []),
+      ...callbacks,
+    ]);
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
     const byBinding =
-      value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
+      value.kind === "Binding" ? this.#wrappedCallbacksByBinding[value.binding.id] : undefined;
     return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
   }
 
@@ -1454,7 +1455,7 @@ export class Interpreter {
       const member = callee.path.at(-1);
       const isElement = member === undefined || !isBuiltinMember(member);
       return isElement
-        ? this.getSourceFunctions(this.#sourcesByBinding.get(callee.binding.id) ?? [])
+        ? this.getSourceFunctions(this.#sourcesByBinding[callee.binding.id] ?? [])
         : [];
     }
     if (callee.kind !== "Unknown") return [];
@@ -1499,11 +1500,11 @@ export class Interpreter {
         case "Binding": {
           if (seen.has(value.binding.id)) return [];
           seen.add(value.binding.id);
-          const sources = this.#sourcesByBinding.get(value.binding.id) ?? [];
+          const sources = this.#sourcesByBinding[value.binding.id] ?? [];
           const initial = value.binding.initial ? [value.binding.initial] : [];
           const passed =
             value.binding.kind === "call"
-              ? (this.#wrappedCallbacksByBinding.get(value.binding.id) ?? [])
+              ? (this.#wrappedCallbacksByBinding[value.binding.id] ?? [])
               : [];
           return this.getSourceFunctions(
             [...sources, ...initial, ...passed, ...this.getStoredFunctions(value)],
@@ -1682,7 +1683,7 @@ export class Interpreter {
     const binding = this.createBinding(sourceText, "call", loc, {
       inputPlaces: inputPlaces.places(),
     });
-    this.#sourcesByBinding.set(binding.id, sourceValues);
+    this.#sourcesByBinding[binding.id] = sourceValues;
     return createBindingValue(binding);
   }
 
@@ -1766,10 +1767,9 @@ export class Interpreter {
         ...(domain && { domain }),
       },
     );
-    this.#sourcesByBinding.set(
-      binding.id,
-      callSite.receiver ? [callSite.callee, callSite.receiver] : [callSite.callee],
-    );
+    this.#sourcesByBinding[binding.id] = callSite.receiver
+      ? [callSite.callee, callSite.receiver]
+      : [callSite.callee];
     return createBindingValue(binding);
   }
 

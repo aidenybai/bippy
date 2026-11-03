@@ -173,9 +173,6 @@ export class MemoStaleness {
   #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
     const readPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(memoized, readPlaces);
-    const bindingsById = new Map(
-      this.#interpreter.bindingTable.bindings.map((binding) => [binding.id, binding]),
-    );
     const capturedPlaces = new PlaceMap<true>();
     forEachSymbolicValue(memoized, (part) => {
       if (part.kind !== "Function") return;
@@ -190,7 +187,7 @@ export class MemoStaleness {
         nullishTestPlaces.has(place) &&
         dependencyPlaces.places().some((dependency) => isPlacePrefix(place, dependency));
       if (isOptionalChainBase) return true;
-      const binding = bindingsById.get(place.bindingId);
+      const binding = this.#interpreter.bindingTable.bindings[place.bindingId];
       if (!binding || binding.kind === "ref" || visited.has(binding.id))
         return binding?.kind === "ref";
       visited.add(binding.id);
