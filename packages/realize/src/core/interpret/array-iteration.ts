@@ -10,6 +10,7 @@ import {
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "../types";
 import { getIdentifierName } from "./get-identifier-name";
 import { negate } from "../values/negate";
+import { getConditionalLeaves } from "../values/conditional";
 import { PlaceMap } from "../values/place-map";
 import { getPlaceOrSpread } from "./get-place-or-spread";
 import type { PathState } from "./path-state";
@@ -45,17 +46,11 @@ const FALSE_VALUE: SymbolicValue = { kind: "Primitive", value: false };
 
 const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
 
-const getLoopElements = (collection: SymbolicValue): SymbolicValue[] => {
-  if (collection.kind === "Conditional")
-    return [...getLoopElements(collection.consequent), ...getLoopElements(collection.alternate)];
-  const literal =
-    collection.kind === "Binding" && collection.path.length === 0
-      ? collection.binding.initial
-      : collection;
-  return literal?.kind === "ArrayExpression"
-    ? [...literal.elements, ...literal.spreads]
-    : [collection];
-};
+const getLoopElements = (collection: SymbolicValue): SymbolicValue[] =>
+  getConditionalLeaves(collection).flatMap((leaf) => {
+    const literal = leaf.kind === "Binding" && leaf.path.length === 0 ? leaf.binding.initial : leaf;
+    return literal?.kind === "ArrayExpression" ? [...literal.elements, ...literal.spreads] : [leaf];
+  });
 
 const getDeclaredNameLoc = (
   sourceText: string | null,

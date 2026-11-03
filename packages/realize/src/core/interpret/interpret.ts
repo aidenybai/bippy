@@ -76,9 +76,9 @@ import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
 import { isNullish } from "../values/is-nullish";
 import { isPlacePrefix } from "../values/is-place-prefix";
-import { getTestExpression } from "../values/get-test-expression";
 import { coerceBooleanCall } from "./coerce-boolean-call";
 import { negate } from "../values/negate";
+import { forkConditional, getConditionalLeaves, mapConditionalLeaves } from "../values/conditional";
 import {
   EMPTY_STRING_VALUE,
   ONE_VALUE,
@@ -243,11 +243,6 @@ const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
 const isBuiltinMember = (property: string): boolean =>
   property in Array.prototype || property in Object.prototype;
 
-const hasLiteralArrayLeaf = (value: SymbolicValue): boolean =>
-  value.kind === "Conditional"
-    ? hasLiteralArrayLeaf(value.consequent) || hasLiteralArrayLeaf(value.alternate)
-    : value.kind === "ArrayExpression";
-
 const getInvokedArguments = (
   methodName: string,
   argumentValues: SymbolicValue[],
@@ -356,12 +351,6 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
   };
 };
 
-const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
-  if (value.kind === "Conditional")
-    return [...getReturnedFunctions(value.consequent), ...getReturnedFunctions(value.alternate)];
-  return value.kind === "Function" ? [value] : [];
-};
-
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
 const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
@@ -371,14 +360,8 @@ const nameUnknownArgument = (argument: SymbolicValue, name: string | null): Symb
     ? { ...argument, origin: { kind: "Name", name } }
     : argument;
 
-const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null => {
-  if (object.kind === "Conditional")
-    return (
-      getSetterAccessor(object.consequent, property) ??
-      getSetterAccessor(object.alternate, property)
-    );
-  const literal =
-    object.kind === "Binding" && object.path.length === 0 ? object.binding.initial : object;
+const getLeafSetter = (leaf: SymbolicValue, property: string): FunctionValue | null => {
+  const literal = leaf.kind === "Binding" && leaf.path.length === 0 ? leaf.binding.initial : leaf;
   const setter =
     literal?.kind === "ObjectExpression"
       ? literal.properties.find((candidate) => candidate.key === `${SETTER_KEY_PREFIX}${property}`)
@@ -386,6 +369,11 @@ const getSetterAccessor = (object: SymbolicValue, property: string): FunctionVal
       : undefined;
   return setter?.kind === "Function" ? setter : null;
 };
+
+const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null =>
+  getConditionalLeaves(object)
+    .map((leaf) => getLeafSetter(leaf, property))
+    .find((setter) => setter !== null) ?? null;
 
 const getStoredLabel = (value: BindingValue): string =>
   `${formatPlace(value.binding, value.path)}@${value.binding.id}`;
@@ -562,7 +550,9 @@ export class Interpreter {
               this.#runCallback(handlerCallback, argumentValues, new Set(), pathState),
             )
           : null;
-        const cleanups = returned ? getReturnedFunctions(returned) : [];
+        const cleanups = returned
+          ? getConditionalLeaves(returned).filter((leaf) => leaf.kind === "Function")
+          : [];
         const updateCountBeforeCleanup = handlerEffects.updateCount;
         const cleanupPathState =
           returned?.kind === "Function"
@@ -877,22 +867,19 @@ export class Interpreter {
   }
 
   addStoredFunctions(place: BindingValue, value: SymbolicValue, isMountClosure = true): void {
-    if (value.kind === "Conditional") {
-      this.addStoredFunctions(place, value.consequent, isMountClosure);
-      this.addStoredFunctions(place, value.alternate, isMountClosure);
-      return;
+    for (const leaf of getConditionalLeaves(value)) {
+      if (leaf.kind !== "ObjectExpression") {
+        this.#addStoredValues(place, leaf, isMountClosure);
+        continue;
+      }
+      for (const property of leaf.properties)
+        this.addStoredFunctions(
+          { ...place, path: [...place.path, property.key] },
+          property.value,
+          isMountClosure,
+        );
+      for (const spread of leaf.spreads) this.#addStoredValues(place, spread, isMountClosure);
     }
-    if (value.kind !== "ObjectExpression") {
-      this.#addStoredValues(place, value, isMountClosure);
-      return;
-    }
-    for (const property of value.properties)
-      this.addStoredFunctions(
-        { ...place, path: [...place.path, property.key] },
-        property.value,
-        isMountClosure,
-      );
-    for (const spread of value.spreads) this.#addStoredValues(place, spread, isMountClosure);
   }
 
   #addStoredValues(place: BindingValue, value: SymbolicValue, isMountClosure: boolean): void {
@@ -1292,18 +1279,13 @@ export class Interpreter {
           callSite.thisValue ?? callSite.receiver,
         );
       case "Conditional": {
-        const test = getTestExpression(callee);
-        return {
-          ...callee,
-          consequent: this.#evaluateCall(
-            { ...callSite, callee: callee.consequent },
-            { ...pathState, guards: [...pathState.guards, test] },
-          ),
-          alternate: this.#evaluateCall(
-            { ...callSite, callee: callee.alternate },
-            { ...pathState, guards: [...pathState.guards, negate(test)] },
-          ),
-        };
+        const [consequent, alternate] = forkConditional(
+          callee,
+          pathState.guards,
+          (branch, guards) =>
+            this.#evaluateCall({ ...callSite, callee: branch }, { ...pathState, guards }),
+        );
+        return { ...callee, consequent, alternate };
       }
       case "Setter":
         this.#applySetter(callee, firstArgument, pathState);
@@ -2064,7 +2046,7 @@ export class Interpreter {
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
       ITERATION_METHODS.has(methodName) &&
-      hasLiteralArrayLeaf(receiver) &&
+      getConditionalLeaves(receiver).some((leaf) => leaf.kind === "ArrayExpression") &&
       callback?.kind === "Function";
     const found = this.iteration.evaluateArrayFind(
       methodName,
@@ -2195,16 +2177,13 @@ export class Interpreter {
     atIndex: SymbolicValue,
     loc: SourceLocation,
   ): SymbolicValue | null {
-    if (receiver.kind === "Conditional") {
-      const readBranchValue = (branchValue: SymbolicValue) =>
-        this.#readAt(branchValue, atIndex, loc) ??
-        this.createDerivedValue([branchValue, atIndex], "computed-member", loc);
-      return {
-        ...receiver,
-        consequent: readBranchValue(receiver.consequent),
-        alternate: readBranchValue(receiver.alternate),
-      };
-    }
+    if (receiver.kind === "Conditional")
+      return mapConditionalLeaves(
+        receiver,
+        (leaf) =>
+          this.#readAt(leaf, atIndex, loc) ??
+          this.createDerivedValue([leaf, atIndex], "computed-member", loc),
+      );
     const isBinding = receiver.kind === "Binding";
     const array =
       receiver.kind === "Binding" && receiver.path.length <= 1
@@ -2263,18 +2242,10 @@ export class Interpreter {
         })
       );
     }
-    const test = getTestExpression(receiver);
-    return {
-      ...receiver,
-      consequent: this.#iterateLiteralBranches(methodName, receiver.consequent, callback, loc, {
-        ...pathState,
-        guards: [...pathState.guards, test],
-      }),
-      alternate: this.#iterateLiteralBranches(methodName, receiver.alternate, callback, loc, {
-        ...pathState,
-        guards: [...pathState.guards, negate(test)],
-      }),
-    };
+    const [consequent, alternate] = forkConditional(receiver, pathState.guards, (branch, guards) =>
+      this.#iterateLiteralBranches(methodName, branch, callback, loc, { ...pathState, guards }),
+    );
+    return { ...receiver, consequent, alternate };
   }
 
   #evaluateDerivedMethod(
@@ -2663,11 +2634,9 @@ export class Interpreter {
     computedLoad: InstructionValueOfKind<"ComputedLoad">,
   ): SymbolicValue {
     if (object.kind === "Conditional" && propertyKey.kind !== "Primitive")
-      return {
-        ...object,
-        consequent: this.#loadComputedMember(object.consequent, propertyKey, computedLoad),
-        alternate: this.#loadComputedMember(object.alternate, propertyKey, computedLoad),
-      };
+      return mapConditionalLeaves(object, (leaf) =>
+        this.#loadComputedMember(leaf, propertyKey, computedLoad),
+      );
     const bindingLiteral =
       object.kind === "Binding" && object.path.length <= 1
         ? getLiteralPathValue(object.binding.initial, object.path)
@@ -3029,22 +2998,14 @@ export class Interpreter {
     thisValue?: SymbolicValue,
   ): SymbolicValue | null {
     if (callback.kind === "Conditional") {
-      const test = getTestExpression(callback);
-      const consequentPathState = { ...pathState, guards: [...pathState.guards, test] };
-      const alternatePathState = { ...pathState, guards: [...pathState.guards, negate(test)] };
-      this.#runCallback(
-        callback.consequent,
-        argumentValues,
-        new Set(visitedFunctionIds),
-        consequentPathState,
-        thisValue,
-      );
-      this.#runCallback(
-        callback.alternate,
-        argumentValues,
-        new Set(visitedFunctionIds),
-        alternatePathState,
-        thisValue,
+      forkConditional(callback, pathState.guards, (branch, guards) =>
+        this.#runCallback(
+          branch,
+          argumentValues,
+          new Set(visitedFunctionIds),
+          { ...pathState, guards },
+          thisValue,
+        ),
       );
       return null;
     }

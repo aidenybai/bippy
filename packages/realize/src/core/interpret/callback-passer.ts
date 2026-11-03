@@ -4,7 +4,7 @@ import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks, isMemoCache } from "../values/symbolic-values";
 import type { FunctionValue, SymbolicValue, UnknownOrigin } from "../types";
-import { getTestExpression } from "../values/get-test-expression";
+import { forkConditional } from "../values/conditional";
 import { negate } from "../values/negate";
 import { getAsyncPathState } from "./path-state";
 import type { PathState } from "./path-state";
@@ -60,15 +60,9 @@ export class CallbackPasser {
   ): void {
     if (!this.#interpreter.handlerEffects) return;
     if (argument.kind === "Conditional") {
-      const test = getTestExpression(argument);
-      this.#visitArgument(argument.consequent, {
-        ...pathState,
-        guards: [...pathState.guards, test],
-      });
-      this.#visitArgument(argument.alternate, {
-        ...pathState,
-        guards: [...pathState.guards, negate(test)],
-      });
+      forkConditional(argument, pathState.guards, (branch, guards) =>
+        this.#visitArgument(branch, { ...pathState, guards }),
+      );
       return;
     }
     if (argument.kind === "ObjectExpression")

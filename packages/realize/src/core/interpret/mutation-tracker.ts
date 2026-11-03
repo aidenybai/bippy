@@ -4,6 +4,7 @@ import type { AliasingEffect } from "../../react-compiler/Inference/AliasingEffe
 import { formatPlace } from "../values/format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "../values/symbolic-values";
+import { getConditionalLeaves } from "../values/conditional";
 import type {
   AbstractValue,
   ArrayExpressionValue,
@@ -83,12 +84,6 @@ const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): bo
   const writesCurrent =
     ownedValue.path[0] === REF_CURRENT || storedProperty === REF_CURRENT || passesWholeRef;
   return writesCurrent && isRefDomain(ownedValue.binding.domain);
-};
-
-const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
-  if (value.kind === "Conditional")
-    return [...getOwnedValues(value.consequent), ...getOwnedValues(value.alternate)];
-  return isOwnedValue(value) ? [value] : [];
 };
 
 const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null => {
@@ -215,14 +210,11 @@ export class MutationTracker {
   }
 
   #freeze(value: SymbolicValue): void {
-    if (value.kind === "Conditional") {
-      this.#freeze(value.consequent);
-      this.#freeze(value.alternate);
-      return;
+    for (const leaf of getConditionalLeaves(value)) {
+      if (!isMutableLiteral(leaf) || this.#frozenValues.has(leaf)) continue;
+      this.#frozenValues.add(leaf);
+      for (const nestedValue of getNestedValues(leaf)) this.#freeze(nestedValue);
     }
-    if (!isMutableLiteral(value) || this.#frozenValues.has(value)) return;
-    this.#frozenValues.add(value);
-    for (const nestedValue of getNestedValues(value)) this.#freeze(nestedValue);
   }
 
   #replaceMutatedValue(mutatedValue: SymbolicValue, replacement: SymbolicValue): void {
@@ -263,7 +255,7 @@ export class MutationTracker {
     guards: SymbolicValue[],
     isFrozen = false,
   ): void {
-    const ownedValues = getOwnedValues(value);
+    const ownedValues = getConditionalLeaves(value).filter(isOwnedValue);
     const aliasedValue =
       ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place, isFrozen);
     for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
