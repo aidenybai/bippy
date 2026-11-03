@@ -1,10 +1,11 @@
 import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
-import { HarnessError, getCaptureFailure, isNothingRendered } from "./reasons";
+import { HarnessError, isNothingRendered } from "./reasons";
 import type { MountFailure } from "./reasons";
 import type {
   Action,
   Capture,
+  CaptureError,
   ComponentModule,
   MountRequest,
   ProjectIndex,
@@ -80,12 +81,6 @@ const getInsertIndex = (error: string, componentName: string, layers: Layer[]): 
   return isComponent || layers.length === 0 ? layers.length : 0;
 };
 
-interface FailedMount {
-  error: string;
-  errorDepth: number | null;
-  failure: MountFailure;
-}
-
 type LayerRevision = "retry" | "give-up" | "unchanged";
 
 class WrapperSearch {
@@ -109,12 +104,11 @@ class WrapperSearch {
     return this.#layers.length;
   }
 
-  async reviseNewestLayer(failedMount: FailedMount): Promise<LayerRevision> {
+  async reviseNewestLayer(failedMount: CaptureError): Promise<LayerRevision> {
     const newestLayer = this.#newestLayer;
     if (!newestLayer) return "unchanged";
-    const throwingLayer =
-      failedMount.errorDepth === null ? undefined : this.#layers[failedMount.errorDepth];
-    const isSameError = failedMount.error === newestLayer.error;
+    const throwingLayer = failedMount.depth === null ? undefined : this.#layers[failedMount.depth];
+    const isSameError = failedMount.message === newestLayer.error;
     if (
       isSameError &&
       throwingLayer === newestLayer &&
@@ -136,17 +130,17 @@ class WrapperSearch {
     return this.#advanceNewestLayer(newestLayer, failedMount, isSameError);
   }
 
-  #namesMissingParent(failedMount: FailedMount): boolean {
+  #namesMissingParent(failedMount: CaptureError): boolean {
     if (failedMount.failure !== "provider") return false;
-    const named = resolveNamedParent(failedMount.error, this.#project);
+    const named = resolveNamedParent(failedMount.message, this.#project);
     return named !== null && !this.wrappers.some((wrapper) => wrapper.name === named);
   }
 
-  async #addNamedParent(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
+  async #addNamedParent(newestLayer: Layer, failedMount: CaptureError): Promise<boolean> {
     const newestWrapper = getLayerWrapper(newestLayer);
     if (
       newestWrapper?.candidate.kind !== "project" ||
-      newestWrapper.name !== resolveNamedParent(failedMount.error, this.#project)
+      newestWrapper.name !== resolveNamedParent(failedMount.message, this.#project)
     )
       return false;
     return this.#tryAddLayer(
@@ -157,31 +151,31 @@ class WrapperSearch {
           failedMount,
         ),
       ),
-      failedMount.error,
+      failedMount.message,
       this.#layers.indexOf(newestLayer),
     );
   }
 
-  async #addRootParts(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
+  async #addRootParts(newestLayer: Layer, failedMount: CaptureError): Promise<boolean> {
     const root = getLayerWrapper(newestLayer);
     if (root?.source !== "root") return false;
     return this.#tryAddLayer(
       findRootParts(root, this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount)),
-      failedMount.error,
+      failedMount.message,
       this.#layers.indexOf(newestLayer) + 1,
     );
   }
 
   async #advanceNewestLayer(
     newestLayer: Layer,
-    failedMount: FailedMount,
+    failedMount: CaptureError,
     isSameError: boolean,
   ): Promise<LayerRevision> {
     const newestIndex = this.#layers.indexOf(newestLayer);
     const isBrokenByNewest =
       failedMount.failure === "other" &&
-      failedMount.errorDepth !== null &&
-      failedMount.errorDepth <= newestIndex;
+      failedMount.depth !== null &&
+      failedMount.depth <= newestIndex;
     if (!isSameError && failedMount.failure !== "did-not-render" && !isBrokenByNewest)
       return "unchanged";
     newestLayer.cursor++;
@@ -190,19 +184,18 @@ class WrapperSearch {
     return "give-up";
   }
 
-  async addParentLayer(failedMount: FailedMount): Promise<boolean> {
+  async addParentLayer(failedMount: CaptureError): Promise<boolean> {
     const parentQuery = this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount);
     const insertIndex =
-      failedMount.errorDepth ??
-      getInsertIndex(failedMount.error, this.#analysis.name, this.#layers);
-    return this.#tryAddLayer(proposeParents(parentQuery), failedMount.error, insertIndex);
+      failedMount.depth ?? getInsertIndex(failedMount.message, this.#analysis.name, this.#layers);
+    return this.#tryAddLayer(proposeParents(parentQuery), failedMount.message, insertIndex);
   }
 
-  #getQuery(name: string, file: string, failedMount: FailedMount): ParentQuery {
+  #getQuery(name: string, file: string, failedMount: CaptureError): ParentQuery {
     return {
       name,
       file,
-      error: failedMount.error,
+      error: failedMount.message,
       isNamingParent: failedMount.failure === "provider",
       analysis: this.#analysis,
       project: this.#project,
@@ -248,11 +241,7 @@ export const resolveWrappers = async (
   ) {
     const capture = await mountInPage(page, { ...request, wrappers: search.wrappers });
     if (!isNothingRendered(capture)) return { wrappers: search.wrappers, mounted: capture };
-    const failedMount: FailedMount = {
-      error: capture.error,
-      errorDepth: capture.errorDepth,
-      failure: getCaptureFailure(capture),
-    };
+    const failedMount = capture.error;
     const revision = await search.reviseNewestLayer(failedMount);
     if (revision === "retry") continue;
     if (revision === "give-up" || !PARENT_FAILURES.has(failedMount.failure)) break;

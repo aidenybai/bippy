@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 import type { ComponentModel } from "../../../src/core/model/types";
 import type { Observation } from "./driver";
-import { getCaptureFailure, isNothingRendered } from "./reasons";
+import { isNothingRendered } from "./reasons";
 import type { MountFailure } from "./reasons";
 
 interface RenderCounterexample {
@@ -115,10 +115,10 @@ export const getMountFailedVerdict = (
   observations: Observation[],
 ): ComponentVerdict | null => {
   if (!observations.every((observation) => isNothingRendered(observation.after))) return null;
-  const firstCapture = observations[0]?.after;
+  const firstError = observations[0]?.after.error;
   return toMountFailedVerdict(
     verdict,
-    firstCapture?.error ?? "nothing was mounted",
-    firstCapture ? getCaptureFailure(firstCapture) : "did-not-render",
+    firstError?.message ?? "nothing was mounted",
+    firstError?.failure ?? "did-not-render",
   );
 };

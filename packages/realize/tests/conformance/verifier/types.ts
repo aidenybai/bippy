@@ -52,6 +52,12 @@ export interface MutationHit {
   isLost: boolean;
 }
 
+export interface CaptureError {
+  message: string;
+  depth: number | null;
+  failure: MountFailure;
+}
+
 export interface Capture {
   shapes: Shape[];
   stateValues: unknown[];
@@ -59,9 +65,7 @@ export interface Capture {
   handlerCalls: string[];
   mutationHits: MutationHit[];
   mutatedOrigins: string[];
-  error: string | null;
-  errorDepth: number | null;
-  failure: MountFailure | null;
+  error: CaptureError | null;
 }
 
 export interface Action {

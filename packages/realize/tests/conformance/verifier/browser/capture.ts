@@ -1,11 +1,10 @@
 import { getDisplayName, getReactWorkTagsForFiber, isCompositeFiber, isHostFiber } from "bippy";
 import type { Fiber } from "bippy";
-import type { MountFailure } from "../reasons";
 import { isPlainRecord } from "../snapshot";
 import { STAND_IN } from "../stubs/stand-in";
 import { TRUNCATED_VALUE } from "../types";
-import type { Capture, Shape } from "../types";
-import { getRecordedError, getRenderError } from "./errors";
+import type { Capture, CaptureError, Shape } from "../types";
+import { createCaptureError, getRecordedError, getRenderError } from "./errors";
 import {
   MAX_CAPTURED_FIBERS,
   findMountedFiber,
@@ -67,11 +66,7 @@ const toPlainData = (value: unknown): unknown => {
   return visit(value, 0);
 };
 
-export const createEmptyCapture = (
-  error: string,
-  errorDepth: number | null = null,
-  failure: MountFailure | null = null,
-): Capture => ({
+export const createEmptyCapture = (error: CaptureError): Capture => ({
   shapes: [],
   stateValues: [],
   branchHits: takeBranchHits(true),
@@ -79,23 +74,21 @@ export const createEmptyCapture = (
   mutationHits: [],
   mutatedOrigins: [],
   error,
-  errorDepth,
-  failure,
 });
 
 export const captureMountedComponent = (): Capture => {
   const fiber = findMountedFiber();
-  if (!fiber) {
-    const error = getRecordedError();
-    return error
-      ? createEmptyCapture(error.message, error.depth)
-      : createEmptyCapture("component did not render", null, "did-not-render");
-  }
+  if (!fiber)
+    return createEmptyCapture(
+      getRecordedError() ?? createCaptureError("component did not render", null, "did-not-render"),
+    );
   if (hasTooManyFibers(fiber))
     return createEmptyCapture(
-      `component rendered more than ${MAX_CAPTURED_FIBERS} fibers`,
-      null,
-      "too-large",
+      createCaptureError(
+        `component rendered more than ${MAX_CAPTURED_FIBERS} fibers`,
+        null,
+        "too-large",
+      ),
     );
   const renderError = getRenderError();
   return {
@@ -104,8 +97,6 @@ export const captureMountedComponent = (): Capture => {
     branchHits: takeBranchHits(renderError !== null),
     handlerCalls: takeHandlerCalls(),
     ...takeMutations(fiber),
-    error: renderError?.message ?? null,
-    errorDepth: renderError?.depth ?? null,
-    failure: null,
+    error: renderError,
   };
 };
