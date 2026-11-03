@@ -4,13 +4,13 @@ import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type {
   AbstractValue,
   BinaryExpressionValue,
-  BinaryOperator,
   Binding,
   ConditionalValue,
   PrimitiveValue,
   SymbolicValue,
   UnknownOrigin,
 } from "../types";
+import { NEGATED, isComparison } from "./comparison";
 import { getChildValues } from "./for-each-symbolic-value";
 import { getValueKey } from "./get-value-key";
 import { getOriginValues } from "./symbolic-values";
@@ -32,17 +32,6 @@ const BINARY_PRECEDENCE = new Map<string, number>([
   ["*", 7],
   ["/", 7],
   ["%", 7],
-]);
-
-const NEGATED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
-  ["===", "!=="],
-  ["!==", "==="],
-  ["==", "!="],
-  ["!=", "=="],
-  ["<", ">="],
-  [">", "<="],
-  ["<=", ">"],
-  [">=", "<"],
 ]);
 
 const ATOMIC_PRECEDENCE = 10;
@@ -259,9 +248,8 @@ export const formatNegated = (
   const resolvedPromise = getResolvedPromise(value);
   if (resolvedPromise) return `${formatSymbolicValue(resolvedPromise)} resolves`;
   if (value.kind === "BinaryExpression") {
-    const negatedOperator = NEGATED_OPERATORS.get(value.operator);
-    if (negatedOperator && isComplement(value))
-      return formatSymbolicValue({ ...value, operator: negatedOperator });
+    if (isComparison(value.operator) && isComplement(value))
+      return formatSymbolicValue({ ...value, operator: NEGATED[value.operator] });
     return `!(${formatSymbolicValue(value)})`;
   }
   return value.kind === "Conditional"

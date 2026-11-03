@@ -1,5 +1,6 @@
 import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
+import { isComparison } from "../values/comparison";
 import { getChildValues } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
@@ -76,6 +77,7 @@ const evaluateBinary = (
   evaluator: Evaluator,
   value: Extract<SymbolicValue, { kind: "BinaryExpression" }>,
 ): Abstract[] => {
+  if (isComparison(value.operator)) return fromPredicate(evaluator, evaluator.table.compile(value));
   switch (value.operator) {
     case "+":
       return addAll(evaluate(evaluator, value.left, []), evaluate(evaluator, value.right, []));
@@ -84,15 +86,6 @@ const evaluateBinary = (
         evaluate(evaluator, value.left, []),
         evaluate(evaluator, value.right, []).map(negate),
       );
-    case "===":
-    case "!==":
-    case "==":
-    case "!=":
-    case "<":
-    case "<=":
-    case ">":
-    case ">=":
-      return fromPredicate(evaluator, evaluator.table.compile(value));
     default:
       return [ANY];
   }

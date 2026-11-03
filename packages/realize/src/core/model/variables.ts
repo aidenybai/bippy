@@ -12,14 +12,8 @@ import { isNullishCase } from "../values/abstract-values";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
-import {
-  COMPARISONS,
-  FLIPPED,
-  compareAbstract,
-  compareAbstracts,
-  getAbstractTruthiness,
-  type Comparison,
-} from "./abstract";
+import { FLIPPED, isComparison, type Comparison } from "../values/comparison";
+import { compareAbstract, compareAbstracts, getAbstractTruthiness } from "./abstract";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
@@ -91,8 +85,8 @@ export const getPlaceKey = (bindingId: number, path: string[]): string =>
 
 const toAtom = (value: SymbolicValue): Atom | null => {
   if (value.kind === "Binding") return { kind: "Truthy", binding: value.binding, path: value.path };
-  if (value.kind !== "BinaryExpression" || !COMPARISONS.has(value.operator)) return null;
-  const operator = value.operator as Comparison;
+  if (value.kind !== "BinaryExpression" || !isComparison(value.operator)) return null;
+  const operator = value.operator;
   if (value.left.kind === "Binding" && value.right.kind === "Binding")
     return { kind: "Relate", left: value.left, operator, right: value.right };
   if (value.left.kind === "Binding" && value.right.kind === "Primitive")

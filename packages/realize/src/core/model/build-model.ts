@@ -4,7 +4,7 @@ import { forEachRenderNode } from "../render/for-each-render-node";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { foldBinary } from "../values/symbolic-values";
-import { COMPARISONS } from "./abstract";
+import { isComparison } from "../values/comparison";
 import { compileHandlerActions, compileInputActions } from "./actions";
 import { and, collectPredicateVariables, not, or } from "./predicates";
 import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
@@ -30,7 +30,7 @@ interface ScopedAssertion {
 const collectValueTests = (value: SymbolicValue, tests: SymbolicValue[]): void =>
   forEachEvaluatedValue(value, (node) => {
     if (node.kind === "Conditional") tests.push(getTestExpression(node));
-    if (node.kind === "BinaryExpression" && COMPARISONS.has(node.operator)) tests.push(node);
+    if (node.kind === "BinaryExpression" && isComparison(node.operator)) tests.push(node);
   });
 
 const getAssertionTests = (assertion: Assertion): SymbolicValue[] =>
