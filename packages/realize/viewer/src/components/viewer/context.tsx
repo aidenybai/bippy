@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
+import { hasInspectorContent } from "@/lib/graph";
 import { getPathMode, getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
@@ -14,6 +15,8 @@ interface ViewerState {
   json: string;
   setMode: (mode: ViewMode) => void;
   colorByNodeId: Map<string, string>;
+  hasInspector: boolean;
+  canShowInspector: boolean;
 }
 
 const ViewerContext = createContext<ViewerState | null>(null);
@@ -30,10 +33,24 @@ export const ViewerProvider = ({ examples, name, view, json, children }: ViewerP
   const mode = getPathMode(usePathname());
   const [store] = useState(() => createViewerStore(view));
   const colorByNodeId = getColorByNodeId(view);
+  const hasInspector = hasInspectorContent(view);
+  const canShowInspector = hasInspector && mode !== "json";
   const setMode = (next: ViewMode) =>
     window.history.replaceState(null, "", getRouteHref(name, next));
   return (
-    <ViewerContext value={{ examples, name, mode, view, json, setMode, colorByNodeId }}>
+    <ViewerContext
+      value={{
+        examples,
+        name,
+        mode,
+        view,
+        json,
+        setMode,
+        colorByNodeId,
+        hasInspector,
+        canShowInspector,
+      }}
+    >
       <ViewerStoreContext value={store}>{children}</ViewerStoreContext>
     </ViewerContext>
   );

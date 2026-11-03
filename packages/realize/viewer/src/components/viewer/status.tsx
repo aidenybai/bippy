@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { describeNode } from "@/lib/describe";
-import { hasInspectorContent } from "@/lib/graph";
 import { ArcKey } from "./arc-key";
 import { useHoveredNode } from "@/store/viewer";
 import { useViewer } from "./context";
@@ -36,10 +35,10 @@ const Key = () => {
 };
 
 const Controls = () => {
-  const { view, mode } = useViewer();
+  const { hasInspector, canShowInspector } = useViewer();
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      {hasInspectorContent(view) && <SidebarTrigger label="inspector" disabled={mode === "json"} />}
+      {hasInspector && <SidebarTrigger label="inspector" disabled={!canShowInspector} />}
       <ThemeToggle />
     </div>
   );

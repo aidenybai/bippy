@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Code } from "@/components/ui/code";
+import { findComponentElement, scrollToStart } from "@/lib/scroll";
 import { getSourceLine } from "@/lib/state-chart";
 import type { ViewComponent, ViewFile } from "@/model";
 import { useFocusListener, useViewerStore } from "@/store/viewer";
@@ -32,16 +33,9 @@ const ComponentStateChart = ({ view, component }: { view: ViewFile; component: V
 export const StateChartPane = () => {
   const { view } = useViewer();
   const paneRef = useRef<HTMLDivElement>(null);
-  useFocusListener((name) =>
-    paneRef.current
-      ?.querySelector(`[data-component="${CSS.escape(name)}"]`)
-      ?.scrollIntoView({ block: "start", behavior: "smooth" }),
-  );
+  useFocusListener((name) => scrollToStart(findComponentElement(paneRef.current, name)));
   return (
-    <div
-      ref={paneRef}
-      className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]"
-    >
+    <div ref={paneRef} className="scroll-pane">
       <div className="grid gap-6 px-4 py-3 sm:px-5">
         {view.components.map((component) => (
           <ComponentStateChart key={component.name} view={view} component={component} />

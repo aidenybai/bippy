@@ -7,7 +7,6 @@ import {
   SidebarLayout,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { hasInspectorContent } from "@/lib/graph";
 import { VIEW_MODES, type ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
@@ -21,11 +20,10 @@ import { Status } from "./status";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
-  const { view, mode } = useViewer();
+  const { canShowInspector } = useViewer();
   const isInspectorOpen = useUiStore((state) => state.isInspectorOpen);
   const setInspectorOpen = useUiStore((state) => state.setInspectorOpen);
   useHighlighterWarmup();
-  const canShowInspector = hasInspectorContent(view) && mode !== "json";
   return (
     <SidebarProvider
       open={isInspectorOpen && canShowInspector}

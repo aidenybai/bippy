@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Table, TableBody } from "@/components/ui/table";
+import { findComponentElement, scrollToStart } from "@/lib/scroll";
 import type { ViewComponent } from "@/model";
 import { getActiveName, useViewerStore, useViewerStoreApi } from "@/store/viewer";
 import { useViewer } from "./context";
@@ -91,9 +92,8 @@ const useScrollActiveIntoView = (listRef: RefObject<HTMLDivElement | null>): voi
         const activeName = getActiveName(state);
         if (!list || activeName === null || activeName === getActiveName(previous)) return;
         if (list.matches(":hover")) return;
-        const panel = list.querySelector(`[data-component="${CSS.escape(activeName)}"]`);
-        if (panel && !isTopVisible(panel, list))
-          panel.scrollIntoView({ block: "start", behavior: "smooth" });
+        const panel = findComponentElement(list, activeName);
+        if (panel && !isTopVisible(panel, list)) scrollToStart(panel);
       }),
     [store, listRef],
   );

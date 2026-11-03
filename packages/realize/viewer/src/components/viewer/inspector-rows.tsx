@@ -38,11 +38,7 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => (
         <Chip nodeIds={binding.nodeIds}>{binding.name}</Chip>
       </span>
       <span className="wrap-anywhere pl-1">
-        <Domain
-          binding={binding}
-          renderValue={(value) => <Code>{value}</Code>}
-          separator={<span className="text-faint"> | </span>}
-        />
+        <Domain binding={binding} />
         {binding.initial !== null && (
           <span>
             <span className="text-faint"> = </span>

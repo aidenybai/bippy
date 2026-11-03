@@ -1,3 +1,4 @@
+import { scrollToStart } from "@/lib/scroll";
 import type { ViewLocation } from "@/model";
 
 export interface Box {
@@ -55,9 +56,7 @@ export const getLineFromEvent = (event: Event): number | null => {
 
 export const scrollToLine = (host: HTMLElement, line: number): void => {
   const root: ParentNode = host.shadowRoot ?? host;
-  root
-    .querySelector(`[data-line="${line}"]`)
-    ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  scrollToStart(root.querySelector(`[data-line="${line}"]`));
 };
 
 export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {

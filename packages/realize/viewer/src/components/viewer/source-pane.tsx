@@ -1,9 +1,8 @@
-import { Suspense, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { File } from "@pierre/diffs/react";
-import { Spinner } from "@/components/ui/spinner";
+import { ClientSuspense } from "@/components/ui/client-suspense";
 import { useFileOptions } from "@/hooks/use-file-options";
 import { useHighlighter } from "@/hooks/use-highlighter";
-import { useIsClient } from "@/hooks/use-is-client";
 import { useTokenBoxes, type PlacedToken } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { getComponentAtLine } from "@/lib/graph";
@@ -186,12 +185,10 @@ const CodeView = () => {
   );
 };
 
-export const SourcePane = () => {
-  const isClient = useIsClient();
-  const spinner = <Spinner className="h-full" />;
-  return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      {isClient ? <Suspense fallback={spinner}>{<CodeView />}</Suspense> : spinner}
-    </div>
-  );
-};
+export const SourcePane = () => (
+  <div className="scroll-pane">
+    <ClientSuspense>
+      <CodeView />
+    </ClientSuspense>
+  </div>
+);

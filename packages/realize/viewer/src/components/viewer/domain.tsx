@@ -1,12 +1,7 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import { Code } from "@/components/ui/code";
 import { getPreviewCount, isLongDomain, shortenType } from "@/lib/domain";
 import type { ViewBinding } from "@/model";
-
-interface DomainProps {
-  binding: ViewBinding;
-  renderValue: (value: string) => ReactNode;
-  separator?: ReactNode;
-}
 
 const MoreButton = ({
   hidden,
@@ -26,7 +21,7 @@ const MoreButton = ({
   </button>
 );
 
-export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
+export const Domain = ({ binding }: { binding: ViewBinding }) => {
   const [isExpanded, setExpanded] = useState(false);
   const values = binding.domain;
   const isLong = isLongDomain(values);
@@ -41,7 +36,7 @@ export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
       <span className="grid gap-0.5">
         {shown.map((value) => (
           <span key={value} title={value} className="wrap-anywhere">
-            {renderValue(shortenType(value))}
+            <Code>{shortenType(value)}</Code>
           </span>
         ))}
         {toggle}
@@ -51,8 +46,8 @@ export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
     <>
       {shown.map((value, index) => (
         <span key={value} className="wrap-anywhere">
-          {index > 0 && separator}
-          {renderValue(value)}
+          {index > 0 && <span className="text-faint"> | </span>}
+          <Code>{value}</Code>
         </span>
       ))}
       {toggle}
