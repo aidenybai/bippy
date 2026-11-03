@@ -7,9 +7,9 @@ import type {
   Place,
   SourceLocation,
 } from "../../react-compiler/HIR/HIR";
-import { addsCallResult } from "./adds-call-result";
 import { GeneratedSource, SETTER_KEY_PREFIX, getHookKind } from "../../react-compiler/HIR/HIR";
 import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
+import { eachCallArgument } from "../../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
@@ -77,7 +77,6 @@ import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
 import { isNullish } from "../values/is-nullish";
 import { isPlacePrefix } from "../values/is-place-prefix";
-import { coerceBooleanCall } from "./coerce-boolean-call";
 import { negate } from "../values/negate";
 import { forkConditional, getConditionalLeaves, mapConditionalLeaves } from "../values/conditional";
 import {
@@ -138,6 +137,35 @@ const dedupeByValueKey = (values: SymbolicValue[]): SymbolicValue[] => [
 
 const isSameValueZero = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
   [left].includes(right);
+
+const coerceBooleanCall = (
+  callee: SymbolicValue,
+  argumentValues: SymbolicValue[],
+): SymbolicValue | null => {
+  const [argument] = argumentValues;
+  const isBooleanCall =
+    callee.kind === "Global" && callee.name === "Boolean" && callee.module === null;
+  if (!isBooleanCall || !argument || argumentValues.length !== 1) return null;
+  return {
+    kind: "UnaryExpression",
+    operator: "!",
+    value: { kind: "UnaryExpression", operator: "!", value: argument },
+  };
+};
+
+const collectCallBindingIds = (values: SymbolicValue[]): Set<number> => {
+  const bindingIds = new Set<number>();
+  for (const value of values)
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding" && part.binding.kind === "call") bindingIds.add(part.binding.id);
+    });
+  return bindingIds;
+};
+
+const addsCallResult = (value: SymbolicValue, argumentValues: SymbolicValue[]): boolean => {
+  const argumentCallIds = collectCallBindingIds(argumentValues);
+  return [...collectCallBindingIds([value])].some((bindingId) => !argumentCallIds.has(bindingId));
+};
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
@@ -1913,7 +1941,7 @@ export class Interpreter {
     if (!this.#handlerEffects || receiver.kind !== "Binding")
       return this.#evaluateMethodResult(methodCall, pathState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
-    const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
+    const argumentValues = [...eachCallArgument(methodCall.args)].map((place) => this.read(place));
     if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
       for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
     if (isRefContents(receiver) && receiver.path.length === 1)
@@ -1954,10 +1982,10 @@ export class Interpreter {
   ): BindingValue | null {
     if (!this.#handlerEffects || this.getPropertyName(methodCall.property) !== "values")
       return null;
-    const [argument] = methodCall.args;
+    const [argumentPlace] = eachCallArgument(methodCall.args);
     const isObjectValues =
       receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
-    const container = isObjectValues && argument ? this.read(getPlaceOrSpread(argument)) : receiver;
+    const container = isObjectValues && argumentPlace ? this.read(argumentPlace) : receiver;
     return container.kind === "Binding" && this.getStoredFunctions(container).length > 0
       ? container
       : null;
@@ -1986,7 +2014,7 @@ export class Interpreter {
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
-    const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
+    const argumentPlaces = [...eachCallArgument(methodCall.args)];
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const storeResult = this.storeReads.evaluateStoreMethod(
       methodCall,
@@ -2394,7 +2422,7 @@ export class Interpreter {
           settlement: "fulfilled",
         });
       case "NewExpression": {
-        const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
+        const argumentValues = [...eachCallArgument(value.args)].map((place) => this.read(place));
         this.callbacks.passCallbacks(argumentValues, value.loc, pathState);
         const constructor = this.read(value.callee);
         const collection =
@@ -2755,7 +2783,7 @@ export class Interpreter {
     call: InstructionValueOfKind<"CallExpression">,
     pathState: PathState,
   ): SymbolicValue {
-    const argumentPlaces = call.args.map(getPlaceOrSpread);
+    const argumentPlaces = [...eachCallArgument(call.args)];
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, pathState);
     if (mapped) return mapped;
