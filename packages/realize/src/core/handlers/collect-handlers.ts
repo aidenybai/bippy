@@ -14,8 +14,6 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "../types";
-import { forEachJsxElement, forEachPropNode } from "../render/for-each-jsx-element";
-import { getRenderChildren } from "../render/get-render-children";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";
 import { getValueKey } from "../values/get-value-key";
@@ -27,7 +25,8 @@ import {
   createUnknown,
   getContainedValues,
 } from "../values/symbolic-values";
-import { getRenderGuards, intersectGuards } from "./get-render-guards";
+import { getAncestors, getDescendants, getRenderTree, intersectGuards } from "./render-tree";
+import type { RenderTree } from "./render-tree";
 import { isStateBinding } from "../values/is-state-binding";
 import { mayCallPropsOutsideEvents } from "./may-call-props-outside-events";
 import { isFunctionCreation } from "../interpret/is-function-creation";
@@ -357,26 +356,19 @@ class HandlerCollector {
   readonly commitCallbacks = new Map<string, { callback: SymbolicValue; loc: SourceLocation }>();
 
   readonly #consumerCallbacks: Map<JsxExpressionValue, Set<SymbolicValue>>;
-  readonly #ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>;
-  readonly #renderGuards: Map<JsxExpressionValue, SymbolicValue[]>;
+  readonly #tree: RenderTree;
 
-  constructor(
-    interpreter: Interpreter,
-    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>,
-    renderGuards: Map<JsxExpressionValue, SymbolicValue[]>,
-  ) {
+  constructor(interpreter: Interpreter, tree: RenderTree) {
     this.#interpreter = interpreter;
-    this.#consumerCallbacks = this.#getConsumerCallbacks(ancestorsByElement);
-    this.#ancestorsByElement = ancestorsByElement;
-    this.#renderGuards = renderGuards;
+    this.#tree = tree;
+    this.#consumerCallbacks = this.#getConsumerCallbacks();
   }
 
-  #getConsumerCallbacks(
-    ancestorsByElement: Map<JsxExpressionValue, JsxExpressionValue[]>,
-  ): Map<JsxExpressionValue, Set<SymbolicValue>> {
+  #getConsumerCallbacks(): Map<JsxExpressionValue, Set<SymbolicValue>> {
     const callbacksByAncestor = new Map<JsxExpressionValue, Set<SymbolicValue>>();
-    for (const [element, ancestors] of ancestorsByElement) {
+    for (const element of this.#tree.elements) {
       if (element.tag.kind !== "Component" || element.tag.isContext) continue;
+      const ancestors = this.#getAncestors(element);
       const provided = ancestors.flatMap((ancestor) =>
         ancestor.tag.kind === "Component" && ancestor.tag.isContext
           ? this.#getAncestorCallbacks(ancestor, "value").flatMap((value) =>
@@ -667,9 +659,7 @@ class HandlerCollector {
         };
       },
     );
-    const descendants = [...this.#ancestorsByElement].flatMap(([candidate, path]) =>
-      path.includes(element) ? [candidate] : [],
-    );
+    const descendants = getDescendants(this.#tree, element);
     const getDescendantDispatches = () =>
       descendants.flatMap((descendant) => [
         ...this.#getWrapperDispatches(descendant, [
@@ -707,7 +697,7 @@ class HandlerCollector {
   }
 
   getRefEventCallbacks(refId: number, methodName: string): SymbolicValue[] {
-    const element = [...this.#ancestorsByElement.keys()].find((candidate) =>
+    const element = this.#tree.elements.find((candidate) =>
       candidate.props.some(
         (prop) =>
           prop.kind === "JsxAttribute" &&
@@ -772,9 +762,9 @@ class HandlerCollector {
     prevents: Load,
     prop: JsxProp,
   ): SymbolicValue[] {
-    const labelKeys = new Set((this.#renderGuards.get(label) ?? []).map(getValueKey));
+    const labelKeys = new Set(this.#getRenderGuards(label).map(getValueKey));
     const getControlGuards = (control: JsxExpressionValue) =>
-      (this.#renderGuards.get(control) ?? []).filter((guard) => !labelKeys.has(getValueKey(guard)));
+      this.#getRenderGuards(control).filter((guard) => !labelKeys.has(getValueKey(guard)));
     const controls = this.#getLabelControls(label);
     const renderedIndex = controls.findIndex((control) => getControlGuards(control).length === 0);
     const sequence = controls
@@ -832,7 +822,7 @@ class HandlerCollector {
 
   #getLabelControls(label: JsxExpressionValue): JsxExpressionValue[] {
     const target = getAttribute(label, "htmlFor")?.value;
-    const elements = [...this.#ancestorsByElement.keys()];
+    const elements = this.#tree.elements;
     if (target)
       return elements.filter((element) => {
         const id = getAttribute(element, "id")?.value;
@@ -1075,7 +1065,7 @@ class HandlerCollector {
         (ancestor) => ancestor.tag.kind === "BuiltinTag" && ancestor.tag.name === "form",
       );
     if (formId.kind !== "Primitive") return undefined;
-    return [...this.#ancestorsByElement.keys()].find((candidate) => {
+    return this.#tree.elements.find((candidate) => {
       const id = getAttribute(candidate, "id")?.value;
       return (
         candidate.tag.kind === "BuiltinTag" &&
@@ -1087,7 +1077,12 @@ class HandlerCollector {
   }
 
   #getAncestors(element: JsxExpressionValue): JsxExpressionValue[] {
-    return this.#ancestorsByElement.get(element) ?? [];
+    return getAncestors(this.#tree, element);
+  }
+
+  #getRenderGuards(element: JsxExpressionValue): SymbolicValue[] {
+    const index = this.#tree.indexes.get(element);
+    return (index === undefined ? undefined : this.#tree.guards[index]) ?? [];
   }
 
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {
@@ -1221,37 +1216,17 @@ const getFunctionLoads = (hirFunction: HIRFunction): EventLoads => ({
   prevents: getFunctionLoad(hirFunction, "preventDefault"),
 });
 
-const getElementAncestors = (
-  render: SymbolicValue,
-): Map<JsxExpressionValue, JsxExpressionValue[]> => {
-  const ancestorsByElement = new Map<JsxExpressionValue, JsxExpressionValue[]>();
-  const visited = new WeakSet<SymbolicValue>();
-  const walk = (node: SymbolicValue, ancestors: JsxExpressionValue[]): void => {
-    if (visited.has(node)) return;
-    visited.add(node);
-    if (node.kind === "JsxExpression") {
-      ancestorsByElement.set(node, ancestors);
-      forEachPropNode(node, (propNode) => walk(propNode, []));
-    }
-    const childAncestors = node.kind === "JsxExpression" ? [...ancestors, node] : ancestors;
-    getRenderChildren(node).forEach((child) => walk(child, childAncestors));
-  };
-  walk(render, []);
-  return ancestorsByElement;
-};
-
 const collectWrappedCallbacks = (
-  render: SymbolicValue,
+  elements: JsxExpressionValue[],
   interpreter: Interpreter,
 ): Set<SymbolicValue> => {
   const wrapped = new Set<SymbolicValue>();
-  forEachJsxElement(render, (element) => {
+  for (const element of elements)
     for (const prop of element.props) {
       if (prop.kind !== "JsxAttribute" || !isHandlerProp(element.tag, prop)) continue;
       for (const callback of interpreter.getWrappedCallbacks(prop.value) ?? [])
         wrapped.add(callback);
     }
-  });
   return wrapped;
 };
 
@@ -1335,16 +1310,17 @@ const collectHandlersOnce = (
   interpreter: Interpreter,
   renderPhaseEffects: CollectedEffects,
 ): Handler[] => {
-  const ancestorsByElement = getElementAncestors(render);
-  const renderGuards = getRenderGuards(render);
-  const collector = new HandlerCollector(interpreter, ancestorsByElement, renderGuards);
+  const tree = getRenderTree(render);
+  const collector = new HandlerCollector(interpreter, tree);
   interpreter.refEventDispatcher = (refId, methodName) =>
     collector.getRefEventCallbacks(refId, methodName);
-  const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
+  const wrappedCallbacks = collectWrappedCallbacks(tree.elements, interpreter);
   const effectCalls = interpreter.effectCalls.filter(
     (effectCall) => !wrappedCallbacks.has(effectCall.callback),
   );
-  for (const [element, guards] of renderGuards) collector.planElementHandlers(element, guards);
+  tree.elements.forEach((element, index) =>
+    collector.planElementHandlers(element, tree.guards[index] ?? []),
+  );
   for (const callback of [
     ...effectCalls.map((effectCall) => effectCall.callback),
     ...collector.plannedCallbacks,
