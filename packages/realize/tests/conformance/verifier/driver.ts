@@ -45,7 +45,7 @@ const withTimeout = <Result>(promise: Promise<Result>): Promise<Result> =>
     ),
   ]);
 
-export const mountInPage = (page: Page, request: MountRequest): Promise<Capture> =>
+const mountInPage = (page: Page, request: MountRequest): Promise<Capture> =>
   withTimeout(page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request));
 
 export const performInPage = (page: Page, actionKey: string): Promise<Capture | null> =>
@@ -63,6 +63,11 @@ export const listActionsInPage = (page: Page): Promise<Action[]> =>
 interface ResolvedWrappers {
   wrappers: Wrapper[];
   mounted: Capture | null;
+}
+
+interface MountedComponent {
+  request: MountRequest;
+  capture: Capture;
 }
 
 interface Layer {
@@ -227,7 +232,7 @@ class WrapperSearch {
   }
 }
 
-export const resolveWrappers = async (
+const resolveWrappers = async (
   page: Page,
   request: MountRequest,
   analysis: ComponentAnalysis,
@@ -318,6 +323,23 @@ const explorePropCombination = async (
   return observations;
 };
 
+export const mountComponent = async (
+  page: Page,
+  analysis: ComponentAnalysis,
+  request: MountRequest,
+  project: ProjectIndex,
+): Promise<MountedComponent> => {
+  const resolved = await resolveWrappers(page, { ...request, scenario: null }, analysis, project);
+  const mountedRequest = { ...request, wrappers: resolved.wrappers };
+  return {
+    request: mountedRequest,
+    capture:
+      resolved.mounted && request.scenario === null
+        ? resolved.mounted
+        : await mountInPage(page, mountedRequest),
+  };
+};
+
 export const exploreComponent = async (
   page: Page,
   analysis: ComponentAnalysis,
@@ -327,29 +349,25 @@ export const exploreComponent = async (
 ): Promise<Observation[]> => {
   const deadline = performance.now() + budgetMs;
   if (!analysis.exportName) return [];
-  const propCombinations = getPropCombinations(analysis);
-  const [firstProps = {}] = propCombinations;
-  const resolved = await resolveWrappers(
+  const [firstProps = {}, ...otherProps] = getPropCombinations(analysis);
+  const mounted = await mountComponent(
     page,
-    { module, exportName: analysis.exportName, props: firstProps, scenario: null, wrappers: [] },
     analysis,
+    { module, exportName: analysis.exportName, props: firstProps, scenario: null, wrappers: [] },
     project,
   );
-  const observations: Observation[] = [];
-  for (const props of propCombinations) {
-    if (observations.length > 0 && performance.now() >= deadline) break;
-    const request: MountRequest = {
-      module,
-      exportName: analysis.exportName,
-      props,
-      scenario: null,
-      wrappers: resolved.wrappers,
-    };
-    const initialCapture =
-      resolved.mounted && props === propCombinations[0]
-        ? resolved.mounted
-        : await mountInPage(page, request);
-    observations.push(...(await explorePropCombination(page, request, initialCapture, deadline)));
+  const observations = await explorePropCombination(
+    page,
+    mounted.request,
+    mounted.capture,
+    deadline,
+  );
+  for (const props of otherProps) {
+    if (performance.now() >= deadline) break;
+    const request = { ...mounted.request, props };
+    observations.push(
+      ...(await explorePropCombination(page, request, await mountInPage(page, request), deadline)),
+    );
   }
   return observations;
 };
