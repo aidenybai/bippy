@@ -17,18 +17,10 @@ const Page = async ({ params }: PageProps) => {
   const analyzed = await analyzeFile(route.file);
   if (!analyzed) notFound();
   const [example] = analyzed.examples;
-  const view = example ? (analyzed.views[example.name] ?? null) : null;
-  if (!example || !view) notFound();
-  const json = route.mode === "json" ? (analyzed.json[example.name] ?? null) : null;
-  return (
-    <ClientApp
-      examples={examples}
-      name={`f/${route.file}`}
-      mode={route.mode}
-      view={view}
-      json={json}
-    />
-  );
+  const view = example ? analyzed.views[example.name] : undefined;
+  const json = example ? analyzed.json[example.name] : undefined;
+  if (!view || json === undefined) notFound();
+  return <ClientApp examples={examples} name={`f/${route.file}`} view={view} json={json} />;
 };
 
 export default Page;

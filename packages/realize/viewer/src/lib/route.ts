@@ -29,3 +29,8 @@ export const parseFileRoute = (segments: string[]): FileRoute | null => {
 
 export const getRouteHref = (name: string, mode: ViewMode = "code"): string =>
   mode === "code" ? `/${name}` : `/${name}/${mode}`;
+
+export const getPathMode = (pathname: string): ViewMode => {
+  const last = pathname.split("/").at(-1);
+  return isViewMode(last) ? last : "code";
+};
