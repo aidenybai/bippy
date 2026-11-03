@@ -21,6 +21,8 @@ const BOUNDS = [
   },
 ];
 
+const VIEW_FIELD = "view";
+
 const NODE_PATTERN = /^(-?\d+) \[label="((?:[^"\\]|\\.)*)"(,style = filled)?/;
 
 const EDGE_PATTERN = /^(-?\d+) -> (-?\d+) \[label="((?:[^"\\]|\\.)*)"/;
@@ -40,6 +42,7 @@ export interface StateGraph {
 
 interface Graph {
   values: string[];
+  views: string[];
   initialCount: number;
   parents: number[];
   parentActions: number[];
@@ -60,6 +63,7 @@ const countInitialStates = (spec: ModelSpec): number =>
 
 const createGraph = (): Graph => ({
   values: [],
+  views: [],
   initialCount: 0,
   parents: [],
   parentActions: [],
@@ -71,11 +75,14 @@ const createGraph = (): Graph => ({
 
 const createConstantGraph = (spec: ModelSpec): Graph => {
   const graph = createGraph();
+  const isConstantTrue = (predicate: Predicate): boolean =>
+    evaluatePredicate(predicate, () => undefined) === true;
   graph.initialCount = 1;
+  graph.views.push(spec.views.find((view) => isConstantTrue(view.predicate))?.label ?? NO_VIEW);
   graph.parents.push(NONE);
   graph.parentActions.push(NONE);
   spec.actions.forEach((action, index) => {
-    if (evaluatePredicate(action.guard, () => undefined) !== true) return;
+    if (!isConstantTrue(action.guard)) return;
     graph.edgeSources.push(0);
     graph.edgeTargets.push(0);
     graph.edgeActions.push(index);
@@ -104,11 +111,16 @@ const readDump = (dot: string, spec: ModelSpec): Graph => {
     if (!node) continue;
     const offset = graph.values.length;
     graph.values.length += width;
+    let view = NO_VIEW;
     for (const assignment of unescape(node[2]).split("\n")) {
       const match = ASSIGNMENT_PATTERN.exec(assignment);
-      const index = match ? variableIndexes.get(match[1]) : undefined;
-      if (match && index !== undefined) graph.values[offset + index] = unescape(match[2]);
+      if (!match) continue;
+      const value = unescape(match[2]);
+      if (match[1] === VIEW_FIELD) view = value;
+      const index = variableIndexes.get(match[1]);
+      if (index !== undefined) graph.values[offset + index] = value;
     }
+    graph.views.push(view);
     const discoveredBy = node[3] === undefined ? edges.at(-1) : undefined;
     if (!discoveredBy) graph.initialCount++;
     graph.parents.push(discoveredBy?.source ?? NONE);
@@ -125,13 +137,20 @@ const readDump = (dot: string, spec: ModelSpec): Graph => {
   return graph;
 };
 
+const createAlias = (spec: ModelSpec) => ({
+  name: "Alias",
+  expression: `[${[...spec.variables.map((variable) => variable.name), VIEW_FIELD]
+    .map((field) => `${field} |-> ${field}`)
+    .join(", ")}]`,
+});
+
 const exploreSpec = async (name: string, spec: ModelSpec): Promise<Graph> => {
   if (spec.variables.length === 0) return createConstantGraph(spec);
   if (countInitialStates(spec) >= MAX_STATES) return { ...createGraph(), isTruncated: true };
   let dot = "";
   const result = await check({
-    source: formatTla(name, spec, BOUNDS),
-    config: "INIT Init\nNEXT Next\nCONSTRAINT IsBounded\nCHECK_DEADLOCK FALSE",
+    source: formatTla(name, spec, [...BOUNDS, createAlias(spec)]),
+    config: "INIT Init\nNEXT Next\nCONSTRAINT IsBounded\nALIAS Alias\nCHECK_DEADLOCK FALSE",
     dump: { path: "states.dot", dot: true, actionLabels: true },
     writeFile: (_path, content) => {
       dot = content;
@@ -161,10 +180,11 @@ export const checkStateGraph = async (name: string, spec: ModelSpec): Promise<St
   const isTrue = (predicate: Predicate, state: number): boolean =>
     evaluatePredicate(predicate, getValueOf(state)) === true;
   const viewLabels = [...views.map((view) => view.label), NO_VIEW];
-  const viewIndexes = Array.from({ length: stateCount }, (_, state) => {
-    const index = views.findIndex((view) => isTrue(view.predicate, state));
-    return index === NONE ? views.length : index;
+  const viewIndexByLabel = new Map<string, number>();
+  viewLabels.forEach((label, index) => {
+    if (!viewIndexByLabel.has(label)) viewIndexByLabel.set(label, index);
   });
+  const viewIndexes = graph.views.map((label) => viewIndexByLabel.get(label) ?? views.length);
   const observedIndexes = variables.flatMap((variable, index) =>
     variable.source === "control" ? [] : [index],
   );
