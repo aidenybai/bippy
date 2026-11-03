@@ -1,4 +1,4 @@
-import { check } from "tla-ts";
+import { check, type Value } from "tla-ts";
 import { evaluatePredicate } from "./predicates";
 import { formatTla } from "./tla";
 import { NO_VIEW } from "./views";
@@ -23,12 +23,6 @@ const BOUNDS = [
 
 const VIEW_FIELD = "view";
 
-const NODE_PATTERN = /^(-?\d+) \[label="((?:[^"\\]|\\.)*)"(,style = filled)?/;
-
-const EDGE_PATTERN = /^(-?\d+) -> (-?\d+) \[label="((?:[^"\\]|\\.)*)"/;
-
-const ASSIGNMENT_PATTERN = /^(?:\/\\ )?(\w+) = "((?:[^"\\]|\\.)*)"$/;
-
 export interface StateGraph {
   stateSpace: StateSpace;
   findTrace: (predicate: Predicate) => TraceStep[] | null;
@@ -41,7 +35,7 @@ export interface StateGraph {
 }
 
 interface Graph {
-  values: string[];
+  values: Array<string | undefined>;
   views: string[];
   initialCount: number;
   parents: number[];
@@ -51,9 +45,6 @@ interface Graph {
   edgeActions: number[];
   isTruncated: boolean;
 }
-
-const unescape = (text: string): string =>
-  text.replace(/\\(.)/g, (_match, character: string) => (character === "n" ? "\n" : character));
 
 const countInitialStates = (spec: ModelSpec): number =>
   spec.variables.reduce(
@@ -90,53 +81,6 @@ const createConstantGraph = (spec: ModelSpec): Graph => {
   return graph;
 };
 
-const readDump = (dot: string, spec: ModelSpec): Graph => {
-  const width = spec.variables.length;
-  const variableIndexes = new Map(spec.variables.map((variable, index) => [variable.name, index]));
-  const actionIndexes = new Map(spec.actions.map((action, index) => [action.name, index]));
-  const stateIndexes = new Map<string, number>();
-  const graph = createGraph();
-  const edges: Array<{ source: number; target: string; action: number }> = [];
-  for (const line of dot.split("\n")) {
-    const edge = EDGE_PATTERN.exec(line);
-    if (edge) {
-      edges.push({
-        source: stateIndexes.get(edge[1]) ?? NONE,
-        target: edge[2],
-        action: actionIndexes.get(unescape(edge[3])) ?? NONE,
-      });
-      continue;
-    }
-    const node = NODE_PATTERN.exec(line);
-    if (!node) continue;
-    const offset = graph.values.length;
-    graph.values.length += width;
-    let view = NO_VIEW;
-    for (const assignment of unescape(node[2]).split("\n")) {
-      const match = ASSIGNMENT_PATTERN.exec(assignment);
-      if (!match) continue;
-      const value = unescape(match[2]);
-      if (match[1] === VIEW_FIELD) view = value;
-      const index = variableIndexes.get(match[1]);
-      if (index !== undefined) graph.values[offset + index] = value;
-    }
-    graph.views.push(view);
-    const discoveredBy = node[3] === undefined ? edges.at(-1) : undefined;
-    if (!discoveredBy) graph.initialCount++;
-    graph.parents.push(discoveredBy?.source ?? NONE);
-    graph.parentActions.push(discoveredBy?.action ?? NONE);
-    stateIndexes.set(node[1], stateIndexes.size);
-  }
-  for (const { source, target, action } of edges) {
-    const targetIndex = stateIndexes.get(target);
-    if (action === NONE || targetIndex === undefined) continue;
-    graph.edgeSources.push(source);
-    graph.edgeTargets.push(targetIndex);
-    graph.edgeActions.push(action);
-  }
-  return graph;
-};
-
 const createAlias = (spec: ModelSpec) => ({
   name: "Alias",
   expression: `[${[...spec.variables.map((variable) => variable.name), VIEW_FIELD]
@@ -147,19 +91,33 @@ const createAlias = (spec: ModelSpec) => ({
 const exploreSpec = async (name: string, spec: ModelSpec): Promise<Graph> => {
   if (spec.variables.length === 0) return createConstantGraph(spec);
   if (countInitialStates(spec) >= MAX_STATES) return { ...createGraph(), isTruncated: true };
-  let dot = "";
+  const graph = createGraph();
+  const actionIndexes = new Map(spec.actions.map((action, index) => [action.name, index]));
+  const getActionIndex = (action: string | undefined): number =>
+    action === undefined ? NONE : (actionIndexes.get(action) ?? NONE);
+  const toText = (value: Value | undefined): string | undefined =>
+    typeof value === "string" ? value : undefined;
   const result = await check({
     source: formatTla(name, spec, [...BOUNDS, createAlias(spec)]),
     config: "INIT Init\nNEXT Next\nCONSTRAINT IsBounded\nALIAS Alias\nCHECK_DEADLOCK FALSE",
-    dump: { path: "states.dot", dot: true, actionLabels: true },
-    writeFile: (_path, content) => {
-      dot = content;
+    onState: (state) => {
+      for (const variable of spec.variables) graph.values.push(toText(state.state[variable.name]));
+      graph.views.push(toText(state.state[VIEW_FIELD]) ?? NO_VIEW);
+      if (state.parent === undefined) graph.initialCount++;
+      graph.parents.push(state.parent ?? NONE);
+      graph.parentActions.push(getActionIndex(state.action));
+    },
+    onStep: (step) => {
+      const action = getActionIndex(step.action);
+      if (action === NONE) return;
+      graph.edgeSources.push(step.from);
+      graph.edgeTargets.push(step.to);
+      graph.edgeActions.push(action);
     },
     onPrint: () => {},
   });
   if (result.status !== "success")
     throw new Error(`tla-ts could not check ${name}: ${result.failure?.message ?? result.status}`);
-  const graph = readDump(dot, spec);
   graph.isTruncated =
     result.distinctStates >= MAX_STATES || result.generatedStates >= MAX_SUCCESSORS;
   return graph;
