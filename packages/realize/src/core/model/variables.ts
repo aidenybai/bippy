@@ -12,6 +12,7 @@ import { isNullishCase } from "../values/abstract-values";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { formatPlace, formatSymbolicValue } from "../values/format";
 import { getTestExpression } from "../values/get-test-expression";
+import { getValueKey } from "../values/get-value-key";
 import {
   COMPARISONS,
   FLIPPED,
@@ -312,9 +313,10 @@ export const createVariableTable = (
   }
 
   const getOpaqueVariable = (value: SymbolicValue): Variable => {
-    const label = formatSymbolicValue(value);
-    const existing = opaqueVariables.get(label);
+    const key = getValueKey(value);
+    const existing = opaqueVariables.get(key);
     if (existing) return existing;
+    const label = formatSymbolicValue(value);
     const variable: Variable = {
       name: createName(`opaque_${label}`),
       label,
@@ -327,7 +329,7 @@ export const createVariableTable = (
       initial: ["false", "true"],
     };
     addVariable(variable);
-    opaqueVariables.set(label, variable);
+    opaqueVariables.set(key, variable);
     return variable;
   };
 
@@ -425,12 +427,11 @@ export const createVariableTable = (
 
   const compileExisting = (test: SymbolicValue): Predicate | null => {
     const count = variables.length;
+    const opaqueCount = opaqueVariables.size;
     const predicate = compile(test);
     if (variables.length === count) return predicate;
-    for (const variable of variables.splice(count)) {
-      variablesByName.delete(variable.name);
-      opaqueVariables.delete(variable.label);
-    }
+    for (const variable of variables.splice(count)) variablesByName.delete(variable.name);
+    for (const key of [...opaqueVariables.keys()].slice(opaqueCount)) opaqueVariables.delete(key);
     return null;
   };
 
