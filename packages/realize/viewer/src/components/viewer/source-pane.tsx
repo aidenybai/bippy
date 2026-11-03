@@ -26,6 +26,7 @@ import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
 import { useFocusListener, useHasHover, useViewerStore } from "@/store/viewer";
 import { Arc } from "./arc";
+import { ArrowMarker } from "./arrow-marker";
 import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
 
@@ -76,13 +77,20 @@ const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
   });
 };
 
-const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
+interface ArcsProps {
+  layout: TokenLayout;
+  markerId: string;
+}
+
+const RestingArcs = ({ layout, markerId }: ArcsProps) => {
   const { view, colorByNodeId } = useViewer();
   const arcs = placeArcs(view, layout.tokens, colorByNodeId, isRestingArc);
-  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
+  return arcs.map((arc) => (
+    <Arc key={`${arc.edge.from}-${arc.edge.to}`} markerId={markerId} {...arc} />
+  ));
 };
 
-const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
+const CausalArcs = ({ layout, markerId }: ArcsProps) => {
   const { view, colorByNodeId } = useViewer();
   const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
   const arcs =
@@ -95,7 +103,9 @@ const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
           (edge) =>
             !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
         );
-  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
+  return arcs.map((arc) => (
+    <Arc key={`${arc.edge.from}-${arc.edge.to}`} markerId={markerId} {...arc} />
+  ));
 };
 
 interface OverlayProps {
@@ -157,12 +167,17 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
 
 const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
   const { colorByNodeId } = useViewer();
+  const markerId = useId();
   return (
     <svg
       className="pointer-events-none absolute inset-0 overflow-hidden"
       width={layout.width}
       height={layout.height}
     >
+      <defs>
+        <ArrowMarker id={`${markerId}solid`} size={7} />
+        <ArrowMarker id={`${markerId}hollow`} size={7} isHollow />
+      </defs>
       <FocusScrim wrapperRef={wrapperRef} layout={layout} />
       {layout.tokens.map((token) => (
         <TokenMark
@@ -171,8 +186,8 @@ const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
           color={colorByNodeId.get(token.node.id) ?? "transparent"}
         />
       ))}
-      <RestingArcs layout={layout} />
-      <CausalArcs layout={layout} />
+      <RestingArcs layout={layout} markerId={markerId} />
+      <CausalArcs layout={layout} markerId={markerId} />
     </svg>
   );
 };

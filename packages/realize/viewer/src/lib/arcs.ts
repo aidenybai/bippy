@@ -1,13 +1,30 @@
 import type { PlacedToken } from "@/hooks/use-token-boxes";
 import type { GraphEdge, ViewFile } from "@/model";
-import { isSideArc, type PlacedArc } from "@/components/viewer/arc";
-import type { Point } from "@/components/viewer/arrow-head";
 import type { Box } from "./positions";
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface PlacedArc {
+  edge: GraphEdge;
+  component: string;
+  from: Box;
+  to: Box;
+  fromSlot: number;
+  toSlot: number;
+  lane: number;
+  junction: Point | null;
+  color: string;
+}
 
 const RESTING_ARC_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
 
 const LANE_X_REACH = 64;
 const JUNCTION_GAP = 12;
+const SIDE_GAP = 24;
+const SIDE_REACH = 160;
 
 interface ArcEnd {
   box: Box;
@@ -22,6 +39,11 @@ interface Endpoint {
 }
 
 const getCenterX = (box: Box): number => box.x + box.width / 2;
+
+export const isSideArc = ({ from, to }: Pick<PlacedArc, "from" | "to">): boolean => {
+  const gap = to.y > from.y ? to.y - (from.y + from.height) : from.y - (to.y + to.height);
+  return gap < SIDE_GAP && Math.abs(getCenterX(from) - getCenterX(to)) < SIDE_REACH;
+};
 
 const getSpan = (arc: Pick<PlacedArc, "from" | "to">): [number, number] => [
   Math.min(arc.from.y, arc.to.y),

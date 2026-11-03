@@ -1,6 +1,8 @@
+import { useId } from "react";
 import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
+import type { Point } from "@/lib/arcs";
 import { getSolidColor } from "@/lib/colors";
 import {
   buildDecisionTree,
@@ -10,7 +12,7 @@ import {
   type TreeNode,
 } from "@/lib/tree";
 import type { ViewComponent, ViewHandler, ViewTransition } from "@/model";
-import { ArrowHead, type Point } from "./arrow-head";
+import { ArrowMarker } from "./arrow-marker";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
 
@@ -28,16 +30,9 @@ interface LaidOutNode {
   height: number;
 }
 
-interface HeadSegment {
-  from: Point;
-  tip: Point;
-}
-
 interface LaidOutEdge {
   id: string;
-  points: Point[];
-  path?: string;
-  head: HeadSegment;
+  path: string;
   label: Point;
   labelAlign?: "center" | "start";
   answer?: "yes" | "no";
@@ -87,11 +82,12 @@ const addTransitionEdges = (
   });
 };
 
+const toPath = (points: Point[]): string =>
+  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+
 const readEdge = (graph: graphlib.Graph, from: string, to: string, name: string) => {
   const edge = graph.edge(from, to, name);
-  const tip = edge.points.at(-1) ?? { x: edge.x, y: edge.y };
-  const head = { from: edge.points.at(-2) ?? tip, tip };
-  return { points: edge.points, head, label: { x: edge.x, y: edge.y } };
+  return { path: toPath(edge.points), label: { x: edge.x, y: edge.y } };
 };
 
 const layoutTree = (component: ViewComponent): Layout | null => {
@@ -154,13 +150,9 @@ const layoutLoops = (
     const bulge = LOOP_BULGE + slot * LOOP_STEP;
     const labelX = right + LOOP_BULGE + (count - 1) * LOOP_STEP + 10;
     const handler = handlersById.get(loop.handlerId);
-    const control = { x: right + bulge, y: node.y + reach + 14 };
-    const tip = { x: right, y: node.y + reach };
     return {
       id: `l${order}`,
-      points: [],
-      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${control.x} ${control.y}, ${tip.x} ${tip.y}`,
-      head: { from: control, tip },
+      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${right + bulge} ${node.y + reach + 14}, ${right} ${node.y + reach}`,
       label: { x: labelX, y: node.y + (slot - (count - 1) / 2) * LABEL_HEIGHT },
       labelAlign: "start",
       transition: loop,
@@ -170,26 +162,21 @@ const layoutLoops = (
   });
 };
 
-const toPath = (points: Point[]): string =>
-  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
-
-const EdgePath = ({ edge }: { edge: LaidOutEdge }) => {
+const EdgePath = ({ edge, markerId }: { edge: LaidOutEdge; markerId: string }) => {
   const { colorByNodeId } = useViewer();
   const [nodeId] = edge.handler?.nodeIds ?? [];
   const color = nodeId !== undefined ? colorByNodeId.get(nodeId) : undefined;
   const stroke = color ? getSolidColor(color) : "var(--faint)";
-  const strokeWidth = edge.transition ? 1.25 : 1;
   return (
-    <g opacity={edge.transition ? 0.85 : 1}>
-      <path
-        d={edge.path ?? toPath(edge.points)}
-        fill="none"
-        style={{ stroke }}
-        strokeWidth={strokeWidth}
-        strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
-      />
-      <ArrowHead {...edge.head} color={stroke} size={6 * strokeWidth} />
-    </g>
+    <path
+      d={edge.path}
+      fill="none"
+      style={{ stroke }}
+      strokeWidth={edge.transition ? 1.25 : 1}
+      strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
+      markerEnd={`url(#${markerId})`}
+      opacity={edge.transition ? 0.85 : 1}
+    />
   );
 };
 
@@ -237,6 +224,7 @@ const NodeView = ({ laid }: { laid: LaidOutNode }) => {
 };
 
 export const DecisionTree = ({ component }: { component: ViewComponent }) => {
+  const markerId = useId();
   const layout = layoutTree(component);
   if (!layout) return null;
   return (
@@ -248,8 +236,11 @@ export const DecisionTree = ({ component }: { component: ViewComponent }) => {
           height={layout.height}
           aria-hidden="true"
         >
+          <defs>
+            <ArrowMarker id={markerId} size={6} markerUnits="strokeWidth" />
+          </defs>
           {layout.edges.map((edge) => (
-            <EdgePath key={edge.id} edge={edge} />
+            <EdgePath key={edge.id} edge={edge} markerId={markerId} />
           ))}
         </svg>
         {layout.nodes.map((laid) => (
