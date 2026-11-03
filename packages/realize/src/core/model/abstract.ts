@@ -165,13 +165,6 @@ export const getAbstractTruthiness = (value: Abstract): boolean | null => {
   }
 };
 
-const rangesOverlap = (left: RangeValue, right: RangeValue): boolean => {
-  if (left.max < right.min || right.max < left.min) return false;
-  if (left.max === right.min) return left.isMaxIncluded && right.isMinIncluded;
-  if (right.max === left.min) return right.isMaxIncluded && left.isMinIncluded;
-  return true;
-};
-
 const containsExact = (container: Abstract, value: PrimitiveValue): boolean => {
   switch (container.kind) {
     case "Exact":
@@ -192,86 +185,6 @@ const containsExact = (container: Abstract, value: PrimitiveValue): boolean => {
     case "Any":
       return true;
   }
-};
-
-export const mayOverlap = (other: Abstract, value: Abstract): boolean => {
-  if (other.kind === "Any" || value.kind === "Any") return true;
-  if (value.kind === "Exact") return containsExact(other, value.value);
-  if (other.kind === "Exact") return mayOverlap(value, other);
-  switch (value.kind) {
-    case "Range":
-      if (other.kind === "Range") return rangesOverlap(other, value);
-      if (other.kind === "Truthy") return !(value.min === 0 && value.max === 0);
-      if (other.kind === "Falsy") return isInRange(value, 0);
-      return other.kind === "Other" && other.type === "any";
-    case "Other":
-      if (other.kind === "Other") return true;
-      if (other.kind === "Truthy") return true;
-      if (other.kind === "Falsy") return !value.excluded.includes("");
-      return value.type === "any" && other.kind !== "Range";
-    case "Object":
-      return other.kind === "Object" || other.kind === "Truthy" || other.kind === "Other";
-    case "Truthy":
-      return other.kind !== "Falsy";
-    case "Falsy":
-      return other.kind === "Falsy" || other.kind === "Other" || other.kind === "Range";
-  }
-};
-
-const isRounded = (bound: number, amount: number): boolean =>
-  Number.isFinite(bound) && bound + amount - amount !== bound;
-
-const shiftAbstract = (value: Abstract, amount: number): Abstract => {
-  if (value.kind === "Exact" && typeof value.value === "number")
-    return { kind: "Exact", value: value.value + amount };
-  if (value.kind !== "Range") return ANY;
-  return {
-    ...value,
-    min: value.min + amount,
-    max: value.max + amount,
-    isMinIncluded: value.isMinIncluded || isRounded(value.min, amount),
-    isMaxIncluded: value.isMaxIncluded || isRounded(value.max, amount),
-  };
-};
-
-const isFiniteNumber = (value: Abstract): value is { kind: "Exact"; value: number } =>
-  value.kind === "Exact" && typeof value.value === "number" && Number.isFinite(value.value);
-
-const toRange = (value: Abstract): RangeValue | null => {
-  if (value.kind === "Range") return value;
-  if (value.kind === "Exact" && typeof value.value === "number" && !Number.isNaN(value.value))
-    return {
-      kind: "Range",
-      min: value.value,
-      max: value.value,
-      isMinIncluded: true,
-      isMaxIncluded: true,
-    };
-  return null;
-};
-
-const includesInfinity = (range: RangeValue, sign: 1 | -1): boolean =>
-  sign === 1
-    ? range.max === Infinity && range.isMaxIncluded
-    : range.min === -Infinity && range.isMinIncluded;
-
-const canSumToNaN = (left: RangeValue, right: RangeValue): boolean =>
-  (includesInfinity(left, 1) && includesInfinity(right, -1)) ||
-  (includesInfinity(left, -1) && includesInfinity(right, 1));
-
-export const addAbstract = (left: Abstract, right: Abstract): Abstract => {
-  if (isFiniteNumber(right)) return shiftAbstract(left, right.value);
-  if (isFiniteNumber(left)) return shiftAbstract(right, left.value);
-  const leftRange = toRange(left);
-  const rightRange = toRange(right);
-  if (!leftRange || !rightRange || canSumToNaN(leftRange, rightRange)) return ANY;
-  return {
-    kind: "Range",
-    min: leftRange.min + rightRange.min,
-    max: leftRange.max + rightRange.max,
-    isMinIncluded: leftRange.isMinIncluded && rightRange.isMinIncluded,
-    isMaxIncluded: leftRange.isMaxIncluded && rightRange.isMaxIncluded,
-  };
 };
 
 const isPrimitive = (value: unknown): value is PrimitiveValue =>

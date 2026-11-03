@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { addAbstract, compareAbstract, containsValue } from "../../src/core/model/abstract";
+import { compareAbstract, containsValue } from "../../src/core/model/abstract";
 import { createDomain, getValueLabels } from "../../src/core/model/domains";
-import type { Abstract } from "../../src/core/model/types";
+import { inValues } from "../../src/core/model/predicates";
+import { checkStateGraph } from "../../src/core/model/state-graph";
+import type { Abstract, Variable } from "../../src/core/model/types";
 import type { Domain } from "../../src/core/types";
 
 const NUMBER: Domain = {
@@ -54,12 +56,51 @@ describe("abstract values", () => {
     expect(compareAbstract({ kind: "Truthy" }, "==", undefined)).toBe(false);
   });
 
-  it("includes a bound that rounds when shifted", () => {
-    const shifted = addAbstract(getAbstract([0.1, 1e308], "(0.1, 1e+308)"), {
-      kind: "Exact",
-      value: 1e308,
+  it("includes a bound that rounds when shifted", async () => {
+    const domain = numberDomain([0.1, 1e308]);
+    const labels = getValueLabels(domain);
+    const variable: Variable = {
+      name: "value",
+      label: "value",
+      source: "state",
+      bindingKind: "state",
+      bindingId: 0,
+      inputBindingIds: [],
+      path: [],
+      domain,
+      initial: { kind: "Values", values: ["(0.1, 1e+308)"] },
+    };
+    const stateGraph = await checkStateGraph("Shift", {
+      variables: [variable],
+      actions: [
+        {
+          name: "shift",
+          label: "shift",
+          handlerId: "shift",
+          phase: "call",
+          guard: { kind: "True" },
+          writes: [
+            {
+              variable: "value",
+              next: {
+                kind: "Evaluate",
+                term: {
+                  kind: "Plus",
+                  left: { kind: "Read", variable: "value" },
+                  right: { kind: "Constant", value: { kind: "Exact", value: 1e308 } },
+                },
+              },
+            },
+          ],
+          writtenBindingIds: [0],
+          hasRenderedWrite: true,
+          loc: null,
+        },
+      ],
+      views: [],
+      invariants: [],
     });
-    expect(containsValue(shifted, 1e308)).toBe(true);
-    expect(containsValue(shifted, Infinity)).toBe(true);
+    expect(stateGraph.findTrace(inValues("value", ["1e+308"], labels))).not.toBeNull();
+    expect(stateGraph.findTrace(inValues("value", [">1e+308"], labels))).not.toBeNull();
   });
 });

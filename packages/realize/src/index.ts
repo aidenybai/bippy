@@ -1,7 +1,7 @@
 export { analyzeProject } from "./core/project/analyze-project";
 export { serializeProjectAnalysis } from "./core/project/serialize";
 export { buildComponentModel } from "./core/model/build-model";
-export { formatTla } from "./core/model/tla";
+export { formatLibrary, formatTla } from "./core/model/tla";
 export { formatSymbolicValue } from "./core/values/format";
 export type {
   AbstractValue,

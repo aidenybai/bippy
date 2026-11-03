@@ -52,6 +52,8 @@ const isSameNextValue = (left: NextValue, right: NextValue): boolean => {
       );
     case "Copy":
       return right.kind === "Copy" && left.variable === right.variable;
+    case "Evaluate":
+      return false;
   }
 };
 
