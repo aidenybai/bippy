@@ -10,15 +10,9 @@ import {
 } from "node:fs";
 import { extname, join } from "node:path";
 import { parseSync } from "@babel/core";
+import { z } from "zod";
 import { getCheckoutArguments } from "../runner/checkout";
 import { CACHE_DIRECTORY, PACKAGE_DIRECTORY } from "../runner/repos";
-
-interface FixtureSource {
-  repository: string;
-  revision: string;
-  fixtures: string;
-  runtime: string;
-}
 
 export interface Fixture {
   name: string;
@@ -54,9 +48,14 @@ const PROJECT_TSCONFIG = {
   include: ["src"],
 };
 
-const SOURCE = JSON.parse(
-  readFileSync(join(import.meta.dirname, "source.json"), "utf8"),
-) as FixtureSource;
+const SOURCE = z
+  .object({
+    repository: z.string(),
+    revision: z.string(),
+    fixtures: z.string(),
+    runtime: z.string(),
+  })
+  .parse(JSON.parse(readFileSync(join(import.meta.dirname, "source.json"), "utf8")));
 
 const CHECKOUT_DIRECTORY = join(CACHE_DIRECTORY, "react-compiler-fixtures");
 export const PROJECT_DIRECTORY = join(CACHE_DIRECTORY, "react-compiler-fixtures-project");
