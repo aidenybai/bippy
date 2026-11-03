@@ -7,12 +7,16 @@ import {
   type RefObject,
 } from "react";
 import { ChevronRight } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Table, TableBody } from "@/components/ui/table";
 import type { ViewComponent } from "@/model";
-import { useViewerStore } from "@/store/viewer";
-import { useIsPanelChosen, useIsPanelOpen, useUiStore } from "@/store/ui";
-import { useActiveComponent, useViewer } from "./context";
+import { getActiveName, useViewerStore, useViewerStoreApi } from "@/store/viewer";
+import { useViewer } from "./context";
 import { BindingRow, HandlerRow, StateRow } from "./inspector-rows";
 
 const ComponentContext = createContext<ViewComponent | null>(null);
@@ -46,41 +50,31 @@ const Section = ({ title, count, children }: SectionProps) => (
   </section>
 );
 
-interface ComponentPanelProps {
-  component: ViewComponent;
-  isOpen: boolean;
-  isActive: boolean;
-  onOpenChange: (open: boolean) => void;
-  children: ReactNode;
-}
-
-const ComponentPanel = ({
-  component,
-  isOpen,
-  isActive,
-  onOpenChange,
-  children,
-}: ComponentPanelProps) => (
-  <Collapsible
-    open={isOpen}
-    onOpenChange={onOpenChange}
-    data-component={component.name}
-    data-active={isActive || undefined}
-    className="grid scroll-mt-4 gap-4 border-l-2 border-transparent pl-3 -ml-3 transition-colors duration-150 data-active:border-foreground/60"
-  >
-    <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md text-left">
-      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-90" />
-      <h2 className={isActive ? "font-medium text-foreground" : "font-medium text-text-2"}>
-        {component.name}
-      </h2>
-    </CollapsibleTrigger>
-    <CollapsibleContent>
-      <ComponentContext value={component}>
-        <div className="grid gap-5 pb-2 pl-5">{children}</div>
-      </ComponentContext>
-    </CollapsibleContent>
-  </Collapsible>
-);
+const Panel = ({ component, children }: { component: ViewComponent; children: ReactNode }) => {
+  const isActive = useViewerStore((state) => getActiveName(state) === component.name);
+  const setPanelOpen = useViewerStore((state) => state.setPanelOpen);
+  return (
+    <AccordionItem
+      value={component.name}
+      onOpenChange={(open) => setPanelOpen(component.name, open)}
+      data-component={component.name}
+      data-active={isActive || undefined}
+      className="grid scroll-mt-4 gap-4 border-l-2 border-transparent pl-3 -ml-3 transition-colors duration-150 data-active:border-foreground/60"
+    >
+      <AccordionTrigger className="group flex w-full items-center gap-2 rounded-md text-left">
+        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-90" />
+        <span className={isActive ? "font-medium text-foreground" : "font-medium text-text-2"}>
+          {component.name}
+        </span>
+      </AccordionTrigger>
+      <AccordionContent>
+        <ComponentContext value={component}>
+          <div className="grid gap-5 pb-2 pl-5">{children}</div>
+        </ComponentContext>
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
 
 const isTopVisible = (element: Element, container: Element): boolean => {
   const box = element.getBoundingClientRect();
@@ -88,83 +82,43 @@ const isTopVisible = (element: Element, container: Element): boolean => {
   return box.top >= bounds.top && box.top < bounds.bottom;
 };
 
-const useScrollActiveIntoView = (
-  listRef: RefObject<HTMLDivElement | null>,
-  activeName: string | null,
-): { onMouseEnter: () => void; onMouseLeave: () => void } => {
-  const isPointerInside = useRef(false);
-  const handledName = useRef(activeName);
-  useEffect(() => {
-    const list = listRef.current;
-    if (activeName === handledName.current) return;
-    handledName.current = activeName;
-    if (activeName === null || isPointerInside.current || !list) return;
-    const panel = list.querySelector(`[data-component="${CSS.escape(activeName)}"]`);
-    if (panel && !isTopVisible(panel, list))
-      panel.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [listRef, activeName]);
-  return {
-    onMouseEnter: () => {
-      isPointerInside.current = true;
-    },
-    onMouseLeave: () => {
-      isPointerInside.current = false;
-    },
-  };
-};
-
-interface InspectorPanelProps {
-  component: ViewComponent;
-  activeName: string | null;
-  children: ReactNode;
-}
-
-const InspectorPanel = ({ component, activeName, children }: InspectorPanelProps) => {
-  const focus = useViewerStore((state) => state.focus);
-  const choosePanel = useUiStore((state) => state.choosePanel);
-  const isOpen = useIsPanelOpen(component.name, activeName);
-  return (
-    <ComponentPanel
-      component={component}
-      isOpen={isOpen}
-      isActive={component.name === activeName}
-      onOpenChange={(open) => {
-        choosePanel(component.name, open);
-        if (open) focus(component.name);
-      }}
-    >
-      {children}
-    </ComponentPanel>
+const useScrollActiveIntoView = (listRef: RefObject<HTMLDivElement | null>): void => {
+  const store = useViewerStoreApi();
+  useEffect(
+    () =>
+      store.subscribe((state, previous) => {
+        const list = listRef.current;
+        const activeName = getActiveName(state);
+        if (!list || activeName === null || activeName === getActiveName(previous)) return;
+        if (list.matches(":hover")) return;
+        const panel = list.querySelector(`[data-component="${CSS.escape(activeName)}"]`);
+        if (panel && !isTopVisible(panel, list))
+          panel.scrollIntoView({ block: "start", behavior: "smooth" });
+      }),
+    [store, listRef],
   );
-};
-
-const useKeepActiveOpen = (activeName: string | null): void => {
-  const choosePanel = useUiStore((state) => state.choosePanel);
-  const isChosen = useIsPanelChosen(activeName ?? "");
-  useEffect(() => {
-    if (activeName !== null && !isChosen) choosePanel(activeName, true);
-  }, [activeName, isChosen, choosePanel]);
 };
 
 const Root = ({ children }: { children: ReactNode }) => {
   const { view } = useViewer();
-  const activeComponent = useActiveComponent();
-  const activeName = activeComponent?.name ?? null;
-  useKeepActiveOpen(activeName);
+  const panels = useViewerStore((state) => state.panels);
   const listRef = useRef<HTMLDivElement>(null);
-  const pointerHandlers = useScrollActiveIntoView(listRef, activeName);
+  useScrollActiveIntoView(listRef);
   return (
-    <div
+    <Accordion
       ref={listRef}
-      {...pointerHandlers}
+      multiple
+      value={view.components
+        .filter((component) => panels.get(component.name))
+        .map((component) => component.name)}
       className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
     >
       {view.components.map((component) => (
-        <InspectorPanel key={component.name} component={component} activeName={activeName}>
+        <Panel key={component.name} component={component}>
           {children}
-        </InspectorPanel>
+        </Panel>
       ))}
-    </div>
+    </Accordion>
   );
 };
 

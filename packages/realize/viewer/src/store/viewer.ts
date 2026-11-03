@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
-import { buildGraphIndex, getCausalNodeIds, type GraphIndex } from "@/lib/graph";
+import {
+  buildGraphIndex,
+  getCausalNodeIds,
+  getDefaultComponent,
+  type GraphIndex,
+} from "@/lib/graph";
 import type { GraphNode, ViewFile } from "@/model";
 
 interface FocusRequest {
@@ -9,35 +14,57 @@ interface FocusRequest {
 
 interface ViewerStoreState {
   index: GraphIndex;
+  defaultName: string | null;
   activeName: string | null;
+  panels: Map<string, boolean>;
   focusRequest: FocusRequest | null;
   hoveredNodeId: string | null;
   causalNodeIds: Set<string> | null;
   activate: (name: string) => void;
-  focus: (name: string) => void;
+  setPanelOpen: (name: string, open: boolean) => void;
   hover: (nodeId: string) => void;
   leave: () => void;
 }
 
 export type ViewerStore = StoreApi<ViewerStoreState>;
 
-export const createViewerStore = (view: ViewFile): ViewerStore =>
-  createStore<ViewerStoreState>()((set, get) => ({
+export const getActiveName = (state: ViewerStoreState): string | null =>
+  state.activeName ?? state.defaultName;
+
+const openOnFirstActivation = (
+  panels: Map<string, boolean>,
+  name: string | null,
+): Map<string, boolean> =>
+  name === null || panels.has(name) ? panels : new Map(panels).set(name, true);
+
+export const createViewerStore = (view: ViewFile): ViewerStore => {
+  const defaultName = getDefaultComponent(view)?.name ?? null;
+  return createStore<ViewerStoreState>()((set, get) => ({
     index: buildGraphIndex(view),
+    defaultName,
     activeName: null,
+    panels: openOnFirstActivation(new Map(), defaultName),
     focusRequest: null,
     hoveredNodeId: null,
     causalNodeIds: null,
     activate: (activeName) => {
-      if (get().activeName !== activeName) set({ activeName });
+      const { panels } = get();
+      if (get().activeName === activeName) return;
+      set({ activeName, panels: openOnFirstActivation(panels, activeName) });
     },
-    focus: (name) => set({ activeName: name, focusRequest: { name } }),
+    setPanelOpen: (name, open) => {
+      const panels = new Map(get().panels).set(name, open);
+      if (open) set({ panels, activeName: name, focusRequest: { name } });
+      else set({ panels });
+    },
     hover: (nodeId) => {
-      const { index, hoveredNodeId } = get();
+      const { index, hoveredNodeId, panels } = get();
       if (hoveredNodeId === nodeId) return;
+      const activeName = index.nodes.get(nodeId)?.component ?? null;
       set({
         hoveredNodeId: nodeId,
-        activeName: index.nodes.get(nodeId)?.component ?? null,
+        activeName,
+        panels: openOnFirstActivation(panels, activeName),
         causalNodeIds: getCausalNodeIds(index, nodeId),
       });
     },
@@ -45,10 +72,11 @@ export const createViewerStore = (view: ViewFile): ViewerStore =>
       if (get().hoveredNodeId !== null) set({ hoveredNodeId: null, causalNodeIds: null });
     },
   }));
+};
 
 export const ViewerStoreContext = createContext<ViewerStore | null>(null);
 
-const useViewerStoreApi = (): ViewerStore => {
+export const useViewerStoreApi = (): ViewerStore => {
   const store = useContext(ViewerStoreContext);
   if (!store) throw new Error("useViewerStore must be used inside <Viewer>");
   return store;

@@ -1,11 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
-import { getDefaultComponent } from "@/lib/graph";
 import { getPathMode, getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
-import type { Example, ViewComponent, ViewFile } from "@/model";
-import { ViewerStoreContext, createViewerStore, useViewerStore } from "@/store/viewer";
+import type { Example, ViewFile } from "@/model";
+import { ViewerStoreContext, createViewerStore } from "@/store/viewer";
 
 interface ViewerState {
   examples: Example[];
@@ -44,12 +43,4 @@ export const useViewer = (): ViewerState => {
   const state = useContext(ViewerContext);
   if (!state) throw new Error("useViewer must be used inside <Viewer>");
   return state;
-};
-
-export const useActiveComponent = (): ViewComponent | null => {
-  const { view } = useViewer();
-  const activeName = useViewerStore((state) => state.activeName);
-  return (
-    view.components.find((component) => component.name === activeName) ?? getDefaultComponent(view)
-  );
 };
