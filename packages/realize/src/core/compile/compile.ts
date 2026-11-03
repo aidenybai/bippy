@@ -31,7 +31,8 @@ import type {
   ImportedNames,
 } from "./module-values";
 import { getLocationKey } from "../shared/get-location-key";
-import { getClassName, isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
+import { lowerClassComponents } from "./lower-class-components";
+import type { ClassComponent } from "./lower-class-components";
 import { isModuleLevel } from "./is-module-level";
 
 type BabelFunction = NodePath<
@@ -133,25 +134,15 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
   comparedComponents: new Set(),
 };
 
-const collectClassComponents = (ast: types.File): CompiledFunction[] => {
-  const classComponents: CompiledFunction[] = [];
-  traverse(ast, {
-    Class(path) {
-      const name = getClassName(path);
-      if (!name || !path.node.loc || !isComponentBaseClass(path.node.superClass)) return;
-      classComponents.push({
-        name,
-        bindingName: name,
-        functionType: "Component",
-        loc: path.node.loc,
-        hir: null,
-        errors: [],
-        isClass: true,
-      });
-    },
-  });
-  return classComponents;
-};
+const toClassFunction = (component: ClassComponent): CompiledFunction => ({
+  name: component.name,
+  bindingName: component.name,
+  functionType: "Component",
+  loc: component.loc,
+  hir: null,
+  errors: [],
+  isClass: true,
+});
 
 const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFunction => {
   const isAtModuleScope =
@@ -377,7 +368,7 @@ export const compileFile = (
 ): CompiledFile => {
   const { ast, error } = parseFile(fileName, code);
   if (!ast) return { ...EMPTY_COMPILED_FILE, parseError: error };
-  lowerClassComponents(ast);
+  const classComponents = lowerClassComponents(ast);
   const collector = new CompiledFunctionCollector();
   const pluginOptions = createPluginOptions(environment, {
     logEvent: collector.recordEvent,
@@ -390,7 +381,7 @@ export const compileFile = (
     parseError: null,
     functions: [
       ...collector.getFunctions(programFunctions.namesByLocation),
-      ...collectClassComponents(ast),
+      ...classComponents.map(toClassFunction),
     ],
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
