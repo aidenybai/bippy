@@ -3,7 +3,7 @@ import type { HIRFunction, IdentifierId } from "../../react-compiler/HIR/HIR";
 import { isFunctionCreation } from "../interpret/is-function-creation";
 import { getHookTraits } from "../interpret/hook-traits";
 
-const scanFunction = (hirFunction: HIRFunction): boolean => {
+export const mayCallPropsOutsideEvents = (hirFunction: HIRFunction): boolean => {
   const functionIds = new Set<IdentifierId>();
   for (const block of hirFunction.body.blocks.values())
     for (const instruction of block.instructions) {
@@ -36,6 +36,3 @@ const scanFunction = (hirFunction: HIRFunction): boolean => {
     }
   return false;
 };
-
-export const mayCallPropsOutsideEvents = (hirFunction: HIRFunction): boolean =>
-  scanFunction(hirFunction);
