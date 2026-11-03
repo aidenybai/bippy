@@ -1,30 +1,16 @@
-import {
-  Suspense,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-  type RefObject,
-} from "react";
+import { Suspense, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { File } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { useFileOptions } from "@/hooks/use-file-options";
 import { useHighlighter } from "@/hooks/use-highlighter";
 import { useIsClient } from "@/hooks/use-is-client";
-import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-token-boxes";
+import { useTokenBoxes, type PlacedToken } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { getComponentAtLine } from "@/lib/graph";
-import {
-  createLineLookup,
-  getLineFromEvent,
-  getRangeRows,
-  scrollToLine,
-  type Box,
-} from "@/lib/positions";
+import { getLineFromEvent, scrollToLine, type Box } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useFocusListener, useHasHover, useViewerStore } from "@/store/viewer";
+import { useFocusListener, useViewerStore } from "@/store/viewer";
 import { Arc } from "./arc";
 import { ArrowMarker } from "./arrow-marker";
 import { useViewer } from "./context";
@@ -34,11 +20,12 @@ const contains = (box: Box, x: number, y: number): boolean =>
   x >= box.x - 2 && x <= box.x + box.width + 2 && y >= box.y && y <= box.y + box.height;
 
 const findTokenAt = (tokens: PlacedToken[], x: number, y: number): PlacedToken | null =>
-  tokens.find((token) => token.rows.some((row) => contains(row, x, y))) ?? null;
+  tokens.find((token) => !token.isMultiLine && token.rows.some((row) => contains(row, x, y))) ??
+  null;
 
 const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
-  layout: TokenLayout,
+  tokens: PlacedToken[],
 ): ((event: MouseEvent) => void) => {
   const { view } = useViewer();
   const activate = useViewerStore((state) => state.activate);
@@ -48,11 +35,7 @@ const usePointerTracking = (
     const wrapper = wrapperRef.current;
     if (!wrapper || event.buttons !== 0) return;
     const origin = wrapper.getBoundingClientRect();
-    const token = findTokenAt(
-      layout.tokens,
-      event.clientX - origin.left,
-      event.clientY - origin.top,
-    );
+    const token = findTokenAt(tokens, event.clientX - origin.left, event.clientY - origin.top);
     if (token) hover(token.node.id);
     else leave();
     const line = getLineFromEvent(event.nativeEvent);
@@ -78,19 +61,19 @@ const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
 };
 
 interface ArcsProps {
-  layout: TokenLayout;
+  tokens: PlacedToken[];
   markerId: string;
 }
 
-const RestingArcs = ({ layout, markerId }: ArcsProps) => {
+const RestingArcs = ({ tokens, markerId }: ArcsProps) => {
   const { view, colorByNodeId } = useViewer();
-  const arcs = placeArcs(view, layout.tokens, colorByNodeId, isRestingArc);
+  const arcs = placeArcs(view, tokens, colorByNodeId, isRestingArc);
   return arcs.map((arc) => (
     <Arc key={`${arc.edge.from}-${arc.edge.to}`} markerId={markerId} {...arc} />
   ));
 };
 
-const CausalArcs = ({ layout, markerId }: ArcsProps) => {
+const CausalArcs = ({ tokens, markerId }: ArcsProps) => {
   const { view, colorByNodeId } = useViewer();
   const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
   const arcs =
@@ -98,7 +81,7 @@ const CausalArcs = ({ layout, markerId }: ArcsProps) => {
       ? []
       : placeArcs(
           view,
-          layout.tokens,
+          tokens,
           colorByNodeId,
           (edge) =>
             !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
@@ -108,43 +91,30 @@ const CausalArcs = ({ layout, markerId }: ArcsProps) => {
   ));
 };
 
-interface OverlayProps {
-  wrapperRef: RefObject<HTMLDivElement | null>;
-  layout: TokenLayout;
-}
+const getRowKey = (row: Box): string => `${row.x}-${row.y}-${row.width}`;
 
-const useFocusRows = (wrapperRef: RefObject<HTMLDivElement | null>, layout: TokenLayout): Box[] => {
-  const index = useViewerStore((state) => state.index);
-  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
-  const [rows, setRows] = useState<Box[]>([]);
-  useLayoutEffect(() => {
-    const wrapper = wrapperRef.current;
-    const host = wrapper?.querySelector<HTMLElement>("diffs-container");
-    if (!wrapper || !host || causalNodeIds === null) return;
-    const lookup = createLineLookup(host, wrapper);
-    const rowByKey = new Map<string, Box>();
-    for (const nodeId of causalNodeIds) {
-      const node = index.nodes.get(nodeId);
-      if (!node || node.kind === "handler") continue;
-      for (const row of getRangeRows(lookup, node.loc))
-        rowByKey.set(`${row.x}-${row.y}-${row.width}`, row);
-    }
-    setRows([...rowByKey.values()]);
-  }, [wrapperRef, index, causalNodeIds, layout]);
-  return rows;
+const getFocusRows = (tokens: PlacedToken[], nodeIds: Set<string> | null): Box[] => {
+  const rows = tokens
+    .filter((token) => nodeIds?.has(token.node.id) && token.node.kind !== "handler")
+    .flatMap((token) => token.rows);
+  return [...new Map(rows.map((row) => [getRowKey(row), row])).values()];
 };
 
-const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
+const FocusScrim = ({ tokens }: { tokens: PlacedToken[] }) => {
   const maskId = useId();
-  const hasHover = useHasHover();
-  const rows = useFocusRows(wrapperRef, layout);
+  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
+  const [focusNodeIds, setFocusNodeIds] = useState(causalNodeIds);
+  if (causalNodeIds !== null && causalNodeIds !== focusNodeIds) setFocusNodeIds(causalNodeIds);
   return (
-    <g className="transition-opacity duration-150" style={{ opacity: hasHover ? 1 : 0 }}>
+    <g
+      className="transition-opacity duration-150"
+      style={{ opacity: causalNodeIds === null ? 0 : 1 }}
+    >
       <mask id={maskId}>
-        <rect width={layout.width} height={layout.height} fill="white" />
-        {rows.map((row) => (
+        <rect width="100%" height="100%" fill="white" />
+        {getFocusRows(tokens, focusNodeIds).map((row) => (
           <rect
-            key={`${row.x}-${row.y}-${row.width}`}
+            key={getRowKey(row)}
             x={row.x - 2}
             y={row.y}
             width={row.width + 4}
@@ -155,8 +125,8 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
         ))}
       </mask>
       <rect
-        width={layout.width}
-        height={layout.height}
+        width="100%"
+        height="100%"
         style={{ fill: "var(--color-background)" }}
         fillOpacity={0.6}
         mask={`url(#${maskId})`}
@@ -165,29 +135,29 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
   );
 };
 
-const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
+const Overlay = ({ tokens }: { tokens: PlacedToken[] }) => {
   const { colorByNodeId } = useViewer();
   const markerId = useId();
   return (
     <svg
       className="pointer-events-none absolute inset-0 overflow-hidden"
-      width={layout.width}
-      height={layout.height}
+      width="100%"
+      height="100%"
     >
       <defs>
         <ArrowMarker id={`${markerId}solid`} size={7} />
         <ArrowMarker id={`${markerId}hollow`} size={7} isHollow />
       </defs>
-      <FocusScrim wrapperRef={wrapperRef} layout={layout} />
-      {layout.tokens.map((token) => (
+      <FocusScrim tokens={tokens} />
+      {tokens.map((token) => (
         <TokenMark
           key={token.node.id}
           {...token}
           color={colorByNodeId.get(token.node.id) ?? "transparent"}
         />
       ))}
-      <RestingArcs layout={layout} markerId={markerId} />
-      <CausalArcs layout={layout} markerId={markerId} />
+      <RestingArcs tokens={tokens} markerId={markerId} />
+      <CausalArcs tokens={tokens} markerId={markerId} />
     </svg>
   );
 };
@@ -199,8 +169,8 @@ const CodeView = () => {
   const [renderCount, setRenderCount] = useState(0);
   const options = useFileOptions(() => setRenderCount((count) => count + 1));
   const file = { name: getFileTitle(view.file), contents: view.source };
-  const layout = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
-  const trackPointer = usePointerTracking(wrapperRef, layout);
+  const tokens = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
+  const trackPointer = usePointerTracking(wrapperRef, tokens);
   const leave = useViewerStore((state) => state.leave);
   useFocusScroll(wrapperRef);
   return (
@@ -211,7 +181,7 @@ const CodeView = () => {
       onMouseLeave={leave}
     >
       <File file={file} options={options} disableWorkerPool />
-      <Overlay wrapperRef={wrapperRef} layout={layout} />
+      <Overlay tokens={tokens} />
     </div>
   );
 };
