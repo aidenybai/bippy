@@ -80,6 +80,9 @@ export class HarnessError extends Error {
   }
 }
 
+export const isNothingRendered = (capture: Capture): capture is Capture & { error: string } =>
+  Boolean(capture.error) && capture.shapes.length === 0;
+
 export const getCaptureFailure = (capture: Capture): MountFailure =>
   capture.failure ?? classifyMountError(capture.error ?? "");
 

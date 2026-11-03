@@ -1,6 +1,6 @@
 import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
-import { HarnessError, getCaptureFailure } from "./reasons";
+import { HarnessError, getCaptureFailure, isNothingRendered } from "./reasons";
 import type { MountFailure } from "./reasons";
 import type {
   Action,
@@ -247,8 +247,7 @@ export const resolveWrappers = async (
     attempt++
   ) {
     const capture = await mountInPage(page, { ...request, wrappers: search.wrappers });
-    if (!capture.error || capture.shapes.length > 0)
-      return { wrappers: search.wrappers, mounted: capture };
+    if (!isNothingRendered(capture)) return { wrappers: search.wrappers, mounted: capture };
     const failedMount: FailedMount = {
       error: capture.error,
       errorDepth: capture.errorDepth,
@@ -296,7 +295,7 @@ const explorePropCombination = async (
   const observations: Observation[] = [
     { props: request.props, path: [], action: null, before: null, after: initialCapture },
   ];
-  if (initialCapture.error && initialCapture.shapes.length === 0) return observations;
+  if (isNothingRendered(initialCapture)) return observations;
   const seenCaptureKeys = new Set([getCaptureKey(initialCapture)]);
   const pendingPaths: string[][] = [[]];
   let actionCount = 0;
