@@ -155,8 +155,11 @@ export const analyzeComponent = (
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
-    fileContext.compiled.loadModuleConstant,
-    fileContext.compiled.loadModuleVariable,
+    (constantName) => fileContext.compiled.moduleValues.constants.get(constantName) ?? null,
+    (variableName) => {
+      const declaration = fileContext.compiled.moduleValues.declarations.get(variableName);
+      return declaration?.isWritten ? declaration : null;
+    },
     fileContext.projectLoaders,
     contextSetterFields,
     fileContext.modelsByStore,

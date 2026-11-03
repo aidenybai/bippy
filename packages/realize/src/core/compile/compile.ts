@@ -17,19 +17,8 @@ import { isHookName } from "../../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { TypeConfig } from "../../react-compiler/HIR/TypeSchema";
 import type { ModuleFunctionLoader } from "./function-registry";
-import {
-  createModuleConstantLoader,
-  createModuleDeclarationLoader,
-  createImportUseLoader,
-  collectImportedNames,
-} from "./module-values";
-import type {
-  ModuleConstantLoader,
-  ModuleDeclarationLoader,
-  ModuleVariableLoader,
-  ImportUseLoader,
-  ImportedNames,
-} from "./module-values";
+import { collectModuleValues } from "./module-values";
+import type { ModuleValues } from "./module-values";
 import { getLocationKey } from "../shared/get-location-key";
 import { lowerClassComponents } from "./lower-class-components";
 import type { ClassComponent } from "./lower-class-components";
@@ -54,11 +43,7 @@ export interface CompiledFile {
   functions: CompiledFunction[];
   loadModuleFunction: ModuleFunctionLoader;
   lowerModuleFunction: ModuleFunctionLoader;
-  loadModuleConstant: ModuleConstantLoader;
-  loadModuleVariable: ModuleVariableLoader;
-  loadModuleDeclaration: ModuleDeclarationLoader;
-  loadImportUse: ImportUseLoader;
-  importedNames: ImportedNames;
+  moduleValues: ModuleValues;
   comparedComponents: ReadonlySet<string>;
 }
 
@@ -121,15 +106,16 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
   functions: [],
   loadModuleFunction: () => null,
   lowerModuleFunction: () => null,
-  loadModuleConstant: () => null,
-  loadModuleVariable: () => null,
-  loadModuleDeclaration: () => null,
-  loadImportUse: () => "read",
-  importedNames: {
-    specifiers: [],
-    namespaceSources: [],
-    reexportSources: [],
-    isReadOnly: () => false,
+  moduleValues: {
+    declarations: new Map(),
+    constants: new Map(),
+    importUses: new Map(),
+    importedNames: {
+      specifiers: [],
+      namespaceSources: [],
+      reexportSources: [],
+      isReadOnly: () => false,
+    },
   },
   comparedComponents: new Set(),
 };
@@ -376,7 +362,6 @@ export const compileFile = (
   });
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
-  const loadModuleDeclaration = createModuleDeclarationLoader(ast);
   return {
     parseError: null,
     functions: [
@@ -385,14 +370,7 @@ export const compileFile = (
     ],
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
-    loadModuleConstant: createModuleConstantLoader(ast),
-    loadModuleVariable: (variableName) => {
-      const declaration = loadModuleDeclaration(variableName);
-      return declaration?.isWritten ? declaration : null;
-    },
-    loadModuleDeclaration,
-    loadImportUse: createImportUseLoader(ast),
-    importedNames: collectImportedNames(ast),
+    moduleValues: collectModuleValues(ast),
     comparedComponents: programFunctions.comparedComponents,
   };
 };
