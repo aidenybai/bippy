@@ -1,6 +1,4 @@
-import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import type { PlacedToken } from "@/hooks/use-token-boxes";
-import { getSolidColor } from "@/lib/colors";
 import type { Box } from "@/lib/positions";
 import { useIsDimmed, useIsHovered, useIsInactive } from "@/store/viewer";
 
@@ -25,24 +23,22 @@ interface MarkRectProps {
   opacity: number;
 }
 
-const MarkRect = ({ nodeId, box, isMultiLine, isHovered, color, opacity }: MarkRectProps) => {
-  const { theme } = useResolvedTheme();
-  return (
-    <rect
-      data-node={nodeId}
-      x={isMultiLine ? box.x - 8 : box.x - 2}
-      y={box.y + 1}
-      width={isMultiLine ? 3 : box.width + 4}
-      height={box.height - 2}
-      rx={isMultiLine ? 1.5 : 2}
-      fill={isMultiLine ? getSolidColor(color) : color}
-      stroke={isHovered ? getSolidColor(color) : "none"}
-      strokeWidth={2}
-      opacity={opacity}
-      style={{ mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
-    />
-  );
-};
+const MarkRect = ({ nodeId, box, isMultiLine, isHovered, color, opacity }: MarkRectProps) => (
+  <rect
+    data-node={nodeId}
+    x={isMultiLine ? box.x - 8 : box.x - 2}
+    y={box.y + 1}
+    width={isMultiLine ? 3 : box.width + 4}
+    height={box.height - 2}
+    rx={isMultiLine ? 1.5 : 2}
+    fill={color}
+    fillOpacity={isMultiLine ? 1 : 0.3}
+    stroke={isHovered ? color : "none"}
+    strokeWidth={2}
+    opacity={opacity}
+    className="mix-blend-multiply dark:mix-blend-screen"
+  />
+);
 
 interface TokenMarkProps extends PlacedToken {
   color: string;

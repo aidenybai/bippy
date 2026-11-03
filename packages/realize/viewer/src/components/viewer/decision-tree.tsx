@@ -3,7 +3,6 @@ import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import type { Point } from "@/lib/arcs";
-import { getSolidColor } from "@/lib/colors";
 import {
   buildDecisionTree,
   collectEdges,
@@ -165,13 +164,12 @@ const layoutLoops = (
 const EdgePath = ({ edge, markerId }: { edge: LaidOutEdge; markerId: string }) => {
   const { colorByNodeId } = useViewer();
   const [nodeId] = edge.handler?.nodeIds ?? [];
-  const color = nodeId !== undefined ? colorByNodeId.get(nodeId) : undefined;
-  const stroke = color ? getSolidColor(color) : "var(--faint)";
+  const color = nodeId === undefined ? undefined : colorByNodeId.get(nodeId);
   return (
     <path
       d={edge.path}
       fill="none"
-      style={{ stroke }}
+      style={{ stroke: color ?? "var(--faint)" }}
       strokeWidth={edge.transition ? 1.25 : 1}
       strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
       markerEnd={`url(#${markerId})`}

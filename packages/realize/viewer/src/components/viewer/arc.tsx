@@ -1,5 +1,4 @@
 import { isSideArc, type PlacedArc, type Point } from "@/lib/arcs";
-import { getSolidColor } from "@/lib/colors";
 import type { Box } from "@/lib/positions";
 import type { GraphEdge } from "@/model";
 import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/viewer";
@@ -63,7 +62,7 @@ export const Arc = ({ markerId, ...arc }: ArcProps) => {
     <path
       d={isSideArc(arc) ? getSidePath(arc) : getVerticalPath(arc)}
       fill="none"
-      stroke={getSolidColor(arc.color)}
+      stroke={arc.color}
       strokeWidth={isActive ? 1.75 : 1}
       strokeDasharray={isEvent ? "4 3" : undefined}
       markerEnd={`url(#${markerId}${isEvent ? "hollow" : "solid"})`}
