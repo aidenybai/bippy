@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
@@ -31,18 +31,16 @@ interface ViewerProviderProps {
 export const ViewerProvider = ({ examples, name, view, json, children }: ViewerProviderProps) => {
   const mode = getPathMode(usePathname());
   const setIndex = useHoverStore((state) => state.setIndex);
-  const index = useMemo(() => buildGraphIndex(view), [view]);
-  const colorByNodeId = useMemo(() => getColorByNodeId(view), [view]);
+  const index = buildGraphIndex(view);
+  const colorByNodeId = getColorByNodeId(view);
   useEffect(() => setIndex(index), [index, setIndex]);
-  const setMode = useCallback(
-    (next: ViewMode) => window.history.replaceState(null, "", getRouteHref(name, next)),
-    [name],
+  const setMode = (next: ViewMode) =>
+    window.history.replaceState(null, "", getRouteHref(name, next));
+  return (
+    <ViewerContext value={{ examples, name, mode, view, json, setMode, index, colorByNodeId }}>
+      {children}
+    </ViewerContext>
   );
-  const value = useMemo<ViewerState>(
-    () => ({ examples, name, mode, view, json, setMode, index, colorByNodeId }),
-    [examples, name, mode, view, json, setMode, index, colorByNodeId],
-  );
-  return <ViewerContext value={value}>{children}</ViewerContext>;
 };
 
 export const useViewer = (): ViewerState => {
@@ -54,12 +52,9 @@ export const useViewer = (): ViewerState => {
 export const useActiveComponent = (): ViewComponent | null => {
   const { view } = useViewer();
   const activeName = useHoverStore((state) => state.activeName);
-  return useMemo(() => {
-    return (
-      view.components.find((component) => component.name === activeName) ??
-      getDefaultComponent(view)
-    );
-  }, [view, activeName]);
+  return (
+    view.components.find((component) => component.name === activeName) ?? getDefaultComponent(view)
+  );
 };
 
 export const useHoveredNode = (): GraphNode | null => {

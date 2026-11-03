@@ -1,9 +1,7 @@
 import {
   Suspense,
-  useCallback,
   useId,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type MouseEvent,
@@ -45,36 +43,28 @@ const usePointerTracking = (
   const activate = useHoverStore((state) => state.activate);
   const hover = useHoverStore((state) => state.hover);
   const leave = useHoverStore((state) => state.leave);
-  return useCallback(
-    (event: MouseEvent) => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper || event.buttons !== 0) return;
-      const origin = wrapper.getBoundingClientRect();
-      const token = findTokenAt(
-        layout.tokens,
-        event.clientX - origin.left,
-        event.clientY - origin.top,
-      );
-      if (token) hover(token.node.id);
-      else leave();
-      const line = getLineFromEvent(event.nativeEvent);
-      const component = line === null ? null : getComponentAtLine(view, line);
-      if (component) activate(component.name);
-    },
-    [wrapperRef, layout, view, activate, hover, leave],
-  );
+  return (event: MouseEvent) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || event.buttons !== 0) return;
+    const origin = wrapper.getBoundingClientRect();
+    const token = findTokenAt(
+      layout.tokens,
+      event.clientX - origin.left,
+      event.clientY - origin.top,
+    );
+    if (token) hover(token.node.id);
+    else leave();
+    const line = getLineFromEvent(event.nativeEvent);
+    const component = line === null ? null : getComponentAtLine(view, line);
+    if (component) activate(component.name);
+  };
 };
 
 const useColoredNodes = (): GraphNode[] => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
-  return useMemo(
-    () =>
-      view.components
-        .flatMap((component) => component.graph.nodes)
-        .filter((node) => colorByNodeId.has(node.id)),
-    [view, colorByNodeId],
-  );
+  const { view, colorByNodeId } = useViewer();
+  return view.components
+    .flatMap((component) => component.graph.nodes)
+    .filter((node) => colorByNodeId.has(node.id));
 };
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
@@ -87,32 +77,24 @@ const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
 };
 
 const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
-  const arcs = useMemo(
-    () => placeArcs(view, layout.tokens, colorByNodeId, isRestingArc),
-    [view, layout, colorByNodeId],
-  );
+  const { view, colorByNodeId } = useViewer();
+  const arcs = placeArcs(view, layout.tokens, colorByNodeId, isRestingArc);
   return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
 };
 
 const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
+  const { view, colorByNodeId } = useViewer();
   const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
-  const arcs = useMemo(
-    () =>
-      causalNodeIds === null
-        ? []
-        : placeArcs(
-            view,
-            layout.tokens,
-            colorByNodeId,
-            (edge) =>
-              !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
-          ),
-    [view, layout, colorByNodeId, causalNodeIds],
-  );
+  const arcs =
+    causalNodeIds === null
+      ? []
+      : placeArcs(
+          view,
+          layout.tokens,
+          colorByNodeId,
+          (edge) =>
+            !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
+        );
   return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
 };
 
@@ -200,12 +182,8 @@ const CodeView = () => {
   useHighlighter();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
-  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const options = useFileOptions(onPostRender);
-  const file = useMemo(
-    () => ({ name: getFileTitle(view.file), contents: view.source }),
-    [view.file, view.source],
-  );
+  const options = useFileOptions(() => setRenderCount((count) => count + 1));
+  const file = { name: getFileTitle(view.file), contents: view.source };
   const layout = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
   const trackPointer = usePointerTracking(wrapperRef, layout);
   const leave = useHoverStore((state) => state.leave);

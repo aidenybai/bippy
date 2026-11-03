@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
@@ -251,7 +250,7 @@ interface DecisionTreeProps {
 }
 
 export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
-  const layout = useMemo(() => layoutTree(component, region), [component, region]);
+  const layout = layoutTree(component, region);
   if (!layout) return null;
   return (
     <div className="-mx-2 overflow-x-auto overscroll-x-contain px-2 py-2 -my-2">
