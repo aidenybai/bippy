@@ -52,7 +52,7 @@ export const TokenMark = ({ node, box, rows, isMultiLine, color }: TokenMarkProp
   const isHovered = useIsHovered(node.id);
   const opacity = getTokenOpacity({
     isDimmed: useIsDimmed([node.id]),
-    isInactive: useIsInactive(node.id),
+    isInactive: useIsInactive(node.component),
     isMultiLine,
   });
   return (isMultiLine ? [box] : rows).map((row) => (

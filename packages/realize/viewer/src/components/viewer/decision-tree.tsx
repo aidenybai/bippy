@@ -2,7 +2,6 @@ import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { getSolidColor } from "@/lib/colors";
-import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
 import {
   buildDecisionTree,
   collectEdges,
@@ -174,11 +173,10 @@ const layoutLoops = (
 const toPath = (points: Point[]): string =>
   points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 
-const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
+const EdgePath = ({ edge }: { edge: LaidOutEdge }) => {
   const { colorByNodeId } = useViewer();
-  const handlerId = edge.transition?.handlerId;
-  const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
-  const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
+  const [nodeId] = edge.handler?.nodeIds ?? [];
+  const color = nodeId !== undefined ? colorByNodeId.get(nodeId) : undefined;
   const stroke = color ? getSolidColor(color) : "var(--faint)";
   const strokeWidth = edge.transition ? 1.25 : 1;
   return (
@@ -195,42 +193,36 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
   );
 };
 
-const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
-  const handlerId = edge.transition?.handlerId;
-  const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
-  return (
-    <div
-      className={
-        edge.labelAlign === "start"
-          ? "absolute -translate-y-1/2 bg-background px-0.5 whitespace-nowrap"
-          : "absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
-      }
-      style={{ left: edge.label.x, top: edge.label.y }}
-    >
-      {edge.handler ? (
-        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
-          <Code>{edge.handler.label}</Code>
-        </Chip>
-      ) : (
-        <span className="text-muted-foreground">{edge.answer === "yes" ? "✓" : "✗"}</span>
-      )}
-    </div>
-  );
-};
+const EdgeLabel = ({ edge }: { edge: LaidOutEdge }) => (
+  <div
+    className={
+      edge.labelAlign === "start"
+        ? "absolute -translate-y-1/2 bg-background px-0.5 whitespace-nowrap"
+        : "absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
+    }
+    style={{ left: edge.label.x, top: edge.label.y }}
+  >
+    {edge.handler ? (
+      <Chip nodeIds={edge.handler.nodeIds} canDim={false}>
+        <Code>{edge.handler.label}</Code>
+      </Chip>
+    ) : (
+      <span className="text-muted-foreground">{edge.answer === "yes" ? "✓" : "✗"}</span>
+    )}
+  </div>
+);
 
-const NodeView = ({ laid, component }: { laid: LaidOutNode; component: ViewComponent }) => {
+const NodeView = ({ laid }: { laid: LaidOutNode }) => {
   const { node, x, y, width, height } = laid;
   const style = { left: x - width / 2, top: y - height / 2, width };
-  if (node.kind === "branch") {
-    const nodeId = node.branch ? getConditionNodeId(component, node.branch.test) : undefined;
+  if (node.kind === "branch")
     return (
       <div className="absolute flex justify-center overflow-hidden" style={style}>
-        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
+        <Chip nodeIds={node.nodeIds} canDim={false}>
           <Code className="block max-w-full truncate">{node.condition}</Code>
         </Chip>
       </div>
     );
-  }
   return (
     <div
       className="absolute grid content-start gap-0.5 rounded-md border bg-background px-2 py-1.5 shadow-card"
@@ -257,14 +249,14 @@ export const DecisionTree = ({ component }: { component: ViewComponent }) => {
           aria-hidden="true"
         >
           {layout.edges.map((edge) => (
-            <EdgePath key={edge.id} edge={edge} component={component} />
+            <EdgePath key={edge.id} edge={edge} />
           ))}
         </svg>
         {layout.nodes.map((laid) => (
-          <NodeView key={laid.node.id} laid={laid} component={component} />
+          <NodeView key={laid.node.id} laid={laid} />
         ))}
         {layout.edges.map((edge) => (
-          <EdgeLabel key={edge.id} edge={edge} component={component} />
+          <EdgeLabel key={edge.id} edge={edge} />
         ))}
       </div>
     </div>

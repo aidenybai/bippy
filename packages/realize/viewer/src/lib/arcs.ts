@@ -166,17 +166,16 @@ export const placeArcs = (
     if (box)
       ends.set(token.node.id, { box, line: (token.node.anchor ?? token.node.loc).start.line });
   }
-  const arcs = view.components
-    .flatMap((component) => component.graph.edges)
-    .filter(isWanted)
-    .flatMap((edge) => {
+  const arcs = view.components.flatMap((component) =>
+    component.graph.edges.filter(isWanted).flatMap((edge) => {
       const from = ends.get(edge.from);
       const to = ends.get(edge.to);
       const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from);
       return from && to && color && from.line !== to.line
-        ? [{ edge, from: from.box, to: to.box, color }]
+        ? [{ edge, component: component.name, from: from.box, to: to.box, color }]
         : [];
-    });
+    }),
+  );
   return assignLanes(assignJunctions(assignSlots(arcs)));
 };
 

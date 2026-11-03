@@ -16,6 +16,7 @@ const EVENT_ARC_KINDS = new Set<GraphEdge["kind"]>(["triggers", "writes"]);
 
 export interface PlacedArc {
   edge: GraphEdge;
+  component: string;
   from: Box;
   to: Box;
   fromSlot: number;
@@ -88,7 +89,7 @@ const getArcShape = (arc: PlacedArc): ArcShape =>
 export const Arc = (arc: PlacedArc) => {
   const isActive = useIsCausalEdge(arc.edge.from, arc.edge.to);
   const hasHover = useHasHover();
-  const isInactive = useIsInactive(arc.edge.from);
+  const isInactive = useIsInactive(arc.component);
   const isMuted = (hasHover && !isActive) || isInactive;
   const shape = getArcShape(arc);
   const color = getSolidColor(arc.color);

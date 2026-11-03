@@ -13,6 +13,7 @@ const viewBindingSchema = z.object({
   initial: z.string().nullable(),
   reachable: z.string().nullable(),
   loc: viewLocationSchema.nullable(),
+  nodeIds: z.array(z.string()),
 });
 
 const viewBranchSchema = z.object({
@@ -38,6 +39,7 @@ const viewHandlerSchema = z.object({
   label: z.string(),
   loc: viewLocationSchema.nullable(),
   updates: z.array(viewUpdateSchema),
+  nodeIds: z.array(z.string()),
 });
 
 const viewTransitionSchema = z.object({
@@ -47,15 +49,24 @@ const viewTransitionSchema = z.object({
   isAsync: z.boolean(),
 });
 
+const viewConditionSchema = z.object({
+  text: z.string(),
+  branchId: z.number().nullable(),
+  arm: armSchema.nullable(),
+  nodeIds: z.array(z.string()),
+});
+
 const viewStateSchema = z.object({
   index: z.number(),
-  conditions: z.array(z.string()),
+  conditions: z.array(viewConditionSchema),
   label: z.string(),
   render: z.string(),
+  armNodeIds: z.array(z.string()),
 });
 
 const graphNodeSchema = z.object({
   id: z.string(),
+  component: z.string(),
   kind: z.enum(["handler", "trigger", "binding", "write", "read", "branch", "arm"]),
   label: z.string(),
   loc: viewLocationSchema,
@@ -107,6 +118,7 @@ export type ViewBinding = z.infer<typeof viewBindingSchema>;
 export type ViewBranch = z.infer<typeof viewBranchSchema>;
 export type ViewUpdate = z.infer<typeof viewUpdateSchema>;
 export type ViewHandler = z.infer<typeof viewHandlerSchema>;
+export type ViewCondition = z.infer<typeof viewConditionSchema>;
 export type ViewState = z.infer<typeof viewStateSchema>;
 export type ViewTransition = z.infer<typeof viewTransitionSchema>;
 export type GraphNode = z.infer<typeof graphNodeSchema>;
@@ -116,3 +128,6 @@ export type ViewComponent = z.infer<typeof viewComponentSchema>;
 export type ViewFile = z.infer<typeof viewFileSchema>;
 export type Example = z.infer<typeof exampleSchema>;
 export type Demos = z.infer<typeof demosSchema>;
+
+export const getUpdateKey = (update: ViewUpdate): string =>
+  `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;

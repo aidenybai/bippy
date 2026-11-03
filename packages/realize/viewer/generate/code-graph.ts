@@ -18,13 +18,17 @@ interface TriggerSite {
   name: string;
 }
 
+type GraphBinding = Omit<ViewBinding, "nodeIds">;
+
+type GraphHandler = Omit<ViewHandler, "nodeIds">;
+
 interface GraphInput {
-  idPrefix: string;
+  component: string;
   source: string;
   componentLoc: ViewLocation | null;
-  bindings: ViewBinding[];
+  bindings: GraphBinding[];
   branches: ViewBranch[];
-  handlers: ViewHandler[];
+  handlers: GraphHandler[];
   triggers: TriggerSite[];
 }
 
@@ -50,7 +54,7 @@ const toLocation = (node: t.Node): ViewLocation | null =>
 const contains = (outer: ViewLocation | null, inner: ViewLocation): boolean =>
   outer !== null && outer.start.index <= inner.start.index && inner.end.index <= outer.end.index;
 
-const getSetterNames = (ast: t.File, bindings: ViewBinding[]): Map<number, string> => {
+const getSetterNames = (ast: t.File, bindings: GraphBinding[]): Map<number, string> => {
   const setters = new Map<number, string>();
   traverse(ast, {
     VariableDeclarator(path) {
@@ -81,7 +85,7 @@ const collectReferences = (ast: t.File, componentLoc: ViewLocation | null): Refe
   return references;
 };
 
-const findEnclosingHandler = (handlers: ViewHandler[], loc: ViewLocation): ViewHandler | null =>
+const findEnclosingHandler = (handlers: GraphHandler[], loc: ViewLocation): GraphHandler | null =>
   handlers
     .filter((handler) => handler.loc && contains(handler.loc, loc))
     .sort(
@@ -93,46 +97,50 @@ interface GraphSink {
   edges: GraphEdge[];
 }
 
+const getNodeId = (input: GraphInput, suffix: string): string => `${input.component}/${suffix}`;
+
 const addWriteNode = (
   input: GraphInput,
-  binding: ViewBinding,
+  binding: GraphBinding,
   reference: Reference,
   index: number,
   sink: GraphSink,
 ): void => {
   const handler = findEnclosingHandler(input.handlers, reference.loc);
-  const id = `${input.idPrefix}write:${binding.id}:${index}`;
+  const id = getNodeId(input, `write:${binding.id}:${index}`);
   sink.nodes.push({
     id,
+    component: input.component,
     kind: "write",
     label: `writes ${binding.name}`,
     loc: reference.loc,
     bindingId: binding.id,
     handlerId: handler?.id,
   });
-  sink.edges.push({ from: id, to: `${input.idPrefix}binding:${binding.id}`, kind: "writes" });
+  sink.edges.push({ from: id, to: getNodeId(input, `binding:${binding.id}`), kind: "writes" });
   if (handler)
-    sink.edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
+    sink.edges.push({ from: getNodeId(input, `handler:${handler.id}`), to: id, kind: "writes" });
 };
 
 const addReadNode = (
   input: GraphInput,
-  binding: ViewBinding,
+  binding: GraphBinding,
   reference: Reference,
   index: number,
   sink: GraphSink,
 ): void => {
   const handler = findEnclosingHandler(input.handlers, reference.loc);
-  const id = `${input.idPrefix}read:${binding.id}:${index}`;
+  const id = getNodeId(input, `read:${binding.id}:${index}`);
   sink.nodes.push({
     id,
+    component: input.component,
     kind: "read",
     label: handler ? `${binding.name} read by ${handler.label}` : `${binding.name} on screen`,
     loc: reference.loc,
     bindingId: binding.id,
     handlerId: handler?.id,
   });
-  sink.edges.push({ from: `${input.idPrefix}binding:${binding.id}`, to: id, kind: "reads" });
+  sink.edges.push({ from: getNodeId(input, `binding:${binding.id}`), to: id, kind: "reads" });
 };
 
 const addBindingNodes = (
@@ -147,7 +155,8 @@ const addBindingNodes = (
     const { loc } = binding;
     if (!loc) continue;
     nodes.push({
-      id: `${input.idPrefix}binding:${binding.id}`,
+      id: getNodeId(input, `binding:${binding.id}`),
+      component: input.component,
       kind: "binding",
       label: `${binding.name} · ${binding.domain}`,
       loc,
@@ -185,7 +194,8 @@ const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge
   for (const handler of input.handlers) {
     if (!handler.loc) continue;
     nodes.push({
-      id: `${input.idPrefix}handler:${handler.id}`,
+      id: getNodeId(input, `handler:${handler.id}`),
+      component: input.component,
       kind: "handler",
       label: handler.label,
       loc: handler.loc,
@@ -193,22 +203,27 @@ const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge
     });
   }
   for (const trigger of input.triggers) {
-    const id = `${input.idPrefix}trigger:${trigger.handlerId}:${trigger.loc.start.index}`;
+    const id = getNodeId(input, `trigger:${trigger.handlerId}:${trigger.loc.start.index}`);
     nodes.push({
       id,
+      component: input.component,
       kind: "trigger",
       label: getEventName(trigger.name),
       loc: trigger.loc,
       handlerId: trigger.handlerId,
     });
-    edges.push({ from: id, to: `${input.idPrefix}handler:${trigger.handlerId}`, kind: "triggers" });
+    edges.push({
+      from: id,
+      to: getNodeId(input, `handler:${trigger.handlerId}`),
+      kind: "triggers",
+    });
   }
 };
 
 const getConditionAnchor = (
   branch: ViewBranch,
   references: Reference[],
-  bindings: ViewBinding[],
+  bindings: GraphBinding[],
 ): ViewLocation | undefined => {
   const readIds = new Set(branch.readsBindingIds);
   const names = new Set(
@@ -227,9 +242,10 @@ const addBranchNodes = (
 ): void => {
   for (const branch of input.branches) {
     if (!branch.loc) continue;
-    const branchNodeId = `${input.idPrefix}branch:${branch.id}`;
+    const branchNodeId = getNodeId(input, `branch:${branch.id}`);
     nodes.push({
       id: branchNodeId,
+      component: input.component,
       kind: "branch",
       label: branch.test,
       loc: branch.loc,
@@ -238,16 +254,17 @@ const addBranchNodes = (
     });
     for (const bindingId of branch.readsBindingIds)
       edges.push({
-        from: `${input.idPrefix}binding:${bindingId}`,
+        from: getNodeId(input, `binding:${bindingId}`),
         to: branchNodeId,
         kind: "decides",
       });
     for (const arm of ["consequent", "alternate"] as const) {
       const loc = branch[arm];
       if (!loc) continue;
-      const id = `${input.idPrefix}arm:${branch.id}:${arm}`;
+      const id = getNodeId(input, `arm:${branch.id}:${arm}`);
       nodes.push({
         id,
+        component: input.component,
         kind: "arm",
         label: arm === "consequent" ? `when ${branch.test}` : `when ${branch.negated}`,
         loc,

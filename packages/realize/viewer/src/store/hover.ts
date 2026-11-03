@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
-import { getCausalNodeIds, getComponentName, type GraphIndex } from "@/lib/graph";
+import { getCausalNodeIds, type GraphIndex } from "@/lib/graph";
 
 interface FocusRequest {
   name: string;
@@ -40,7 +40,7 @@ export const useHoverStore = create<HoverState>((set, get) => ({
     if (hoveredNodeId === nodeId) return;
     set({
       hoveredNodeId: nodeId,
-      activeName: getComponentName(nodeId),
+      activeName: index?.nodes.get(nodeId)?.component ?? null,
       causalNodeIds: index ? getCausalNodeIds(index, nodeId) : null,
     });
   },
@@ -60,10 +60,8 @@ export const useIsDimmed = (nodeIds: string[]): boolean =>
       !nodeIds.some((nodeId) => state.causalNodeIds?.has(nodeId)),
   );
 
-export const useIsInactive = (nodeId: string): boolean =>
-  useHoverStore(
-    (state) => state.activeName !== null && getComponentName(nodeId) !== state.activeName,
-  );
+export const useIsInactive = (component: string): boolean =>
+  useHoverStore((state) => state.activeName !== null && component !== state.activeName);
 
 export const useIsCausalEdge = (from: string, to: string): boolean =>
   useHoverStore(

@@ -3,13 +3,15 @@ import type {
   ViewBinding,
   ViewBranch,
   ViewComponent,
+  ViewCondition,
   ViewFile,
   ViewLocation,
   ViewState,
   ViewUpdate,
 } from "@/model";
-import { getComponentName } from "./graph";
-import { getArmOutcome } from "./lookup";
+
+const getArmOutcome = (branch: ViewBranch, state: ViewState): ViewCondition["arm"] =>
+  state.conditions.find((condition) => condition.branchId === branch.id)?.arm ?? null;
 
 const formatStateList = (states: ViewState[]): string =>
   states.map((state) => `S${state.index + 1}`).join(", ");
@@ -83,9 +85,7 @@ const describeArm = (
 };
 
 export const describeNode = (view: ViewFile, node: GraphNode): string => {
-  const component = view.components.find(
-    (candidate) => candidate.name === getComponentName(node.id),
-  );
+  const component = view.components.find((candidate) => candidate.name === node.component);
   if (!component) return node.label;
   const binding = component.bindings.find((candidate) => candidate.id === node.bindingId);
   const branch = component.branches.find((candidate) => candidate.id === node.branchId);

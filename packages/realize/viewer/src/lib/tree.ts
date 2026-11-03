@@ -1,10 +1,10 @@
-import type { ViewBranch, ViewComponent, ViewState } from "@/model";
+import type { ViewComponent, ViewState } from "@/model";
 
 interface BranchNode {
   kind: "branch";
   id: string;
-  branch: ViewBranch | null;
   condition: string;
+  nodeIds: string[];
   yes: TreeNode | null;
   no: TreeNode | null;
 }
@@ -17,10 +17,6 @@ interface LeafNode {
 
 export type TreeNode = BranchNode | LeafNode;
 
-const findBranch = (component: ViewComponent, condition: string): ViewBranch | null =>
-  component.branches.find((branch) => branch.test === condition || branch.negated === condition) ??
-  null;
-
 const buildNode = (
   component: ViewComponent,
   states: ViewState[],
@@ -30,15 +26,15 @@ const buildNode = (
   if (!first) return null;
   const condition = first.conditions[depth];
   if (condition === undefined) return { kind: "leaf", id: `leaf:${first.index}`, state: first };
-  const branch = findBranch(component, condition);
-  const positive = branch?.test ?? condition;
-  const yes = states.filter((state) => state.conditions[depth] === positive);
-  const no = states.filter((state) => state.conditions[depth] !== positive);
+  const branch = component.branches.find((candidate) => candidate.id === condition.branchId);
+  const positive = branch?.test ?? condition.text;
+  const yes = states.filter((state) => state.conditions[depth]?.text === positive);
+  const no = states.filter((state) => state.conditions[depth]?.text !== positive);
   return {
     kind: "branch",
     id: `branch:${depth}:${first.index}`,
-    branch,
     condition: positive,
+    nodeIds: condition.nodeIds,
     yes: buildNode(component, yes, depth + 1),
     no: buildNode(component, no, depth + 1),
   };
