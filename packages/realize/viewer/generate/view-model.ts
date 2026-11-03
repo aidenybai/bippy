@@ -40,7 +40,7 @@ import {
   type ViewTransition,
   type ViewUpdate,
 } from "@/model";
-import { buildCodeGraph } from "./code-graph";
+import { buildCodeGraph, parseSource, type ParsedSource } from "./code-graph";
 
 const toViewLocation = (loc: SourceLocation): ViewLocation | null =>
   typeof loc !== "object"
@@ -314,14 +314,14 @@ const toViewState = (
 
 const toViewComponent = async (
   component: AnalyzedComponent,
-  source: string,
+  parsed: ParsedSource,
 ): Promise<ViewComponent> => {
   const bindings = await getViewBindings(component);
   const branches = collectBranches(component);
   const handlers = getViewHandlers(component);
   const graph = buildCodeGraph({
     component: component.analysis.name,
-    source,
+    parsed,
     componentLoc: toViewLocation(component.analysis.loc),
     bindings,
     branches,
@@ -367,9 +367,10 @@ const findTsconfig = (file: string): string => {
 export const analyzeFile = async (file: string): Promise<{ view: ViewFile; json: string }> => {
   const analysis = await analyzeProject(findTsconfig(file), file);
   const source = readFileSync(file, "utf8");
+  const parsed = parseSource(source);
   const components: ViewComponent[] = [];
   for (const component of analysis.components)
-    if (component.analysis.file === file) components.push(await toViewComponent(component, source));
+    if (component.analysis.file === file) components.push(await toViewComponent(component, parsed));
   return {
     view: { file, source, components },
     json: JSON.stringify(JSON.parse(serializeProjectAnalysis(analysis)), null, 2),

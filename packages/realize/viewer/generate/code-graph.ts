@@ -22,20 +22,37 @@ type GraphBinding = Omit<ViewBinding, "nodeIds">;
 
 type GraphHandler = Omit<ViewHandler, "nodeIds">;
 
+interface Reference {
+  name: string;
+  loc: ViewLocation;
+  isCall: boolean;
+}
+
+interface StateDeclarator {
+  stateName: string;
+  setterName: string;
+  loc: ViewLocation;
+}
+
+interface JsxAttributeSite {
+  nameLoc: ViewLocation;
+  valueLoc: ViewLocation;
+}
+
+export interface ParsedSource {
+  references: Reference[];
+  declarators: StateDeclarator[];
+  attributes: JsxAttributeSite[];
+}
+
 interface GraphInput {
   component: string;
-  source: string;
+  parsed: ParsedSource;
   componentLoc: ViewLocation | null;
   bindings: GraphBinding[];
   branches: ViewBranch[];
   handlers: GraphHandler[];
   triggers: TriggerSite[];
-}
-
-interface Reference {
-  name: string;
-  loc: ViewLocation;
-  isCall: boolean;
 }
 
 const traverse: typeof traverseModule =
@@ -54,35 +71,54 @@ const toLocation = (node: t.Node): ViewLocation | null =>
 const contains = (outer: ViewLocation | null, inner: ViewLocation): boolean =>
   outer !== null && outer.start.index <= inner.start.index && inner.end.index <= outer.end.index;
 
-const getSetterNames = (ast: t.File, bindings: GraphBinding[]): Map<number, string> => {
-  const setters = new Map<number, string>();
+export const parseSource = (source: string): ParsedSource => {
+  const parsed: ParsedSource = { references: [], declarators: [], attributes: [] };
+  const visitIdentifier = (path: NodePath<t.Identifier | t.JSXIdentifier>): void => {
+    const loc = toLocation(path.node);
+    if (!loc || !path.isReferencedIdentifier()) return;
+    const isCall = path.parentPath?.isCallExpression() && path.parentPath.node.callee === path.node;
+    parsed.references.push({ name: path.node.name, loc, isCall: Boolean(isCall) });
+  };
+  const ast = parse(source, {
+    sourceType: "module",
+    plugins: ["typescript", "jsx"],
+    errorRecovery: true,
+  });
   traverse(ast, {
+    Identifier: visitIdentifier,
+    JSXIdentifier: visitIdentifier,
     VariableDeclarator(path) {
       const { id } = path.node;
-      if (id.type !== "ArrayPattern" || id.elements.length < 2) return;
+      const loc = toLocation(path.node);
+      if (!loc || id.type !== "ArrayPattern" || id.elements.length < 2) return;
       const [stateId, setterId] = id.elements;
       if (stateId?.type !== "Identifier" || setterId?.type !== "Identifier") return;
-      const loc = toLocation(path.node);
-      const binding = bindings.find(
-        (candidate) =>
-          candidate.name === stateId.name && candidate.loc && loc && contains(loc, candidate.loc),
-      );
-      if (binding) setters.set(binding.id, setterId.name);
+      parsed.declarators.push({ stateName: stateId.name, setterName: setterId.name, loc });
+    },
+    JSXAttribute(path) {
+      const valueLoc = path.node.value && toLocation(path.node.value);
+      const nameLoc = toLocation(path.node.name);
+      if (valueLoc && nameLoc) parsed.attributes.push({ nameLoc, valueLoc });
     },
   });
-  return setters;
+  return parsed;
 };
 
-const collectReferences = (ast: t.File, componentLoc: ViewLocation | null): Reference[] => {
-  const references: Reference[] = [];
-  const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>): void => {
-    const loc = toLocation(path.node);
-    if (!loc || !contains(componentLoc, loc) || !path.isReferencedIdentifier()) return;
-    const isCall = path.parentPath?.isCallExpression() && path.parentPath.node.callee === path.node;
-    references.push({ name: path.node.name, loc, isCall: Boolean(isCall) });
-  };
-  traverse(ast, { Identifier: visit, JSXIdentifier: visit });
-  return references;
+const getSetterNames = (
+  declarators: StateDeclarator[],
+  bindings: GraphBinding[],
+): Map<number, string> => {
+  const setters = new Map<number, string>();
+  for (const declarator of declarators) {
+    const binding = bindings.find(
+      (candidate) =>
+        candidate.name === declarator.stateName &&
+        candidate.loc &&
+        contains(declarator.loc, candidate.loc),
+    );
+    if (binding) setters.set(binding.id, declarator.setterName);
+  }
+  return setters;
 };
 
 const findEnclosingHandler = (handlers: GraphHandler[], loc: ViewLocation): GraphHandler | null =>
@@ -172,18 +208,14 @@ const addBindingNodes = (
   }
 };
 
-const refineTriggerLocations = (ast: t.File, triggers: TriggerSite[]): TriggerSite[] => {
+const refineTriggerLocations = (
+  attributes: JsxAttributeSite[],
+  triggers: TriggerSite[],
+): TriggerSite[] => {
   const refined = triggers.map((trigger) => ({ ...trigger }));
-  traverse(ast, {
-    JSXAttribute(path) {
-      const valueLoc = path.node.value && toLocation(path.node.value);
-      const nameLoc = toLocation(path.node.name);
-      if (!valueLoc || !nameLoc) return;
-      for (const trigger of refined)
-        if (contains(valueLoc, trigger.loc) || contains(trigger.loc, valueLoc))
-          trigger.loc = nameLoc;
-    },
-  });
+  for (const { nameLoc, valueLoc } of attributes)
+    for (const trigger of refined)
+      if (contains(valueLoc, trigger.loc) || contains(trigger.loc, valueLoc)) trigger.loc = nameLoc;
   return refined;
 };
 
@@ -277,20 +309,24 @@ const addBranchNodes = (
 };
 
 export const buildCodeGraph = (input: GraphInput): CodeGraph => {
-  const ast = parse(input.source, {
-    sourceType: "module",
-    plugins: ["typescript", "jsx"],
-    errorRecovery: true,
-  });
+  const { parsed } = input;
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   addHandlerNodes(
-    { ...input, triggers: refineTriggerLocations(ast, input.triggers) },
+    { ...input, triggers: refineTriggerLocations(parsed.attributes, input.triggers) },
     nodes,
     edges,
   );
-  const references = collectReferences(ast, input.componentLoc);
-  addBindingNodes(input, references, getSetterNames(ast, input.bindings), nodes, edges);
+  const references = parsed.references.filter((reference) =>
+    contains(input.componentLoc, reference.loc),
+  );
+  addBindingNodes(
+    input,
+    references,
+    getSetterNames(parsed.declarators, input.bindings),
+    nodes,
+    edges,
+  );
   addBranchNodes(input, references, nodes, edges);
   const nodeIds = new Set(nodes.map((node) => node.id));
   return { nodes, edges: edges.filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to)) };
