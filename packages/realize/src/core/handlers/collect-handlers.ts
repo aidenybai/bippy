@@ -16,11 +16,11 @@ import type {
 } from "../types";
 import { forEachJsxElement, forEachPropNode } from "../render/for-each-jsx-element";
 import { getRenderChildren } from "../render/get-render-children";
-import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { mapSymbolicValue } from "../values/map-symbolic-value";
 import { isExternalSource } from "./is-external-source";
 import { getValueKey } from "../values/get-value-key";
 import { getLocationKey } from "../shared/get-location-key";
+import { collectBindingIds, getDependentClosure, getInputClosure } from "../shared/binding-graph";
 import {
   UNDEFINED_VALUE,
   createBindingValue,
@@ -1200,18 +1200,9 @@ const collectWrappedCallbacks = (
   return wrapped;
 };
 
-const getBindingIds = (values: SymbolicValue[]): Set<number> => {
-  const bindingIds = new Set<number>();
-  for (const value of values)
-    forEachSymbolicValue(value, (part) => {
-      if (part.kind === "Binding") bindingIds.add(part.binding.id);
-    });
-  return bindingIds;
-};
-
 const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   const readIds = effects.map((effect) =>
-    getBindingIds(effect.updates.flatMap((update) => [update.value, ...update.guards])),
+    collectBindingIds(effect.updates.flatMap((update) => [update.value, ...update.guards])),
   );
   const interacting = effects.filter((effect, index) =>
     effects.some(
@@ -1229,30 +1220,6 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   );
 };
 
-const getInputClosure = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
-  const closure = new Set(bindingIds);
-  const pending = [...bindingIds];
-  for (let bindingId = pending.pop(); bindingId !== undefined; bindingId = pending.pop())
-    for (const place of bindings[bindingId]?.inputPlaces ?? [])
-      if (!closure.has(place.bindingId)) {
-        closure.add(place.bindingId);
-        pending.push(place.bindingId);
-      }
-  return closure;
-};
-
-const getDependentIds = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
-  const dependentIds = new Set(bindingIds);
-  let previousSize = 0;
-  while (previousSize !== dependentIds.size) {
-    previousSize = dependentIds.size;
-    for (const binding of bindings)
-      if (binding.inputPlaces.some((place) => dependentIds.has(place.bindingId)))
-        dependentIds.add(binding.id);
-  }
-  return dependentIds;
-};
-
 const forgetPendingReads = (
   handlers: Handler[],
   pendingMutations: Binding[],
@@ -1260,7 +1227,7 @@ const forgetPendingReads = (
 ): void => {
   const mutatedIds = new Set(pendingMutations.filter(isStateBinding).map((binding) => binding.id));
   if (mutatedIds.size === 0) return;
-  const pendingIds = getDependentIds(mutatedIds, bindings);
+  const pendingIds = getDependentClosure(bindings, mutatedIds);
   const forget = (value: SymbolicValue): SymbolicValue =>
     mapSymbolicValue(value, (part) =>
       part.kind === "Binding" && pendingIds.has(part.binding.id)
@@ -1364,7 +1331,10 @@ const collectHandlersOnce = (
   );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
-  const renderedIds = getInputClosure(getBindingIds([render]), interpreter.bindingTable.bindings);
+  const renderedIds = getInputClosure(
+    interpreter.bindingTable.bindings,
+    collectBindingIds([render]),
+  );
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
   forgetPendingReads(

@@ -20,6 +20,7 @@ import {
   getAbstractTruthiness,
   type Comparison,
 } from "./abstract";
+import { getInputClosure } from "../shared/binding-graph";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
@@ -155,16 +156,12 @@ const hasCountedLength = (receiver: Domain | null): boolean => {
   );
 };
 
-const getInputBindingIds = (binding: Binding, bindingsById: Map<number, Binding>): number[] => {
-  const ids = new Set<number>();
-  const pending = binding.inputPlaces.map((place) => place.bindingId);
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    if (ids.has(id)) continue;
-    ids.add(id);
-    for (const place of bindingsById.get(id)?.inputPlaces ?? []) pending.push(place.bindingId);
-  }
-  return [...ids];
-};
+const getInputBindingIds = (binding: Binding, bindings: Binding[]): number[] => [
+  ...getInputClosure(
+    bindings,
+    binding.inputPlaces.map((place) => place.bindingId),
+  ),
+];
 
 const shareLiterals = (relations: Array<[PlaceTests, PlaceTests]>): void => {
   for (let isGrowing = true; isGrowing;) {
@@ -282,8 +279,6 @@ export const createVariableTable = (
     path.length === 0
       ? binding.domain
       : (analysis.placeDomains.get({ bindingId: binding.id, path }) ?? null);
-  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
-
   const attachedRefIds = getAttachedRefIds(analysis);
   for (const [key, entry] of entries) {
     const isLength =
@@ -302,7 +297,7 @@ export const createVariableTable = (
       source: getVariableSource(entry.binding),
       bindingKind: entry.binding.kind,
       bindingId: entry.binding.id,
-      inputBindingIds: getInputBindingIds(entry.binding, bindingsById),
+      inputBindingIds: getInputBindingIds(entry.binding, analysis.bindings),
       path: entry.path,
       domain: values,
       initial: getValueLabels(values),

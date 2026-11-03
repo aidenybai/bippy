@@ -4,6 +4,7 @@ import type { CompiledFile, CompiledFunction } from "../compile/compile";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { collectHandlers } from "../handlers/collect-handlers";
+import { collectBindingIds } from "../shared/binding-graph";
 import { Interpreter } from "../interpret/interpret";
 import { PlaceMap } from "../values/place-map";
 import { createDeclarationKey } from "./declaration-key";
@@ -110,16 +111,15 @@ const getReadBindingIds = (
   assertions: Assertion[],
   bindings: Binding[],
 ): Set<number> => {
-  const readIds = new Set<number>();
-  const visit = (value: SymbolicValue): void =>
-    forEachSymbolicValue(value, (part) => {
-      if (part.kind === "Binding") readIds.add(part.binding.id);
-    });
-  visit(render);
-  for (const handler of handlers)
-    for (const update of handler.updates) [update.value, ...update.guards].forEach(visit);
-  for (const assertion of [...assertions, ...handlers.flatMap((handler) => handler.assertions)])
-    [assertion.subject, ...assertion.guards].forEach(visit);
+  const readIds = collectBindingIds([
+    render,
+    ...handlers.flatMap((handler) =>
+      handler.updates.flatMap((update) => [update.value, ...update.guards]),
+    ),
+    ...[...assertions, ...handlers.flatMap((handler) => handler.assertions)].flatMap(
+      (assertion) => [assertion.subject, ...assertion.guards],
+    ),
+  ]);
   for (const binding of bindings)
     for (const place of binding.inputPlaces) readIds.add(place.bindingId);
   return readIds;
