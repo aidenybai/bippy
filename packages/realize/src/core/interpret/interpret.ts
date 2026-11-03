@@ -313,10 +313,6 @@ const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
       ? target.hirFunction.id
       : null;
 
-const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
-
-const getContextCellKey = (place: Place): string => `context:${place.identifier.id}`;
-
 const MAX_CALL_NAME_LENGTH = 200;
 
 const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
@@ -2507,7 +2503,7 @@ export class Interpreter {
       load.loc,
     );
     if (!this.#handlerEffects || !isRefCell(object, property)) return loaded;
-    const cellValue = this.cells.read(getRefCellKey(object.binding), loaded, load.loc, pathState);
+    const cellValue = this.cells.read("ref", object.binding.id, loaded, load.loc, pathState);
     const isUnstoredAsyncRead =
       cellValue.kind === "Unknown" &&
       cellValue.reason === "async" &&
@@ -2544,7 +2540,7 @@ export class Interpreter {
       this.bindingTable.forgetInitial(object.binding);
       return storedValue;
     }
-    this.cells.store(getRefCellKey(object.binding), storedValue, pathState);
+    this.cells.store("ref", object.binding.id, storedValue, pathState);
     this.#handlerEffects.addPossibleMutation(object.binding);
     return storedValue;
   }
@@ -2557,7 +2553,7 @@ export class Interpreter {
     const isConstant =
       this.getCompilationTables().facts.constantContextIds[load.place.identifier.id] ?? false;
     return this.#handlerEffects && !isConstant
-      ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, pathState)
+      ? this.cells.read("context", load.place.identifier.id, loaded, load.loc, pathState)
       : loaded;
   }
 
@@ -2571,14 +2567,13 @@ export class Interpreter {
     const isContextCell =
       this.#handlerEffects !== null &&
       (update.kind === "PrefixUpdateContext" || update.kind === "PostfixUpdateContext");
-    const cellKey = getContextCellKey(update.lvalue);
     const loaded = this.read(update.value);
     const previous = isContextCell
-      ? this.cells.read(cellKey, loaded, update.loc, pathState)
+      ? this.cells.read("context", update.lvalue.identifier.id, loaded, update.loc, pathState)
       : loaded;
     const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
     this.write(update.lvalue, next);
-    if (isContextCell) this.cells.store(cellKey, next, pathState);
+    if (isContextCell) this.cells.store("context", update.lvalue.identifier.id, next, pathState);
     return isPrefix ? next : previous;
   }
 
@@ -2626,7 +2621,7 @@ export class Interpreter {
         : storedValue;
     this.write(store.lvalue.place, localValue);
     if (store.kind === "StoreContext" && this.#handlerEffects)
-      this.cells.store(getContextCellKey(store.lvalue.place), localValue, pathState);
+      this.cells.store("context", store.lvalue.place.identifier.id, localValue, pathState);
     return localValue;
   }
 
