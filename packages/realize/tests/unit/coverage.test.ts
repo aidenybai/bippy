@@ -33,8 +33,6 @@ describe("conformance coverage", async () => {
     mutationHits: [],
     mutatedOrigins: [],
     error: null,
-    errorDepth: null,
-    failure: null,
   });
 
   const clickNext: Action = {
@@ -134,8 +132,6 @@ describe("conformance coverage of steps the model leaves out", async () => {
     mutationHits: [],
     mutatedOrigins: [],
     error: null,
-    errorDepth: null,
-    failure: null,
     ...overrides,
   });
 

@@ -1,16 +1,7 @@
-import { useState, type ReactNode } from "react";
-import { getDomainValues, shortenType } from "@/lib/state-chart";
+import { useState } from "react";
+import { Code } from "@/components/ui/code";
+import { getPreviewCount, isLongDomain, shortenType } from "@/lib/domain";
 import type { ViewBinding } from "@/model";
-
-const PREVIEW_COUNT = 6;
-const LONG_PREVIEW_COUNT = 3;
-const LONG_VALUE = 24;
-
-interface DomainProps {
-  binding: ViewBinding;
-  renderValue: (value: string) => ReactNode;
-  separator?: ReactNode;
-}
 
 const MoreButton = ({
   hidden,
@@ -30,14 +21,14 @@ const MoreButton = ({
   </button>
 );
 
-export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
+export const Domain = ({ binding }: { binding: ViewBinding }) => {
   const [isExpanded, setExpanded] = useState(false);
-  const values = getDomainValues(binding);
-  const isLong = values.some((value) => value.length > LONG_VALUE);
-  const preview = isLong ? LONG_PREVIEW_COUNT : PREVIEW_COUNT;
-  const hidden = values.length - preview;
-  const shown = isExpanded || hidden <= 1 ? values : values.slice(0, preview);
-  const toggle = hidden > 1 && (
+  const values = binding.domain;
+  const isLong = isLongDomain(values);
+  const count = getPreviewCount(values);
+  const hidden = values.length - count;
+  const shown = isExpanded ? values : values.slice(0, count);
+  const toggle = hidden > 0 && (
     <MoreButton hidden={hidden} isExpanded={isExpanded} onToggle={() => setExpanded((c) => !c)} />
   );
   if (isLong)
@@ -45,7 +36,7 @@ export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
       <span className="grid gap-0.5">
         {shown.map((value) => (
           <span key={value} title={value} className="wrap-anywhere">
-            {renderValue(shortenType(value))}
+            <Code>{shortenType(value)}</Code>
           </span>
         ))}
         {toggle}
@@ -55,8 +46,8 @@ export const Domain = ({ binding, renderValue, separator }: DomainProps) => {
     <>
       {shown.map((value, index) => (
         <span key={value} className="wrap-anywhere">
-          {index > 0 && separator}
-          {renderValue(value)}
+          {index > 0 && <span className="text-faint"> | </span>}
+          <Code>{value}</Code>
         </span>
       ))}
       {toggle}

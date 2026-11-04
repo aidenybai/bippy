@@ -5,7 +5,7 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
 import { collectBindingIds, getInputClosure } from "../shared/binding-graph";
 import { foldBinary } from "../values/symbolic-values";
-import { COMPARISONS } from "./abstract";
+import { isComparison } from "../values/comparison";
 import { compileHandlerActions, compileInputActions } from "./actions";
 import { and, collectPredicateVariables, not, or } from "./predicates";
 import { evaluateInitialValues, forEachEvaluatedValue } from "./evaluate";
@@ -31,7 +31,7 @@ interface ScopedAssertion {
 const collectValueTests = (value: SymbolicValue, tests: SymbolicValue[]): void =>
   forEachEvaluatedValue(value, (node) => {
     if (node.kind === "Conditional") tests.push(getTestExpression(node));
-    if (node.kind === "BinaryExpression" && COMPARISONS.has(node.operator)) tests.push(node);
+    if (node.kind === "BinaryExpression" && isComparison(node.operator)) tests.push(node);
   });
 
 const getAssertionTests = (assertion: Assertion): SymbolicValue[] =>
@@ -91,20 +91,12 @@ const collectDisplayedBindingIds = (analysis: ComponentAnalysis): Set<number> =>
   getInputClosure(analysis.bindings, collectBindingIds([analysis.render]));
 
 const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action => {
-  const written = new Set(action.writtenBindingIds);
   const writtenVariables = new Set(action.writes.map((write) => write.variable));
-  const added: Variable[] = [];
-  for (let isGrowing = true; isGrowing;) {
-    isGrowing = false;
-    for (const variable of derivedVariables) {
-      if (writtenVariables.has(variable.name) || variable.bindingId === null) continue;
-      if (!variable.inputBindingIds.some((id) => written.has(id))) continue;
-      writtenVariables.add(variable.name);
-      written.add(variable.bindingId);
-      added.push(variable);
-      isGrowing = true;
-    }
-  }
+  const added = derivedVariables.filter(
+    (variable) =>
+      !writtenVariables.has(variable.name) &&
+      variable.inputBindingIds.some((id) => action.writtenBindingIds.includes(id)),
+  );
   if (added.length === 0) return action;
   return {
     ...action,
@@ -115,7 +107,12 @@ const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action
         next: { kind: "Values" as const, values: getValueLabels(variable.domain) },
       })),
     ],
-    writtenBindingIds: [...written],
+    writtenBindingIds: [
+      ...new Set([
+        ...action.writtenBindingIds,
+        ...added.flatMap((variable) => variable.bindingId ?? []),
+      ]),
+    ],
   };
 };
 
@@ -228,10 +225,9 @@ export const buildComponentModel = async (
       withDerivedWrites(action, derivedVariables),
     ),
   ];
-  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const variable of table.variables) {
     if (variable.source !== "state" || variable.bindingId === null) continue;
-    const initial = bindingsById.get(variable.bindingId)?.initial;
+    const initial = analysis.bindings[variable.bindingId]?.initial;
     if (initial) variable.initial = evaluateInitialValues(table, variable, initial);
   }
   const stateGraph = await checkStateGraph(analysis.name, {

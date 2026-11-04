@@ -1,52 +1,175 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { appendToGroup } from "../../../src/core/shared/append-to-group";
+import { parse } from "@babel/parser";
+import type { ParserOptions } from "@babel/parser";
+import type { types } from "@babel/core";
 import type {
   AliasResolver,
-  ExportedName,
   FileImports,
   ModuleExport,
+  ModuleSummary,
   PackageImport,
 } from "./types";
 
-const IMPORT_PATTERN = /import\s+(type\s+)?([^;]*?)\s*from\s*["']([^"']+)["']/g;
-const REEXPORT_PATTERN =
-  /export\s+(type\s+)?(\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s*from\s*["']([^"']+)["']/g;
-const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
-const EXPORT_DECLARATION_PATTERN =
-  /export\s+(default\s+)?(?:async\s+)?(?:const|let|var|function|class)\s+([A-Z]\w*)/g;
-const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
+interface ExportBinding {
+  local: string;
+  exported: string;
+}
+
+const PARSER_PLUGINS: NonNullable<ParserOptions["plugins"]> = [
+  "typescript",
+  "jsx",
+  "decorators-legacy",
+];
+const STORE_FACTORIES = new Set(["configureStore", "createStore", "legacy_createStore"]);
+const COMPONENT_NAME_PATTERN = /^[A-Z]/;
+const DEFAULT_EXPORT = "default";
 const RELATIVE_IMPORT_PATTERN = /^\.{1,2}\//;
 const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
 
-const getImportedNames = (clause: string): string[] =>
-  (NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []).flatMap((namedImport) => {
-    if (/^\s*type\s/.test(namedImport)) return [];
-    const name = namedImport.split(/\s+as\s+/)[0]?.trim();
-    return name ? [name] : [];
-  });
+export const parseBody = (code: string): types.Statement[] =>
+  parse(code, { sourceType: "module", plugins: PARSER_PLUGINS, errorRecovery: true }).program.body;
 
-export const parseImports = (text: string): PackageImport[] =>
-  [...text.matchAll(IMPORT_PATTERN), ...text.matchAll(REEXPORT_PATTERN)].flatMap(
-    ([, typeOnly, clause = "", specifier = ""]) =>
-      typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
+const getName = (node: types.Identifier | types.StringLiteral): string =>
+  node.type === "Identifier" ? node.name : node.value;
+
+const getDeclaredNames = (node: types.Node | null | undefined): string[] => {
+  if (node?.type === "VariableDeclaration")
+    return node.declarations.flatMap((declarator) =>
+      declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+    );
+  if (
+    node?.type === "FunctionDeclaration" ||
+    node?.type === "ClassDeclaration" ||
+    node?.type === "TSEnumDeclaration"
+  )
+    return node.id ? [node.id.name] : [];
+  return [];
+};
+
+const getUnexportedDeclaration = (statement: types.Statement): types.Node | null | undefined =>
+  statement.type === "ExportNamedDeclaration" ? statement.declaration : statement;
+
+const getDefaultExportedName = (node: types.Node): string | null => {
+  if (node.type === "Identifier") return node.name;
+  if ((node.type === "FunctionDeclaration" || node.type === "ClassDeclaration") && node.id)
+    return node.id.name;
+  const [firstArgument] = node.type === "CallExpression" ? node.arguments : [];
+  return firstArgument ? getDefaultExportedName(firstArgument) : null;
+};
+
+const getExportBindings = (statement: types.Statement): ExportBinding[] => {
+  if (statement.type === "ExportDefaultDeclaration") {
+    const local = getDefaultExportedName(statement.declaration);
+    return local ? [{ local, exported: DEFAULT_EXPORT }] : [];
+  }
+  if (statement.type !== "ExportNamedDeclaration" || statement.exportKind === "type") return [];
+  return [
+    ...getDeclaredNames(statement.declaration).map((name) => ({ local: name, exported: name })),
+    ...statement.specifiers.flatMap((specifier) =>
+      specifier.type === "ExportSpecifier" && specifier.exportKind !== "type"
+        ? [{ local: specifier.local.name, exported: getName(specifier.exported) }]
+        : [],
+    ),
+  ];
+};
+
+const toComponentExport = (binding: ExportBinding): ModuleExport[] => {
+  const name = binding.exported === DEFAULT_EXPORT ? binding.local : binding.exported;
+  return COMPONENT_NAME_PATTERN.test(name) ? [{ name, exportName: binding.exported }] : [];
+};
+
+const getImport = (statement: types.Statement): PackageImport[] => {
+  if (statement.type === "ImportDeclaration")
+    return statement.importKind === "type"
+      ? []
+      : [
+          {
+            specifier: statement.source.value,
+            names: statement.specifiers.flatMap((specifier) =>
+              specifier.type === "ImportSpecifier" && specifier.importKind !== "type"
+                ? [getName(specifier.imported)]
+                : [],
+            ),
+          },
+        ];
+  if (statement.type === "ExportAllDeclaration")
+    return statement.exportKind === "type"
+      ? []
+      : [{ specifier: statement.source.value, names: [] }];
+  if (statement.type !== "ExportNamedDeclaration" || !statement.source) return [];
+  return statement.exportKind === "type"
+    ? []
+    : [
+        {
+          specifier: statement.source.value,
+          names: statement.specifiers.flatMap((specifier) =>
+            specifier.type === "ExportSpecifier" && specifier.exportKind !== "type"
+              ? [specifier.local.name]
+              : [],
+          ),
+        },
+      ];
+};
+
+const getTypeExportNames = (statement: types.Statement): string[] => {
+  if (statement.type !== "ExportNamedDeclaration") return [];
+  const declaration = statement.declaration;
+  if (
+    declaration?.type === "TSTypeAliasDeclaration" ||
+    declaration?.type === "TSInterfaceDeclaration"
+  )
+    return [declaration.id.name];
+  if (statement.exportKind !== "type") return [];
+  return statement.specifiers.flatMap((specifier) =>
+    specifier.type === "ExportSpecifier" ? [getName(specifier.exported)] : [],
   );
+};
 
-export const parseExports = (text: string): ModuleExport[] => [
-  ...[...text.matchAll(EXPORT_DECLARATION_PATTERN)].map(([, isDefault, name = ""]) => ({
-    name,
-    exportName: isDefault ? "default" : name,
-  })),
-  ...[...text.matchAll(EXPORT_LIST_PATTERN)].flatMap(([, names = ""]) =>
-    names.split(",").flatMap((specifier) => {
-      const exported = specifier
-        .split(/\s+as\s+/)
-        .pop()
-        ?.trim();
-      return exported && /^[A-Z]/.test(exported) ? [{ name: exported, exportName: exported }] : [];
-    }),
-  ),
-];
+const getStoreNames = (statement: types.Statement): string[] => {
+  const declaration = getUnexportedDeclaration(statement);
+  if (declaration?.type !== "VariableDeclaration") return [];
+  return declaration.declarations.flatMap((declarator) =>
+    declarator.id.type === "Identifier" &&
+    declarator.init?.type === "CallExpression" &&
+    declarator.init.callee.type === "Identifier" &&
+    STORE_FACTORIES.has(declarator.init.callee.name)
+      ? [declarator.id.name]
+      : [],
+  );
+};
+
+const parseModuleBody = (code: string): types.Statement[] => {
+  try {
+    return parseBody(code);
+  } catch {
+    return [];
+  }
+};
+
+export const summarizeModule = (code: string): ModuleSummary => {
+  const body = parseModuleBody(code);
+  const exportBindings = body.flatMap(getExportBindings);
+  const valueNames = new Set(
+    body.flatMap((statement) => getDeclaredNames(getUnexportedDeclaration(statement))),
+  );
+  const storeNames = new Set(body.flatMap(getStoreNames));
+  return {
+    exports: exportBindings.flatMap(toComponentExport),
+    imports: body.flatMap(getImport),
+    localNames: new Set(body.flatMap((statement) => getDeclaredNames(statement))),
+    typeOnlyExports: new Set(
+      body.flatMap(getTypeExportNames).filter((name) => !valueNames.has(name)),
+    ),
+    storeExportName:
+      exportBindings.find((binding) => storeNames.has(binding.local))?.exported ?? null,
+  };
+};
+
+export const getModuleSummary = (
+  summaries: Map<string, ModuleSummary>,
+  file: string,
+): ModuleSummary => summaries.get(file) ?? summarizeModule(readFileSync(file, "utf8"));
 
 const resolveRelativeImport = (file: string, specifier: string): string | null => {
   const base = resolve(dirname(file), specifier);
@@ -75,15 +198,6 @@ export const getFileImports = async (
     else packages.push({ specifier: packageImport.specifier, names: packageImport.names });
   }
   return { packages, files };
-};
-
-export const addExports = (
-  exports: Map<string, ExportedName[]>,
-  file: string,
-  text: string,
-): void => {
-  for (const moduleExport of parseExports(text))
-    appendToGroup(exports, moduleExport.name, { file, exportName: moduleExport.exportName });
 };
 
 interface SearchFrame {

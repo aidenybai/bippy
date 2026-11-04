@@ -1,14 +1,12 @@
 import type { GraphNode, ViewComponent, ViewFile } from "@/model";
 
 const PALETTE = [
-  "rgba(25, 133, 255, 0.3)",
-  "rgba(174, 97, 174, 0.3)",
-  "rgba(255, 97, 106, 0.3)",
-  "rgba(250, 192, 61, 0.3)",
-  "rgba(115, 192, 88, 0.3)",
+  "rgb(25, 133, 255)",
+  "rgb(174, 97, 174)",
+  "rgb(255, 97, 106)",
+  "rgb(250, 192, 61)",
+  "rgb(115, 192, 88)",
 ];
-
-export const getSolidColor = (color: string): string => color.replace(" 0.3)", " 1)");
 
 interface ComponentColors {
   byBinding: Map<number, string>;

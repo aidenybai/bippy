@@ -1,6 +1,8 @@
 import { Component } from "react";
 import type { ComponentType, ErrorInfo, ReactNode } from "react";
-import { getErrorMessage } from "../reasons";
+import { classifyMountError, getErrorMessage } from "../reasons";
+import type { MountFailure } from "../reasons";
+import type { CaptureError } from "../types";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -14,33 +16,34 @@ interface ChildrenProps {
   children?: ReactNode;
 }
 
-interface RecordedError {
-  message: string;
-  depth: number | null;
-}
-
 const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
 const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 
-let renderError: RecordedError | null = null;
-let caughtError: RecordedError | null = null;
+let renderError: CaptureError | null = null;
+let caughtError: CaptureError | null = null;
 const depthMarkers = new Map<number, ComponentType<ChildrenProps>>();
 
-export const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
+export const createCaptureError = (
+  message: string,
+  depth: number | null = null,
+  failure: MountFailure = classifyMountError(message),
+): CaptureError => ({ message, depth, failure });
+
+export const recordError = (error: unknown, errorInfo?: ErrorInfo): CaptureError => {
   const componentStack = errorInfo?.componentStack;
-  return {
-    message: getErrorMessage(error),
-    depth: componentStack ? Number(DEPTH_MARKER_PATTERN.exec(componentStack)?.[1] ?? 0) : null,
-  };
+  return createCaptureError(
+    getErrorMessage(error),
+    componentStack ? Number(DEPTH_MARKER_PATTERN.exec(componentStack)?.[1] ?? 0) : null,
+  );
 };
 
 export const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
   caughtError ??= recordError(error, errorInfo);
 };
 
-export const getRenderError = (): RecordedError | null => renderError;
+export const getRenderError = (): CaptureError | null => renderError;
 
-export const getRecordedError = (): RecordedError | null => renderError ?? caughtError;
+export const getRecordedError = (): CaptureError | null => renderError ?? caughtError;
 
 export const resetErrors = (): void => {
   renderError = null;

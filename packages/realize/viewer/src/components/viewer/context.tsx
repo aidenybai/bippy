@@ -1,11 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
-import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
+import { hasInspectorContent } from "@/lib/graph";
 import { getPathMode, getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
-import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
-import { useHoverStore } from "@/store/hover";
+import type { Example, ViewFile } from "@/model";
+import { ViewerStoreContext, createViewerStore } from "@/store/viewer";
 
 interface ViewerState {
   examples: Example[];
@@ -14,8 +14,9 @@ interface ViewerState {
   view: ViewFile;
   json: string;
   setMode: (mode: ViewMode) => void;
-  index: GraphIndex;
   colorByNodeId: Map<string, string>;
+  hasInspector: boolean;
+  canShowInspector: boolean;
 }
 
 const ViewerContext = createContext<ViewerState | null>(null);
@@ -30,40 +31,33 @@ interface ViewerProviderProps {
 
 export const ViewerProvider = ({ examples, name, view, json, children }: ViewerProviderProps) => {
   const mode = getPathMode(usePathname());
-  const setIndex = useHoverStore((state) => state.setIndex);
-  const index = useMemo(() => buildGraphIndex(view), [view]);
-  const colorByNodeId = useMemo(() => getColorByNodeId(view), [view]);
-  useEffect(() => setIndex(index), [index, setIndex]);
-  const setMode = useCallback(
-    (next: ViewMode) => window.history.replaceState(null, "", getRouteHref(name, next)),
-    [name],
+  const [store] = useState(() => createViewerStore(view));
+  const colorByNodeId = getColorByNodeId(view);
+  const hasInspector = hasInspectorContent(view);
+  const canShowInspector = hasInspector && mode !== "json";
+  const setMode = (next: ViewMode) =>
+    window.history.replaceState(null, "", getRouteHref(name, next));
+  return (
+    <ViewerContext
+      value={{
+        examples,
+        name,
+        mode,
+        view,
+        json,
+        setMode,
+        colorByNodeId,
+        hasInspector,
+        canShowInspector,
+      }}
+    >
+      <ViewerStoreContext value={store}>{children}</ViewerStoreContext>
+    </ViewerContext>
   );
-  const value = useMemo<ViewerState>(
-    () => ({ examples, name, mode, view, json, setMode, index, colorByNodeId }),
-    [examples, name, mode, view, json, setMode, index, colorByNodeId],
-  );
-  return <ViewerContext value={value}>{children}</ViewerContext>;
 };
 
 export const useViewer = (): ViewerState => {
   const state = useContext(ViewerContext);
   if (!state) throw new Error("useViewer must be used inside <Viewer>");
   return state;
-};
-
-export const useActiveComponent = (): ViewComponent | null => {
-  const { view } = useViewer();
-  const activeName = useHoverStore((state) => state.activeName);
-  return useMemo(() => {
-    return (
-      view.components.find((component) => component.name === activeName) ??
-      getDefaultComponent(view)
-    );
-  }, [view, activeName]);
-};
-
-export const useHoveredNode = (): GraphNode | null => {
-  const { index } = useViewer();
-  const hoveredNodeId = useHoverStore((state) => state.hoveredNodeId);
-  return hoveredNodeId !== null ? (index.nodes.get(hoveredNodeId) ?? null) : null;
 };

@@ -1,9 +1,7 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ComponentProps,
   type CSSProperties,
@@ -52,11 +50,11 @@ export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProvide
   const [openMobile, setOpenMobile] = useState(false);
   const [isAnimated, setAnimated] = useState(false);
   const setOpen = onOpenChange;
-  const toggleSidebar = useCallback(() => {
+  const toggleSidebar = () => {
     setAnimated(true);
     if (isMobile) setOpenMobile((current) => !current);
     else setOpen(!open);
-  }, [isMobile, open, setOpen]);
+  };
   useEffect(() => {
     if (!isAnimated) return;
     const timer = window.setTimeout(() => setAnimated(false), 250);
@@ -72,20 +70,22 @@ export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProvide
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [toggleSidebar]);
-  const value = useMemo<SidebarContextValue>(
-    () => ({
-      state: open ? "expanded" : "collapsed",
-      isAnimated,
-      open,
-      setOpen,
-      openMobile,
-      setOpenMobile,
-      isMobile,
-      toggleSidebar,
-    }),
-    [open, isAnimated, setOpen, openMobile, isMobile, toggleSidebar],
+  return (
+    <SidebarContext
+      value={{
+        state: open ? "expanded" : "collapsed",
+        isAnimated,
+        open,
+        setOpen,
+        openMobile,
+        setOpenMobile,
+        isMobile,
+        toggleSidebar,
+      }}
+    >
+      {children}
+    </SidebarContext>
   );
-  return <SidebarContext value={value}>{children}</SidebarContext>;
 };
 
 export const SidebarLayout = ({ className, style, ...props }: ComponentProps<"div">) => {
