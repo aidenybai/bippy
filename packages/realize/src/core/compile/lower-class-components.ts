@@ -50,7 +50,7 @@ interface ClassParts {
   render: types.ClassMethod | null;
 }
 
-export const isComponentBaseClass = (superClass: types.Expression | null | undefined): boolean => {
+const isComponentBaseClass = (superClass: types.Expression | null | undefined): boolean => {
   if (types.isIdentifier(superClass)) return COMPONENT_BASE_CLASSES.has(superClass.name);
   return (
     types.isMemberExpression(superClass) &&
@@ -269,29 +269,34 @@ const withLoc = <Node extends types.Node>(
   return node;
 };
 
+interface ThisRewrite {
+  usesState: boolean;
+  apply: () => void;
+}
+
 const rewriteThis = (
   classPath: NodePath<types.Class>,
   parts: ClassParts,
   introducedNames: Set<string>,
-  isApplied: boolean,
-): { usesState: boolean } | null => {
+): ThisRewrite | null => {
   const classBody = classPath.node.body;
-  const insertedNodes = new WeakSet<types.Node>();
-  const insert = <Node extends types.Node>(node: Node): Node => {
-    insertedNodes.add(node);
-    return node;
-  };
+  const edits: Array<() => void> = [];
+  const setStateCalls: Array<NodePath<types.CallExpression>> = [];
+  const previousIds: types.Identifier[] = [];
   let isLowerable = true;
   let usesState = false;
   const isShadowed = (path: NodePath, name: string): boolean => {
     const binding = path.scope.getBinding(name);
     return binding !== undefined && isInsideNode(binding.path, classBody);
   };
+  const replaceWithName = (path: NodePath, name: string): void => {
+    edits.push(() => path.replaceWith(withLoc(types.identifier(name), path.node.loc)));
+  };
   classPath.get("body").traverse({
     CallExpression(path) {
       const name = getInlineBoundName(path.node);
       if (!name || !parts.methods.has(name) || isShadowed(path, name)) return;
-      if (isApplied) path.replaceWith(insert(withLoc(types.identifier(name), path.node.loc)));
+      replaceWithName(path, name);
       path.skip();
     },
     ExpressionStatement(path) {
@@ -305,7 +310,6 @@ const rewriteThis = (
       path.get("expression.left").skip();
     },
     Identifier(path) {
-      if (insertedNodes.has(path.node)) return;
       if (!introducedNames.has(path.node.name) || !path.isReferencedIdentifier()) return;
       if (!isShadowed(path, path.node.name)) isLowerable = false;
     },
@@ -314,7 +318,7 @@ const rewriteThis = (
         types.isMemberExpression(path.parent) &&
         path.parent.object === path.node &&
         !path.parent.computed;
-      if (!isThisObject || isApplied) isLowerable = false;
+      if (!isThisObject) isLowerable = false;
     },
     MemberExpression(member) {
       if (!isLowerable || !types.isThisExpression(member.node.object) || member.node.computed)
@@ -339,36 +343,44 @@ const rewriteThis = (
           return;
         }
         usesState = true;
-        if (!isApplied) return;
-        const previous = call.scope.generateUidIdentifier("previous");
-        const updater = types.arrowFunctionExpression(
-          [previous],
-          createMergedState(argument, previous, insert(types.identifier(PROPS_NAME))),
-        );
-        member.replaceWith(insert(withLoc(types.identifier(SET_STATE_NAME), member.node.loc)));
-        call.node.arguments = [withLoc(updater, argument.loc)];
+        const callIndex = setStateCalls.push(call) - 1;
+        edits.push(() => {
+          const [updated] = call.node.arguments;
+          const previous = previousIds[callIndex];
+          if (!previous || !types.isExpression(updated)) return;
+          const updater = types.arrowFunctionExpression(
+            [previous],
+            createMergedState(updated, previous, types.identifier(PROPS_NAME)),
+          );
+          member.replaceWith(withLoc(types.identifier(SET_STATE_NAME), member.node.loc));
+          call.node.arguments = [withLoc(updater, updated.loc)];
+        });
         return;
       }
       if (name === STATE_NAME) usesState = true;
       const isInstanceRead = name === STATE_NAME || name === PROPS_NAME;
       const isOwnerDeferred = owner?.isFunction() === true && isDeferredFunction(owner);
       const isDeferred = owner !== null && (isOwnerDeferred || isReadLater(member, owner));
-      if (isInstanceRead && !isApplied && isDeferred) {
+      if (
+        (isInstanceRead && isDeferred) ||
+        (!isInstanceRead && !introducedNames.has(name)) ||
+        isUnboundMethodValue(member, parts)
+      ) {
         isLowerable = false;
         return;
       }
-      if (!isInstanceRead && !introducedNames.has(name)) {
-        isLowerable = false;
-        return;
-      }
-      if (!isApplied && isUnboundMethodValue(member, parts)) {
-        isLowerable = false;
-        return;
-      }
-      if (isApplied) member.replaceWith(insert(withLoc(types.identifier(name), member.node.loc)));
+      replaceWithName(member, name);
     },
   });
-  return isLowerable ? { usesState } : null;
+  if (!isLowerable) return null;
+  return {
+    usesState,
+    apply: () => {
+      for (const call of setStateCalls)
+        previousIds.push(call.scope.generateUidIdentifier("previous"));
+      for (const edit of edits.reverse()) edit();
+    },
+  };
 };
 
 const toBlock = (body: types.BlockStatement | types.Expression): types.BlockStatement =>
@@ -430,11 +442,10 @@ const createComponentBody = (
   parts: ClassParts,
   render: types.ClassMethod,
   usesState: boolean,
-): types.Statement[] | null => {
+): types.Statement[] => {
   const mount = parts.methods.get(MOUNT_METHOD);
   const unmount = parts.methods.get(UNMOUNT_METHOD);
   const effect = createLifecycleEffect(mount, unmount);
-  if ((mount || unmount) && !effect) return null;
   const stateDeclaration =
     usesState || parts.initialState
       ? withLoc(
@@ -466,19 +477,28 @@ const createComponentBody = (
   ];
 };
 
+const hasLifecycleConflict = (parts: ClassParts): boolean => {
+  const mount = parts.methods.get(MOUNT_METHOD);
+  return (
+    mount !== undefined &&
+    parts.methods.has(UNMOUNT_METHOD) &&
+    containsNode(toBlock(mount.body), types.isReturnStatement)
+  );
+};
+
 const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
   const parts = readClassParts(path.node);
-  if (!parts?.render) return false;
+  if (!parts?.render || hasLifecycleConflict(parts)) return false;
   const introducedNames = new Set([
     STATE_NAME,
     SET_STATE_NAME,
     PROPS_NAME,
     ...parts.methods.keys(),
   ]);
-  const checked = rewriteThis(path, parts, introducedNames, false);
-  if (!checked || !createComponentBody(parts, parts.render, checked.usesState)) return false;
-  if (!rewriteThis(path, parts, introducedNames, true)) return false;
-  const body = createComponentBody(parts, parts.render, checked.usesState) ?? [];
+  const rewrite = rewriteThis(path, parts, introducedNames);
+  if (!rewrite) return false;
+  rewrite.apply();
+  const body = createComponentBody(parts, parts.render, rewrite.usesState);
   const params = [types.identifier(PROPS_NAME)];
   const block = types.blockStatement(body);
   const id = withLoc(types.identifier(name), path.node.id?.loc ?? path.node.loc);
@@ -490,7 +510,7 @@ const lowerClass = (path: NodePath<types.Class>, name: string): boolean => {
   return true;
 };
 
-export const getClassName = (path: NodePath<types.Class>): string | null => {
+const getClassName = (path: NodePath<types.Class>): string | null => {
   if (path.node.id) return path.node.id.name;
   return types.isVariableDeclarator(path.parent) && types.isIdentifier(path.parent.id)
     ? path.parent.id.name
@@ -509,19 +529,30 @@ const importMissingHooks = (programPath: NodePath<types.Program>): void => {
   );
 };
 
-export const lowerClassComponents = (ast: types.File): void => {
+export interface ClassComponent {
+  name: string;
+  loc: types.SourceLocation;
+}
+
+export const lowerClassComponents = (ast: types.File): ClassComponent[] => {
+  const unlowered: ClassComponent[] = [];
   traverse(ast, {
     Program(programPath) {
-      if (hasForeignHook(programPath)) return;
+      const isLowerable = !hasForeignHook(programPath);
       let isLowered = false;
       programPath.traverse({
         Class(path) {
           const name = getClassName(path);
-          if (name && isComponentBaseClass(path.node.superClass) && lowerClass(path, name))
+          if (!name || !isComponentBaseClass(path.node.superClass)) return;
+          if (isLowerable && lowerClass(path, name)) {
             isLowered = true;
+            return;
+          }
+          if (path.node.loc) unlowered.push({ name, loc: path.node.loc });
         },
       });
       if (isLowered) importMissingHooks(programPath);
     },
   });
+  return unlowered;
 };

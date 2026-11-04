@@ -1,4 +1,5 @@
 import { cloneElement, isValidElement } from "react";
+import { isPlainRecord } from "../snapshot";
 import type { BranchHit } from "../types";
 import { isRendering } from "../write-origins";
 import { recordMutationHit } from "./mutations";
@@ -45,11 +46,8 @@ const callHandler = (
   return Reflect.apply(handler, thisArgument, callArguments);
 };
 
-const isSpreadProps = (value: unknown): value is object => {
-  if (typeof value !== "object" || value === null || Object.isFrozen(value)) return false;
-  const prototype: unknown = Object.getPrototypeOf(value);
-  return Array.isArray(value) || prototype === Object.prototype || prototype === null;
-};
+const isSpreadProps = (value: unknown): value is object =>
+  typeof value === "object" && value !== null && !Object.isFrozen(value) && isPlainRecord(value);
 
 const isWrappableMember = (
   spread: object,

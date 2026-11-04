@@ -1,24 +1,13 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import {
-  getTypeOnlyNames,
-  removeTypeReexports,
-} from "../conformance/verifier/harness/type-exports";
-
-const writeSource = (source: string): string => {
-  const file = join(mkdtempSync(join(tmpdir(), "type-exports-")), "chart-props.ts");
-  writeFileSync(file, source);
-  return file;
-};
+import { removeTypeReexports } from "../conformance/verifier/harness/type-exports";
+import { summarizeModule } from "../conformance/verifier/source-index";
 
 const rewrite = async (code: string, typeOnlyNames: string[]): Promise<string | undefined> =>
   (await removeTypeReexports(code, async () => new Set(typeOnlyNames)))?.toString();
 
 describe("type re-exports", () => {
   it("lists names a module exports only as types", () => {
-    const file = writeSource(`
+    const summary = summarizeModule(`
       export type EventProps = { value: string } | null;
       export interface ChartProps { data: unknown[] }
       type Formatter = (value: number) => string;
@@ -27,7 +16,7 @@ describe("type re-exports", () => {
       export const Color = { red: "red" };
       export const ChartDefaults = {};
     `);
-    expect([...getTypeOnlyNames(file)].sort()).toEqual(["ChartProps", "EventProps", "Formatter"]);
+    expect([...summary.typeOnlyExports].sort()).toEqual(["ChartProps", "EventProps", "Formatter"]);
   });
 
   it("drops a re-exported type and keeps the values beside it", async () => {

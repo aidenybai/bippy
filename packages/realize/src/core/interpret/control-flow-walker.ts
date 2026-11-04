@@ -2,19 +2,12 @@ import type {
   BasicBlock,
   BlockId,
   IdentifierId,
-  InstructionValue,
   Phi,
   Place,
   SourceLocation,
   Terminal,
 } from "../../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
-import {
-  eachInstructionLValue,
-  eachInstructionOperand,
-  eachTerminalOperand,
-  eachTerminalSuccessor,
-} from "../../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { Binding, SymbolicValue, TestKind } from "../types";
 import {
@@ -50,10 +43,9 @@ import { getIdentifierName } from "./get-identifier-name";
 import { getTestExpression } from "../values/get-test-expression";
 import { negate } from "../values/negate";
 import type { Interpreter } from "./interpret";
+import type { BranchOperator } from "./function-facts";
 import { getAsyncPathState } from "./path-state";
 import type { PathState } from "./path-state";
-
-export type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-chain-tail";
 
 type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "optional" }>;
 
@@ -84,31 +76,6 @@ interface SwitchWalk {
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_UNROLLED_ITERATIONS = 32;
-const UNROLLABLE_INSTRUCTIONS = new Set<InstructionValue["kind"]>([
-  "LoadLocal",
-  "StoreLocal",
-  "DeclareLocal",
-  "Primitive",
-  "BinaryExpression",
-  "UnaryExpression",
-  "PrefixUpdateLocal",
-  "PostfixUpdateLocal",
-  "TemplateLiteral",
-  "PropertyLoad",
-  "ComputedLoad",
-]);
-const UNROLLABLE_TERMINALS = new Set<Terminal["kind"]>([
-  "goto",
-  "if",
-  "branch",
-  "ternary",
-  "logical",
-  "optional",
-  "switch",
-  "label",
-  "sequence",
-  "return",
-]);
 const MAX_WALK_DEPTH = 256;
 const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
 
@@ -140,12 +107,6 @@ const getReachTest = (
     conditional.alternate.kind !== "Primitive" ||
     conditional.consequent.value !== conditional.alternate.value;
   return isUndecided ? conditional : conditional.consequent;
-};
-
-const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
-  if (terminal.kind === "logical") return terminal.operator;
-  if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
-  return terminal.kind;
 };
 
 interface ThrowPoint {
@@ -264,7 +225,7 @@ export class ControlFlowWalker {
     pathState: PathState,
   ): Completion {
     const operator =
-      this.#interpreter.getCompilationTables().branchOperators.get(terminal.fallthrough) ??
+      this.#interpreter.getCompilationTables().facts.branchOperators[terminal.fallthrough] ??
       "ternary";
     const branchTest = getBranchTest(operator, this.#interpreter.read(terminal.test));
     const testGuard = getTestExpression(branchTest);
@@ -302,10 +263,7 @@ export class ControlFlowWalker {
         pathState,
       );
     }
-    const storedPlaces = this.#getSuccessorStoredContextPlaces(
-      [terminal.consequent, terminal.alternate],
-      terminal.fallthrough,
-    );
+    const storedPlaces = this.#interpreter.currentFacts.branchContextStores[from];
     const valuesBefore = storedPlaces.map((place) => this.#interpreter.read(place));
     const consequentCompletion = walkConsequent();
     const consequentValues = storedPlaces.map((place) => this.#interpreter.read(place));
@@ -452,11 +410,11 @@ export class ControlFlowWalker {
         this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     }
     const [loopEntry = terminal.fallthrough] = loopHeaders;
-    const storedContextPlaces = this.#getStoredContextPlaces(loopEntry, terminal.fallthrough);
+    const storedContextPlaces = this.#interpreter.currentFacts.loops[from].contextStores;
     for (const loopHeader of loopHeaders)
       if (!("init" in terminal) || loopHeader !== terminal.init)
         this.#loopContextPlaces.set(loopHeader, storedContextPlaces);
-    this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
+    this.#addLoopInputPlaces(loopBindings, from);
     const headerBindingCount = loopBindings.length;
     const awaitCountBefore = this.#awaitCount;
     this.#loopDepth++;
@@ -492,11 +450,7 @@ export class ControlFlowWalker {
     );
     for (const phi of this.#getBlock(terminal.fallthrough).phis)
       this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
-    this.#addLoopInputPlaces(
-      loopBindings.slice(headerBindingCount),
-      loopEntry,
-      terminal.fallthrough,
-    );
+    this.#addLoopInputPlaces(loopBindings.slice(headerBindingCount), from);
     for (const place of storedContextPlaces)
       this.#interpreter.write(place, createUnknown("loop", place.loc));
     const afterPathState =
@@ -518,14 +472,7 @@ export class ControlFlowWalker {
   ): Completion | null {
     const loopHeaders = getLoopHeaders(terminal);
     const [loopEntry = terminal.fallthrough] = loopHeaders;
-    const isUnrollable = this.#getBlocksBetween(loopEntry, terminal.fallthrough).every(
-      (block) =>
-        UNROLLABLE_TERMINALS.has(block.terminal.kind) &&
-        block.instructions.every((instruction) =>
-          UNROLLABLE_INSTRUCTIONS.has(instruction.value.kind),
-        ),
-    );
-    if (!isUnrollable) return null;
+    if (!this.#interpreter.currentFacts.loops[from].isUnrollable) return null;
     const loopStops = new Set([...stops, terminal.fallthrough]);
     for (const loopHeader of loopHeaders) this.#unrolledLoopHeaders.add(loopHeader);
     let completion: Completion = { kind: "Fallthrough", from, to: loopEntry };
@@ -552,39 +499,8 @@ export class ControlFlowWalker {
     return this.#continueAfter(completion, terminal.fallthrough, stops, pathState);
   }
 
-  #getBlocksBetween(entry: BlockId, exit: BlockId): BasicBlock[] {
-    const visitedBlocks = new Set([entry, exit]);
-    const blocks = [this.#getBlock(entry)];
-    for (const block of blocks)
-      for (const successor of eachTerminalSuccessor(block.terminal)) {
-        if (visitedBlocks.has(successor)) continue;
-        visitedBlocks.add(successor);
-        blocks.push(this.#getBlock(successor));
-      }
-    return blocks;
-  }
-
-  #getTrackedContextPlaces(): Place[] {
-    const hirFunction = this.#interpreter.getCurrentFunction();
-    const placesById = new Map<IdentifierId, Place>();
-    for (const block of hirFunction.body.blocks.values())
-      for (const instruction of block.instructions) {
-        if (instruction.value.kind === "StoreContext")
-          placesById.set(
-            instruction.value.lvalue.place.identifier.id,
-            instruction.value.lvalue.place,
-          );
-        if (
-          instruction.value.kind === "PostfixUpdateContext" ||
-          instruction.value.kind === "PrefixUpdateContext"
-        )
-          placesById.set(instruction.value.lvalue.identifier.id, instruction.value.lvalue);
-      }
-    return [...placesById.values()];
-  }
-
   #getContextValues(): ReadonlyMap<IdentifierId, ContextValue> | null {
-    const places = this.#getTrackedContextPlaces();
+    const places = this.#interpreter.currentFacts.contextWrites;
     if (places.length === 0) return null;
     return new Map(
       places.map((place): [IdentifierId, ContextValue] => [
@@ -606,7 +522,7 @@ export class ControlFlowWalker {
   }
 
   #mergeContextValues(completion: Completion, join: BlockId | null, guards: SymbolicValue[]): void {
-    for (const place of this.#getTrackedContextPlaces()) {
+    for (const place of this.#interpreter.currentFacts.contextWrites) {
       const merged = this.#getJoinedContextValue(completion, join, place.identifier.id, guards);
       if (merged) this.#interpreter.write(place, merged);
     }
@@ -631,27 +547,6 @@ export class ControlFlowWalker {
     );
   }
 
-  #getSuccessorStoredContextPlaces(entries: BlockId[], exit: BlockId): Place[] {
-    const placesById = new Map<IdentifierId, Place>();
-    for (const entry of entries)
-      for (const place of this.#getStoredContextPlaces(entry, exit))
-        placesById.set(place.identifier.id, place);
-    return [...placesById.values()];
-  }
-
-  #getStoredContextPlaces(entry: BlockId, exit: BlockId): Place[] {
-    if (entry === exit) return [];
-    return this.#getBlocksBetween(entry, exit).flatMap((block) =>
-      block.instructions.flatMap((instruction) => {
-        if (instruction.value.kind === "StoreContext") return [instruction.value.lvalue.place];
-        return instruction.value.kind === "PostfixUpdateContext" ||
-          instruction.value.kind === "PrefixUpdateContext"
-          ? [instruction.value.lvalue]
-          : [];
-      }),
-    );
-  }
-
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
     const variableName = getIdentifierName(phi.place);
     const declarationLoc = [phi.place, ...phi.operands.values()]
@@ -668,26 +563,11 @@ export class ControlFlowWalker {
     return createBindingValue(binding);
   }
 
-  #addLoopInputPlaces(loopBindings: Binding[], loopEntry: BlockId, loopFallthrough: BlockId): void {
+  #addLoopInputPlaces(loopBindings: Binding[], loopFrom: BlockId): void {
     if (loopBindings.length === 0) return;
-    const loopBlocks = this.#getBlocksBetween(loopEntry, loopFallthrough);
-    const loopDefinedIds = new Set(
-      loopBlocks.flatMap((block) => [
-        ...[...block.phis].map((phi) => phi.place.identifier.id),
-        ...block.instructions.flatMap((instruction) =>
-          [...eachInstructionLValue(instruction)].map((lvalue) => lvalue.identifier.id),
-        ),
-      ]),
-    );
     const inputPlaces = new PlaceMap<true>();
-    for (const block of loopBlocks)
-      for (const operand of [
-        ...[...block.phis].flatMap((phi) => [...phi.operands.values()]),
-        ...block.instructions.flatMap((instruction) => [...eachInstructionOperand(instruction)]),
-        ...eachTerminalOperand(block.terminal),
-      ])
-        if (!loopDefinedIds.has(operand.identifier.id))
-          this.#interpreter.collectInputPlaces(this.#interpreter.read(operand), inputPlaces);
+    for (const operand of this.#interpreter.currentFacts.loops[loopFrom].outsideOperands)
+      this.#interpreter.collectInputPlaces(this.#interpreter.read(operand), inputPlaces);
     const loopBindingIds = new Set(loopBindings.map((binding) => binding.id));
     const outsidePlaces = inputPlaces
       .places()
@@ -817,9 +697,6 @@ export class ControlFlowWalker {
     stops: ReadonlySet<BlockId>,
     pathState: PathState,
   ): Completion {
-    this.#interpreter
-      .getCompilationTables()
-      .branchOperators.set(terminal.fallthrough, getBranchOperator(terminal));
     const testCompletion = this.walk(
       terminal.test,
       new Set([...stops, terminal.fallthrough]),
@@ -848,7 +725,7 @@ export class ControlFlowWalker {
       return { kind: "Next", block: terminal.continuation };
     this.functionScope.walkedCatches.add(terminal.handler);
     const throwTest = createUnknown("throws", terminal.loc);
-    const places = this.#getTrackedContextPlaces();
+    const places = this.#interpreter.currentFacts.contextWrites;
     const valuesBefore = places.map((place) => this.#interpreter.read(place));
     const consequent = this.#walkSuccessor(terminal.handler, blockId, stops, pathState, throwTest);
     places.forEach((place, index) => this.#interpreter.write(place, valuesBefore[index]));
