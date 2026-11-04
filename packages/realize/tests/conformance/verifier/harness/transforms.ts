@@ -1,6 +1,9 @@
+import { traverseFast } from "@babel/types";
+import type { types } from "@babel/core";
 import MagicString from "magic-string";
 import { parseAst, transformWithEsbuild } from "vite";
 import type { Plugin, Rollup } from "vite";
+import { parseBody } from "../source-index";
 import type { Counter } from "../types";
 import { isAppSourceModule, stripQuery } from "./packages";
 
@@ -182,6 +185,61 @@ export const createRequirePlugin = (): Plugin => ({
   },
 });
 
+const LOGICAL_ASSIGNMENT_PATTERN = /^\s*(\?\?|\|\||&&)=/;
+
+const findCountedLogicalAssignments = (
+  code: string,
+  counters: Counter[],
+): types.AssignmentExpression[] => {
+  const countedTargets = new Set(
+    counters.flatMap((counter) =>
+      LOGICAL_ASSIGNMENT_PATTERN.test(code.slice(counter.end))
+        ? [`${counter.start}:${counter.end}`]
+        : [],
+    ),
+  );
+  if (countedTargets.size === 0) return [];
+  const assignments: types.AssignmentExpression[] = [];
+  for (const statement of parseBody(code))
+    traverseFast(statement, (node) => {
+      if (
+        node.type === "AssignmentExpression" &&
+        countedTargets.has(`${node.left.start}:${node.left.end}`)
+      )
+        assignments.push(node);
+    });
+  return assignments;
+};
+
+const expandLogicalAssignment = (
+  source: MagicString,
+  code: string,
+  { operator, left, right, end }: types.AssignmentExpression,
+): void => {
+  const target = code.slice(left.start ?? 0, left.end ?? 0);
+  source.overwrite(left.end ?? 0, right.start ?? 0, ` ${operator.slice(0, -1)} (${target} = `);
+  source.appendLeft(end ?? 0, ")");
+  source.prependRight(left.start ?? 0, "(");
+  source.appendLeft(end ?? 0, ")");
+};
+
+export const addCoverageCounters = (code: string, counters: Counter[]): MagicString => {
+  const source = new MagicString(code);
+  const innermostFirst = [...counters].sort(
+    (left, right) => left.end - left.start - (right.end - right.start),
+  );
+  for (const counter of innermostFirst) {
+    source.prependRight(
+      counter.start,
+      `__bippyCoverage(${JSON.stringify(counter.id)}, ${JSON.stringify(counter.kind)}, (`,
+    );
+    source.appendLeft(counter.end, "))");
+  }
+  for (const assignment of findCountedLogicalAssignments(code, counters))
+    expandLogicalAssignment(source, code, assignment);
+  return source;
+};
+
 export const createCoveragePlugin = (counters: Counter[]): Plugin => {
   const countersByFile = Map.groupBy(
     new Map(counters.map((counter) => [counter.id, counter])).values(),
@@ -193,17 +251,7 @@ export const createCoveragePlugin = (counters: Counter[]): Plugin => {
     transform: (code, id) => {
       const fileCounters = countersByFile.get(stripQuery(id));
       if (!fileCounters) return null;
-      const source = new MagicString(code);
-      const innermostFirst = [...fileCounters].sort(
-        (left, right) => left.end - left.start - (right.end - right.start),
-      );
-      for (const counter of innermostFirst) {
-        source.prependRight(
-          counter.start,
-          `__bippyCoverage(${JSON.stringify(counter.id)}, ${JSON.stringify(counter.kind)}, (`,
-        );
-        source.appendLeft(counter.end, "))");
-      }
+      const source = addCoverageCounters(code, fileCounters);
       return { code: source.toString(), map: source.generateMap({ hires: true }) };
     },
   };
