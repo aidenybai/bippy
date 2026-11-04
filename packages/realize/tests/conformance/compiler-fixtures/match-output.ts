@@ -1,10 +1,8 @@
+import { Element, Text, Window } from "happy-dom";
+import type { Node } from "happy-dom";
 import type { SymbolicValue } from "../../../src/core/types";
 import { toExpected } from "./expected";
 import type { ExpectedShape } from "./expected";
-
-type OutputShape =
-  | { kind: "element"; tag: string; children: OutputShape[] }
-  | { kind: "text"; text: string };
 
 type ExpectedToken =
   | { kind: "char"; char: string }
@@ -17,70 +15,24 @@ type OutputToken =
   | { kind: "char"; char: string }
   | { kind: "element"; tag: string; children: OutputToken[] };
 
-const VOID_TAGS = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "link",
-  "meta",
-  "source",
-  "track",
-  "wbr",
-]);
-
-const ENTITIES = new Map([
-  ["&amp;", "&"],
-  ["&lt;", "<"],
-  ["&gt;", ">"],
-  ["&quot;", '"'],
-  ["&#x27;", "'"],
-  ["&#39;", "'"],
-  ["&nbsp;", " "],
-]);
-
-const TAG_PATTERN =
-  /<(\/?)([a-zA-Z][\w-]*)((?:\s+[^\s=>/]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>|[^<]+/g;
-
 const MAX_MATCH_STEPS = 500_000;
-
-const decode = (text: string): string =>
-  text.replace(/&(?:amp|lt|gt|quot|nbsp|#x27|#39);/g, (entity) => ENTITIES.get(entity) ?? entity);
-
-const parseHtml = (html: string): OutputShape[] => {
-  const root: OutputShape[] = [];
-  const stack: OutputShape[][] = [root];
-  for (const [token, closing, tag, , selfClosing] of html.matchAll(TAG_PATTERN)) {
-    const siblings = stack.at(-1);
-    if (!siblings) break;
-    if (tag === undefined) {
-      siblings.push({ kind: "text", text: decode(token) });
-      continue;
-    }
-    if (closing) {
-      stack.pop();
-      continue;
-    }
-    const children: OutputShape[] = [];
-    siblings.push({ kind: "element", tag: tag.toLowerCase(), children });
-    if (!selfClosing && !VOID_TAGS.has(tag.toLowerCase())) stack.push(children);
-  }
-  return root;
-};
+const DOCUMENT = new Window().document;
 
 const toChars = (text: string): Array<{ kind: "char"; char: string }> =>
   [...text.replace(/\s+/g, "")].map((char) => ({ kind: "char", char }));
 
-const toOutputTokens = (shapes: OutputShape[]): OutputToken[] =>
-  shapes.flatMap((shape): OutputToken[] =>
-    shape.kind === "text"
-      ? toChars(shape.text)
-      : [{ kind: "element", tag: shape.tag, children: toOutputTokens(shape.children) }],
-  );
+const toOutputTokens = (nodes: Iterable<Node>): OutputToken[] =>
+  [...nodes].flatMap((node): OutputToken[] => {
+    if (node instanceof Text) return toChars(node.data);
+    if (!(node instanceof Element)) return [];
+    return [{ kind: "element", tag: node.localName, children: toOutputTokens(node.childNodes) }];
+  });
+
+const parseHtml = (html: string): OutputToken[] => {
+  const template = DOCUMENT.createElement("template");
+  template.innerHTML = html;
+  return toOutputTokens(template.content.childNodes);
+};
 
 const toExpectedTokens = (shapes: ExpectedShape[]): ExpectedToken[] =>
   shapes.flatMap((shape): ExpectedToken[] => {
@@ -227,13 +179,13 @@ const toRenderTokens = (value: SymbolicValue): ExpectedToken[] => {
 };
 
 export const admitsOutput = (renders: SymbolicValue[], html: string): boolean => {
-  const actual = toOutputTokens(parseHtml(html));
+  const actual = parseHtml(html);
   return renders.some((render) => matchTokens(toRenderTokens(render), actual, { steps: 0 }));
 };
 
 export const admitsSequentialOutput = (renders: SymbolicValue[], html: string): boolean =>
   matchTokens(
     [{ kind: "repeat", item: [{ kind: "choice", options: renders.map(toRenderTokens) }] }],
-    toOutputTokens(parseHtml(html)),
+    parseHtml(html),
     { steps: 0 },
   );

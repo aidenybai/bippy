@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { createRequire, findPackageJSON } from "node:module";
 import { dirname, join } from "node:path";
 
 interface PackageManifest {
@@ -46,41 +46,22 @@ const isDeclared = (appDirectory: string, packageName: string): boolean =>
   !existsSync(join(appDirectory, "package.json")) ||
   isDependencyDeclared(appDirectory, packageName);
 
-const findUpwards = (
-  startDirectory: string,
-  isMatch: (directory: string) => boolean,
-): string | null => {
-  for (let directory = startDirectory; ; directory = dirname(directory)) {
-    if (isMatch(directory)) return directory;
-    if (dirname(directory) === directory) return null;
+export const findPackageDirectory = (packageName: string, importer: string): string | null => {
+  try {
+    const manifestPath = findPackageJSON(packageName, importer);
+    return manifestPath ? realpathSync(dirname(manifestPath)) : null;
+  } catch {
+    return null;
   }
-};
-
-const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
-  const installingDirectory = findUpwards(appDirectory, (directory) =>
-    existsSync(join(directory, "node_modules", packageName, "package.json")),
-  );
-  return installingDirectory && join(installingDirectory, "node_modules", packageName);
 };
 
 export const resolvePackageDirectory = (
   appDirectory: string,
   packageName: string,
-): string | null => {
-  if (!isDeclared(appDirectory, packageName)) return null;
-  try {
-    return dirname(
-      createRequire(join(appDirectory, "package.json")).resolve(`${packageName}/package.json`),
-    );
-  } catch {
-    return findInstalledDirectory(appDirectory, packageName);
-  }
-};
+): string | null =>
+  isDeclared(appDirectory, packageName)
+    ? findPackageDirectory(packageName, join(appDirectory, "package.json"))
+    : null;
 
 export const isInstalled = (appDirectory: string, packageName: string): boolean =>
   resolvePackageDirectory(appDirectory, packageName) !== null;
-
-export const hasPackageDirectory = (startDirectory: string, packageName: string): boolean =>
-  findUpwards(startDirectory, (directory) =>
-    existsSync(join(directory, "node_modules", packageName)),
-  ) !== null;

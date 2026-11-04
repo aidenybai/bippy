@@ -1,3 +1,4 @@
+import { scrollToStart } from "@/lib/scroll";
 import type { ViewLocation } from "@/model";
 
 export interface Box {
@@ -55,48 +56,20 @@ export const getLineFromEvent = (event: Event): number | null => {
 
 export const scrollToLine = (host: HTMLElement, line: number): void => {
   const root: ParentNode = host.shadowRoot ?? host;
-  root
-    .querySelector(`[data-line="${line}"]`)
-    ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  scrollToStart(root.querySelector(`[data-line="${line}"]`));
 };
 
 export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {
   const root: ParentNode = host.shadowRoot ?? host;
-  const lines = new Map<number, Element | null>();
   return {
     origin: origin.getBoundingClientRect(),
-    getLine: (line) => {
-      const cached = lines.get(line);
-      if (cached !== undefined) return cached;
-      const element = root.querySelector(`[data-line="${line}"]`);
-      lines.set(line, element);
-      return element;
-    },
+    getLine: (line) => root.querySelector(`[data-line="${line}"]`),
   };
 };
 
 const getLineBox = (lookup: LineLookup, line: number): Box | null => {
   const element = lookup.getLine(line);
   return element ? toBox(element.getBoundingClientRect(), lookup.origin) : null;
-};
-
-const mergeRows = (rects: DOMRect[], origin: DOMRect): Box[] => {
-  const rows = new Map<number, DOMRect[]>();
-  for (const rect of rects)
-    if (rect.width > 0)
-      rows.set(Math.round(rect.top), [...(rows.get(Math.round(rect.top)) ?? []), rect]);
-  return [...rows.values()].map((group) => {
-    const left = Math.min(...group.map((rect) => rect.left));
-    const top = Math.min(...group.map((rect) => rect.top));
-    const right = Math.max(...group.map((rect) => rect.right));
-    const bottom = Math.max(...group.map((rect) => rect.bottom));
-    return {
-      x: left - origin.left,
-      y: top - origin.top,
-      width: right - left,
-      height: bottom - top,
-    };
-  });
 };
 
 export const getBoundingBox = (rows: Box[]): Box | null => {
@@ -106,6 +79,16 @@ export const getBoundingBox = (rows: Box[]): Box | null => {
   const right = Math.max(...rows.map((row) => row.x + row.width));
   const bottom = Math.max(...rows.map((row) => row.y + row.height));
   return { x, y, width: right - x, height: bottom - y };
+};
+
+const mergeRows = (rects: DOMRect[], origin: DOMRect): Box[] => {
+  const rows = Map.groupBy(
+    rects.filter((rect) => rect.width > 0),
+    (rect) => Math.round(rect.top),
+  );
+  return [...rows.values()].flatMap(
+    (group) => getBoundingBox(group.map((rect) => toBox(rect, origin))) ?? [],
+  );
 };
 
 const getSpanRows = (
@@ -124,7 +107,7 @@ const getSpanRows = (
   return mergeRows([...range.getClientRects()], lookup.origin);
 };
 
-export const getLocationRows = (lookup: LineLookup, loc: ViewLocation): Box[] => {
+const getLocationRows = (lookup: LineLookup, loc: ViewLocation): Box[] => {
   const isSingleLine = loc.start.line === loc.end.line;
   return getSpanRows(
     lookup,

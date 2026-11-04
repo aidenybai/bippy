@@ -17,5 +17,5 @@
       "@babel/traverse": ["../../node_modules/@types/babel__traverse"]
     }
   },
-  "include": ["*.ts", "../src/model.ts", "../src/lib/lookup.ts"]
+  "include": ["*.ts", "../src/model.ts"]
 }

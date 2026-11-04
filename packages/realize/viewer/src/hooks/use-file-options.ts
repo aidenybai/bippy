@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { FileOptions } from "@pierre/diffs/react";
 import { getCodeTheme } from "./use-highlighter";
 import { useResolvedTheme } from "./use-resolved-theme";
@@ -16,8 +15,5 @@ const FILE_OPTIONS: Omit<CodeFileOptions, "theme"> = {
 
 export const useFileOptions = (onPostRender?: () => void): CodeFileOptions => {
   const { theme } = useResolvedTheme();
-  return useMemo(
-    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
-    [theme, onPostRender],
-  );
+  return { ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender };
 };

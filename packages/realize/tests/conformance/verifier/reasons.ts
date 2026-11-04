@@ -1,4 +1,4 @@
-import type { Capture } from "./types";
+import type { Capture, CaptureError } from "./types";
 
 export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
@@ -80,8 +80,8 @@ export class HarnessError extends Error {
   }
 }
 
-export const getCaptureFailure = (capture: Capture): MountFailure =>
-  capture.failure ?? classifyMountError(capture.error ?? "");
+export const isNothingRendered = (capture: Capture): capture is Capture & { error: CaptureError } =>
+  capture.error !== null && capture.shapes.length === 0;
 
 export const classifyMountError = (message: string): MountFailure =>
   MOUNT_FAILURE_PATTERNS.find((failurePattern) => failurePattern.pattern.test(message))?.failure ??
