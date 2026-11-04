@@ -1,9 +1,9 @@
 import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
-import { isComparison } from "../values/comparison";
 import { forEachSymbolicValue, getChildValues } from "../values/for-each-symbolic-value";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getTestExpression } from "../values/get-test-expression";
+import { isComparison } from "../values/comparison";
 import { ANY, addAbstract, mayOverlap } from "./abstract";
 import {
   UNCHANGED,
@@ -182,7 +182,10 @@ const collectDependencies = (table: VariableTable, value: SymbolicValue): Variab
     if (node.kind === "Binding") bindingIds.add(node.binding.id);
     if (node.kind === "Conditional")
       collectPredicateVariables(table.compile(getTestExpression(node)), names);
-    if (node.kind === "BinaryExpression" || node.kind === "UnaryExpression")
+    if (
+      (node.kind === "BinaryExpression" && isComparison(node.operator)) ||
+      (node.kind === "UnaryExpression" && node.operator === "!")
+    )
       collectPredicateVariables(table.compile(node), names);
   });
   return table.variables.filter(
