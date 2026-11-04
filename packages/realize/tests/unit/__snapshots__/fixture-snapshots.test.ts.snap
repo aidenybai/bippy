@@ -4322,9 +4322,10 @@ exports[`fixture analysis > UploadForm keeps its TLA+ module 1`] = `
 \\* error: error (state), 3 values
 \\* pending_t1: t1 pending (control), 2 values
 \\* opaque_Unknown_throws: Unknown(throws) (opaque), 2 values
-VARIABLES error, pending_t1, opaque_Unknown_throws
+\\* opaque_Unknown_throws_2: Unknown(throws) (opaque), 2 values
+VARIABLES error, pending_t1, opaque_Unknown_throws, opaque_Unknown_throws_2
 
-vars == <<error, pending_t1, opaque_Unknown_throws>>
+vars == <<error, pending_t1, opaque_Unknown_throws, opaque_Unknown_throws_2>>
 
 view == CASE error = "other string" -> "div > p"
           [] error /= "other string" -> "div"
@@ -4334,32 +4335,38 @@ Init ==
   /\\ error = "null"
   /\\ pending_t1 = "idle"
   /\\ opaque_Unknown_throws \\in {"false", "true"}
+  /\\ opaque_Unknown_throws_2 \\in {"false", "true"}
 
 \\* "Upload"
 t1 ==
   /\\ pending_t1 = "idle"
   /\\ pending_t1' = "pending"
-  /\\ UNCHANGED <<error, opaque_Unknown_throws>>
+  /\\ UNCHANGED <<error, opaque_Unknown_throws, opaque_Unknown_throws_2>>
 
 \\* "Upload" resolves
 t1_fulfilled ==
   /\\ pending_t1 = "pending"
-  /\\ error' \\in (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error})
+  /\\ error' \\in (IF opaque_Unknown_throws = "false" /\\ opaque_Unknown_throws_2 = "true" THEN {"other string"} ELSE (IF opaque_Unknown_throws = "true" THEN {"other string"} ELSE {error}))
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<opaque_Unknown_throws>>
+  /\\ UNCHANGED <<opaque_Unknown_throws, opaque_Unknown_throws_2>>
 
 \\* "Upload" rejects
 t1_rejected ==
   /\\ pending_t1 = "pending"
   /\\ pending_t1' = "idle"
-  /\\ UNCHANGED <<error, opaque_Unknown_throws>>
+  /\\ UNCHANGED <<error, opaque_Unknown_throws, opaque_Unknown_throws_2>>
 
 \\* Unknown(throws) changes
 change_opaque_Unknown_throws ==
   /\\ opaque_Unknown_throws' \\in {"false", "true"}
-  /\\ UNCHANGED <<error, pending_t1>>
+  /\\ UNCHANGED <<error, pending_t1, opaque_Unknown_throws_2>>
 
-Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ change_opaque_Unknown_throws
+\\* Unknown(throws) changes
+change_opaque_Unknown_throws_2 ==
+  /\\ opaque_Unknown_throws_2' \\in {"false", "true"}
+  /\\ UNCHANGED <<error, pending_t1, opaque_Unknown_throws>>
+
+Next == t1 \\/ t1_fulfilled \\/ t1_rejected \\/ change_opaque_Unknown_throws \\/ change_opaque_Unknown_throws_2
 
 Spec == Init /\\ [][Next]_vars
 ===="
@@ -4371,10 +4378,11 @@ title: UploadForm src/catch-after-await.tsx:25
 ---
 stateDiagram-v2
   direction LR
-  %% 8 states
+  %% 16 states
   %% error = error (state): null | empty | other string
   %% pending_t1 = t1 pending (control): idle | pending
   %% opaque_Unknown_throws = Unknown(throws) (opaque): false | true
+  %% opaque_Unknown_throws_2 = Unknown(throws) (opaque): false | true
   S1: div #gt; p
   S2: div
   [*] --> S2
