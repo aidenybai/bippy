@@ -393,8 +393,6 @@ const isDataProperty = (property: ObjectExpressionValue["properties"][number]): 
 const getStoredLabel = (value: BindingValue): string =>
   `${formatPlace(value.binding, value.path)}@${value.binding.id}`;
 
-const ARRAY_INDEX_PATTERN = /^\d+$/;
-
 const isRefContents = (value: BindingValue): boolean =>
   value.binding.kind === "ref" && value.path[0] === "current";
 
@@ -750,9 +748,7 @@ export class Interpreter {
       case "ArrayExpression": {
         if (object.spreads.length === 0) return getArrayLiteralMember(object, property, loc);
         const opaque = createUnknown("member", loc, { kind: "Member", object, property });
-        const element = ARRAY_INDEX_PATTERN.test(property)
-          ? object.elements[Number(property)]
-          : undefined;
+        const element = isArrayIndex(property) ? object.elements[Number(property)] : undefined;
         return element
           ? {
               kind: "Conditional",
@@ -921,7 +917,7 @@ export class Interpreter {
   #getCalledFunctions(place: BindingValue): SymbolicValue[] {
     const called = this.#storedFunctions.get(getValuePlace(place)) ?? [];
     const lastSegment = place.path.at(-1);
-    if (lastSegment === undefined || !ARRAY_INDEX_PATTERN.test(lastSegment)) return called;
+    if (lastSegment === undefined || !isArrayIndex(lastSegment)) return called;
     return dedupeByValueKey([
       ...called,
       ...this.getStoredFunctions({ ...place, path: place.path.slice(0, -1) }),

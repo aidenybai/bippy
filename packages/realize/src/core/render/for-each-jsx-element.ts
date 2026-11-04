@@ -1,23 +1,13 @@
 import type { SymbolicValue, JsxExpressionValue } from "../types";
 import { forEachRenderNode } from "./for-each-render-node";
+import { getContainedValues } from "../values/symbolic-values";
 
 export const forEachPropNode = (
   element: JsxExpressionValue,
   visit: (node: SymbolicValue) => void,
 ): void => {
-  const walk = (value: SymbolicValue): void => {
-    switch (value.kind) {
-      case "ArrayExpression":
-        value.elements.forEach(walk);
-        return;
-      case "ObjectExpression":
-        for (const property of value.properties) walk(property.value);
-        return;
-      default:
-        visit(value);
-    }
-  };
-  for (const prop of element.props) if (prop.kind === "JsxAttribute") walk(prop.value);
+  for (const prop of element.props)
+    if (prop.kind === "JsxAttribute") getContainedValues(prop.value).forEach(visit);
 };
 
 export const forEachJsxElement = (

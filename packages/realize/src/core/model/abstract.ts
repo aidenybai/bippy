@@ -1,65 +1,19 @@
 import type { PrimitiveValue } from "../types";
+import { FLIPPED, comparePrimitives, type Comparison } from "../values/comparison";
+import { isNullish } from "../values/is-nullish";
 import type { Abstract } from "./types";
-
-export type Comparison = "===" | "!==" | "==" | "!=" | "<" | "<=" | ">" | ">=";
-
-export const COMPARISONS = new Set<string>(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
 
 export const ANY: Abstract = { kind: "Any" };
 
 type RangeValue = Extract<Abstract, { kind: "Range" }>;
 
-export const FLIPPED: Record<Comparison, Comparison> = {
-  "===": "===",
-  "!==": "!==",
-  "==": "==",
-  "!=": "!=",
-  "<": ">",
-  "<=": ">=",
-  ">": "<",
-  ">=": "<=",
-};
-
-const isNullish = (value: PrimitiveValue): value is null | undefined =>
-  value === null || value === undefined;
-
 const isNaNValue = (value: PrimitiveValue): boolean =>
   typeof value === "number" && Number.isNaN(value);
 
-const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
+export const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
   left === right || (isNaNValue(left) && isNaNValue(right));
 
-const isLooselyEqual = (left: PrimitiveValue, right: PrimitiveValue): boolean => {
-  if (isNullish(left) || isNullish(right)) return isNullish(left) && isNullish(right);
-  return typeof left === typeof right ? left === right : Number(left) === Number(right);
-};
-
 const isStrict = (operator: Comparison): boolean => operator === "===" || operator === "!==";
-
-const compareValues = (
-  left: PrimitiveValue,
-  operator: Comparison,
-  right: PrimitiveValue,
-): boolean => {
-  switch (operator) {
-    case "===":
-      return left === right;
-    case "!==":
-      return left !== right;
-    case "==":
-      return isLooselyEqual(left, right);
-    case "!=":
-      return !isLooselyEqual(left, right);
-    case "<":
-      return (left as number) < (right as number);
-    case "<=":
-      return (left as number) <= (right as number);
-    case ">":
-      return (left as number) > (right as number);
-    case ">=":
-      return (left as number) >= (right as number);
-  }
-};
 
 const isAbove = (min: number, isMinIncluded: boolean, value: number): boolean =>
   isMinIncluded ? value >= min : value > min;
@@ -91,7 +45,7 @@ const compareRange = (
 ): boolean | null => {
   const point = getComparedNumber(operator, literal);
   if (point !== null && isInRange(range, point) && !isSinglePoint(range)) return null;
-  return compareValues(getSample(range), operator, literal);
+  return comparePrimitives(getSample(range), operator, literal);
 };
 
 const getEquality = (
@@ -123,7 +77,7 @@ export const compareAbstract = (
   operator: Comparison,
   literal: PrimitiveValue,
 ): boolean | null => {
-  if (value.kind === "Exact") return compareValues(value.value, operator, literal);
+  if (value.kind === "Exact") return comparePrimitives(value.value, operator, literal);
   if (value.kind === "Range") return compareRange(value, operator, literal);
   const isEqual = getEquality(value, operator, literal);
   if (isEqual === null) return null;
@@ -142,8 +96,8 @@ export const compareAbstracts = (
   if (right.kind === "Exact") return compareAbstract(left, operator, right.value);
   if (left.kind === "Exact") return compareAbstract(right, FLIPPED[operator], left.value);
   if (left.kind !== "Range" || right.kind !== "Range") return null;
-  if (isRangeBelow(left, right)) return compareValues(0, operator, 1);
-  if (isRangeBelow(right, left)) return compareValues(1, operator, 0);
+  if (isRangeBelow(left, right)) return comparePrimitives(0, operator, 1);
+  if (isRangeBelow(right, left)) return comparePrimitives(1, operator, 0);
   return null;
 };
 

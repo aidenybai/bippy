@@ -24,7 +24,7 @@ export const createImportIndex = (filesByPath: Map<string, FileContext>): Import
   const reexportedPaths = new Map<string, string[]>();
   const namespacedPaths: string[] = [];
   for (const [path, file] of filesByPath) {
-    const imported = file.compiled.importedNames;
+    const imported = file.compiled.moduleValues.importedNames;
     for (const specifier of imported.specifiers) {
       const declarationKey = file.resolver.getDeclarationKey(specifier.loc);
       if (declarationKey)

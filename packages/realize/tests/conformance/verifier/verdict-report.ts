@@ -56,11 +56,7 @@ export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
 ];
 
 export const countCounterexamples = (verdict: ComponentVerdict): number =>
-  verdict.renderCounterexamples.length +
-  verdict.transitionCounterexamples.length +
-  verdict.domainCounterexamples.length +
-  verdict.unreachableEdgesTaken.length +
-  verdict.refutedWarnings.length;
+  formatCounterexamples(verdict).length;
 
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
   items.reduce((total, item) => total + getValue(item), 0);

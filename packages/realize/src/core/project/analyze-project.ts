@@ -151,12 +151,12 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
   const loadModuleDeclaration = (declarationKey: string): ProjectModuleDeclaration | null => {
     const { path, name } = parseDeclarationKey(declarationKey);
     const file = filesByPath.get(path);
-    const declaration = file?.compiled.loadModuleDeclaration(name);
+    const declaration = file?.compiled.moduleValues.declarations.get(name);
     return file && declaration ? { ...declaration, name, resolver: file.resolver } : null;
   };
   const loadImportUse = (declarationKey: string): ImportUse => {
     const { path, name } = parseDeclarationKey(declarationKey);
-    return filesByPath.get(path)?.compiled.loadImportUse(name) ?? "read";
+    return filesByPath.get(path)?.compiled.moduleValues.importUses.get(name) ?? "read";
   };
   const getImportIndex = (): ImportIndex => {
     importIndex ??= createImportIndex(filesByPath);
@@ -167,13 +167,13 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
       (importer) =>
         filesByPath
           .get(importer.path)
-          ?.compiled.importedNames.isReadOnly(importer.localName, value) ?? false,
+          ?.compiled.moduleValues.importedNames.isReadOnly(importer.localName, value) ?? false,
     );
   const isReadOnlyDeclaration = (declarationKey: string): boolean => {
     const cached = readOnlyByDeclaration.get(declarationKey);
     if (cached !== undefined) return cached;
     const { path, name } = parseDeclarationKey(declarationKey);
-    const declaration = filesByPath.get(path)?.compiled.loadModuleDeclaration(name);
+    const declaration = filesByPath.get(path)?.compiled.moduleValues.declarations.get(name);
     const isReadOnly =
       declaration?.isReadOnly === true &&
       declaration.initial !== null &&

@@ -11,15 +11,14 @@ import type {
   UnaryOperator,
   UnknownOrigin,
 } from "../types";
+import { comparePrimitives, isComparison, type Comparison } from "./comparison";
 import { isNullish } from "./is-nullish";
 import { negate } from "./negate";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import { forEachSymbolicValue } from "./for-each-symbolic-value";
 
-const BOOLEAN_OPERATORS = new Set(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
-
 const isBooleanExpression = (value: SymbolicValue): boolean =>
-  (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
+  (value.kind === "BinaryExpression" && isComparison(value.operator)) ||
   (value.kind === "UnaryExpression" && value.operator === "!");
 
 const MAX_OPTIONS_NESTING = 3;
@@ -163,23 +162,15 @@ const foldObjectComparison = (
 const isOrdered = (value: PrimitiveValue): value is number | string =>
   typeof value === "number" || typeof value === "string";
 
-const foldOrder = (
-  operator: "<" | "<=" | ">" | ">=",
+const isEquality = (operator: Comparison): boolean =>
+  operator === "===" || operator === "!==" || operator === "==" || operator === "!=";
+
+const canFoldComparison = (
+  operator: Comparison,
   left: PrimitiveValue,
   right: PrimitiveValue,
-): SymbolicValue | null => {
-  if (!isOrdered(left) || !isOrdered(right) || typeof left !== typeof right) return null;
-  switch (operator) {
-    case "<":
-      return { kind: "Primitive", value: left < right };
-    case "<=":
-      return { kind: "Primitive", value: left <= right };
-    case ">":
-      return { kind: "Primitive", value: left > right };
-    case ">=":
-      return { kind: "Primitive", value: left >= right };
-  }
-};
+): boolean =>
+  isEquality(operator) || (isOrdered(left) && isOrdered(right) && typeof left === typeof right);
 
 const NUMBER_OPERATIONS: Partial<Record<BinaryOperator, (left: number, right: number) => number>> =
   {
@@ -229,38 +220,11 @@ export const foldBinary = (
   const operation = NUMBER_OPERATIONS[operator];
   if (operation && typeof leftValue === "number" && typeof rightValue === "number")
     return { kind: "Primitive", value: operation(leftValue, rightValue) };
-  if (operator === "+" && typeof leftValue === "string" && typeof rightValue === "string")
-    return { kind: "Primitive", value: leftValue + rightValue };
-  switch (operator) {
-    case "===":
-      return { kind: "Primitive", value: leftValue === rightValue };
-    case "!==":
-      return { kind: "Primitive", value: leftValue !== rightValue };
-    case "==":
-      // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
-      return { kind: "Primitive", value: leftValue == rightValue };
-    case "!=":
-      // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
-      return { kind: "Primitive", value: leftValue != rightValue };
-    case "<":
-    case "<=":
-    case ">":
-    case ">=":
-      return (
-        foldOrder(operator, leftValue, rightValue) ?? {
-          kind: "BinaryExpression",
-          operator,
-          left,
-          right,
-        }
-      );
-    case "+":
-      return typeof leftValue === "string" || typeof rightValue === "string"
-        ? { kind: "Primitive", value: String(leftValue) + String(rightValue) }
-        : { kind: "BinaryExpression", operator, left, right };
-    default:
-      return { kind: "BinaryExpression", operator, left, right };
-  }
+  if (isComparison(operator) && canFoldComparison(operator, leftValue, rightValue))
+    return { kind: "Primitive", value: comparePrimitives(leftValue, operator, rightValue) };
+  if (operator === "+" && (typeof leftValue === "string" || typeof rightValue === "string"))
+    return { kind: "Primitive", value: String(leftValue) + String(rightValue) };
+  return { kind: "BinaryExpression", operator, left, right };
 };
 
 const OBJECT_KINDS = new Set<SymbolicValue["kind"]>([
