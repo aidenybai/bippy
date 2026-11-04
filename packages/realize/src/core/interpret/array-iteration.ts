@@ -10,25 +10,13 @@ import {
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "../types";
 import { getIdentifierName } from "./get-identifier-name";
 import { negate } from "../values/negate";
+import { getConditionalLeaves } from "../values/conditional";
 import { PlaceMap } from "../values/place-map";
 import { getPlaceOrSpread } from "./get-place-or-spread";
 import type { PathState } from "./path-state";
-
-export const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
+import { isBuiltinMethod } from "./builtin-methods";
 
 const MAX_LITERAL_ROWS = 32;
-
-export const ITERATION_METHODS = new Set([
-  "forEach",
-  "map",
-  "filter",
-  "some",
-  "every",
-  "find",
-  "flatMap",
-]);
-
-const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter", "reduce"]);
 
 const SHORT_CIRCUIT_OUTCOMES = new Map([
   ["some", true],
@@ -43,41 +31,11 @@ const TRUE_VALUE: SymbolicValue = { kind: "Primitive", value: true };
 
 const FALSE_VALUE: SymbolicValue = { kind: "Primitive", value: false };
 
-const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
-
-const getLoopElements = (collection: SymbolicValue): SymbolicValue[] => {
-  if (collection.kind === "Conditional")
-    return [...getLoopElements(collection.consequent), ...getLoopElements(collection.alternate)];
-  const literal =
-    collection.kind === "Binding" && collection.path.length === 0
-      ? collection.binding.initial
-      : collection;
-  return literal?.kind === "ArrayExpression"
-    ? [...literal.elements, ...literal.spreads]
-    : [collection];
-};
-
-const getDeclaredNameLoc = (
-  sourceText: string | null,
-  loc: SourceLocation,
-): { name: string; loc: SourceLocation } | null => {
-  const name = sourceText?.trim().match(DECLARED_NAME_PATTERN)?.[1];
-  if (!name || !sourceText || typeof loc === "symbol" || loc.start.line !== loc.end.line)
-    return null;
-  const offset = sourceText.lastIndexOf(name);
-  return {
-    name,
-    loc: {
-      ...loc,
-      start: { ...loc.start, column: loc.start.column + offset, index: loc.start.index + offset },
-      end: {
-        ...loc.end,
-        column: loc.start.column + offset + name.length,
-        index: loc.start.index + offset + name.length,
-      },
-    },
-  };
-};
+const getLoopElements = (collection: SymbolicValue): SymbolicValue[] =>
+  getConditionalLeaves(collection).flatMap((leaf) => {
+    const literal = leaf.kind === "Binding" && leaf.path.length === 0 ? leaf.binding.initial : leaf;
+    return literal?.kind === "ArrayExpression" ? [...literal.elements, ...literal.spreads] : [leaf];
+  });
 
 export class ArrayIteration {
   readonly #interpreter: Interpreter;
@@ -168,7 +126,11 @@ export class ArrayIteration {
     const initial =
       receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
-    if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
+    if (
+      !isLiteralArray ||
+      callback?.kind !== "Function" ||
+      !isBuiltinMethod(methodName, "firstValue")
+    )
       return null;
     if (methodName === "reduce")
       return this.#reduce(initial.elements, callback, accumulator, loc, pathState, []);
@@ -189,7 +151,7 @@ export class ArrayIteration {
     tests: SymbolicValue[],
     loc: SourceLocation,
   ): SymbolicValue | null {
-    if (array.spreads.length > 0 || !FIRST_VALUE_METHODS.has(methodName)) return null;
+    if (array.spreads.length > 0 || !isBuiltinMethod(methodName, "firstValue")) return null;
     const select = (
       test: SymbolicValue,
       consequent: SymbolicValue,
@@ -404,16 +366,22 @@ export class ArrayIteration {
     return createBindingValue(binding);
   }
 
-  createLoopItem(collection: SymbolicValue, loc: SourceLocation): SymbolicValue {
-    const declaredLoc = getDeclaredNameLoc(this.#interpreter.resolver.getSourceText(loc), loc);
-    if (!declaredLoc) {
+  createLoopItem(
+    collection: SymbolicValue,
+    target: Place | undefined,
+    loc: SourceLocation,
+  ): SymbolicValue {
+    const name = target ? getIdentifierName(target) : null;
+    const nameLoc = target?.identifier.loc ?? GeneratedSource;
+    if (name === null || typeof loc === "symbol" || typeof nameLoc === "symbol") {
       const unknownItem = createUnknown("IteratorNext", loc);
       this.#interpreter.addUnknownSource(unknownItem, collection);
       return unknownItem;
     }
     const inputPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(collection, inputPlaces);
-    const binding = this.#interpreter.createBinding(declaredLoc.name, "item", declaredLoc.loc, {
+    const declaredLoc = { ...loc, start: { ...nameLoc.start }, end: { ...nameLoc.end } };
+    const binding = this.#interpreter.createBinding(name, "item", declaredLoc, {
       inputPlaces: inputPlaces.places(),
     });
     this.#interpreter.addItemSource(binding, collection);
@@ -437,7 +405,7 @@ export class ArrayIteration {
     const isRenderedMap =
       this.#interpreter.handlerEffects === null &&
       methodName !== null &&
-      RENDERED_ITERATION_METHODS.has(methodName) &&
+      isBuiltinMethod(methodName, "renderedIteration") &&
       receiverPlace !== undefined &&
       callback?.kind === "Function";
     return isRenderedMap

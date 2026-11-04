@@ -5,6 +5,7 @@ import type { DepOptimizationConfig, Plugin } from "vite";
 import {
   PACKAGE_SPECIFIER_PATTERN,
   PATH_SPECIFIER_PATTERN,
+  findPackageDirectory,
   isAppSourceModule,
   isRequirable,
 } from "./packages";
@@ -90,7 +91,7 @@ const isNodeOnlyModule = (
   return (
     specifier.startsWith("node:") ||
     importer === undefined ||
-    !isRequirable(`${name}/package.json`, importer)
+    findPackageDirectory(name, importer) === null
   );
 };
 

@@ -47,6 +47,7 @@ export const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
 export const forEachSymbolicValue = (
   root: SymbolicValue,
   visit: (value: SymbolicValue) => void,
+  getChildren: (value: SymbolicValue) => SymbolicValue[] = getChildValues,
 ): void => {
   const visited = new WeakSet<SymbolicValue>();
   const pending = [root];
@@ -54,6 +55,6 @@ export const forEachSymbolicValue = (
     if (visited.has(value)) continue;
     visited.add(value);
     visit(value);
-    pending.push(...getChildValues(value).toReversed());
+    pending.push(...getChildren(value).toReversed());
   }
 };

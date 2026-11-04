@@ -1,4 +1,5 @@
-import type { HIRFunction, IdentifierId } from "../../react-compiler/HIR/HIR";
+import type { BlockId, HIRFunction, IdentifierId } from "../../react-compiler/HIR/HIR";
+import { computeUnconditionalBlocks } from "../../react-compiler/HIR/ComputeUnconditionalBlocks";
 import type { SymbolicValue } from "../types";
 import { isFunctionCreation } from "../interpret/is-function-creation";
 
@@ -82,24 +83,51 @@ export const loadsInHandlers = (
   return false;
 };
 
-const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
+interface EventLoadSites {
+  blockIds: BlockId[];
+  isNested: boolean;
+}
+
+const getEventIds = (hirFunction: HIRFunction): Set<IdentifierId> => {
+  const [event] = hirFunction.params;
+  return new Set(event?.kind === "Identifier" ? [event.identifier.id] : []);
+};
+
+const findEventLoads = (
+  hirFunction: HIRFunction,
+  eventIds: Set<IdentifierId>,
+  property: string,
+): EventLoadSites => {
+  const sites: EventLoadSites = { blockIds: [], isNested: false };
   for (const block of hirFunction.body.blocks.values())
     for (const instruction of block.instructions) {
       const value = instruction.value;
-      if (value.kind === "PropertyLoad" && value.property === property) return true;
-      if (isFunctionCreation(value) && loadsProperty(value.loweredFunc.func, property)) return true;
+      const id = instruction.lvalue.identifier.id;
+      if (value.kind === "LoadLocal" || value.kind === "LoadContext") {
+        if (eventIds.has(value.place.identifier.id)) eventIds.add(id);
+      } else if (value.kind === "StoreLocal" || value.kind === "StoreContext") {
+        if (eventIds.has(value.value.identifier.id)) eventIds.add(value.lvalue.place.identifier.id);
+      } else if (value.kind === "PropertyLoad" && eventIds.has(value.object.identifier.id)) {
+        if (value.property === property) sites.blockIds.push(block.id);
+        eventIds.add(id);
+      } else if (isFunctionCreation(value)) {
+        const nested = findEventLoads(value.loweredFunc.func, eventIds, property);
+        if (nested.isNested || nested.blockIds.length > 0) sites.isNested = true;
+      }
     }
-  return false;
+  return sites;
+};
+
+const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
+  const sites = findEventLoads(hirFunction, getEventIds(hirFunction), property);
+  return sites.isNested || sites.blockIds.length > 0;
 };
 
 const getFunctionLoad = (hirFunction: HIRFunction, property: string): Load => {
-  if (!loadsProperty(hirFunction, property)) return null;
-  const entry = hirFunction.body.blocks.get(hirFunction.body.entry);
-  const isAlways = entry?.instructions.some(
-    (instruction) =>
-      instruction.value.kind === "PropertyLoad" && instruction.value.property === property,
-  );
-  return isAlways ? "always" : "maybe";
+  const sites = findEventLoads(hirFunction, getEventIds(hirFunction), property);
+  if (!sites.isNested && sites.blockIds.length === 0) return null;
+  const unconditionalBlocks = computeUnconditionalBlocks(hirFunction);
+  return sites.blockIds.some((blockId) => unconditionalBlocks.has(blockId)) ? "always" : "maybe";
 };
 
 export const getFunctionLoads = (hirFunction: HIRFunction): EventLoads => ({

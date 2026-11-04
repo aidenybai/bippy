@@ -8,12 +8,14 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { findPackageJSON } from "node:module";
+import { join, relative } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { gunzipSync } from "node:zlib";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
 import { z } from "zod";
+import { getCheckoutArguments } from "./checkout";
 import { parseCollectSummary } from "./collect-summary";
 import type { CollectSummary } from "./collect-summary";
 import { COMPONENT_BUDGET_MS, getSetupKey } from "./local-environment";
@@ -54,35 +56,11 @@ const ANALYZER_SOURCE_PATHS = [
   "tests/conformance/verifier",
 ];
 const BIPPY_SOURCE_DIRECTORY = join(PACKAGE_DIRECTORY, "../bippy/src");
-const ANALYZER_DEPENDENCIES = [
-  "@babel/code-frame",
-  "@babel/core",
-  "@babel/parser",
-  "@babel/traverse",
-  "@babel/types",
-  "commander",
-  "diff",
-  "invariant",
-  "magic-string",
-  "picocolors",
-  "playwright",
-  "pretty-format",
-  "tsx",
-  "typescript",
-  "vite",
-  "vite-tsconfig-paths",
-  "zod",
-  "zod-validation-error",
-];
-const CHECKOUT_SCRIPT = [
-  "set -euo pipefail",
-  'git init -q "$APP_DIRECTORY"',
-  'git -C "$APP_DIRECTORY" fetch -q --depth 1 "$REPOSITORY" "$REVISION"',
-  'git -C "$APP_DIRECTORY" checkout -q FETCH_HEAD',
-  'if [ -n "$PATCH_PATH" ]; then git -C "$APP_DIRECTORY" apply --whitespace=nowarn "$PATCH_PATH"; fi',
-  'cd "$APP_DIRECTORY"',
-  'bash -c "$INSTALL"',
-].join("\n");
+const PACKAGE_JSON_PATH = join(PACKAGE_DIRECTORY, "package.json");
+const PACKAGE_JSON_SCHEMA = z.object({ dependencies: z.record(z.string(), z.string()) });
+const INSTALLED_PACKAGE_JSON_SCHEMA = z.object({ version: z.string() });
+const WORKSPACE_PROTOCOL = "workspace:";
+const SANDBOX_RUNNER = "tsx";
 
 const getCredentials = (): Credentials => {
   const envFile = join(PACKAGE_DIRECTORY, ".env.local");
@@ -112,29 +90,24 @@ const writeSnapshot = (id: string, record: SnapshotRecord): void => {
   );
 };
 
-const findInstalledPackageJson = (name: string): string | null => {
-  for (let directory = PACKAGE_DIRECTORY; ; directory = dirname(directory)) {
-    const packageJsonPath = join(directory, "node_modules", name, "package.json");
-    if (existsSync(packageJsonPath)) return packageJsonPath;
-    if (dirname(directory) === directory) return null;
-  }
+const getInstalledVersion = (name: string): string => {
+  const packageJsonPath = findPackageJSON(name, PACKAGE_JSON_PATH);
+  if (!packageJsonPath) throw new Error(`${name} is not installed`);
+  return INSTALLED_PACKAGE_JSON_SCHEMA.parse(JSON.parse(readFileSync(packageJsonPath, "utf8")))
+    .version;
 };
 
-const getInstalledVersion = (name: string): string | null => {
-  const packageJsonPath = findInstalledPackageJson(name);
-  if (packageJsonPath === null) return null;
-  const version: unknown = Reflect.get(
-    Object(JSON.parse(readFileSync(packageJsonPath, "utf8"))),
-    "version",
+export const getAnalyzerPackageJson = (): string => {
+  const dependencies = PACKAGE_JSON_SCHEMA.parse(
+    JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8")),
+  ).dependencies;
+  const names = Object.entries(dependencies).flatMap(([name, range]) =>
+    range.startsWith(WORKSPACE_PROTOCOL) ? [] : [name],
   );
-  return typeof version === "string" ? version : null;
-};
-
-const getAnalyzerPackageJson = (): string => {
-  const dependencies = Object.fromEntries(
-    ANALYZER_DEPENDENCIES.map((name) => [name, getInstalledVersion(name) ?? "latest"]),
+  const sandboxDependencies = Object.fromEntries(
+    [...names, SANDBOX_RUNNER].map((name) => [name, getInstalledVersion(name)]),
   );
-  return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies }, null, 2)}\n`;
+  return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies: sandboxDependencies }, null, 2)}\n`;
 };
 
 const getSnapshotKey = (repo: RepoConfig): string =>
@@ -144,7 +117,9 @@ const getSnapshotKey = (repo: RepoConfig): string =>
 
 const listFiles = (path: string): string[] =>
   statSync(path).isDirectory()
-    ? readdirSync(path).flatMap((entry) => listFiles(join(path, entry)))
+    ? readdirSync(path, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => join(entry.parentPath, entry.name))
     : [path];
 
 const waitForCommand = async (
@@ -218,15 +193,13 @@ const installRepoAndBrowser = async (sandbox: Sandbox, repo: RepoConfig): Promis
     { path: `${ANALYZER_DIRECTORY}/package.json`, content: getAnalyzerPackageJson() },
     ...(repo.patchFile ? [{ path: PATCH_PATH, content: readFileSync(repo.patchFile) }] : []),
   ]);
-  await runStep(sandbox, "checkout and install", "bash", ["-c", CHECKOUT_SCRIPT], {
-    env: {
-      APP_DIRECTORY,
-      REPOSITORY: repo.repository,
-      REVISION: repo.revision,
-      PATCH_PATH: repo.patchFile ? PATCH_PATH : "",
-      INSTALL: repo.install,
-    },
-  });
+  await runStep(
+    sandbox,
+    "checkout",
+    "bash",
+    getCheckoutArguments(APP_DIRECTORY, { ...repo, patchFile: repo.patchFile && PATCH_PATH }),
+  );
+  await runStep(sandbox, "install", "bash", ["-c", repo.install], { cwd: APP_DIRECTORY });
   await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
     cwd: ANALYZER_DIRECTORY,
   });

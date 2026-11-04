@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { ComponentAnalysis, Sample } from "../../src/core/types";
-import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
 import { createEmptyAnalysis } from "../../src/core/project/analyze-component";
 import {
@@ -205,15 +204,6 @@ describe("findRootParts", () => {
     expect(
       roots.flatMap((root) => findRootParts(root, query)).map((wrapper) => wrapper.name),
     ).toEqual(["CommandList"]);
-  });
-});
-
-describe("parseExports", () => {
-  it("records a default export under the name a module import sees", () => {
-    expect(parseExports("export default function Panel() {}\nexport const Row = 1;")).toEqual([
-      { name: "Panel", exportName: "default" },
-      { name: "Row", exportName: "Row" },
-    ]);
   });
 });
 

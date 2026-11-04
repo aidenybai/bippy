@@ -2,18 +2,16 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { getTransitionLabels } from "@/lib/describe";
 import { cn } from "@/lib/utils";
 import {
-  getBindingNodeId,
-  getConditionNodeId,
-  getHandlerNodeId,
-  getStateArmNodeIds,
-  getStateNodeIds,
-  getTransitions,
   getUpdateKey,
-} from "@/lib/lookup";
-import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
-import { useIsDimmed } from "@/store/hover";
+  type ViewBinding,
+  type ViewHandler,
+  type ViewState,
+  type ViewUpdate,
+} from "@/model";
+import { useIsDimmed } from "@/store/viewer";
 import { Chip } from "./chip";
 import { Domain } from "./domain";
 import { useInspectorComponent } from "./inspector";
@@ -33,74 +31,61 @@ const Row = ({ nodeIds, children }: { nodeIds: string[]; children: ReactNode }) 
 
 const KEY_CELL = "w-0 wrap-normal whitespace-nowrap";
 
-export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
-  const component = useInspectorComponent();
-  const nodeId = getBindingNodeId(component, binding.id);
-  return (
-    <Row nodeIds={nodeId ? [nodeId] : []}>
-      <Cell className="grid gap-1">
-        <span className="w-fit">
-          <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
-        </span>
-        <span className="wrap-anywhere pl-1">
-          <Domain
-            binding={binding}
-            renderValue={(value) => <Code>{value}</Code>}
-            separator={<span className="text-faint"> | </span>}
-          />
-          {binding.initial !== null && (
-            <span>
-              <span className="text-faint"> = </span>
-              <Code>{binding.initial}</Code>
-            </span>
-          )}
-          {binding.reachable && (
-            <span className="text-muted-foreground"> · only {binding.reachable}</span>
-          )}
-        </span>
-      </Cell>
-    </Row>
-  );
-};
+export const BindingRow = ({ binding }: { binding: ViewBinding }) => (
+  <Row nodeIds={binding.nodeIds}>
+    <Cell className="grid gap-1">
+      <span className="w-fit">
+        <Chip nodeIds={binding.nodeIds}>{binding.name}</Chip>
+      </span>
+      <span className="wrap-anywhere pl-1">
+        <Domain binding={binding} />
+        {binding.initial !== null && (
+          <span>
+            <span className="text-faint"> = </span>
+            <Code>{binding.initial}</Code>
+          </span>
+        )}
+        {binding.reachable && (
+          <span className="text-muted-foreground"> · only {binding.reachable}</span>
+        )}
+      </span>
+    </Cell>
+  </Row>
+);
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  const component = useInspectorComponent();
-  if (state.label === "always") return <span className="text-foreground">always</span>;
+  if (state.conditions.length === 0) return <span className="text-foreground">always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {state.label.split(" ∧ ").map((condition, index) => {
-        const nodeId = getConditionNodeId(component, condition);
-        return (
-          <span key={condition} className="flex items-center gap-1">
-            {index > 0 && <span className="text-faint">∧</span>}
-            <Chip nodeIds={nodeId ? [nodeId] : []}>
-              <Code>{condition}</Code>
-            </Chip>
-          </span>
-        );
-      })}
+      {state.conditions.map((condition, index) => (
+        <span key={condition.text} className="flex items-center gap-1">
+          {index > 0 && <span className="text-faint">∧</span>}
+          <Chip nodeIds={condition.nodeIds}>
+            <Code>{condition.text}</Code>
+          </Chip>
+        </span>
+      ))}
     </div>
   );
 };
 
-export const StateRow = ({ state }: { state: ViewState }) => {
-  const component = useInspectorComponent();
-  return (
-    <Row nodeIds={getStateNodeIds(component, state)}>
-      <Cell className={KEY_CELL}>
-        <Badge variant="outline">S{state.index + 1}</Badge>
-      </Cell>
-      <Cell>
-        <Conditions state={state} />
-        <div className="mt-1 font-mono">
-          <Chip nodeIds={getStateArmNodeIds(component, state)}>
-            <Code>{state.render || "∅"}</Code>
-          </Chip>
-        </div>
-      </Cell>
-    </Row>
-  );
-};
+export const StateRow = ({ state }: { state: ViewState }) => (
+  <Row
+    nodeIds={[...state.conditions.flatMap((condition) => condition.nodeIds), ...state.armNodeIds]}
+  >
+    <Cell className={KEY_CELL}>
+      <Badge variant="outline">{state.name}</Badge>
+    </Cell>
+    <Cell>
+      <Conditions state={state} />
+      <div className="mt-1 font-mono">
+        <Chip nodeIds={state.armNodeIds}>
+          <Code>{state.render || "∅"}</Code>
+        </Chip>
+      </div>
+    </Cell>
+  </Row>
+);
 
 const Update = ({ update }: { update: ViewUpdate }) => (
   <div className="grid">
@@ -130,13 +115,12 @@ const Transitions = ({ transitions }: { transitions: string[] }) => (
 
 export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   const component = useInspectorComponent();
-  const nodeId = getHandlerNodeId(component, handler.id);
-  const transitions = getTransitions(component, handler.id);
+  const transitions = getTransitionLabels(component, handler.id);
   return (
-    <Row nodeIds={nodeId ? [nodeId] : []}>
+    <Row nodeIds={handler.nodeIds}>
       <Cell className="grid gap-2 py-3">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <Chip nodeIds={nodeId ? [nodeId] : []}>
+          <Chip nodeIds={handler.nodeIds}>
             <Code>{handler.label}</Code>
           </Chip>
           {transitions.length > 0 && <Transitions transitions={transitions} />}

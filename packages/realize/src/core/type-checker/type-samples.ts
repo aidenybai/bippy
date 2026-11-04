@@ -1,6 +1,8 @@
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Symbol, Type } from "typescript/unstable/sync";
-import { isLibraryType, isReactType } from "./typescript";
+import { REACT_ELEMENT_TYPE_PATTERN, isLibraryType, isReactType } from "./typescript";
+import { getPrimitiveTypeName } from "./domains";
+import { LIB_COLLECTION_NAMES } from "./lib-collections";
 import { getTypeArguments } from "./get-type-arguments";
 import { getUnionMembers } from "./get-union-members";
 import type { PrimitiveValue, Sample } from "../types";
@@ -9,11 +11,8 @@ import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples";
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const ELEMENT_TYPE_PATTERN = /^(?:ReactElement|Element|ReactNode|ReactChild|ReactPortal)$/;
 const PROMISE_TYPE_PATTERN = /^Promise$/;
 const DATE_TYPE_PATTERN = /^Date$/;
-const SET_TYPE_NAMES = new Set(["Set", "ReadonlySet"]);
-const MAP_TYPE_NAMES = new Set(["Map", "ReadonlyMap"]);
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
@@ -43,29 +42,29 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
 
-const getPrimitiveSamples = (
-  checker: Checker,
-  type: Type,
-  name: string | null,
-): Sample[] | null => {
+const getPrimitiveSamples = (type: Type, name: string | null): Sample[] | null => {
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return [{ kind: "Value", value: type.value }];
-  if (type.isBooleanLiteralType())
-    return [{ kind: "Value", value: checker.typeToString(type) === "true" }];
+  if (type.isBooleanLiteralType()) return [{ kind: "Value", value: type.value }];
   if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
   if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
-  if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
-  if (type.flags & (TypeFlags.NumberLike | TypeFlags.BigIntLike))
-    return [
-      { kind: "Value", value: 0 },
-      { kind: "Value", value: 1 },
-    ];
-  if (type.flags & TypeFlags.BooleanLike)
-    return [
-      { kind: "Value", value: true },
-      { kind: "Value", value: false },
-    ];
-  return null;
+  switch (getPrimitiveTypeName(type)) {
+    case "string":
+      return getStringSamples(name);
+    case "number":
+    case "bigint":
+      return [
+        { kind: "Value", value: 0 },
+        { kind: "Value", value: 1 },
+      ];
+    case "boolean":
+      return [
+        { kind: "Value", value: true },
+        { kind: "Value", value: false },
+      ];
+    default:
+      return null;
+  }
 };
 
 const getFirstSample = (
@@ -88,12 +87,12 @@ const getCollectionSamples = (checker: Checker, type: Type, depth: number): Samp
         ]
       : [{ kind: "Array", items: [] }];
   }
-  const symbolName = type.getSymbol()?.name;
-  if (symbolName && SET_TYPE_NAMES.has(symbolName)) {
+  const collection = LIB_COLLECTION_NAMES.get(type.getSymbol()?.name ?? "");
+  if (collection === "Set") {
     const itemSample = getFirstSample(checker, typeArguments[0], depth);
     return [{ kind: "Set", items: itemSample ? [itemSample] : [] }];
   }
-  if (symbolName && MAP_TYPE_NAMES.has(symbolName)) {
+  if (collection === "Map") {
     const keySample = getFirstSample(checker, typeArguments[0], depth);
     const valueSample = getFirstSample(checker, typeArguments[1], depth);
     return [{ kind: "Map", entries: keySample && valueSample ? [[keySample, valueSample]] : [] }];
@@ -123,7 +122,7 @@ export const getSamples = (
   if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown)
     return getStringSamples(name).slice(0, 1);
   if (isLibraryType(type, DOM_NODE_TYPE_PATTERN)) return [{ kind: "Undefined" }];
-  if (isReactType(type, ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
+  if (isReactType(type, REACT_ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
   if (type.isUnionType()) {
     const memberSamples = dedupeSamples(
       (getUnionMembers(type) ?? []).flatMap((member) => getSamples(checker, member, depth, name)),
@@ -133,12 +132,12 @@ export const getSamples = (
       ...memberSamples.filter((sample) => sample.kind === "Undefined"),
     ].slice(0, MAX_SAMPLE_ALTERNATIVES);
   }
-  const primitiveSamples = getPrimitiveSamples(checker, type, name);
+  const primitiveSamples = getPrimitiveSamples(type, name);
   if (primitiveSamples) return primitiveSamples;
   if (type.isIntersectionType())
     for (const member of type.getTypes() ?? []) {
       const brandedSamples =
-        getPrimitiveSamples(checker, member, name) ?? getCollectionSamples(checker, member, depth);
+        getPrimitiveSamples(member, name) ?? getCollectionSamples(checker, member, depth);
       if (brandedSamples) return brandedSamples;
     }
   const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);

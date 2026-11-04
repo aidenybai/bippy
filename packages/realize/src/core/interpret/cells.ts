@@ -3,8 +3,9 @@ import { createUnknown } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
 import type { PathState } from "./path-state";
 
+export type CellTable = "ref" | "context";
+
 interface CellStore {
-  key: string;
   pathState: PathState;
   generation: number;
   value: SymbolicValue;
@@ -43,34 +44,37 @@ const isMaybeOverwrittenBy = (store: CellStore, pathState: PathState): boolean =
     !isOnOtherSide(store, pathState));
 
 export class Cells {
-  #stores: CellStore[] = [];
+  readonly #stores: Record<CellTable, CellStore[][]> = { ref: [], context: [] };
   #generation = 0;
 
   passAwait(): void {
     this.#generation++;
   }
 
-  store(key: string, value: SymbolicValue, pathState: PathState): void {
-    this.#stores.push({ key, pathState, generation: this.#generation, value });
+  store(table: CellTable, id: number, value: SymbolicValue, pathState: PathState): void {
+    const stores = this.#stores[table];
+    stores[id] ??= [];
+    stores[id].push({ pathState, generation: this.#generation, value });
   }
 
   read(
-    key: string,
+    table: CellTable,
+    id: number,
     liveValue: SymbolicValue,
     loc: SourceLocation,
     pathState: PathState,
   ): SymbolicValue {
-    const storeIndex = this.#stores.findLastIndex(
+    const stores = this.#stores[table][id] ?? [];
+    const storeIndex = stores.findLastIndex(
       (candidate) =>
-        candidate.key === key &&
         isDominatedBy(pathState, candidate) &&
         (!pathState.isAsync || candidate.generation === this.#generation),
     );
-    const isMaybeOverwritten = this.#stores
+    const isMaybeOverwritten = stores
       .slice(storeIndex + 1)
-      .some((candidate) => candidate.key === key && isMaybeOverwrittenBy(candidate, pathState));
+      .some((candidate) => isMaybeOverwrittenBy(candidate, pathState));
     if (isMaybeOverwritten) return createUnknown("cell", loc);
-    const store = this.#stores[storeIndex];
+    const store = stores[storeIndex];
     if (store) return store.value;
     return pathState.isAsync ? createUnknown("async", loc) : liveValue;
   }
