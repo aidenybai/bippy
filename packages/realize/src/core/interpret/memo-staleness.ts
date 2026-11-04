@@ -1,7 +1,5 @@
 import type {
   DeclarationId,
-  HIRFunction,
-  IdentifierId,
   ManualMemoDependency,
   Place,
   SourceLocation,
@@ -14,48 +12,11 @@ import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getDeclarationLocation } from "./get-declaration-location";
 import { getIdentifierName } from "./get-identifier-name";
-import { getConditionallyMutatedPlace, getMutatedPlace } from "./get-mutated-place";
 import { isPropHeld, isSpreadHeld } from "./get-prop-holds";
 import type { HeldProps } from "./get-prop-holds";
 import { getValuePlace } from "../values/get-value-place";
 import { isPlacePrefix } from "../values/is-place-prefix";
 import { PlaceMap } from "../values/place-map";
-import { isFunctionCreation } from "./is-function-creation";
-
-const getStoredLocals = (hirFunction: HIRFunction): Map<IdentifierId, Place> => {
-  const localsByValue = new Map<IdentifierId, Place>();
-  for (const block of hirFunction.body.blocks.values())
-    for (const instruction of block.instructions)
-      if (instruction.value.kind === "StoreLocal")
-        localsByValue.set(instruction.value.value.identifier.id, instruction.value.lvalue.place);
-  return localsByValue;
-};
-
-const collectClosureMutatedIds = (
-  hirFunction: HIRFunction,
-  mutatedIds: Set<IdentifierId>,
-): void => {
-  for (const block of hirFunction.body.blocks.values())
-    for (const instruction of block.instructions) {
-      if (!isFunctionCreation(instruction.value)) continue;
-      for (const effect of [
-        ...(instruction.effects ?? []),
-        ...(instruction.value.loweredFunc.func.aliasingEffects ?? []),
-      ]) {
-        const mutatedPlace = getMutatedPlace(effect) ?? getConditionallyMutatedPlace(effect);
-        if (mutatedPlace) mutatedIds.add(mutatedPlace.identifier.id);
-      }
-      collectClosureMutatedIds(instruction.value.loweredFunc.func, mutatedIds);
-    }
-};
-
-const getClosureMutatedLocals = (hirFunction: HIRFunction): Map<IdentifierId, Place> => {
-  const mutatedIds = new Set<IdentifierId>();
-  collectClosureMutatedIds(hirFunction, mutatedIds);
-  return new Map(
-    [...getStoredLocals(hirFunction)].filter(([, local]) => mutatedIds.has(local.identifier.id)),
-  );
-};
 
 const getNullishTestPlaces = (
   value: SymbolicValue,
@@ -98,7 +59,7 @@ export class MemoStaleness {
   bindMutatedMemo(finish: InstructionValueOfKind<"FinishMemoize">): void {
     const memoized = this.#interpreter.read(finish.decl);
     if (memoized.kind !== "ObjectExpression" && memoized.kind !== "ArrayExpression") return;
-    const local = getClosureMutatedLocals(this.#interpreter.getCurrentFunction()).get(
+    const local = this.#interpreter.currentFacts.closureMutatedLocals.get(
       finish.decl.identifier.id,
     );
     if (!local) return;
@@ -139,8 +100,7 @@ export class MemoStaleness {
   }
 
   #createStaleMemo(memoized: SymbolicValue, decl: Place): SymbolicValue {
-    const hirFunction = this.#interpreter.getCurrentFunction();
-    const local = getStoredLocals(hirFunction).get(decl.identifier.id) ?? decl;
+    const local = this.#interpreter.currentFacts.storedLocals.get(decl.identifier.id) ?? decl;
     const inputPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(memoized, inputPlaces);
     const memo = createBindingValue(
@@ -213,9 +173,6 @@ export class MemoStaleness {
   #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
     const readPlaces = new PlaceMap<true>();
     this.#interpreter.collectInputPlaces(memoized, readPlaces);
-    const bindingsById = new Map(
-      this.#interpreter.bindingTable.bindings.map((binding) => [binding.id, binding]),
-    );
     const capturedPlaces = new PlaceMap<true>();
     forEachSymbolicValue(memoized, (part) => {
       if (part.kind !== "Function") return;
@@ -230,7 +187,7 @@ export class MemoStaleness {
         nullishTestPlaces.has(place) &&
         dependencyPlaces.places().some((dependency) => isPlacePrefix(place, dependency));
       if (isOptionalChainBase) return true;
-      const binding = bindingsById.get(place.bindingId);
+      const binding = this.#interpreter.bindingTable.bindings[place.bindingId];
       if (!binding || binding.kind === "ref" || visited.has(binding.id))
         return binding?.kind === "ref";
       visited.add(binding.id);
