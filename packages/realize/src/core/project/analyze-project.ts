@@ -11,6 +11,7 @@ import { buildComponentModel } from "../model/build-model";
 import { addSamplesFromReadPaths, inferPropsFromCallSites } from "./infer-props";
 import { collectTriggerLabels } from "../labels/trigger-labels";
 import { createSourceReader } from "../labels/source-text";
+import type { LabelSource } from "../labels/source-text";
 import { collectContextSetterFields } from "../interpret/context-setter-fields";
 import type {
   ComponentAnalysis,
@@ -268,6 +269,7 @@ const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => 
 
 export interface InterpretedProject {
   analyses: ComponentAnalysis[];
+  sources: Map<string, LabelSource>;
   fileCount: number;
   unparsedFiles: string[];
 }
@@ -288,7 +290,13 @@ export const interpretProject = (configPath: string): InterpretedProject =>
     const unparsedFiles = fileContexts.flatMap((fileContext) =>
       fileContext.compiled.parseError === null ? [] : [fileContext.sourceFile.fileName],
     );
-    return { analyses, fileCount: fileNames.length, unparsedFiles };
+    const sources = new Map(
+      fileContexts.map((fileContext): [string, LabelSource] => [
+        fileContext.sourceFile.fileName,
+        { text: fileContext.sourceFile.text, declaredNames: fileContext.compiled.declaredNames },
+      ]),
+    );
+    return { analyses, sources, fileCount: fileNames.length, unparsedFiles };
   });
 
 export const reportProject = async (
@@ -297,7 +305,7 @@ export const reportProject = async (
 ): Promise<ProjectAnalysis> => {
   const isSelected = (analysis: ComponentAnalysis): boolean =>
     fileFilter === null || analysis.file.includes(fileFilter);
-  const sourceReader = createSourceReader();
+  const sourceReader = createSourceReader(interpretedProject.sources);
   const components: AnalyzedComponent[] = [];
   for (const analysis of interpretedProject.analyses.filter(isSelected))
     components.push({

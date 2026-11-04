@@ -10,8 +10,6 @@ import { getTestExpression } from "../../src/core/values/get-test-expression";
 import { forEachRenderNode } from "../../src/core/render/for-each-render-node";
 import { forEachJsxElement } from "../../src/core/render/for-each-jsx-element";
 import { isRenderingNothing } from "../../src/core/render/is-rendering-nothing";
-import { collectTriggerLabels } from "../../src/core/labels/trigger-labels";
-import { createSourceReader } from "../../src/core/labels/source-text";
 import { checkStateGraph, type StateGraph } from "../../src/core/model/state-graph";
 import type { ComponentModel, View } from "../../src/core/model/types";
 import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
@@ -236,9 +234,13 @@ const collectTriggerSites = (component: AnalyzedComponent): TriggerSite[] => {
 };
 
 const getViewHandlers = (component: AnalyzedComponent): Omit<ViewHandler, "nodeIds">[] => {
-  const triggerLabels = collectTriggerLabels(component.analysis, createSourceReader());
+  const labels = new Map(
+    component.model.actions.flatMap((action) =>
+      action.handlerId === null ? [] : [[action.handlerId, action.label] as const],
+    ),
+  );
   return component.analysis.handlers.map((handler) =>
-    toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
+    toViewHandler(handler, labels.get(handler.id) ?? handler.id),
   );
 };
 
