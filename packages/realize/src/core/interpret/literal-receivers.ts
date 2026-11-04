@@ -1,10 +1,7 @@
+import { isBuiltinMethod } from "./builtin-methods";
 import type { CollectionValue, PrimitiveValue, SymbolicValue } from "../types";
 
 type LiteralCollection = Set<PrimitiveValue> | Map<PrimitiveValue, PrimitiveValue>;
-
-const COLLECTION_READS = new Set(["has", "get"]);
-
-const COLLECTION_WRITES = new Set(["add", "set", "delete", "clear"]);
 
 const getPrimitives = (values: SymbolicValue[]): PrimitiveValue[] | null => {
   const primitives = values.flatMap((value) => (value.kind === "Primitive" ? [value.value] : []));
@@ -15,10 +12,6 @@ const getLiteralElements = (source: SymbolicValue | null): SymbolicValue[] | nul
   if (source === null) return [];
   return source.kind === "ArrayExpression" && source.spreads.length === 0 ? source.elements : null;
 };
-
-export const isCollectionRead = (methodName: string): boolean => COLLECTION_READS.has(methodName);
-
-export const isCollectionWrite = (methodName: string): boolean => COLLECTION_WRITES.has(methodName);
 
 const getLiteralSource = (value: CollectionValue): LiteralCollection | null => {
   const elements = getLiteralElements(value.source);
@@ -65,7 +58,7 @@ export const applyCollectionMethod = (
   argumentValues: PrimitiveValue[],
 ): PrimitiveValue | null => {
   const collection = getLiteralCollection(value);
-  if (!collection || !isCollectionRead(methodName)) return null;
+  if (!collection || !isBuiltinMethod(methodName, "collectionRead")) return null;
   const method: unknown = Reflect.get(collection, methodName);
   if (typeof method !== "function") return null;
   const result: unknown = Reflect.apply(method, collection, argumentValues);

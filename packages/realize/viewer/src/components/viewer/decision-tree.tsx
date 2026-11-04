@@ -1,10 +1,8 @@
-import { useMemo } from "react";
+import { useId } from "react";
 import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
-import { getSolidColor } from "@/lib/colors";
-import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
-import { getStateTransitions, type StateTransition } from "@/lib/state-chart";
+import type { Point } from "@/lib/arcs";
 import {
   buildDecisionTree,
   collectEdges,
@@ -12,8 +10,8 @@ import {
   type TreeEdge,
   type TreeNode,
 } from "@/lib/tree";
-import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
-import { ArrowHead, type Point } from "./arrow-head";
+import type { ViewComponent, ViewHandler, ViewTransition } from "@/model";
+import { ArrowMarker } from "./arrow-marker";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
 
@@ -31,20 +29,13 @@ interface LaidOutNode {
   height: number;
 }
 
-interface HeadSegment {
-  from: Point;
-  tip: Point;
-}
-
 interface LaidOutEdge {
   id: string;
-  points: Point[];
-  path?: string;
-  head: HeadSegment;
+  path: string;
   label: Point;
   labelAlign?: "center" | "start";
   answer?: "yes" | "no";
-  transition?: StateTransition;
+  transition?: ViewTransition;
   handler?: ViewHandler;
 }
 
@@ -76,7 +67,7 @@ const createGraph = (nodes: TreeNode[], treeEdges: TreeEdge[]): graphlib.Graph =
 
 const addTransitionEdges = (
   graph: graphlib.Graph,
-  transitions: StateTransition[],
+  transitions: ViewTransition[],
   handlersById: Map<string, ViewHandler>,
 ): void => {
   transitions.forEach((transition, order) => {
@@ -90,22 +81,24 @@ const addTransitionEdges = (
   });
 };
 
+const toPath = (points: Point[]): string =>
+  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+
 const readEdge = (graph: graphlib.Graph, from: string, to: string, name: string) => {
   const edge = graph.edge(from, to, name);
-  const tip = edge.points.at(-1) ?? { x: edge.x, y: edge.y };
-  const head = { from: edge.points.at(-2) ?? tip, tip };
-  return { points: edge.points, head, label: { x: edge.x, y: edge.y } };
+  return { path: toPath(edge.points), label: { x: edge.x, y: edge.y } };
 };
 
-const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null => {
-  const root = buildDecisionTree(component, region);
+const layoutTree = (component: ViewComponent): Layout | null => {
+  const root = buildDecisionTree(component);
   if (!root) return null;
   const nodes = collectNodes(root);
   const treeEdges = collectEdges(root);
   const graph = createGraph(nodes, treeEdges);
-  const allTransitions = getStateTransitions(component, region.states);
-  const transitions = allTransitions.filter((transition) => transition.from !== transition.to);
-  const loops = allTransitions.filter((transition) => transition.from === transition.to);
+  const transitions = component.transitions.filter(
+    (transition) => transition.from !== transition.to,
+  );
+  const loops = component.transitions.filter((transition) => transition.from === transition.to);
   const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
   addTransitionEdges(graph, transitions, handlersById);
   dagre.layout(graph);
@@ -139,7 +132,7 @@ const LOOP_REACH = 8;
 type LoopEdge = LaidOutEdge & { right: number };
 
 const layoutLoops = (
-  loops: StateTransition[],
+  loops: ViewTransition[],
   graph: graphlib.Graph,
   handlersById: Map<string, ViewHandler>,
 ): LoopEdge[] => {
@@ -156,13 +149,9 @@ const layoutLoops = (
     const bulge = LOOP_BULGE + slot * LOOP_STEP;
     const labelX = right + LOOP_BULGE + (count - 1) * LOOP_STEP + 10;
     const handler = handlersById.get(loop.handlerId);
-    const control = { x: right + bulge, y: node.y + reach + 14 };
-    const tip = { x: right, y: node.y + reach };
     return {
       id: `l${order}`,
-      points: [],
-      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${control.x} ${control.y}, ${tip.x} ${tip.y}`,
-      head: { from: control, tip },
+      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${right + bulge} ${node.y + reach + 14}, ${right} ${node.y + reach}`,
       label: { x: labelX, y: node.y + (slot - (count - 1) / 2) * LABEL_HEIGHT },
       labelAlign: "start",
       transition: loop,
@@ -172,86 +161,69 @@ const layoutLoops = (
   });
 };
 
-const toPath = (points: Point[]): string =>
-  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
-
-const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
+const EdgePath = ({ edge, markerId }: { edge: LaidOutEdge; markerId: string }) => {
   const { colorByNodeId } = useViewer();
-  const handlerId = edge.transition?.handlerId;
-  const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
-  const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
-  const stroke = color ? getSolidColor(color) : "var(--faint)";
-  const strokeWidth = edge.transition ? 1.25 : 1;
+  const [nodeId] = edge.handler?.nodeIds ?? [];
+  const color = nodeId === undefined ? undefined : colorByNodeId.get(nodeId);
   return (
-    <g opacity={edge.transition ? 0.85 : 1}>
-      <path
-        d={edge.path ?? toPath(edge.points)}
-        fill="none"
-        style={{ stroke }}
-        strokeWidth={strokeWidth}
-        strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
-      />
-      <ArrowHead {...edge.head} color={stroke} size={6 * strokeWidth} />
-    </g>
+    <path
+      d={edge.path}
+      fill="none"
+      style={{ stroke: color ?? "var(--faint)" }}
+      strokeWidth={edge.transition ? 1.25 : 1}
+      strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
+      markerEnd={`url(#${markerId})`}
+      opacity={edge.transition ? 0.85 : 1}
+    />
   );
 };
 
-const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
-  const handlerId = edge.transition?.handlerId;
-  const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
-  return (
-    <div
-      className={
-        edge.labelAlign === "start"
-          ? "absolute -translate-y-1/2 bg-background px-0.5 whitespace-nowrap"
-          : "absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
-      }
-      style={{ left: edge.label.x, top: edge.label.y }}
-    >
-      {edge.handler ? (
-        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
-          <Code>{edge.handler.label}</Code>
-        </Chip>
-      ) : (
-        <span className="text-muted-foreground">{edge.answer === "yes" ? "✓" : "✗"}</span>
-      )}
-    </div>
-  );
-};
+const EdgeLabel = ({ edge }: { edge: LaidOutEdge }) => (
+  <div
+    className={
+      edge.labelAlign === "start"
+        ? "absolute -translate-y-1/2 bg-background px-0.5 whitespace-nowrap"
+        : "absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
+    }
+    style={{ left: edge.label.x, top: edge.label.y }}
+  >
+    {edge.handler ? (
+      <Chip nodeIds={edge.handler.nodeIds} canDim={false}>
+        <Code>{edge.handler.label}</Code>
+      </Chip>
+    ) : (
+      <span className="text-muted-foreground">{edge.answer === "yes" ? "✓" : "✗"}</span>
+    )}
+  </div>
+);
 
-const NodeView = ({ laid, component }: { laid: LaidOutNode; component: ViewComponent }) => {
+const NodeView = ({ laid }: { laid: LaidOutNode }) => {
   const { node, x, y, width, height } = laid;
   const style = { left: x - width / 2, top: y - height / 2, width };
-  if (node.kind === "branch") {
-    const nodeId = node.branch ? getConditionNodeId(component, node.branch.test) : undefined;
+  if (node.kind === "branch")
     return (
       <div className="absolute flex justify-center overflow-hidden" style={style}>
-        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
+        <Chip nodeIds={node.nodeIds} canDim={false}>
           <Code className="block max-w-full truncate">{node.condition}</Code>
         </Chip>
       </div>
     );
-  }
   return (
     <div
       className="absolute grid content-start gap-0.5 rounded-md border bg-background px-2 py-1.5 shadow-card"
       style={{ ...style, height }}
     >
       <Badge variant="outline" className="w-fit">
-        S{node.state.index + 1}
+        {node.state.name}
       </Badge>
       <Code className="truncate text-muted-foreground">{node.state.render || "∅"}</Code>
     </div>
   );
 };
 
-interface DecisionTreeProps {
-  component: ViewComponent;
-  region: ViewRegion;
-}
-
-export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
-  const layout = useMemo(() => layoutTree(component, region), [component, region]);
+export const DecisionTree = ({ component }: { component: ViewComponent }) => {
+  const markerId = useId();
+  const layout = layoutTree(component);
   if (!layout) return null;
   return (
     <div className="-mx-2 overflow-x-auto overscroll-x-contain px-2 py-2 -my-2">
@@ -262,15 +234,18 @@ export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
           height={layout.height}
           aria-hidden="true"
         >
+          <defs>
+            <ArrowMarker id={markerId} size={6} markerUnits="strokeWidth" />
+          </defs>
           {layout.edges.map((edge) => (
-            <EdgePath key={edge.id} edge={edge} component={component} />
+            <EdgePath key={edge.id} edge={edge} markerId={markerId} />
           ))}
         </svg>
         {layout.nodes.map((laid) => (
-          <NodeView key={laid.node.id} laid={laid} component={component} />
+          <NodeView key={laid.node.id} laid={laid} />
         ))}
         {layout.edges.map((edge) => (
-          <EdgeLabel key={edge.id} edge={edge} component={component} />
+          <EdgeLabel key={edge.id} edge={edge} />
         ))}
       </div>
     </div>

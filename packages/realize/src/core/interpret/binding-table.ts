@@ -15,15 +15,15 @@ export interface BindingOptions extends Partial<
   scope?: string;
 }
 
+const getNameKey = (kind: BindingKind, name: string): string => `${kind}:${name}`;
+
 export class BindingTable {
+  readonly bindings: Binding[] = [];
   readonly #bindingsByKey = new Map<string, Binding>();
   readonly #bindingsByProp = new Map<string, Binding>();
-  readonly #resolversByBinding = new Map<number, SourceFileResolver>();
+  readonly #sameNamedCounts = new Map<string, number>();
+  readonly #resolvers: SourceFileResolver[] = [];
   readonly placeDomains = new PlaceMap<Domain>();
-
-  get bindings(): Binding[] {
-    return [...this.#bindingsByKey.values()];
-  }
 
   createBinding(
     resolver: SourceFileResolver,
@@ -39,11 +39,9 @@ export class BindingTable {
     const existingBinding = this.#bindingsByKey.get(declarationKey);
     if (existingBinding) return existingBinding;
     const sourceName = resolver.getSourceName(loc) ?? name;
-    const sameNamed = [...this.#bindingsByKey.values()].filter(
-      (candidate) => candidate.kind === kind && candidate.name.split("#")[0] === sourceName,
-    ).length;
+    const sameNamed = this.#sameNamedCounts.get(getNameKey(kind, sourceName)) ?? 0;
     const binding: Binding = {
-      id: this.#bindingsByKey.size,
+      id: this.bindings.length,
       name: scope && sameNamed > 0 ? `${sourceName}#${sameNamed + 1}` : sourceName,
       kind,
       hookKind: options.hookKind ?? null,
@@ -55,8 +53,11 @@ export class BindingTable {
       inputPlaces: options.inputPlaces ?? [],
       isDerived: options.isDerived ?? false,
     };
+    const nameKey = getNameKey(kind, binding.name.split("#")[0] ?? "");
+    this.#sameNamedCounts.set(nameKey, (this.#sameNamedCounts.get(nameKey) ?? 0) + 1);
     this.#bindingsByKey.set(declarationKey, binding);
-    this.#resolversByBinding.set(binding.id, resolver);
+    this.bindings.push(binding);
+    this.#resolvers.push(resolver);
     this.placeDomains.set(getBindingPlace(binding), binding.domain);
     return binding;
   }
@@ -66,7 +67,7 @@ export class BindingTable {
   }
 
   isDeclaredIn(binding: Binding, fileName: string): boolean {
-    return this.#resolversByBinding.get(binding.id)?.fileName === fileName;
+    return this.#resolvers[binding.id].fileName === fileName;
   }
 
   getPropBinding(
@@ -104,7 +105,7 @@ export class BindingTable {
     const [field] = place.path;
     const unionMemberValues =
       place.path.length === 1 && field !== undefined
-        ? this.#resolversByBinding.get(binding.id)?.getUnionMemberValues(binding.loc, field)
+        ? this.#resolvers[binding.id].getUnionMemberValues(binding.loc, field)
         : null;
     if (!unionMemberValues || readDomain.kind === "Unknown") {
       this.placeDomains.set(place, readDomain);

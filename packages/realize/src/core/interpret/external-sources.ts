@@ -51,11 +51,11 @@ export class ExternalSources {
   readonly #modelsByStore: Map<string, StoreModel>;
   readonly #contextKeysByHook = new WeakMap<HookResultValue, string>();
   readonly #resolversByHook = new WeakMap<HookResultValue, SourceFileResolver>();
-  readonly #setterFieldsByBinding = new Map<number, Map<string, string>>();
-  readonly #modulesByBinding = new Map<number, string>();
-  readonly #externalStoreIds = new Set<number>();
+  readonly #setterFieldsByBinding: Array<Map<string, string>> = [];
+  readonly #modulesByBinding: string[] = [];
+  readonly #isExternalStore: boolean[] = [];
   readonly #bindingsByStore = new Map<string, Binding>();
-  readonly #actionsByStoreBinding = new Map<number, StoreActions>();
+  readonly #actionsByStoreBinding: StoreActions[] = [];
   readonly contextSamples = new Map<string, Sample>();
   readonly untypedContextBindingIds = new Map<string, number>();
   readonly readContextKeys = new Set<string>();
@@ -79,16 +79,16 @@ export class ExternalSources {
   }
 
   bindHookResult(binding: Binding, hook: HookResultValue, resolver: SourceFileResolver): void {
-    if (hook.module !== null) this.#modulesByBinding.set(binding.id, hook.module);
+    if (hook.module !== null) this.#modulesByBinding[binding.id] = hook.module;
     const isExternalStore =
       resolver.getReactExportName(hook.loc) === "useSyncExternalStore" ||
       (EXTERNAL_STORE_HOOKS.get(hook.module ?? "")?.includes(hook.name) ?? false);
-    if (isExternalStore) this.#externalStoreIds.add(binding.id);
+    if (isExternalStore) this.#isExternalStore[binding.id] = true;
     const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;
     this.readContextKeys.add(contextKey);
     const setterFields = this.#contextSetterFields.get(contextKey);
-    if (setterFields) this.#setterFieldsByBinding.set(binding.id, setterFields);
+    if (setterFields) this.#setterFieldsByBinding[binding.id] = setterFields;
     if (binding.domain.kind === "Unknown") {
       if (!this.untypedContextBindingIds.has(contextKey))
         this.untypedContextBindingIds.set(contextKey, binding.id);
@@ -102,16 +102,16 @@ export class ExternalSources {
   }
 
   isExternalStore(binding: Binding): boolean {
-    return this.#externalStoreIds.has(binding.id);
+    return this.#isExternalStore[binding.id] ?? false;
   }
 
   isFromSameModule(binding: Binding, otherBinding: Binding): boolean {
-    const hookModule = this.#modulesByBinding.get(binding.id);
-    return hookModule !== undefined && this.#modulesByBinding.get(otherBinding.id) === hookModule;
+    const hookModule = this.#modulesByBinding[binding.id];
+    return hookModule !== undefined && this.#modulesByBinding[otherBinding.id] === hookModule;
   }
 
   getSetterField(contextBinding: Binding, setterName: string): string | undefined {
-    return this.#setterFieldsByBinding.get(contextBinding.id)?.get(setterName);
+    return this.#setterFieldsByBinding[contextBinding.id]?.get(setterName);
   }
 
   getStoreModel(storeKey: string): StoreModel | undefined {
@@ -121,15 +121,15 @@ export class ExternalSources {
   getStoreBinding(storeKey: string, model: StoreModel, createBinding: () => Binding): Binding {
     const storeBinding = this.#bindingsByStore.get(storeKey) ?? createBinding();
     this.#bindingsByStore.set(storeKey, storeBinding);
-    this.#actionsByStoreBinding.set(storeBinding.id, model.actions);
+    this.#actionsByStoreBinding[storeBinding.id] = model.actions;
     return storeBinding;
   }
 
   isStoreBinding(binding: Binding): boolean {
-    return this.#actionsByStoreBinding.has(binding.id);
+    return this.#actionsByStoreBinding[binding.id] !== undefined;
   }
 
   getActionAssignments(storeBinding: Binding, actionName: string): StoreAssignment[] | undefined {
-    return this.#actionsByStoreBinding.get(storeBinding.id)?.get(actionName);
+    return this.#actionsByStoreBinding[storeBinding.id]?.get(actionName);
   }
 }

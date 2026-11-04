@@ -2,15 +2,8 @@ import { SETTER_KEY_PREFIX } from "../../react-compiler/HIR/HIR";
 import { UNDEFINED_VALUE } from "../values/symbolic-values";
 import type { SymbolicValue } from "../types";
 import { isStatelessRegExp } from "./is-stateless-regexp";
-
-const OBJECT_READS = new Set(["keys", "values", "entries"]);
-
-const ARRAY_INDEX_PATTERN = /^(?:0|[1-9]\d*)$/;
-
-const MAX_ARRAY_INDEX = 2 ** 32 - 2;
-
-const isArrayIndex = (key: string): boolean =>
-  ARRAY_INDEX_PATTERN.test(key) && Number(key) <= MAX_ARRAY_INDEX;
+import { isArrayIndex } from "./is-array-index";
+import { isBuiltinMethod } from "./builtin-methods";
 
 const getLiteralEntries = (value: SymbolicValue): Array<[string, SymbolicValue]> | null => {
   if (value.kind === "ArrayExpression")
@@ -37,15 +30,18 @@ const toArray = (elements: SymbolicValue[]): SymbolicValue => ({
   spreads: [],
 });
 
+export const readObjectEntries = (
+  methodName: string,
+  entries: Array<[string, SymbolicValue]>,
+): SymbolicValue[] => {
+  if (methodName === "keys") return entries.map(([key]) => ({ kind: "Primitive", value: key }));
+  if (methodName === "values") return entries.map(([, value]) => value);
+  return entries.map(([key, value]) => toArray([{ kind: "Primitive", value: key }, value]));
+};
+
 const readObject = (methodName: string, target: SymbolicValue): SymbolicValue | null => {
   const entries = getLiteralEntries(target);
-  if (!entries) return null;
-  if (methodName === "keys")
-    return toArray(entries.map(([key]) => ({ kind: "Primitive", value: key })));
-  if (methodName === "values") return toArray(entries.map(([, value]) => value));
-  return toArray(
-    entries.map(([key, value]) => toArray([{ kind: "Primitive", value: key }, value])),
-  );
+  return entries && toArray(readObjectEntries(methodName, entries));
 };
 
 const hasOwnKey = (target: SymbolicValue, key: SymbolicValue | undefined): SymbolicValue | null => {
@@ -104,7 +100,7 @@ export const getLiteralRead = (
     receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
   if (isObject && argument && methodName === "hasOwn")
     return hasOwnKey(argument, argumentValues[1]);
-  return isObject && argument && OBJECT_READS.has(methodName)
+  return isObject && argument && isBuiltinMethod(methodName, "objectRead")
     ? readObject(methodName, argument)
     : null;
 };
