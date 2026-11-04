@@ -5,7 +5,7 @@ import "./stubs/react-shims";
 import { didFiberRender, instrument } from "bippy";
 import { collectActions, performAction } from "./browser/actions";
 import { captureMountedComponent } from "./browser/capture";
-import { commitBranchHits } from "./browser/coverage";
+import { commitBranchHits, dropBranchHits, getBranchHitCount } from "./browser/coverage";
 import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
@@ -15,7 +15,11 @@ import {
   recordCommitFlags,
   recordPassiveFlush,
 } from "./browser/pending-callbacks";
+import { createRenderPassTracker } from "./browser/render-passes";
 import { settle } from "./browser/settle";
+import { onDispatcherChange } from "./write-origins";
+
+onDispatcherChange(createRenderPassTracker(getBranchHitCount, dropBranchHits));
 
 instrument({
   onCommitFiberRoot: (_rendererId, root) => {

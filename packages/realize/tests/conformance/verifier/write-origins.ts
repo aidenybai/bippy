@@ -4,6 +4,10 @@ interface DispatcherHook {
   (...hookArguments: unknown[]): unknown;
 }
 
+interface DispatcherListener {
+  (dispatcher: unknown): void;
+}
+
 interface WatchedDispatcherRef {
   ref: object;
   key: string;
@@ -21,6 +25,7 @@ const attributedQueueFunctions = new WeakSet<object>();
 const patchedDispatchers = new WeakSet<object>();
 const watchedDispatcherRefs: WatchedDispatcherRef[] = [];
 const idleDispatchers = new Set<unknown>();
+const dispatcherListeners: DispatcherListener[] = [];
 
 const isHarnessFrame = (frame: string): boolean =>
   frame.includes(ENTRY_PATH) || HARNESS_PATH_PATTERN.test(frame);
@@ -86,8 +91,13 @@ const watchDispatcherRef = (dispatcherRef: object): void => {
     set: (nextDispatcher: unknown) => {
       patchDispatcher(nextDispatcher);
       dispatcher = nextDispatcher;
+      for (const listener of dispatcherListeners) listener(nextDispatcher);
     },
   });
+};
+
+export const onDispatcherChange = (listener: DispatcherListener): void => {
+  dispatcherListeners.push(listener);
 };
 
 export const watchHookCallers = (dispatcherRefs: object[]): void => {

@@ -107,6 +107,12 @@ export const commitBranchHits = (): void => {
   branchHits = [];
 };
 
+export const getBranchHitCount = (): number => branchHits.length;
+
+export const dropBranchHits = (start: number, end: number): void => {
+  branchHits.splice(start, Math.min(end, branchHits.length) - start);
+};
+
 export const takeBranchHits = (hasRenderError: boolean): BranchHit[] => {
   const hits = hasRenderError && branchHits.length > 0 ? branchHits : committedBranchHits;
   branchHits = [];
