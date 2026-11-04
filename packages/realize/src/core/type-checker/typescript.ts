@@ -5,6 +5,8 @@ import { SymbolFlags } from "typescript/unstable/sync";
 import { createDeclarationKey } from "../project/declaration-key";
 
 export const LIBRARY_DECLARATION_PATTERN = /[\\/]lib\.[\w.]*\.d\.ts$/;
+export const REACT_ELEMENT_TYPE_PATTERN =
+  /^(?:ReactElement|Element|ReactNode|ReactChild|ReactPortal)$/;
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react(?:-dom)?[\\/]/;
 
 const isDeclaredType = (type: Type, namePattern: RegExp, declarationPattern: RegExp): boolean =>

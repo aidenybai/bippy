@@ -9,10 +9,11 @@ const armSchema = z.enum(["consequent", "alternate"]);
 const viewBindingSchema = z.object({
   id: z.number(),
   name: z.string(),
-  domain: z.string(),
+  domain: z.array(z.string()),
   initial: z.string().nullable(),
   reachable: z.string().nullable(),
   loc: viewLocationSchema.nullable(),
+  nodeIds: z.array(z.string()),
 });
 
 const viewBranchSchema = z.object({
@@ -38,29 +39,34 @@ const viewHandlerSchema = z.object({
   label: z.string(),
   loc: viewLocationSchema.nullable(),
   updates: z.array(viewUpdateSchema),
+  nodeIds: z.array(z.string()),
 });
 
 const viewTransitionSchema = z.object({
+  from: z.number(),
+  to: z.number(),
   handlerId: z.string(),
-  targets: z.array(z.number()),
   isAsync: z.boolean(),
+});
+
+const viewConditionSchema = z.object({
+  text: z.string(),
+  branchId: z.number().nullable(),
+  arm: armSchema.nullable(),
+  nodeIds: z.array(z.string()),
 });
 
 const viewStateSchema = z.object({
   index: z.number(),
-  conditions: z.array(z.string()),
-  label: z.string(),
+  name: z.string(),
+  conditions: z.array(viewConditionSchema),
   render: z.string(),
-  transitions: z.array(viewTransitionSchema),
-});
-
-const viewRegionSchema = z.object({
-  placeNames: z.array(z.string()),
-  states: z.array(z.number()),
+  armNodeIds: z.array(z.string()),
 });
 
 const graphNodeSchema = z.object({
   id: z.string(),
+  component: z.string(),
   kind: z.enum(["handler", "trigger", "binding", "write", "read", "branch", "arm"]),
   label: z.string(),
   loc: viewLocationSchema,
@@ -89,7 +95,7 @@ const viewComponentSchema = z.object({
   branches: z.array(viewBranchSchema),
   handlers: z.array(viewHandlerSchema),
   states: z.array(viewStateSchema),
-  regions: z.array(viewRegionSchema),
+  transitions: z.array(viewTransitionSchema),
   graph: codeGraphSchema,
 });
 
@@ -112,8 +118,9 @@ export type ViewBinding = z.infer<typeof viewBindingSchema>;
 export type ViewBranch = z.infer<typeof viewBranchSchema>;
 export type ViewUpdate = z.infer<typeof viewUpdateSchema>;
 export type ViewHandler = z.infer<typeof viewHandlerSchema>;
+export type ViewCondition = z.infer<typeof viewConditionSchema>;
 export type ViewState = z.infer<typeof viewStateSchema>;
-export type ViewRegion = z.infer<typeof viewRegionSchema>;
+export type ViewTransition = z.infer<typeof viewTransitionSchema>;
 export type GraphNode = z.infer<typeof graphNodeSchema>;
 export type GraphEdge = z.infer<typeof graphEdgeSchema>;
 export type CodeGraph = z.infer<typeof codeGraphSchema>;
@@ -121,3 +128,6 @@ export type ViewComponent = z.infer<typeof viewComponentSchema>;
 export type ViewFile = z.infer<typeof viewFileSchema>;
 export type Example = z.infer<typeof exampleSchema>;
 export type Demos = z.infer<typeof demosSchema>;
+
+export const getUpdateKey = (update: ViewUpdate): string =>
+  `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;

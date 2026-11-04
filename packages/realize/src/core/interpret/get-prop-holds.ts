@@ -1,4 +1,5 @@
 import { getHookKind } from "../../react-compiler/HIR/HIR";
+import { eachCallArgument } from "../../react-compiler/HIR/visitors";
 import type {
   DeclarationId,
   HIRFunction,
@@ -153,7 +154,7 @@ const scanFunction = (hirFunction: HIRFunction): PropHolds => {
       if (value.kind !== "CallExpression" && value.kind !== "MethodCall") continue;
       const callee = value.kind === "CallExpression" ? value.callee : value.property;
       const hookKind = getHookKind(hirFunction.env, callee.identifier);
-      const places = value.args.map(getPlaceOrSpread);
+      const places = [...eachCallArgument(value.args)];
       if (hookKind === "useContext" && places[0]) {
         const contextName = `${CONTEXT_PREFIX}${contextLocs.size}`;
         contextLocs.set(contextName, places[0].loc);

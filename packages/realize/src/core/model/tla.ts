@@ -93,6 +93,21 @@ const formatView = (model: ModelSpec): string[] => {
   ];
 };
 
+const PLACEHOLDER: Variable = {
+  name: "placeholder",
+  label: "TLC needs a variable",
+  source: "control",
+  bindingKind: null,
+  bindingId: null,
+  inputBindingIds: [],
+  path: [],
+  domain: [{ label: "true", abstract: { kind: "Exact", value: true } }],
+  initial: ["true"],
+};
+
+export const getModuleVariables = (model: ModelSpec): Variable[] =>
+  model.variables.length > 0 ? model.variables : [PLACEHOLDER];
+
 const toModuleName = (name: string): string =>
   name.replace(/[^A-Za-z0-9_]/g, "_").replace(/^([0-9])/, "M$1") || "Component";
 
@@ -101,8 +116,9 @@ export const formatTla = (
   model: ModelSpec,
   definitions: Definition[] = [],
 ): string => {
-  const names = model.variables.map((variable) => variable.name);
-  const variableComments = model.variables.map((variable) =>
+  const variables = getModuleVariables(model);
+  const names = variables.map((variable) => variable.name);
+  const variableComments = variables.map((variable) =>
     formatComment(
       `${variable.name}: ${variable.label} (${variable.source}), ${variable.domain.length} values`,
     ),
@@ -111,17 +127,16 @@ export const formatTla = (
     `---- MODULE ${toModuleName(name)} ----`,
     ...(definitions.length > 0 ? ["EXTENDS Naturals, TLC"] : []),
     ...variableComments,
-    ...(names.length > 0 ? [`VARIABLES ${names.join(", ")}`, ""] : [""]),
+    `VARIABLES ${names.join(", ")}`,
+    "",
     `vars == <<${names.join(", ")}>>`,
     "",
     ...formatView(model),
     "",
     "Init ==",
-    ...(model.variables.length > 0
-      ? model.variables.map((variable) => `  /\\ ${formatInitial(variable)}`)
-      : ["  TRUE"]),
+    ...variables.map((variable) => `  /\\ ${formatInitial(variable)}`),
     "",
-    ...model.actions.flatMap((action) => [...formatAction(action, model.variables), ""]),
+    ...model.actions.flatMap((action) => [...formatAction(action, variables), ""]),
     `Next == ${model.actions.length > 0 ? model.actions.map((action) => action.name).join(" \\/ ") : "UNCHANGED vars"}`,
     "",
     "Spec == Init /\\ [][Next]_vars",

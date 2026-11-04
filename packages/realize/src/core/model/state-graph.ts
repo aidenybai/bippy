@@ -1,6 +1,6 @@
 import { check } from "tla-ts";
 import { evaluatePredicate } from "./predicates";
-import { formatTla } from "./tla";
+import { formatTla, getModuleVariables } from "./tla";
 import { NO_VIEW } from "./views";
 import type { Action, ModelSpec, Predicate, StateSpace, TraceStep, ViewTransition } from "./types";
 
@@ -73,23 +73,6 @@ const createGraph = (): Graph => ({
   isTruncated: false,
 });
 
-const createConstantGraph = (spec: ModelSpec): Graph => {
-  const graph = createGraph();
-  const isConstantTrue = (predicate: Predicate): boolean =>
-    evaluatePredicate(predicate, () => undefined) === true;
-  graph.initialCount = 1;
-  graph.views.push(spec.views.find((view) => isConstantTrue(view.predicate))?.label ?? NO_VIEW);
-  graph.parents.push(NONE);
-  graph.parentActions.push(NONE);
-  spec.actions.forEach((action, index) => {
-    if (!isConstantTrue(action.guard)) return;
-    graph.edgeSources.push(0);
-    graph.edgeTargets.push(0);
-    graph.edgeActions.push(index);
-  });
-  return graph;
-};
-
 const readDump = (dot: string, spec: ModelSpec): Graph => {
   const width = spec.variables.length;
   const variableIndexes = new Map(spec.variables.map((variable, index) => [variable.name, index]));
@@ -139,13 +122,12 @@ const readDump = (dot: string, spec: ModelSpec): Graph => {
 
 const createAlias = (spec: ModelSpec) => ({
   name: "Alias",
-  expression: `[${[...spec.variables.map((variable) => variable.name), VIEW_FIELD]
+  expression: `[${[...getModuleVariables(spec).map((variable) => variable.name), VIEW_FIELD]
     .map((field) => `${field} |-> ${field}`)
     .join(", ")}]`,
 });
 
 const exploreSpec = async (name: string, spec: ModelSpec): Promise<Graph> => {
-  if (spec.variables.length === 0) return createConstantGraph(spec);
   if (countInitialStates(spec) >= MAX_STATES) return { ...createGraph(), isTruncated: true };
   let dot = "";
   const result = await check({

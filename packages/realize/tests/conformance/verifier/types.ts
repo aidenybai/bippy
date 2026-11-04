@@ -52,6 +52,12 @@ export interface MutationHit {
   isLost: boolean;
 }
 
+export interface CaptureError {
+  message: string;
+  depth: number | null;
+  failure: MountFailure;
+}
+
 export interface Capture {
   shapes: Shape[];
   stateValues: unknown[];
@@ -59,9 +65,7 @@ export interface Capture {
   handlerCalls: string[];
   mutationHits: MutationHit[];
   mutatedOrigins: string[];
-  error: string | null;
-  errorDepth: number | null;
-  failure: MountFailure | null;
+  error: CaptureError | null;
 }
 
 export interface Action {
@@ -110,6 +114,14 @@ export interface ExportedName {
 export interface ModuleExport {
   name: string;
   exportName: string;
+}
+
+export interface ModuleSummary {
+  exports: ModuleExport[];
+  imports: PackageImport[];
+  localNames: Set<string>;
+  typeOnlyExports: Set<string>;
+  storeExportName: string | null;
 }
 
 export interface AliasResolver {

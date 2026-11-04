@@ -1,33 +1,17 @@
-import {
-  Suspense,
-  useCallback,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type RefObject,
-} from "react";
+import { useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { File } from "@pierre/diffs/react";
-import { Spinner } from "@/components/ui/spinner";
+import { ClientSuspense } from "@/components/ui/client-suspense";
 import { useFileOptions } from "@/hooks/use-file-options";
 import { useHighlighter } from "@/hooks/use-highlighter";
-import { useIsClient } from "@/hooks/use-is-client";
-import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-token-boxes";
+import { useTokenBoxes, type PlacedToken } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { getComponentAtLine } from "@/lib/graph";
-import {
-  createLineLookup,
-  getLineFromEvent,
-  getRangeRows,
-  scrollToLine,
-  type Box,
-} from "@/lib/positions";
+import { getLineFromEvent, scrollToLine, type Box } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useFocusRequest, useHasHover, useHoverStore } from "@/store/hover";
+import { useFocusListener, useViewerStore } from "@/store/viewer";
 import { Arc } from "./arc";
+import { ArrowMarker } from "./arrow-marker";
 import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
 
@@ -35,124 +19,101 @@ const contains = (box: Box, x: number, y: number): boolean =>
   x >= box.x - 2 && x <= box.x + box.width + 2 && y >= box.y && y <= box.y + box.height;
 
 const findTokenAt = (tokens: PlacedToken[], x: number, y: number): PlacedToken | null =>
-  tokens.find((token) => token.rows.some((row) => contains(row, x, y))) ?? null;
+  tokens.find((token) => !token.isMultiLine && token.rows.some((row) => contains(row, x, y))) ??
+  null;
 
 const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
-  layout: TokenLayout,
+  tokens: PlacedToken[],
 ): ((event: MouseEvent) => void) => {
   const { view } = useViewer();
-  const activate = useHoverStore((state) => state.activate);
-  const hover = useHoverStore((state) => state.hover);
-  const leave = useHoverStore((state) => state.leave);
-  return useCallback(
-    (event: MouseEvent) => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper || event.buttons !== 0) return;
-      const origin = wrapper.getBoundingClientRect();
-      const token = findTokenAt(
-        layout.tokens,
-        event.clientX - origin.left,
-        event.clientY - origin.top,
-      );
-      if (token) hover(token.node.id);
-      else leave();
-      const line = getLineFromEvent(event.nativeEvent);
-      const component = line === null ? null : getComponentAtLine(view, line);
-      if (component) activate(component.name);
-    },
-    [wrapperRef, layout, view, activate, hover, leave],
-  );
+  const activate = useViewerStore((state) => state.activate);
+  const hover = useViewerStore((state) => state.hover);
+  const leave = useViewerStore((state) => state.leave);
+  return (event: MouseEvent) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || event.buttons !== 0) return;
+    const origin = wrapper.getBoundingClientRect();
+    const token = findTokenAt(tokens, event.clientX - origin.left, event.clientY - origin.top);
+    if (token) hover(token.node.id);
+    else leave();
+    const line = getLineFromEvent(event.nativeEvent);
+    const component = line === null ? null : getComponentAtLine(view, line);
+    if (component) activate(component.name);
+  };
 };
 
 const useColoredNodes = (): GraphNode[] => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
-  return useMemo(
-    () =>
-      view.components
-        .flatMap((component) => component.graph.nodes)
-        .filter((node) => colorByNodeId.has(node.id)),
-    [view, colorByNodeId],
-  );
+  const { view, colorByNodeId } = useViewer();
+  return view.components
+    .flatMap((component) => component.graph.nodes)
+    .filter((node) => colorByNodeId.has(node.id));
 };
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
   const { view } = useViewer();
-  useFocusRequest((name) => {
+  useFocusListener((name) => {
     const host = wrapperRef.current?.querySelector<HTMLElement>("diffs-container");
     const component = view.components.find((candidate) => candidate.name === name);
     if (host && component?.loc) scrollToLine(host, component.loc.start.line);
   });
 };
 
-const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
-  const arcs = useMemo(
-    () => placeArcs(view, layout.tokens, colorByNodeId, isRestingArc),
-    [view, layout, colorByNodeId],
-  );
-  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
-};
-
-const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
-  const { view } = useViewer();
-  const { colorByNodeId } = useViewer();
-  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
-  const arcs = useMemo(
-    () =>
-      causalNodeIds === null
-        ? []
-        : placeArcs(
-            view,
-            layout.tokens,
-            colorByNodeId,
-            (edge) =>
-              !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
-          ),
-    [view, layout, colorByNodeId, causalNodeIds],
-  );
-  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
-};
-
-interface OverlayProps {
-  wrapperRef: RefObject<HTMLDivElement | null>;
-  layout: TokenLayout;
+interface ArcsProps {
+  tokens: PlacedToken[];
+  markerId: string;
 }
 
-const useFocusRows = (wrapperRef: RefObject<HTMLDivElement | null>, layout: TokenLayout): Box[] => {
-  const index = useHoverStore((state) => state.index);
-  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
-  const [rows, setRows] = useState<Box[]>([]);
-  useLayoutEffect(() => {
-    const wrapper = wrapperRef.current;
-    const host = wrapper?.querySelector<HTMLElement>("diffs-container");
-    if (!wrapper || !host || !index || causalNodeIds === null) return;
-    const lookup = createLineLookup(host, wrapper);
-    const rowByKey = new Map<string, Box>();
-    for (const nodeId of causalNodeIds) {
-      const node = index.nodes.get(nodeId);
-      if (!node || node.kind === "handler") continue;
-      for (const row of getRangeRows(lookup, node.loc))
-        rowByKey.set(`${row.x}-${row.y}-${row.width}`, row);
-    }
-    setRows([...rowByKey.values()]);
-  }, [wrapperRef, index, causalNodeIds, layout]);
-  return rows;
+const RestingArcs = ({ tokens, markerId }: ArcsProps) => {
+  const { view, colorByNodeId } = useViewer();
+  const arcs = placeArcs(view, tokens, colorByNodeId, isRestingArc);
+  return arcs.map((arc) => (
+    <Arc key={`${arc.edge.from}-${arc.edge.to}`} markerId={markerId} {...arc} />
+  ));
 };
 
-const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
+const CausalArcs = ({ tokens, markerId }: ArcsProps) => {
+  const { view, colorByNodeId } = useViewer();
+  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
+  const arcs =
+    causalNodeIds === null
+      ? []
+      : placeArcs(
+          view,
+          tokens,
+          colorByNodeId,
+          (edge) =>
+            !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
+        );
+  return arcs.map((arc) => (
+    <Arc key={`${arc.edge.from}-${arc.edge.to}`} markerId={markerId} {...arc} />
+  ));
+};
+
+const getRowKey = (row: Box): string => `${row.x}-${row.y}-${row.width}`;
+
+const getFocusRows = (tokens: PlacedToken[], nodeIds: Set<string> | null): Box[] => {
+  const rows = tokens
+    .filter((token) => nodeIds?.has(token.node.id) && token.node.kind !== "handler")
+    .flatMap((token) => token.rows);
+  return [...new Map(rows.map((row) => [getRowKey(row), row])).values()];
+};
+
+const FocusScrim = ({ tokens }: { tokens: PlacedToken[] }) => {
   const maskId = useId();
-  const hasHover = useHasHover();
-  const rows = useFocusRows(wrapperRef, layout);
+  const causalNodeIds = useViewerStore((state) => state.causalNodeIds);
+  const [focusNodeIds, setFocusNodeIds] = useState(causalNodeIds);
+  if (causalNodeIds !== null && causalNodeIds !== focusNodeIds) setFocusNodeIds(causalNodeIds);
   return (
-    <g className="transition-opacity duration-150" style={{ opacity: hasHover ? 1 : 0 }}>
+    <g
+      className="transition-opacity duration-150"
+      style={{ opacity: causalNodeIds === null ? 0 : 1 }}
+    >
       <mask id={maskId}>
-        <rect width={layout.width} height={layout.height} fill="white" />
-        {rows.map((row) => (
+        <rect width="100%" height="100%" fill="white" />
+        {getFocusRows(tokens, focusNodeIds).map((row) => (
           <rect
-            key={`${row.x}-${row.y}-${row.width}`}
+            key={getRowKey(row)}
             x={row.x - 2}
             y={row.y}
             width={row.width + 4}
@@ -163,8 +124,8 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
         ))}
       </mask>
       <rect
-        width={layout.width}
-        height={layout.height}
+        width="100%"
+        height="100%"
         style={{ fill: "var(--color-background)" }}
         fillOpacity={0.6}
         mask={`url(#${maskId})`}
@@ -173,24 +134,29 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
   );
 };
 
-const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
+const Overlay = ({ tokens }: { tokens: PlacedToken[] }) => {
   const { colorByNodeId } = useViewer();
+  const markerId = useId();
   return (
     <svg
       className="pointer-events-none absolute inset-0 overflow-hidden"
-      width={layout.width}
-      height={layout.height}
+      width="100%"
+      height="100%"
     >
-      <FocusScrim wrapperRef={wrapperRef} layout={layout} />
-      {layout.tokens.map((token) => (
+      <defs>
+        <ArrowMarker id={`${markerId}solid`} size={7} />
+        <ArrowMarker id={`${markerId}hollow`} size={7} isHollow />
+      </defs>
+      <FocusScrim tokens={tokens} />
+      {tokens.map((token) => (
         <TokenMark
           key={token.node.id}
           {...token}
           color={colorByNodeId.get(token.node.id) ?? "transparent"}
         />
       ))}
-      <RestingArcs layout={layout} />
-      <CausalArcs layout={layout} />
+      <RestingArcs tokens={tokens} markerId={markerId} />
+      <CausalArcs tokens={tokens} markerId={markerId} />
     </svg>
   );
 };
@@ -200,15 +166,11 @@ const CodeView = () => {
   useHighlighter();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
-  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const options = useFileOptions(onPostRender);
-  const file = useMemo(
-    () => ({ name: getFileTitle(view.file), contents: view.source }),
-    [view.file, view.source],
-  );
-  const layout = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
-  const trackPointer = usePointerTracking(wrapperRef, layout);
-  const leave = useHoverStore((state) => state.leave);
+  const options = useFileOptions(() => setRenderCount((count) => count + 1));
+  const file = { name: getFileTitle(view.file), contents: view.source };
+  const tokens = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
+  const trackPointer = usePointerTracking(wrapperRef, tokens);
+  const leave = useViewerStore((state) => state.leave);
   useFocusScroll(wrapperRef);
   return (
     <div
@@ -218,17 +180,15 @@ const CodeView = () => {
       onMouseLeave={leave}
     >
       <File file={file} options={options} disableWorkerPool />
-      <Overlay wrapperRef={wrapperRef} layout={layout} />
+      <Overlay tokens={tokens} />
     </div>
   );
 };
 
-export const SourcePane = () => {
-  const isClient = useIsClient();
-  const spinner = <Spinner className="h-full" />;
-  return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      {isClient ? <Suspense fallback={spinner}>{<CodeView />}</Suspense> : spinner}
-    </div>
-  );
-};
+export const SourcePane = () => (
+  <div className="scroll-pane">
+    <ClientSuspense>
+      <CodeView />
+    </ClientSuspense>
+  </div>
+);

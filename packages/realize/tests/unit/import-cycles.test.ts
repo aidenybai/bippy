@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { getCycleImporters, parseImports } from "../conformance/verifier/source-index";
+import { getCycleImporters, summarizeModule } from "../conformance/verifier/source-index";
 import type { FileImports } from "../conformance/verifier/types";
 
 const createImports = (edges: Record<string, string[]>): Map<string, FileImports> =>
@@ -34,7 +34,7 @@ describe("import cycles", () => {
       'export type { SidebarProps } from "./types";',
       "export const SIDEBAR_WIDTH = 240;",
     ].join("\n");
-    expect(parseImports(barrel)).toEqual([
+    expect(summarizeModule(barrel).imports).toEqual([
       { specifier: "./AppSidebar", names: ["default", "MobileAppHeader"] },
       { specifier: "./hooks", names: [] },
     ]);

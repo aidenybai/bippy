@@ -4,6 +4,7 @@ import type { AliasingEffect } from "../../react-compiler/Inference/AliasingEffe
 import { formatPlace } from "../values/format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "../values/symbolic-values";
+import { getConditionalLeaves } from "../values/conditional";
 import type {
   AbstractValue,
   ArrayExpressionValue,
@@ -17,7 +18,7 @@ import type {
 import { getConditionallyMutatedPlace, getMutatedPlace } from "./get-mutated-place";
 import { isFunctionCreation } from "./is-function-creation";
 import { isStateBinding } from "../values/is-state-binding";
-import { isCollectionWrite } from "../interpret/literal-receivers";
+import { isBuiltinMethod } from "./builtin-methods";
 import type { PathState } from "./path-state";
 
 interface CreationPath {
@@ -27,21 +28,6 @@ interface CreationPath {
 }
 
 const MAX_ALIAS_CHAIN_LENGTH = 32;
-
-const ELEMENT_METHODS = new Set(["find", "findLast", "at"]);
-
-const COPYING_METHODS = new Set([
-  "filter",
-  "slice",
-  "toSorted",
-  "toReversed",
-  "toSpliced",
-  "concat",
-  "with",
-  "reverse",
-  "sort",
-  "flat",
-]);
 
 const COPYING_STATICS = new Set(["Array.from", "Object.values", "Object.entries"]);
 
@@ -83,12 +69,6 @@ const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): bo
   const writesCurrent =
     ownedValue.path[0] === REF_CURRENT || storedProperty === REF_CURRENT || passesWholeRef;
   return writesCurrent && isRefDomain(ownedValue.binding.domain);
-};
-
-const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
-  if (value.kind === "Conditional")
-    return [...getOwnedValues(value.consequent), ...getOwnedValues(value.alternate)];
-  return isOwnedValue(value) ? [value] : [];
 };
 
 const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null => {
@@ -215,14 +195,11 @@ export class MutationTracker {
   }
 
   #freeze(value: SymbolicValue): void {
-    if (value.kind === "Conditional") {
-      this.#freeze(value.consequent);
-      this.#freeze(value.alternate);
-      return;
+    for (const leaf of getConditionalLeaves(value)) {
+      if (!isMutableLiteral(leaf) || this.#frozenValues.has(leaf)) continue;
+      this.#frozenValues.add(leaf);
+      for (const nestedValue of getNestedValues(leaf)) this.#freeze(nestedValue);
     }
-    if (!isMutableLiteral(value) || this.#frozenValues.has(value)) return;
-    this.#frozenValues.add(value);
-    for (const nestedValue of getNestedValues(value)) this.#freeze(nestedValue);
   }
 
   #replaceMutatedValue(mutatedValue: SymbolicValue, replacement: SymbolicValue): void {
@@ -263,7 +240,7 @@ export class MutationTracker {
     guards: SymbolicValue[],
     isFrozen = false,
   ): void {
-    const ownedValues = getOwnedValues(value);
+    const ownedValues = getConditionalLeaves(value).filter(isOwnedValue);
     const aliasedValue =
       ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place, isFrozen);
     for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
@@ -304,7 +281,7 @@ export class MutationTracker {
   }
 
   recordAliasSources(instruction: Instruction): void {
-    const { aliasSources, elementSources, frozenSources, itemSources, propertyNames } =
+    const { aliasSources, elementSources, frozenSources, facts } =
       this.#interpreter.getCompilationTables();
     const getElementSource = (place: Place): Place =>
       elementSources.get(place.identifier.id) ?? place;
@@ -325,17 +302,15 @@ export class MutationTracker {
       const [item] = value.elements;
       if (value.elements.length === 1 && item?.kind === "Spread")
         elementSources.set(resultId, getElementSource(item.place));
-      if (value.elements.length === 1 && item?.kind === "Identifier")
-        itemSources.set(resultId, item);
       return;
     }
     if (value.kind !== "MethodCall") return;
-    const methodName = propertyNames.get(value.property.identifier.id) ?? "";
-    if (ELEMENT_METHODS.has(methodName))
+    const methodName = facts.propertyNames[value.property.identifier.id] ?? "";
+    if (isBuiltinMethod(methodName, "element"))
       aliasSources.set(resultId, getElementSource(value.receiver));
     const flattenedItem =
-      methodName === "flat" ? itemSources.get(value.receiver.identifier.id) : null;
-    if (COPYING_METHODS.has(methodName))
+      methodName === "flat" ? facts.itemSources[value.receiver.identifier.id] : null;
+    if (isBuiltinMethod(methodName, "copying"))
       elementSources.set(resultId, getElementSource(flattenedItem ?? value.receiver));
     const receiver = this.#interpreter.read(value.receiver);
     const [source] = value.args;
@@ -439,13 +414,13 @@ export class MutationTracker {
     const value = instruction.value;
     const methodName =
       value.kind === "MethodCall" && value.receiver.identifier.id === mutatedPlace.identifier.id
-        ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
-        : undefined;
+        ? this.#interpreter.getPropertyName(value.property)
+        : null;
     if (literal.kind === "Collection")
       return writeGuards &&
         value.kind === "MethodCall" &&
-        methodName !== undefined &&
-        isCollectionWrite(methodName)
+        methodName !== null &&
+        isBuiltinMethod(methodName, "collectionWrite")
         ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
         : createUnknown("mutation", instruction.loc);
     if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")

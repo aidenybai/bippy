@@ -7,6 +7,7 @@ import { getMemoizedRender } from "../render/get-memoized-render";
 import { FALSE, TRUE, and, not, or } from "./predicates";
 import type { VariableTable } from "./variables";
 import type { Branch, Predicate, View } from "./types";
+import { createUniqueLabel } from "./unique-label";
 
 const MAX_VIEWS = 64;
 
@@ -218,9 +219,11 @@ export const collectViews = (
       rootPart && render.kind !== "Conditional"
         ? [rootPart, ...renderPath.parts]
         : renderPath.parts;
-    const baseLabel = parts.join(" > ") || NO_VIEW;
-    let label = baseLabel;
-    for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} (${suffix})`;
+    const label = createUniqueLabel(
+      parts.join(" > ") || NO_VIEW,
+      usedLabels,
+      (suffix) => ` (${suffix})`,
+    );
     usedLabels.add(label);
     return {
       name: `S${index + 1}`,
