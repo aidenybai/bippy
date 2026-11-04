@@ -277,8 +277,8 @@ importers:
         specifier: ^24.9.0
         version: 24.9.0
       tla-ts:
-        specifier: 0.0.4
-        version: 0.0.4
+        specifier: 0.0.8
+        version: 0.0.8
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -13318,8 +13318,8 @@ packages:
     resolution: {integrity: sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==}
     engines: {node: '>=14.0.0'}
 
-  tla-ts@0.0.4:
-    resolution: {integrity: sha512-U0st9GzMkpfwREl+yDFT2zT6WITsSCTi7ETMaDEqghySTJYdpdbPBC7bk0Q0QMmlkHd0J7rTNWT5WPn9LuOAow==}
+  tla-ts@0.0.8:
+    resolution: {integrity: sha512-o6l6mvlV+o81B6ZRN/k1Jb4De788F4584vzm13U+EBgEIqifeyHjBNvCiUJtZFFM/GV3LugdKhhnCS/cAbA3qg==}
     hasBin: true
 
   tmp@0.2.7:
@@ -28681,7 +28681,7 @@ snapshots:
 
   tinyrainbow@3.2.0: {}
 
-  tla-ts@0.0.4:
+  tla-ts@0.0.8:
     dependencies:
       fflate: 0.8.3
 
