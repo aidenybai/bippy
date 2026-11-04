@@ -37,3 +37,20 @@ export const CopiedDuringRender = () => {
     </div>
   );
 };
+
+export const ResetOnToggle = () => {
+  const [isOpen, setOpen] = useState(false);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  const [count, setCount] = useState(0);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    setCount(0);
+  }
+  return (
+    <div>
+      {count > 1 && <p>{isOpen ? "Open" : "Closed"}</p>}
+      <button onClick={() => setCount((previous) => previous + 1)}>Add</button>
+      <button onClick={() => setOpen(!isOpen)}>Toggle</button>
+    </div>
+  );
+};
