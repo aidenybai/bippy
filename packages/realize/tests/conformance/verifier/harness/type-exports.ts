@@ -1,71 +1,9 @@
-import { readFileSync } from "node:fs";
-import { parse } from "@babel/parser";
-import type { ParserOptions } from "@babel/parser";
 import type { types } from "@babel/core";
 import MagicString from "magic-string";
 import type { Plugin } from "vite";
+import { getModuleSummary, parseBody } from "../source-index";
+import type { ModuleSummary } from "../types";
 import { isAppSourceModule, stripQuery } from "./packages";
-
-const PARSER_PLUGINS: NonNullable<ParserOptions["plugins"]> = [
-  "typescript",
-  "jsx",
-  "decorators-legacy",
-];
-
-const typeOnlyNamesByFile = new Map<string, Set<string>>();
-
-const isTypeDeclaration = (node: types.Node | null | undefined): boolean =>
-  node?.type === "TSTypeAliasDeclaration" || node?.type === "TSInterfaceDeclaration";
-
-const getDeclaredName = (node: types.Node): string | null =>
-  node.type === "TSTypeAliasDeclaration" ||
-  node.type === "TSInterfaceDeclaration" ||
-  node.type === "FunctionDeclaration" ||
-  node.type === "ClassDeclaration" ||
-  node.type === "TSEnumDeclaration"
-    ? (node.id?.name ?? null)
-    : null;
-
-const getValueNames = (statement: types.Statement): string[] => {
-  const declaration =
-    statement.type === "ExportNamedDeclaration" ? statement.declaration : statement;
-  if (!declaration || isTypeDeclaration(declaration)) return [];
-  if (declaration.type === "VariableDeclaration")
-    return declaration.declarations.flatMap((declarator) =>
-      declarator.id.type === "Identifier" ? [declarator.id.name] : [],
-    );
-  const name = getDeclaredName(declaration);
-  return name ? [name] : [];
-};
-
-const getTypeExportNames = (statement: types.Statement): string[] => {
-  if (statement.type !== "ExportNamedDeclaration") return [];
-  if (statement.declaration && isTypeDeclaration(statement.declaration)) {
-    const name = getDeclaredName(statement.declaration);
-    return name ? [name] : [];
-  }
-  if (statement.exportKind !== "type") return [];
-  return statement.specifiers.flatMap((specifier) =>
-    specifier.exported.type === "Identifier" ? [specifier.exported.name] : [],
-  );
-};
-
-export const parseBody = (code: string): types.Statement[] =>
-  parse(code, { sourceType: "module", plugins: PARSER_PLUGINS, errorRecovery: true }).program.body;
-
-const readTypeOnlyNames = (file: string): Set<string> => {
-  const body = parseBody(readFileSync(file, "utf8"));
-  const valueNames = new Set(body.flatMap(getValueNames));
-  return new Set(body.flatMap(getTypeExportNames).filter((name) => !valueNames.has(name)));
-};
-
-export const getTypeOnlyNames = (file: string): Set<string> => {
-  const cached = typeOnlyNamesByFile.get(file);
-  if (cached) return cached;
-  const names = readTypeOnlyNames(file);
-  typeOnlyNamesByFile.set(file, names);
-  return names;
-};
 
 const getLocalName = (specifier: types.ExportNamedDeclaration["specifiers"][number]): string => {
   if (specifier.type !== "ExportSpecifier") return "";
@@ -103,14 +41,14 @@ export const removeTypeReexports = async (
   return source.hasChanged() ? source : null;
 };
 
-export const createTypeReexportPlugin = (): Plugin => ({
+export const createTypeReexportPlugin = (summaries: Map<string, ModuleSummary>): Plugin => ({
   name: "bippy-verify-type-reexports",
   async transform(code, id) {
     if (!isAppSourceModule(id) || !code.includes("export {")) return null;
     const source = await removeTypeReexports(code, async (specifier) => {
       const resolved = await this.resolve(specifier, id);
       return resolved && isAppSourceModule(resolved.id)
-        ? getTypeOnlyNames(stripQuery(resolved.id))
+        ? getModuleSummary(summaries, stripQuery(resolved.id)).typeOnlyExports
         : null;
     });
     return source && { code: source.toString(), map: source.generateMap({ hires: true }) };

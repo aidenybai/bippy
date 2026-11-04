@@ -1,19 +1,20 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, sep } from "node:path";
 import type { ViteDevServer } from "vite";
-import { addExports, getFileImports, parseImports } from "../source-index";
+import { appendToGroup } from "../../../../src/core/shared/append-to-group";
+import { getFileImports, summarizeModule } from "../source-index";
 import type {
   AliasResolver,
   ExportedName,
   FileImports,
-  PackageImport,
+  ModuleSummary,
   SourceIndex,
 } from "../types";
 import {
   PACKAGE_SPECIFIER_PATTERN,
   SOURCE_FILE_PATTERN,
+  findPackageDirectory,
   getPackageName,
-  hasPackageDirectory,
   stripQuery,
 } from "./packages";
 
@@ -22,17 +23,14 @@ export interface SourceReferences {
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
   packageImports: Map<string, Set<string>>;
-  exports: SourceIndex["exports"];
-  fileImports: Map<string, PackageImport[]>;
+  summaries: Map<string, ModuleSummary>;
   reduxStore: ExportedName | null;
 }
 
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
-const NEXT_FONT_IMPORT_PATTERN =
-  /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
-const STORE_DECLARATION_PATTERN =
-  /\b(?:const|let)\s+(\w+)\s*=\s*(?:configureStore|createStore|legacy_createStore)\(/;
+const NEXT_FONT_SPECIFIERS = new Set(["next/font/google", "next/font/local"]);
 const TEST_FILE_PATTERN = /\.(?:test|spec|stories)\.[jt]sx?$/;
+const SUBPATH_IMPORT_PREFIX = "#";
 
 const listSourceFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -42,36 +40,24 @@ const listSourceFiles = (directory: string): string[] =>
     return SOURCE_FILE_PATTERN.test(entry.name) ? [path] : [];
   });
 
-const findReduxStore = (file: string, text: string): ExportedName | null => {
-  const name = STORE_DECLARATION_PATTERN.exec(text)?.[1];
-  if (!name) return null;
-  if (new RegExp(`export\\s+default\\s+${name}\\b`).test(text))
-    return { file, exportName: "default" };
-  return new RegExp(`export\\s+(?:const|let)\\s+${name}\\b|export\\s*\\{[^}]*\\b${name}\\b`).test(
-    text,
-  )
-    ? { file, exportName: name }
-    : null;
-};
-
 export const collectSourceReferences = (appDirectory: string): SourceReferences => {
   const references: SourceReferences = {
     processEnv: new Set(),
     importMetaEnv: new Set(),
     nextFonts: new Set(),
     packageImports: new Map(),
-    exports: new Map(),
-    fileImports: new Map(),
+    summaries: new Map(),
     reduxStore: null,
   };
   for (const file of listSourceFiles(appDirectory)) {
     const text = readFileSync(file, "utf8");
-    if (!references.reduxStore && !TEST_FILE_PATTERN.test(file))
-      references.reduxStore = findReduxStore(file, text);
-    addExports(references.exports, file, text);
-    const imports = parseImports(text);
-    references.fileImports.set(file, imports);
-    for (const packageImport of imports) {
+    const summary = summarizeModule(text);
+    references.summaries.set(file, summary);
+    if (!references.reduxStore && summary.storeExportName && !TEST_FILE_PATTERN.test(file))
+      references.reduxStore = { file, exportName: summary.storeExportName };
+    for (const packageImport of summary.imports) {
+      if (NEXT_FONT_SPECIFIERS.has(packageImport.specifier))
+        for (const name of packageImport.names) references.nextFonts.add(name);
       if (!PACKAGE_SPECIFIER_PATTERN.test(packageImport.specifier)) continue;
       const packageNames = references.packageImports.get(packageImport.specifier) ?? new Set();
       for (const name of packageImport.names) packageNames.add(name);
@@ -79,11 +65,6 @@ export const collectSourceReferences = (appDirectory: string): SourceReferences 
     }
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
-    for (const [, names = ""] of text.matchAll(NEXT_FONT_IMPORT_PATTERN))
-      for (const name of names.split(",")) {
-        const localName = name.split(/\s+as\s+/)[0]?.trim();
-        if (localName) references.nextFonts.add(localName);
-      }
   }
   return references;
 };
@@ -95,7 +76,10 @@ const createAliasResolver = (server: ViteDevServer): AliasResolver => {
     const key = `${directory}\0${specifier}`;
     const cached = resolved.get(key);
     if (cached) return cached;
-    const resolvedPath = hasPackageDirectory(directory, getPackageName(specifier))
+    const isPackage =
+      !specifier.startsWith(SUBPATH_IMPORT_PREFIX) &&
+      findPackageDirectory(getPackageName(specifier), importer) !== null;
+    const resolvedPath = isPackage
       ? Promise.resolve(null)
       : server.environments.client.pluginContainer
           .resolveId(specifier, importer)
@@ -119,8 +103,12 @@ export const indexSource = async (
   server: ViteDevServer,
 ): Promise<SourceIndex> => {
   const resolveAlias = createAliasResolver(server);
+  const exports = new Map<string, ExportedName[]>();
   const imports = new Map<string, FileImports>();
-  for (const [file, fileImports] of references.fileImports)
-    imports.set(file, await getFileImports(file, fileImports, resolveAlias));
-  return { exports: references.exports, imports };
+  for (const [file, summary] of references.summaries) {
+    for (const moduleExport of summary.exports)
+      appendToGroup(exports, moduleExport.name, { file, exportName: moduleExport.exportName });
+    imports.set(file, await getFileImports(file, summary.imports, resolveAlias));
+  }
+  return { exports, imports };
 };

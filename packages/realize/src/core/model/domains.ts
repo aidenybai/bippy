@@ -1,6 +1,7 @@
 import type { AbstractValue, Domain, PrimitiveValue } from "../types";
 import { isSameValue } from "./abstract";
 import type { Abstract, Value } from "./types";
+import { createUniqueLabel } from "./unique-label";
 
 export interface PlaceTests {
   literals: PrimitiveValue[];
@@ -156,8 +157,7 @@ export const createDomain = (
   for (const abstract of createAbstractValues(typeDomain, tests, isLength)) {
     if (values.some((value) => isSameExact(value.abstract, abstract))) continue;
     const baseLabel = formatAbstract(abstract);
-    let label = baseLabel;
-    for (let suffix = 2; usedLabels.has(label); suffix++) label = `${baseLabel} ${suffix}`;
+    const label = createUniqueLabel(baseLabel, usedLabels, (suffix) => ` ${suffix}`);
     usedLabels.add(label);
     values.push({ label, abstract });
   }

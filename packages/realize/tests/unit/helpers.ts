@@ -52,8 +52,6 @@ export const createCapture = (overrides: Partial<Capture>): Capture => ({
   mutationHits: [],
   mutatedOrigins: [],
   error: null,
-  errorDepth: null,
-  failure: null,
   ...overrides,
 });
 

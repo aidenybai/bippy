@@ -25,8 +25,6 @@ describe("render-phase actions", async () => {
     mutationHits: [],
     mutatedOrigins: [],
     error: null,
-    errorDepth: null,
-    failure: null,
   });
 
   const clickSet: Action = { key: "set", kind: "click", tag: "button", label: "set" };

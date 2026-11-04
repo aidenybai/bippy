@@ -1,6 +1,8 @@
 import type { HIRFunction, Place } from "../../react-compiler/HIR/HIR";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
 import type { FunctionValue, SymbolicValue } from "../types";
+import { buildFunctionFacts } from "../interpret/function-facts";
+import type { FunctionFacts } from "../interpret/function-facts";
 
 export interface ModuleFunctionLoader {
   (functionName: string): HIRFunction | null;
@@ -10,6 +12,7 @@ export type CapturedValue = [Place, SymbolicValue];
 
 export class FunctionRegistry {
   readonly #functions: HIRFunction[] = [];
+  readonly #facts: FunctionFacts[] = [];
   readonly #idsByFunction = new Map<HIRFunction, number>();
   readonly #resolversByFunction = new WeakMap<HIRFunction, SourceFileResolver>();
   readonly #loadersByModule = new Map<SourceFileResolver, ModuleFunctionLoader>();
@@ -19,6 +22,10 @@ export class FunctionRegistry {
     return this.#functions[functionId] ?? null;
   }
 
+  getFacts(functionId: number): FunctionFacts {
+    return this.#facts[functionId];
+  }
+
   register(
     hirFunction: HIRFunction,
     resolver: SourceFileResolver,
@@ -26,10 +33,13 @@ export class FunctionRegistry {
   ): FunctionValue {
     if (!this.#resolversByFunction.has(hirFunction))
       this.#resolversByFunction.set(hirFunction, resolver);
-    const existingId = isSnapshot ? undefined : this.#idsByFunction.get(hirFunction);
-    if (existingId !== undefined)
+    const existingId = this.#idsByFunction.get(hirFunction);
+    if (existingId !== undefined && !isSnapshot)
       return { kind: "Function", functionId: existingId, loc: hirFunction.loc };
     this.#functions.push(hirFunction);
+    this.#facts.push(
+      existingId === undefined ? buildFunctionFacts(hirFunction) : this.#facts[existingId],
+    );
     const functionId = this.#functions.length - 1;
     if (!isSnapshot) this.#idsByFunction.set(hirFunction, functionId);
     return { kind: "Function", functionId, loc: hirFunction.loc };
