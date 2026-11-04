@@ -19,6 +19,7 @@ import { indexSource } from "./harness/source-references";
 import { createTypeReexportPlugin } from "./harness/type-exports";
 import type { SourceReferences } from "./harness/source-references";
 import {
+  createAmbientGlobalPlugin,
   createMissingModulePlugin,
   createMissingDependencyPlugin,
   createNodeBuiltinPlugin,
@@ -202,6 +203,7 @@ const createHarnessPlugins = (
   return [
     createStubPlugin(context.nextDirectory, context.appImporter, context.references.nextFonts),
     createStandInPlugin(polyfilledModules, context.references.packageImports),
+    createAmbientGlobalPlugin(),
     createAssetPlugin(isDependencyDeclared(context.appDirectory, "@svgr/webpack")),
     ...(isDependencyDeclared(context.appDirectory, "worker-loader")
       ? [createWorkerImportPlugin()]
