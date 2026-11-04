@@ -3,7 +3,12 @@ import { findNodeAtLocation } from "./find-node-at-location";
 import { getUnionMembers } from "./get-union-members";
 import { getCollectionName, getInterfaceMemberNames } from "./lib-collections";
 import { isPrimitiveType } from "./is-primitive-type";
-import { getDeclarationKey, getReactExportName, isReactType } from "./typescript";
+import {
+  REACT_ELEMENT_TYPE_PATTERN,
+  getDeclarationKey,
+  getReactExportName,
+  isReactType,
+} from "./typescript";
 import {
   isBindingElement,
   isCallExpression,
@@ -34,8 +39,6 @@ const getContextKey = (checker: Checker, node: Node): string | null =>
   isPropertyAccessExpression(node) && node.name.text === "Provider"
     ? getDeclarationKey(checker, node.expression)
     : getDeclarationKey(checker, node);
-
-const REACT_ELEMENT_TYPE_PATTERN = /^(?:ReactElement|ReactPortal|ReactNode|Element)$/;
 
 const isReactElementType = (type: Type): boolean =>
   (getUnionMembers(type) ?? []).some((member) => isReactType(member, REACT_ELEMENT_TYPE_PATTERN));

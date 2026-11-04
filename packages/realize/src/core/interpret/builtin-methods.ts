@@ -1,0 +1,52 @@
+const BUILTIN_METHODS = {
+  iteration: new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]),
+  renderedIteration: new Set(["map", "flatMap"]),
+  firstValue: new Set(["every", "some", "find", "findIndex", "filter", "reduce"]),
+  lengthLimiting: new Set(["filter", "slice", "toReversed", "toSorted", "with"]),
+  copying: new Set([
+    "filter",
+    "slice",
+    "toSorted",
+    "toReversed",
+    "toSpliced",
+    "concat",
+    "with",
+    "reverse",
+    "sort",
+    "flat",
+  ]),
+  element: new Set(["find", "findLast", "at"]),
+  storedItemRead: new Set(["get", "at", "find", "findLast"]),
+  refContainerWrite: new Set(["push", "unshift", "add", "set"]),
+  collectionRead: new Set(["has", "get"]),
+  collectionWrite: new Set(["add", "set", "delete", "clear"]),
+  chainedCollectionWrite: new Set(["add", "set"]),
+  objectRead: new Set(["keys", "values", "entries"]),
+  promise: new Set(["then", "catch", "finally"]),
+  string: new Set([
+    "trim",
+    "trimStart",
+    "trimEnd",
+    "toLowerCase",
+    "toUpperCase",
+    "startsWith",
+    "endsWith",
+    "includes",
+    "indexOf",
+    "slice",
+    "charAt",
+    "at",
+    "padStart",
+    "padEnd",
+    "repeat",
+    "replace",
+    "replaceAll",
+    "substring",
+    "lastIndexOf",
+  ]),
+};
+
+export type BuiltinMethodKind = keyof typeof BUILTIN_METHODS;
+
+export const isBuiltinMethod = (methodName: string, kind: BuiltinMethodKind): boolean =>
+  BUILTIN_METHODS[kind].has(methodName);

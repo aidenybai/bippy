@@ -13,8 +13,8 @@ import type {
 import {
   PACKAGE_SPECIFIER_PATTERN,
   SOURCE_FILE_PATTERN,
+  findPackageDirectory,
   getPackageName,
-  hasPackageDirectory,
   stripQuery,
 } from "./packages";
 
@@ -30,6 +30,7 @@ export interface SourceReferences {
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const NEXT_FONT_SPECIFIERS = new Set(["next/font/google", "next/font/local"]);
 const TEST_FILE_PATTERN = /\.(?:test|spec|stories)\.[jt]sx?$/;
+const SUBPATH_IMPORT_PREFIX = "#";
 
 const listSourceFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -75,7 +76,10 @@ const createAliasResolver = (server: ViteDevServer): AliasResolver => {
     const key = `${directory}\0${specifier}`;
     const cached = resolved.get(key);
     if (cached) return cached;
-    const resolvedPath = hasPackageDirectory(directory, getPackageName(specifier))
+    const isPackage =
+      !specifier.startsWith(SUBPATH_IMPORT_PREFIX) &&
+      findPackageDirectory(getPackageName(specifier), importer) !== null;
+    const resolvedPath = isPackage
       ? Promise.resolve(null)
       : server.environments.client.pluginContainer
           .resolveId(specifier, importer)

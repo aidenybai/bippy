@@ -14,7 +14,7 @@ import { collectHandlerCounters } from "./handler-counters";
 import { collectMutationCounters } from "./mutation";
 import { collectBranchCounters } from "./branch-counters";
 import { checkComponent } from "./check";
-import { createEmptyVerdict } from "./verdicts";
+import { createEmptyVerdict, toMountFailedVerdict } from "./verdicts";
 import type { ComponentVerdict } from "./verdicts";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
@@ -158,12 +158,11 @@ interface ComponentVerification {
 
 const createFailedVerdict = (component: AnalyzedComponent, error: unknown): ComponentVerdict => {
   const message = getErrorMessage(error).split("\n")[0] ?? "";
-  return {
-    ...createEmptyVerdict(component.analysis, component.model),
-    status: "mount-failed",
-    error: message,
-    mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
-  };
+  return toMountFailedVerdict(
+    createEmptyVerdict(component.analysis, component.model),
+    message,
+    error instanceof HarnessError ? error.failure : classifyMountError(message),
+  );
 };
 
 const verifyComponent = async (

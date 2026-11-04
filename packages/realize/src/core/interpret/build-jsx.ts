@@ -1,4 +1,5 @@
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
+import { mapConditionalLeaves } from "../values/conditional";
 import type { FunctionValue, JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types";
 
 interface JsxElementParts {
@@ -40,11 +41,7 @@ export const buildJsx = (
   renderedComponents: Set<string>,
 ): SymbolicValue => {
   if (tag.kind === "Conditional")
-    return {
-      ...tag,
-      consequent: buildJsx(tag.consequent, elementParts, renderedComponents),
-      alternate: buildJsx(tag.alternate, elementParts, renderedComponents),
-    };
+    return mapConditionalLeaves(tag, (leaf) => buildJsx(leaf, elementParts, renderedComponents));
   const jsxTag = getJsxTag(tag, elementParts);
   if (jsxTag.kind === "Component") renderedComponents.add(jsxTag.name);
   const renderPropChildren =

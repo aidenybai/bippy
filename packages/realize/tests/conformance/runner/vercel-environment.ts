@@ -14,6 +14,7 @@ import { gunzipSync } from "node:zlib";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
 import { z } from "zod";
+import { getCheckoutArguments } from "./checkout";
 import { parseCollectSummary } from "./collect-summary";
 import type { CollectSummary } from "./collect-summary";
 import { COMPONENT_BUDGET_MS, getSetupKey } from "./local-environment";
@@ -74,15 +75,6 @@ const ANALYZER_DEPENDENCIES = [
   "zod",
   "zod-validation-error",
 ];
-const CHECKOUT_SCRIPT = [
-  "set -euo pipefail",
-  'git init -q "$APP_DIRECTORY"',
-  'git -C "$APP_DIRECTORY" fetch -q --depth 1 "$REPOSITORY" "$REVISION"',
-  'git -C "$APP_DIRECTORY" checkout -q FETCH_HEAD',
-  'if [ -n "$PATCH_PATH" ]; then git -C "$APP_DIRECTORY" apply --whitespace=nowarn "$PATCH_PATH"; fi',
-  'cd "$APP_DIRECTORY"',
-  'bash -c "$INSTALL"',
-].join("\n");
 
 const getCredentials = (): Credentials => {
   const envFile = join(PACKAGE_DIRECTORY, ".env.local");
@@ -144,7 +136,9 @@ const getSnapshotKey = (repo: RepoConfig): string =>
 
 const listFiles = (path: string): string[] =>
   statSync(path).isDirectory()
-    ? readdirSync(path).flatMap((entry) => listFiles(join(path, entry)))
+    ? readdirSync(path, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => join(entry.parentPath, entry.name))
     : [path];
 
 const waitForCommand = async (
@@ -218,15 +212,13 @@ const installRepoAndBrowser = async (sandbox: Sandbox, repo: RepoConfig): Promis
     { path: `${ANALYZER_DIRECTORY}/package.json`, content: getAnalyzerPackageJson() },
     ...(repo.patchFile ? [{ path: PATCH_PATH, content: readFileSync(repo.patchFile) }] : []),
   ]);
-  await runStep(sandbox, "checkout and install", "bash", ["-c", CHECKOUT_SCRIPT], {
-    env: {
-      APP_DIRECTORY,
-      REPOSITORY: repo.repository,
-      REVISION: repo.revision,
-      PATCH_PATH: repo.patchFile ? PATCH_PATH : "",
-      INSTALL: repo.install,
-    },
-  });
+  await runStep(
+    sandbox,
+    "checkout",
+    "bash",
+    getCheckoutArguments(APP_DIRECTORY, { ...repo, patchFile: repo.patchFile && PATCH_PATH }),
+  );
+  await runStep(sandbox, "install", "bash", ["-c", repo.install], { cwd: APP_DIRECTORY });
   await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
     cwd: ANALYZER_DIRECTORY,
   });

@@ -9,6 +9,7 @@ import { markDispatchersIdle, watchHookCallers } from "../write-origins";
 import { captureMountedComponent, createEmptyCapture } from "./capture";
 import {
   Boundary,
+  createCaptureError,
   getDepthMarker,
   getRecordedError,
   recordCaughtError,
@@ -135,10 +136,11 @@ export const mount = async (request: MountRequest): Promise<Capture> => {
   resetMountState();
   const providersModule: ProvidersModule = await import(/* @vite-ignore */ PROVIDERS_PATH);
   if (request.scenario && !(await runScenario(request.scenario)))
-    return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
+    return createEmptyCapture(createCaptureError(`setup has no scenario ${request.scenario.name}`));
   const moduleExports = await importComponentModule(request.module);
   const componentType = moduleExports[request.exportName];
-  if (!componentType) return createEmptyCapture(`export ${request.exportName} not found`);
+  if (!componentType)
+    return createEmptyCapture(createCaptureError(`export ${request.exportName} not found`));
   const mounted: MountedComponent = {
     props: Object.fromEntries(
       Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
@@ -154,7 +156,7 @@ export const mount = async (request: MountRequest): Promise<Capture> => {
       await renderClientComponent(componentType, mounted);
     }
   } catch (error) {
-    return createEmptyCapture(recordError(error).message);
+    return createEmptyCapture(recordError(error));
   }
   return captureMountedComponent();
 };

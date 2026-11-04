@@ -1,5 +1,6 @@
 import { traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
+import type { Binding } from "@babel/traverse";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { PrimitiveValue, SymbolicValue } from "../types";
@@ -24,15 +25,7 @@ export interface ModuleDeclaration extends ModuleVariable {
   isReadOnly: boolean;
 }
 
-export interface ModuleDeclarationLoader {
-  (variableName: string): ModuleDeclaration | null;
-}
-
 export type ImportUse = "written" | "state" | "read";
-
-export interface ImportUseLoader {
-  (localName: string): ImportUse;
-}
 
 interface ImportedName {
   localName: string;
@@ -44,6 +37,13 @@ export interface ImportedNames {
   namespaceSources: SourceLocation[];
   reexportSources: SourceLocation[];
   isReadOnly: (localName: string, value: SymbolicValue) => boolean;
+}
+
+export interface ModuleValues {
+  declarations: Map<string, ModuleDeclaration>;
+  constants: Map<string, SymbolicValue>;
+  importUses: Map<string, ImportUse>;
+  importedNames: ImportedNames;
 }
 
 const allOrNone = <Item>(items: Array<Item | null>): Item[] | null => {
@@ -422,79 +422,125 @@ const isOnlyReadOfPrimitives = (references: NodePath[], value: SymbolicValue): b
     (reference) => isStateValueReference(reference) || isReadOfPrimitive(reference, [value], []),
   );
 
-export const createModuleDeclarationLoader = (ast: types.File): ModuleDeclarationLoader => {
+const getModuleDeclaration = (
+  path: NodePath<types.VariableDeclarator>,
+  kind: types.VariableDeclaration["kind"],
+  binding: Binding | undefined,
+  loc: SourceLocation,
+): ModuleDeclaration => {
+  const value = path.node.init ? toSymbolicValue(path.node.init) : null;
+  const isWritten =
+    binding !== undefined &&
+    (binding.constantViolations.length > 0 ||
+      binding.referencePaths.some(isMemberWrite) ||
+      getOwnThisPaths(path.get("init")).some(isMemberWrite) ||
+      (isLocalConstruction(path.get("init")) && binding.referencePaths.some(isMethodReceiver)) ||
+      (value !== null && isReadThroughState(binding.referencePaths, value)));
+  const isReadOnly =
+    kind === "const" &&
+    value !== null &&
+    binding !== undefined &&
+    binding.constantViolations.length === 0 &&
+    isOnlyReadOfPrimitives(
+      binding.referencePaths.filter((reference) => !reference.isExportNamedDeclaration()),
+      value,
+    );
+  return {
+    initial: path.node.init ? value : { kind: "Primitive", value: undefined },
+    loc,
+    isWritten,
+    isReadOnly,
+  };
+};
+
+const getModuleConstant = (
+  init: types.Expression,
+  isExported: boolean,
+  binding: Binding | undefined,
+): SymbolicValue | null => {
+  const value = toSymbolicValue(init);
+  if (!value) return null;
+  const isUnchanged =
+    isPrimitive(value) ||
+    (isStatelessRegExp(value) &&
+      binding !== undefined &&
+      binding.constantViolations.length === 0 &&
+      !binding.referencePaths.some(isMemberWrite)) ||
+    (!isExported &&
+      binding !== undefined &&
+      binding.constantViolations.length === 0 &&
+      isOnlyReadOfPrimitives(binding.referencePaths, value));
+  return isUnchanged ? value : null;
+};
+
+const collectModuleEnums = (
+  program: types.Program,
+  unsafeEnums: Set<string>,
+): Map<string, SymbolicValue> => {
+  const enums = new Map<string, SymbolicValue>();
+  for (const statement of program.body) {
+    const declaration = types.isExportNamedDeclaration(statement)
+      ? statement.declaration
+      : statement;
+    if (!types.isTSEnumDeclaration(declaration)) continue;
+    const name = declaration.id.name;
+    const value = getEnumObject(declaration);
+    if (value && !enums.has(name)) enums.set(name, value);
+    if (!value || enums.get(name) !== value) unsafeEnums.add(name);
+  }
+  return enums;
+};
+
+const isTypePosition = (path: NodePath<types.Identifier>): boolean =>
+  path.parentPath.isTSTypeReference() ||
+  path.parentPath.isTSQualifiedName() ||
+  path.parentPath.isTSEnumDeclaration({ id: path.node });
+
+export const collectModuleValues = (ast: types.File): ModuleValues => {
   const declarations = new Map<string, ModuleDeclaration>();
+  const constants = new Map<string, SymbolicValue>();
+  const importUses = new Map<string, ImportUse>();
+  const specifiers: ImportedName[] = [];
+  const namespaceSources: SourceLocation[] = [];
+  const reexportSources: SourceLocation[] = [];
+  const referencesByName = new Map<string, NodePath[]>();
+  const unsafeEnums = new Set<string>();
+  const enums = collectModuleEnums(ast.program, unsafeEnums);
   traverse(ast, {
     VariableDeclarator(path) {
       const declaration = path.parentPath;
       if (
         !declaration.isVariableDeclaration() ||
         !isModuleLevel(declaration.parentPath) ||
-        !types.isIdentifier(path.node.id) ||
-        !path.node.id.loc
+        !types.isIdentifier(path.node.id)
       )
         return;
-      const binding = path.scope.getBinding(path.node.id.name);
-      const value = path.node.init ? toSymbolicValue(path.node.init) : null;
-      const isWritten =
-        binding !== undefined &&
-        (binding.constantViolations.length > 0 ||
-          binding.referencePaths.some(isMemberWrite) ||
-          getOwnThisPaths(path.get("init")).some(isMemberWrite) ||
-          (isLocalConstruction(path.get("init")) &&
-            binding.referencePaths.some(isMethodReceiver)) ||
-          (value !== null && isReadThroughState(binding.referencePaths, value)));
-      const isReadOnly =
-        declaration.node.kind === "const" &&
-        value !== null &&
-        binding !== undefined &&
-        binding.constantViolations.length === 0 &&
-        isOnlyReadOfPrimitives(
-          binding.referencePaths.filter((reference) => !reference.isExportNamedDeclaration()),
-          value,
+      const name = path.node.id.name;
+      const binding = path.scope.getBinding(name);
+      const isExported = declaration.parentPath?.isExportNamedDeclaration() ?? false;
+      const constant =
+        declaration.node.kind === "const" && path.node.init
+          ? getModuleConstant(path.node.init, isExported, binding)
+          : null;
+      if (constant) constants.set(name, constant);
+      if (path.node.id.loc)
+        declarations.set(
+          name,
+          getModuleDeclaration(path, declaration.node.kind, binding, path.node.id.loc),
         );
-      declarations.set(path.node.id.name, {
-        initial: path.node.init ? value : { kind: "Primitive", value: undefined },
-        loc: path.node.id.loc,
-        isWritten,
-        isReadOnly,
-      });
     },
-  });
-  return (variableName) => declarations.get(variableName) ?? null;
-};
-
-export const createImportUseLoader = (ast: types.File): ImportUseLoader => {
-  const uses = new Map<string, ImportUse>();
-  traverse(ast, {
     ImportDeclaration(path) {
       for (const specifier of path.node.specifiers) {
-        const references = path.scope.getBinding(specifier.local.name)?.referencePaths ?? [];
-        if (references.some(isMemberWrite)) uses.set(specifier.local.name, "written");
+        const localName = specifier.local.name;
+        const references = path.scope.getBinding(localName)?.referencePaths ?? [];
+        if (references.some(isMemberWrite)) importUses.set(localName, "written");
         if (references.length > 0 && references.every(isStateValueReference))
-          uses.set(specifier.local.name, "state");
-      }
-    },
-  });
-  return (localName) => uses.get(localName) ?? "read";
-};
-
-export const collectImportedNames = (ast: types.File): ImportedNames => {
-  const specifiers: ImportedName[] = [];
-  const namespaceSources: SourceLocation[] = [];
-  const reexportSources: SourceLocation[] = [];
-  const referencesByName = new Map<string, NodePath[]>();
-  traverse(ast, {
-    ImportDeclaration(path) {
-      for (const specifier of path.node.specifiers) {
-        if (types.isImportNamespaceSpecifier(specifier) && path.node.source.loc)
-          namespaceSources.push(path.node.source.loc);
-        if (types.isImportNamespaceSpecifier(specifier) || !specifier.local.loc) continue;
-        specifiers.push({ localName: specifier.local.name, loc: specifier.local.loc });
-        referencesByName.set(
-          specifier.local.name,
-          path.scope.getBinding(specifier.local.name)?.referencePaths ?? [],
-        );
+          importUses.set(localName, "state");
+        const isNamespace = types.isImportNamespaceSpecifier(specifier);
+        if (isNamespace && path.node.source.loc) namespaceSources.push(path.node.source.loc);
+        if (isNamespace || !specifier.local.loc) continue;
+        specifiers.push({ localName, loc: specifier.local.loc });
+        referencesByName.set(localName, references);
       }
     },
     ExportNamedDeclaration(path) {
@@ -503,63 +549,14 @@ export const collectImportedNames = (ast: types.File): ImportedNames => {
     ExportAllDeclaration(path) {
       if (path.node.source.loc) reexportSources.push(path.node.source.loc);
     },
-  });
-  return {
-    specifiers,
-    namespaceSources,
-    reexportSources,
-    isReadOnly: (localName, value) =>
-      isOnlyReadOfPrimitives(referencesByName.get(localName) ?? [], value),
-  };
-};
-
-export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
-  const constants = new Map<string, SymbolicValue>();
-  const enums = new Map<string, SymbolicValue>();
-  const unsafeEnums = new Set<string>();
-  traverse(ast, {
-    VariableDeclarator(path) {
-      const declaration = path.parentPath;
-      if (
-        !declaration.isVariableDeclaration() ||
-        declaration.node.kind !== "const" ||
-        !isModuleLevel(declaration.parentPath) ||
-        !types.isIdentifier(path.node.id) ||
-        !path.node.init
-      )
-        return;
-      const value = toSymbolicValue(path.node.init);
-      if (!value) return;
-      const isExported = declaration.parentPath?.isExportNamedDeclaration() ?? false;
-      const binding = path.scope.getBinding(path.node.id.name);
-      const isUnchanged =
-        isPrimitive(value) ||
-        (isStatelessRegExp(value) &&
-          binding !== undefined &&
-          binding.constantViolations.length === 0 &&
-          !binding.referencePaths.some(isMemberWrite)) ||
-        (!isExported &&
-          binding !== undefined &&
-          binding.constantViolations.length === 0 &&
-          isOnlyReadOfPrimitives(binding.referencePaths, value));
-      if (isUnchanged) constants.set(path.node.id.name, value);
-    },
     TSEnumDeclaration(path) {
-      const value = isModuleLevel(path.parentPath) ? getEnumObject(path.node) : null;
-      if (value && !enums.has(path.node.id.name)) enums.set(path.node.id.name, value);
-      if (!value || enums.get(path.node.id.name) !== value) unsafeEnums.add(path.node.id.name);
+      if (!isModuleLevel(path.parentPath)) unsafeEnums.add(path.node.id.name);
     },
-  });
-  traverse(ast, {
     Identifier(path) {
       const value = enums.get(path.node.name);
-      const isTypePosition =
-        path.parentPath.isTSTypeReference() ||
-        path.parentPath.isTSQualifiedName() ||
-        path.parentPath.isTSEnumDeclaration({ id: path.node });
       if (
         !value ||
-        isTypePosition ||
+        isTypePosition(path) ||
         !path.isReferencedIdentifier() ||
         path.scope.hasBinding(path.node.name)
       )
@@ -568,5 +565,16 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
     },
   });
   for (const [name, value] of enums) if (!unsafeEnums.has(name)) constants.set(name, value);
-  return (constantName) => constants.get(constantName) ?? null;
+  return {
+    declarations,
+    constants,
+    importUses,
+    importedNames: {
+      specifiers,
+      namespaceSources,
+      reexportSources,
+      isReadOnly: (localName, value) =>
+        isOnlyReadOfPrimitives(referencesByName.get(localName) ?? [], value),
+    },
+  };
 };

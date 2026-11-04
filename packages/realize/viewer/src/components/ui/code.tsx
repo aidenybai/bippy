@@ -1,4 +1,4 @@
-import { useMemo, type ComponentProps, type CSSProperties } from "react";
+import type { ComponentProps, CSSProperties } from "react";
 import type { ThemedToken } from "@pierre/diffs";
 import { CODE_THEMES, useHighlighter } from "@/hooks/use-highlighter";
 import { cn } from "@/lib/utils";
@@ -20,13 +20,9 @@ const toStyle = (token: ThemedToken): ThemedStyle | undefined => {
 
 export const Code = ({ children, className, ...props }: CodeProps) => {
   const highlighter = useHighlighter();
-  const tokens = useMemo(
-    () =>
-      highlighter
-        .codeToTokens(children, { lang: "tsx", themes: CODE_THEMES, defaultColor: false })
-        .tokens.flat(),
-    [highlighter, children],
-  );
+  const tokens = highlighter
+    .codeToTokens(children, { lang: "tsx", themes: CODE_THEMES, defaultColor: false })
+    .tokens.flat();
   return (
     <code data-slot="code" className={cn("font-mono", className)} {...props}>
       {tokens.map((token, index) => (

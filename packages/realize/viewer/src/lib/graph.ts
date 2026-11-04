@@ -6,8 +6,6 @@ export interface GraphIndex {
   backward: Map<string, string[]>;
 }
 
-export const getComponentName = (nodeId: string): string => nodeId.slice(0, nodeId.indexOf("/"));
-
 export const hasInspectorContent = (view: ViewFile): boolean =>
   view.components.some(
     (component) => component.bindings.length > 0 || component.handlers.length > 0,
