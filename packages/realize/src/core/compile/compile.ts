@@ -17,21 +17,11 @@ import { isHookName } from "../../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../../react-compiler/HIR/HIR";
 import type { TypeConfig } from "../../react-compiler/HIR/TypeSchema";
 import type { ModuleFunctionLoader } from "./function-registry";
-import {
-  createModuleConstantLoader,
-  createModuleDeclarationLoader,
-  createImportUseLoader,
-  collectImportedNames,
-} from "./module-values";
-import type {
-  ModuleConstantLoader,
-  ModuleDeclarationLoader,
-  ModuleVariableLoader,
-  ImportUseLoader,
-  ImportedNames,
-} from "./module-values";
+import { collectModuleValues } from "./module-values";
+import type { ModuleValues } from "./module-values";
 import { getLocationKey } from "../shared/get-location-key";
-import { getClassName, isComponentBaseClass, lowerClassComponents } from "./lower-class-components";
+import { lowerClassComponents } from "./lower-class-components";
+import type { ClassComponent } from "./lower-class-components";
 import { isModuleLevel } from "./is-module-level";
 
 type BabelFunction = NodePath<
@@ -53,11 +43,7 @@ export interface CompiledFile {
   functions: CompiledFunction[];
   loadModuleFunction: ModuleFunctionLoader;
   lowerModuleFunction: ModuleFunctionLoader;
-  loadModuleConstant: ModuleConstantLoader;
-  loadModuleVariable: ModuleVariableLoader;
-  loadModuleDeclaration: ModuleDeclarationLoader;
-  loadImportUse: ImportUseLoader;
-  importedNames: ImportedNames;
+  moduleValues: ModuleValues;
   comparedComponents: ReadonlySet<string>;
 }
 
@@ -120,38 +106,29 @@ const EMPTY_COMPILED_FILE: Omit<CompiledFile, "parseError"> = {
   functions: [],
   loadModuleFunction: () => null,
   lowerModuleFunction: () => null,
-  loadModuleConstant: () => null,
-  loadModuleVariable: () => null,
-  loadModuleDeclaration: () => null,
-  loadImportUse: () => "read",
-  importedNames: {
-    specifiers: [],
-    namespaceSources: [],
-    reexportSources: [],
-    isReadOnly: () => false,
+  moduleValues: {
+    declarations: new Map(),
+    constants: new Map(),
+    importUses: new Map(),
+    importedNames: {
+      specifiers: [],
+      namespaceSources: [],
+      reexportSources: [],
+      isReadOnly: () => false,
+    },
   },
   comparedComponents: new Set(),
 };
 
-const collectClassComponents = (ast: types.File): CompiledFunction[] => {
-  const classComponents: CompiledFunction[] = [];
-  traverse(ast, {
-    Class(path) {
-      const name = getClassName(path);
-      if (!name || !path.node.loc || !isComponentBaseClass(path.node.superClass)) return;
-      classComponents.push({
-        name,
-        bindingName: name,
-        functionType: "Component",
-        loc: path.node.loc,
-        hir: null,
-        errors: [],
-        isClass: true,
-      });
-    },
-  });
-  return classComponents;
-};
+const toClassFunction = (component: ClassComponent): CompiledFunction => ({
+  name: component.name,
+  bindingName: component.name,
+  functionType: "Component",
+  loc: component.loc,
+  hir: null,
+  errors: [],
+  isClass: true,
+});
 
 const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFunction => {
   const isAtModuleScope =
@@ -377,7 +354,7 @@ export const compileFile = (
 ): CompiledFile => {
   const { ast, error } = parseFile(fileName, code);
   if (!ast) return { ...EMPTY_COMPILED_FILE, parseError: error };
-  lowerClassComponents(ast);
+  const classComponents = lowerClassComponents(ast);
   const collector = new CompiledFunctionCollector();
   const pluginOptions = createPluginOptions(environment, {
     logEvent: collector.recordEvent,
@@ -385,23 +362,15 @@ export const compileFile = (
   });
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
-  const loadModuleDeclaration = createModuleDeclarationLoader(ast);
   return {
     parseError: null,
     functions: [
       ...collector.getFunctions(programFunctions.namesByLocation),
-      ...collectClassComponents(ast),
+      ...classComponents.map(toClassFunction),
     ],
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
-    loadModuleConstant: createModuleConstantLoader(ast),
-    loadModuleVariable: (variableName) => {
-      const declaration = loadModuleDeclaration(variableName);
-      return declaration?.isWritten ? declaration : null;
-    },
-    loadModuleDeclaration,
-    loadImportUse: createImportUseLoader(ast),
-    importedNames: collectImportedNames(ast),
+    moduleValues: collectModuleValues(ast),
     comparedComponents: programFunctions.comparedComponents,
   };
 };

@@ -3,6 +3,7 @@ import { getValueLabels } from "./domains";
 import { forEachRenderNode } from "../render/for-each-render-node";
 import { forEachSymbolicValue } from "../values/for-each-symbolic-value";
 import { getTestExpression } from "../values/get-test-expression";
+import { collectBindingIds, getInputClosure } from "../shared/binding-graph";
 import { foldBinary } from "../values/symbolic-values";
 import { isComparison } from "../values/comparison";
 import { compileHandlerActions, compileInputActions } from "./actions";
@@ -86,21 +87,8 @@ const collectTests = (
   return tests;
 };
 
-const collectDisplayedBindingIds = (analysis: ComponentAnalysis): Set<number> => {
-  const ids = new Set<number>();
-  forEachSymbolicValue(analysis.render, (node) => {
-    if (node.kind === "Binding") ids.add(node.binding.id);
-  });
-  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
-  const pending = [...ids];
-  for (let id = pending.pop(); id !== undefined; id = pending.pop())
-    for (const place of bindingsById.get(id)?.inputPlaces ?? [])
-      if (!ids.has(place.bindingId)) {
-        ids.add(place.bindingId);
-        pending.push(place.bindingId);
-      }
-  return ids;
-};
+const collectDisplayedBindingIds = (analysis: ComponentAnalysis): Set<number> =>
+  getInputClosure(analysis.bindings, collectBindingIds([analysis.render]));
 
 const withDerivedWrites = (action: Action, derivedVariables: Variable[]): Action => {
   const writtenVariables = new Set(action.writes.map((write) => write.variable));

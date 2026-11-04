@@ -17,6 +17,7 @@ import { getValuePlace } from "../values/get-value-place";
 import { PlaceMap } from "../values/place-map";
 import { FLIPPED, isComparison, type Comparison } from "../values/comparison";
 import { compareAbstract, compareAbstracts, getAbstractTruthiness } from "./abstract";
+import { getInputClosure } from "../shared/binding-graph";
 import { createDomain, getValueLabels, type PlaceTests } from "./domains";
 import { FALSE, TRUE, and, inValues, not, or } from "./predicates";
 import type { Abstract, Predicate, Value, Variable, VariableSource } from "./types";
@@ -136,16 +137,12 @@ const hasCountedLength = (receiver: Domain | null): boolean => {
   );
 };
 
-const getInputBindingIds = (binding: Binding, bindingsById: Map<number, Binding>): number[] => {
-  const ids = new Set<number>();
-  const pending = binding.inputPlaces.map((place) => place.bindingId);
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    if (ids.has(id)) continue;
-    ids.add(id);
-    for (const place of bindingsById.get(id)?.inputPlaces ?? []) pending.push(place.bindingId);
-  }
-  return [...ids];
-};
+const getInputBindingIds = (binding: Binding, bindings: Binding[]): number[] => [
+  ...getInputClosure(
+    bindings,
+    binding.inputPlaces.map((place) => place.bindingId),
+  ),
+];
 
 const shareLiterals = (relations: Array<[PlaceTests, PlaceTests]>): void => {
   for (let isGrowing = true; isGrowing;) {
@@ -255,7 +252,6 @@ export const createVariableTable = (
 
   const getPlaceDomain = (bindingId: number, path: string[]): Domain | null =>
     analysis.placeDomains.get({ bindingId, path }) ?? null;
-  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
 
   const attachedRefIds = getAttachedRefIds(analysis);
   for (const [place, tests] of testsByPlace) {
@@ -277,7 +273,7 @@ export const createVariableTable = (
       source: getVariableSource(binding),
       bindingKind: binding.kind,
       bindingId,
-      inputBindingIds: getInputBindingIds(binding, bindingsById),
+      inputBindingIds: getInputBindingIds(binding, analysis.bindings),
       path,
       domain: values,
       initial: getValueLabels(values),
