@@ -15,7 +15,7 @@ import { isDependencyDeclared, resolvePackageDirectory } from "./harness/package
 import { createProvidersSource, getInstalledProviders } from "./harness/providers";
 import type { ProviderSpec } from "./harness/providers";
 import type { HarnessSetup } from "./harness/setup";
-import { collectSourceReferences, indexSource } from "./harness/source-references";
+import { indexSource } from "./harness/source-references";
 import { createTypeReexportPlugin } from "./harness/type-exports";
 import type { SourceReferences } from "./harness/source-references";
 import {
@@ -217,7 +217,7 @@ const createHarnessPlugins = (
     ...(context.nextDirectory ? [createNextImagePlugin()] : []),
     createJsxInScriptPlugin(),
     createServerActionPlugin(),
-    createTypeReexportPlugin(),
+    createTypeReexportPlugin(context.references.summaries),
     createLocalExportPlugin(context.localNamesByFile),
     createCommonJsPlugin(),
     createRequirePlugin(),
@@ -292,10 +292,10 @@ export const startHarness = async (
   counters: Counter[],
   componentFiles: string[],
   setup: HarnessSetup,
+  references: SourceReferences,
   localNamesByFile: Map<string, string[]>,
 ): Promise<Harness> => {
   const nextDirectory = resolvePackageDirectory(appDirectory, "next");
-  const references = collectSourceReferences(appDirectory);
   const context: HarnessContext = {
     appDirectory,
     nextDirectory,

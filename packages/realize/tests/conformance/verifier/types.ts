@@ -116,6 +116,14 @@ export interface ModuleExport {
   exportName: string;
 }
 
+export interface ModuleSummary {
+  exports: ModuleExport[];
+  imports: PackageImport[];
+  localNames: Set<string>;
+  typeOnlyExports: Set<string>;
+  storeExportName: string | null;
+}
+
 export interface AliasResolver {
   (specifier: string, importer: string): Promise<string | null>;
 }

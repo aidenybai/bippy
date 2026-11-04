@@ -1,23 +1,15 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { getTopLevelNames, toLocalExportName } from "../conformance/verifier/harness/local-exports";
-
-const writeSource = (source: string): string => {
-  const file = join(mkdtempSync(join(tmpdir(), "local-exports-")), "panel.tsx");
-  writeFileSync(file, source);
-  return file;
-};
+import { toLocalExportName } from "../conformance/verifier/harness/local-exports";
+import { summarizeModule } from "../conformance/verifier/source-index";
 
 describe("local exports", () => {
   it("lists only names declared at the top of a module", () => {
-    const file = writeSource(`
+    const summary = summarizeModule(`
       const Header = () => <h1>Title</h1>;
       function Footer() { const Inner = () => null; return <Inner />; }
       export const Panel = () => <Header />;
     `);
-    expect([...getTopLevelNames(file)].sort()).toEqual(["Footer", "Header"]);
+    expect([...summary.localNames].sort()).toEqual(["Footer", "Header"]);
   });
 
   it("gives each local component an export name no module would choose", () => {
