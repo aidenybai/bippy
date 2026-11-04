@@ -10,7 +10,13 @@ export const SameValueStep = ({ label }: { label?: string }) => {
   };
   return (
     <div>
-      {count === 2 ? <p>{isStarted ? "two" : "idle"}</p> : label ? <em>{label}</em> : <span>{count}</span>}
+      {count === 2 ? (
+        <p>{isStarted ? "two" : "idle"}</p>
+      ) : label ? (
+        <em>{label}</em>
+      ) : (
+        <span>{count}</span>
+      )}
       <button onClick={handleStep}>step</button>
     </div>
   );
