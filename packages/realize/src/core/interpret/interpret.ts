@@ -1,5 +1,4 @@
 import type {
-  BlockId,
   HIRFunction,
   IdentifierId,
   Instruction,
@@ -8,24 +7,19 @@ import type {
   Place,
   SourceLocation,
 } from "../../react-compiler/HIR/HIR";
-import { addsCallResult } from "./adds-call-result";
-import {
-  GeneratedSource,
-  InstructionKind,
-  SETTER_KEY_PREFIX,
-  getHookKind,
-} from "../../react-compiler/HIR/HIR";
+import { GeneratedSource, SETTER_KEY_PREFIX, getHookKind } from "../../react-compiler/HIR/HIR";
 import type { HookKind } from "../../react-compiler/HIR/ObjectShape";
+import { eachCallArgument } from "../../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "../type-checker/source-file-resolver";
-import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
+import { ArrayIteration } from "./array-iteration";
+import { isBuiltinMethod } from "./builtin-methods";
 import { CallbackPasser } from "./callback-passer";
 import { AssertionRecorder } from "./assertion-recorder";
 import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MemoStaleness } from "./memo-staleness";
 import { MutationTracker } from "./mutation-tracker";
-import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_PATH_STATE, getAsyncPathState } from "./path-state";
 import type { PathState } from "./path-state";
 import type {
@@ -70,22 +64,18 @@ import { getLocationKey } from "../shared/get-location-key";
 import { getPropertyKeyForms } from "./get-property-key-forms";
 import { getDomainPrimitive, isEnumerated } from "../type-checker/domains";
 import { isRefOnlyRead } from "./is-ref-only-read";
-import { applyStringMethod, isStringMethod } from "../interpret/string-methods";
-import {
-  applyCollectionMethod,
-  getCollectionSize,
-  isCollectionRead,
-} from "../interpret/literal-receivers";
+import { applyStringMethod } from "./string-methods";
+import { applyCollectionMethod, getCollectionSize } from "../interpret/literal-receivers";
 import { getValueKey } from "../values/get-value-key";
 import { getValuePlace } from "../values/get-value-place";
-import { getLiteralRead } from "./literal-reads";
+import { getLiteralRead, readObjectEntries } from "./literal-reads";
+import { isArrayIndex } from "./is-array-index";
 import { isStatelessRegExp } from "./is-stateless-regexp";
 import { isExternalSource } from "../handlers/is-external-source";
 import { isNullish } from "../values/is-nullish";
 import { isPlacePrefix } from "../values/is-place-prefix";
-import { getTestExpression } from "../values/get-test-expression";
-import { coerceBooleanCall } from "./coerce-boolean-call";
 import { negate } from "../values/negate";
+import { forkConditional, getConditionalLeaves, mapConditionalLeaves } from "../values/conditional";
 import {
   EMPTY_STRING_VALUE,
   ONE_VALUE,
@@ -124,17 +114,9 @@ import type { CapturedValue, ModuleFunctionLoader } from "../compile/function-re
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./get-identifier-name";
 import { getPlaceOrSpread } from "./get-place-or-spread";
-import {
-  getStoredContextPlaces,
-  getReassignedIds,
-  getWrittenContextPlaces,
-} from "./get-written-context-places";
 import { getHookTraits } from "./hook-traits";
-
-const LOOP_KINDS = new Set(["for", "for-of", "for-in", "while", "do-while"]);
-
-const hasLoop = (hirFunction: HIRFunction): boolean =>
-  [...hirFunction.body.blocks.values()].some((block) => LOOP_KINDS.has(block.terminal.kind));
+import { buildEnvironmentFacts, buildFunctionFacts } from "./function-facts";
+import type { EnvironmentFacts, FunctionFacts } from "./function-facts";
 
 const flattenArrayChildren = (children: SymbolicValue[]): SymbolicValue[] =>
   children.flatMap((child) =>
@@ -151,7 +133,36 @@ const dedupeByValueKey = (values: SymbolicValue[]): SymbolicValue[] => [
 ];
 
 const isSameValueZero = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
-  left === right || (Number.isNaN(left) && Number.isNaN(right));
+  [left].includes(right);
+
+const coerceBooleanCall = (
+  callee: SymbolicValue,
+  argumentValues: SymbolicValue[],
+): SymbolicValue | null => {
+  const [argument] = argumentValues;
+  const isBooleanCall =
+    callee.kind === "Global" && callee.name === "Boolean" && callee.module === null;
+  if (!isBooleanCall || !argument || argumentValues.length !== 1) return null;
+  return {
+    kind: "UnaryExpression",
+    operator: "!",
+    value: { kind: "UnaryExpression", operator: "!", value: argument },
+  };
+};
+
+const collectCallBindingIds = (values: SymbolicValue[]): Set<number> => {
+  const bindingIds = new Set<number>();
+  for (const value of values)
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding" && part.binding.kind === "call") bindingIds.add(part.binding.id);
+    });
+  return bindingIds;
+};
+
+const addsCallResult = (value: SymbolicValue, argumentValues: SymbolicValue[]): boolean => {
+  const argumentCallIds = collectCallBindingIds(argumentValues);
+  return [...collectCallBindingIds([value])].some((bindingId) => !argumentCallIds.has(bindingId));
+};
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
@@ -182,13 +193,10 @@ export interface CallSite {
 
 interface CompilationTables {
   values: Map<IdentifierId, SymbolicValue>;
-  propertyNames: Map<IdentifierId, string>;
-  propertyObjects: Map<IdentifierId, Place>;
-  branchOperators: Map<BlockId, BranchOperator>;
   aliasSources: Map<IdentifierId, Place>;
   elementSources: Map<IdentifierId, Place>;
   frozenSources: Map<IdentifierId, Place>;
-  itemSources: Map<IdentifierId, Place>;
+  facts: EnvironmentFacts;
 }
 
 type CallTarget =
@@ -230,8 +238,6 @@ export interface ProjectLoaders {
 const BOUND_RECEIVERS = new Set<string>([...CALLABLE_KINDS, "Binding", "Conditional"]);
 
 const MAX_INLINE_DEPTH = 4;
-const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-const LENGTH_LIMITING_METHODS = new Set(["filter", "slice", "toReversed", "toSorted", "with"]);
 
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
@@ -261,11 +267,6 @@ const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
 const isBuiltinMember = (property: string): boolean =>
   property in Array.prototype || property in Object.prototype;
 
-const hasLiteralArrayLeaf = (value: SymbolicValue): boolean =>
-  value.kind === "Conditional"
-    ? hasLiteralArrayLeaf(value.consequent) || hasLiteralArrayLeaf(value.alternate)
-    : value.kind === "ArrayExpression";
-
 const getInvokedArguments = (
   methodName: string,
   argumentValues: SymbolicValue[],
@@ -293,8 +294,6 @@ const BUILTIN_MUTATORS = new Set([
 
 const PROTOTYPE_MUTATOR_CALL =
   /^Array\.prototype\.(push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin)\.(call|apply)$/;
-
-const BINDING_OBJECT_READS = new Set(["keys", "values", "entries"]);
 
 const getLiteralPathValue = (value: SymbolicValue | null, path: string[]): SymbolicValue | null => {
   const [key, ...rest] = path;
@@ -337,18 +336,7 @@ const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
       ? target.hirFunction.id
       : null;
 
-const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
-
-const getContextCellKey = (place: Place): string => `context:${place.identifier.id}`;
-
 const MAX_CALL_NAME_LENGTH = 200;
-
-const CONSTANT_DECLARATION_KINDS = new Set([
-  InstructionKind.Const,
-  InstructionKind.HoistedConst,
-  InstructionKind.Function,
-  InstructionKind.HoistedFunction,
-]);
 
 const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
   object.kind === "Binding" &&
@@ -362,11 +350,9 @@ const getArrayLiteralMember = (
   loc: SourceLocation,
 ): SymbolicValue => {
   if (property === "length") return { kind: "Primitive", value: array.elements.length };
-  const index = Number(property);
-  const isArrayIndex = Number.isInteger(index) && index >= 0 && String(index) === property;
-  if (!isArrayIndex)
+  if (!isArrayIndex(property))
     return createUnknown("member", loc, { kind: "Member", object: array, property });
-  return array.elements[index] ?? UNDEFINED_VALUE;
+  return array.elements[Number(property)] ?? UNDEFINED_VALUE;
 };
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
@@ -381,29 +367,13 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
   };
 };
 
-const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
-  if (value.kind === "Conditional")
-    return [...getReturnedFunctions(value.consequent), ...getReturnedFunctions(value.alternate)];
-  return value.kind === "Function" ? [value] : [];
-};
-
-const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
-
-const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
-
 const nameUnknownArgument = (argument: SymbolicValue, name: string | null): SymbolicValue =>
   argument.kind === "Unknown" && !argument.origin && name !== null
     ? { ...argument, origin: { kind: "Name", name } }
     : argument;
 
-const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null => {
-  if (object.kind === "Conditional")
-    return (
-      getSetterAccessor(object.consequent, property) ??
-      getSetterAccessor(object.alternate, property)
-    );
-  const literal =
-    object.kind === "Binding" && object.path.length === 0 ? object.binding.initial : object;
+const getLeafSetter = (leaf: SymbolicValue, property: string): FunctionValue | null => {
+  const literal = leaf.kind === "Binding" && leaf.path.length === 0 ? leaf.binding.initial : leaf;
   const setter =
     literal?.kind === "ObjectExpression"
       ? literal.properties.find((candidate) => candidate.key === `${SETTER_KEY_PREFIX}${property}`)
@@ -412,12 +382,15 @@ const getSetterAccessor = (object: SymbolicValue, property: string): FunctionVal
   return setter?.kind === "Function" ? setter : null;
 };
 
+const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null =>
+  getConditionalLeaves(object)
+    .map((leaf) => getLeafSetter(leaf, property))
+    .find((setter) => setter !== null) ?? null;
+
 const getStoredLabel = (value: BindingValue): string =>
   `${formatPlace(value.binding, value.path)}@${value.binding.id}`;
 
 const ARRAY_INDEX_PATTERN = /^\d+$/;
-
-const REF_CONTAINER_WRITES = new Set(["push", "unshift", "add", "set"]);
 
 const isRefContents = (value: BindingValue): boolean =>
   value.binding.kind === "ref" && value.path[0] === "current";
@@ -467,10 +440,9 @@ export class Interpreter {
   readonly #projectLoaders: ProjectLoaders;
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
-  readonly #constantContextIds = new Set<IdentifierId>();
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
-  readonly #itemSources = new Map<number, PlaceMap<true>>();
+  readonly #itemSources: PlaceMap<true>[] = [];
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -493,24 +465,25 @@ export class Interpreter {
     this.warn(kind, message, loc),
   );
   readonly renderedComponents = new Set<string>();
-  readonly #renderMutatedIds = new Set<number>();
+  readonly #isRenderMutated: boolean[] = [];
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #importDeclarationKeys = new WeakMap<SymbolicValue, string>();
-  readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
-  readonly #sourcesByBinding = new Map<number, SymbolicValue[]>();
+  readonly #wrappedCallbacksByBinding: SymbolicValue[][] = [];
+  readonly #sourcesByBinding: SymbolicValue[][] = [];
   readonly #unknownSources = new WeakMap<SymbolicValue, SymbolicValue[]>();
   readonly #unknownSourceKeys = new WeakMap<SymbolicValue, Set<string>>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
+  #currentFacts: FunctionFacts | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #thisValues = new Map<HIRFunction, SymbolicValue>();
   readonly #mountClosureIds = new Set<number>();
   readonly #storedFunctions = new PlaceMap<SymbolicValue[]>();
   #storedFunctionCount = 0;
   readonly #frameClosureIds: number[][] = [];
-  readonly #bindingScopes: string[] = [];
+  #bindingScope = "";
 
   constructor(
     resolver: SourceFileResolver,
@@ -548,7 +521,7 @@ export class Interpreter {
   }
 
   markRenderMutation(binding: Binding): void {
-    this.#renderMutatedIds.add(binding.id);
+    this.#isRenderMutated[binding.id] = true;
   }
 
   finishRenderPhaseEffects(): CollectedEffects {
@@ -587,7 +560,9 @@ export class Interpreter {
               this.#runCallback(handlerCallback, argumentValues, new Set(), pathState),
             )
           : null;
-        const cleanups = returned ? getReturnedFunctions(returned) : [];
+        const cleanups = returned
+          ? getConditionalLeaves(returned).filter((leaf) => leaf.kind === "Function")
+          : [];
         const updateCountBeforeCleanup = handlerEffects.updateCount;
         const cleanupPathState =
           returned?.kind === "Function"
@@ -661,10 +636,9 @@ export class Interpreter {
     const capturedValues = isCreatingFrameActive
       ? []
       : this.functions.getCapturedValues(functionId);
-    const hirFunction = functionId === null ? undefined : this.functions.get(functionId);
     const writtenPlaces =
-      this.#handlerEffects && hirFunction && !isCreatingFrameActive
-        ? getStoredContextPlaces(hirFunction)
+      this.#handlerEffects && functionId !== null && !isCreatingFrameActive
+        ? this.functions.getFacts(functionId).capturedContextStores
         : [];
     const liveValues = [...capturedValues.map(([place]) => place), ...writtenPlaces].map(
       (place): CapturedValue => [place, this.read(place)],
@@ -688,17 +662,18 @@ export class Interpreter {
     options: InterpreterBindingOptions = {},
   ): Binding {
     return this.bindingTable.createBinding(options.resolver ?? this.#resolver, name, kind, loc, {
-      scope: this.#bindingScopes.join(">"),
+      scope: this.#bindingScope,
       ...options,
     });
   }
 
   withBindingScope<Result>(scope: string, run: () => Result): Result {
-    this.#bindingScopes.push(scope);
+    const outerScope = this.#bindingScope;
+    this.#bindingScope = outerScope === "" ? scope : `${outerScope}>${scope}`;
     try {
       return run();
     } finally {
-      this.#bindingScopes.pop();
+      this.#bindingScope = outerScope;
     }
   }
 
@@ -709,13 +684,10 @@ export class Interpreter {
   getCompilationTables(hirFunction: HIRFunction = this.getCurrentFunction()): CompilationTables {
     const compilationTables = this.#tablesByEnvironment.get(hirFunction.env) ?? {
       values: new Map(),
-      propertyNames: new Map(),
-      propertyObjects: new Map(),
-      branchOperators: new Map(),
       aliasSources: new Map(),
       elementSources: new Map(),
       frozenSources: new Map(),
-      itemSources: new Map(),
+      facts: buildEnvironmentFacts(hirFunction),
     };
     this.#tablesByEnvironment.set(hirFunction.env, compilationTables);
     return compilationTables;
@@ -762,7 +734,7 @@ export class Interpreter {
   ): SymbolicValue {
     switch (object.kind) {
       case "Binding":
-        return this.#renderMutatedIds.has(object.binding.id) && !this.#handlerEffects
+        return this.#isRenderMutated[object.binding.id] && !this.#handlerEffects
           ? createUnknown("mutated", loc)
           : this.readField(object.binding, [...object.path, property], loc);
       case "Props":
@@ -888,13 +860,13 @@ export class Interpreter {
   }
 
   getItemSources(item: Binding): PlaceMap<true> | undefined {
-    return this.#itemSources.get(item.id);
+    return this.#itemSources[item.id];
   }
 
   addItemSource(item: Binding, array: SymbolicValue): void {
-    const sources = this.#itemSources.get(item.id) ?? new PlaceMap<true>();
+    const sources = this.#itemSources[item.id] ?? new PlaceMap<true>();
     this.collectInputPlaces(array, sources);
-    this.#itemSources.set(item.id, sources);
+    this.#itemSources[item.id] = sources;
   }
 
   addMountClosure(closure: FunctionValue): void {
@@ -906,22 +878,19 @@ export class Interpreter {
   }
 
   addStoredFunctions(place: BindingValue, value: SymbolicValue, isMountClosure = true): void {
-    if (value.kind === "Conditional") {
-      this.addStoredFunctions(place, value.consequent, isMountClosure);
-      this.addStoredFunctions(place, value.alternate, isMountClosure);
-      return;
+    for (const leaf of getConditionalLeaves(value)) {
+      if (leaf.kind !== "ObjectExpression") {
+        this.#addStoredValues(place, leaf, isMountClosure);
+        continue;
+      }
+      for (const property of leaf.properties)
+        this.addStoredFunctions(
+          { ...place, path: [...place.path, property.key] },
+          property.value,
+          isMountClosure,
+        );
+      for (const spread of leaf.spreads) this.#addStoredValues(place, spread, isMountClosure);
     }
-    if (value.kind !== "ObjectExpression") {
-      this.#addStoredValues(place, value, isMountClosure);
-      return;
-    }
-    for (const property of value.properties)
-      this.addStoredFunctions(
-        { ...place, path: [...place.path, property.key] },
-        property.value,
-        isMountClosure,
-      );
-    for (const spread of value.spreads) this.#addStoredValues(place, spread, isMountClosure);
   }
 
   #addStoredValues(place: BindingValue, value: SymbolicValue, isMountClosure: boolean): void {
@@ -1109,7 +1078,7 @@ export class Interpreter {
   ): SymbolicValue {
     const updaterValue = setterArgument && this.resolveModuleFunction(setterArgument);
     if (updaterValue?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
-    const reassignedIds = getReassignedIds(this.getCurrentFunction());
+    const reassignedIds = this.currentFacts.reassignedIds;
     const updater = this.functions.get(updaterValue.functionId);
     return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
       ? createUnknown("deferred-updater", loc)
@@ -1321,18 +1290,13 @@ export class Interpreter {
           callSite.thisValue ?? callSite.receiver,
         );
       case "Conditional": {
-        const test = getTestExpression(callee);
-        return {
-          ...callee,
-          consequent: this.#evaluateCall(
-            { ...callSite, callee: callee.consequent },
-            { ...pathState, guards: [...pathState.guards, test] },
-          ),
-          alternate: this.#evaluateCall(
-            { ...callSite, callee: callee.alternate },
-            { ...pathState, guards: [...pathState.guards, negate(test)] },
-          ),
-        };
+        const [consequent, alternate] = forkConditional(
+          callee,
+          pathState.guards,
+          (branch, guards) =>
+            this.#evaluateCall({ ...callSite, callee: branch }, { ...pathState, guards }),
+        );
+        return { ...callee, consequent, alternate };
       }
       case "Setter":
         this.#applySetter(callee, firstArgument, pathState);
@@ -1392,7 +1356,7 @@ export class Interpreter {
       this.#handlerEffects &&
       callee.kind === "Unknown" &&
       callee.origin?.kind === "Member" &&
-      ITERATION_METHODS.has(callee.origin.property)
+      isBuiltinMethod(callee.origin.property, "iteration")
         ? callee.origin.object
         : null;
     const [callback] = callSite.argumentValues;
@@ -1433,12 +1397,15 @@ export class Interpreter {
     const helper = callSite.argumentValues.some(isCallableValue)
       ? null
       : this.#loadUnmutatingHelper(callSite);
-    const returned = helper && this.#inlineFunction(helper.hirFunction, callSite, pathState);
+    const helperClosure = helper && this.functions.register(helper.hirFunction, this.#resolver);
+    const returned =
+      helperClosure &&
+      this.callFunction(helperClosure, callSite.argumentValues, callSite.loc, pathState);
     const initial = returned && !hasUnknownPart(returned) ? returned : null;
     if (
-      helper &&
+      helperClosure &&
       initial &&
-      !hasLoop(helper.hirFunction) &&
+      !this.functions.getFacts(helperClosure.functionId).hasLoop &&
       !addsCallResult(initial, callSite.argumentValues)
     )
       return initial;
@@ -1448,7 +1415,7 @@ export class Interpreter {
     const wrapped = isExternalWrapper ? [callee, ...callbacks] : callbacks;
     if (callbacks.length > 0) this.#wrappedCallbacks.set(result, wrapped);
     if (callbacks.length > 0 && result.kind === "Binding")
-      this.#wrappedCallbacksByBinding.set(result.binding.id, wrapped);
+      this.#wrappedCallbacksByBinding[result.binding.id] = wrapped;
     return result;
   }
 
@@ -1473,15 +1440,15 @@ export class Interpreter {
   carryWrappedCallbacks(binding: Binding, value: SymbolicValue): void {
     const callbacks = this.#wrappedCallbacks.get(value);
     if (!callbacks) return;
-    this.#wrappedCallbacksByBinding.set(
-      binding.id,
-      dedupeByValueKey([...(this.#wrappedCallbacksByBinding.get(binding.id) ?? []), ...callbacks]),
-    );
+    this.#wrappedCallbacksByBinding[binding.id] = dedupeByValueKey([
+      ...(this.#wrappedCallbacksByBinding[binding.id] ?? []),
+      ...callbacks,
+    ]);
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
     const byBinding =
-      value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
+      value.kind === "Binding" ? this.#wrappedCallbacksByBinding[value.binding.id] : undefined;
     return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
   }
 
@@ -1501,7 +1468,7 @@ export class Interpreter {
       const member = callee.path.at(-1);
       const isElement = member === undefined || !isBuiltinMember(member);
       return isElement
-        ? this.getSourceFunctions(this.#sourcesByBinding.get(callee.binding.id) ?? [])
+        ? this.getSourceFunctions(this.#sourcesByBinding[callee.binding.id] ?? [])
         : [];
     }
     if (callee.kind !== "Unknown") return [];
@@ -1546,11 +1513,11 @@ export class Interpreter {
         case "Binding": {
           if (seen.has(value.binding.id)) return [];
           seen.add(value.binding.id);
-          const sources = this.#sourcesByBinding.get(value.binding.id) ?? [];
+          const sources = this.#sourcesByBinding[value.binding.id] ?? [];
           const initial = value.binding.initial ? [value.binding.initial] : [];
           const passed =
             value.binding.kind === "call"
-              ? (this.#wrappedCallbacksByBinding.get(value.binding.id) ?? [])
+              ? (this.#wrappedCallbacksByBinding[value.binding.id] ?? [])
               : [];
           return this.getSourceFunctions(
             [...sources, ...initial, ...passed, ...this.getStoredFunctions(value)],
@@ -1591,7 +1558,7 @@ export class Interpreter {
       const hirFunction = this.functions.get(callback.functionId);
       if (!hirFunction) continue;
       const { values } = this.getCompilationTables(hirFunction);
-      for (const place of getStoredContextPlaces(hirFunction))
+      for (const place of this.functions.getFacts(callback.functionId).capturedContextStores)
         values.set(place.identifier.id, createUnknown("handler-write", callback.loc));
     }
   }
@@ -1599,8 +1566,7 @@ export class Interpreter {
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
     for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
-      const hirFunction = this.functions.get(callback.functionId);
-      for (const place of hirFunction ? getWrittenContextPlaces(hirFunction) : [])
+      for (const place of this.functions.getFacts(callback.functionId).capturedContextWrites)
         this.write(place, createUnknown("callback-write", loc));
     }
   }
@@ -1730,7 +1696,7 @@ export class Interpreter {
     const binding = this.createBinding(sourceText, "call", loc, {
       inputPlaces: inputPlaces.places(),
     });
-    this.#sourcesByBinding.set(binding.id, sourceValues);
+    this.#sourcesByBinding[binding.id] = sourceValues;
     return createBindingValue(binding);
   }
 
@@ -1769,7 +1735,7 @@ export class Interpreter {
       options.isDerived ||
       options.pureCall !== undefined ||
       (methodName !== undefined &&
-        LENGTH_LIMITING_METHODS.has(methodName) &&
+        isBuiltinMethod(methodName, "lengthLimiting") &&
         this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc));
     const hasFiniteResult = isEnumerated(this.#resolver.getDomain(callSite.loc));
     if (!isDerivedResult && !initial && inputPlaces.size === 0 && !hasFiniteResult) {
@@ -1814,10 +1780,9 @@ export class Interpreter {
         ...(domain && { domain }),
       },
     );
-    this.#sourcesByBinding.set(
-      binding.id,
-      callSite.receiver ? [callSite.callee, callSite.receiver] : [callSite.callee],
-    );
+    this.#sourcesByBinding[binding.id] = callSite.receiver
+      ? [callSite.callee, callSite.receiver]
+      : [callSite.callee];
     return createBindingValue(binding);
   }
 
@@ -1965,14 +1930,14 @@ export class Interpreter {
     if (!this.#handlerEffects || receiver.kind !== "Binding")
       return this.#evaluateMethodResult(methodCall, pathState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
-    const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
-    if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
+    const argumentValues = [...eachCallArgument(methodCall.args)].map((place) => this.read(place));
+    if (isRefContents(receiver) && isBuiltinMethod(methodName, "refContainerWrite"))
       for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
     if (isRefContents(receiver) && receiver.path.length === 1)
       this.#dispatchRefEvent(receiver.binding, methodName, pathState);
     const storedFunctions = this.getStoredFunctions(receiver);
     const [callback] = argumentValues;
-    if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
+    if (isBuiltinMethod(methodName, "iteration") && callback?.kind === "Function")
       this.#callStoredItems(
         callback,
         [...storedFunctions, ...this.#getCalledSourceFunctions(receiver)],
@@ -1982,7 +1947,7 @@ export class Interpreter {
         pathState,
       );
     const result = this.#evaluateMethodResult(methodCall, pathState);
-    if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
+    if (isBuiltinMethod(methodName, "storedItemRead") && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
   }
@@ -2006,10 +1971,10 @@ export class Interpreter {
   ): BindingValue | null {
     if (!this.#handlerEffects || this.getPropertyName(methodCall.property) !== "values")
       return null;
-    const [argument] = methodCall.args;
+    const [argumentPlace] = eachCallArgument(methodCall.args);
     const isObjectValues =
       receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
-    const container = isObjectValues && argument ? this.read(getPlaceOrSpread(argument)) : receiver;
+    const container = isObjectValues && argumentPlace ? this.read(argumentPlace) : receiver;
     return container.kind === "Binding" && this.getStoredFunctions(container).length > 0
       ? container
       : null;
@@ -2038,7 +2003,7 @@ export class Interpreter {
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
-    const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
+    const argumentPlaces = [...eachCallArgument(methodCall.args)];
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const storeResult = this.storeReads.evaluateStoreMethod(
       methodCall,
@@ -2048,7 +2013,7 @@ export class Interpreter {
       pathState,
     );
     if (storeResult) return storeResult;
-    if (receiver.kind === "Collection" && CHAINED_COLLECTION_WRITES.has(methodName))
+    if (receiver.kind === "Collection" && isBuiltinMethod(methodName, "chainedCollectionWrite"))
       return receiver;
     const literalRead =
       getLiteralRead(receiver, methodName, argumentValues) ??
@@ -2086,12 +2051,12 @@ export class Interpreter {
     if (instanceCallbacks)
       this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, pathState);
     const [callback] = argumentValues;
-    if (ITERATION_METHODS.has(methodName))
+    if (isBuiltinMethod(methodName, "iteration"))
       this.iteration.visitItemCallback(methodName, callback, methodCall, pathState);
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
-      ITERATION_METHODS.has(methodName) &&
-      hasLiteralArrayLeaf(receiver) &&
+      isBuiltinMethod(methodName, "iteration") &&
+      getConditionalLeaves(receiver).some((leaf) => leaf.kind === "ArrayExpression") &&
       callback?.kind === "Function";
     const found = this.iteration.evaluateArrayFind(
       methodName,
@@ -2126,7 +2091,7 @@ export class Interpreter {
         methodCall.loc,
         pathState,
       );
-    if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
+    if (isBuiltinMethod(methodName, "renderedIteration") && callback?.kind === "Function")
       return this.iteration.evaluateArrayMap(
         receiver,
         callback,
@@ -2134,7 +2099,7 @@ export class Interpreter {
         pathState,
         methodName === "flatMap",
       );
-    if (PROMISE_METHODS.has(methodName)) {
+    if (isBuiltinMethod(methodName, "promise")) {
       this.callbacks.visitPromiseCallbacks(
         methodName,
         receiver,
@@ -2203,18 +2168,19 @@ export class Interpreter {
       receiver.kind === "Global" &&
       receiver.module === null &&
       receiver.name === "Object" &&
-      BINDING_OBJECT_READS.has(methodName);
+      isBuiltinMethod(methodName, "objectRead");
     if (!isObjectRead || target?.kind !== "Binding" || target.path.length > 1) return null;
     const literal = getLiteralPathValue(target.binding.initial, target.path);
     if (literal?.kind !== "ObjectExpression" || literal.spreads.length > 0) return null;
-    const elements = literal.properties.map(({ key }): SymbolicValue => {
-      const keyValue: SymbolicValue = { kind: "Primitive", value: key };
-      const member = this.evaluatePropertyLoad(target, key, loc);
-      if (methodName === "keys") return keyValue;
-      if (methodName === "values") return member;
-      return { kind: "ArrayExpression", elements: [keyValue, member], spreads: [] };
-    });
-    return { kind: "ArrayExpression", elements, spreads: [createUnknown("object-read", loc)] };
+    const entries = literal.properties.map(({ key }): [string, SymbolicValue] => [
+      key,
+      this.evaluatePropertyLoad(target, key, loc),
+    ]);
+    return {
+      kind: "ArrayExpression",
+      elements: readObjectEntries(methodName, entries),
+      spreads: [createUnknown("object-read", loc)],
+    };
   }
 
   #readAt(
@@ -2222,16 +2188,13 @@ export class Interpreter {
     atIndex: SymbolicValue,
     loc: SourceLocation,
   ): SymbolicValue | null {
-    if (receiver.kind === "Conditional") {
-      const readBranchValue = (branchValue: SymbolicValue) =>
-        this.#readAt(branchValue, atIndex, loc) ??
-        this.createDerivedValue([branchValue, atIndex], "computed-member", loc);
-      return {
-        ...receiver,
-        consequent: readBranchValue(receiver.consequent),
-        alternate: readBranchValue(receiver.alternate),
-      };
-    }
+    if (receiver.kind === "Conditional")
+      return mapConditionalLeaves(
+        receiver,
+        (leaf) =>
+          this.#readAt(leaf, atIndex, loc) ??
+          this.createDerivedValue([leaf, atIndex], "computed-member", loc),
+      );
     const isBinding = receiver.kind === "Binding";
     const array =
       receiver.kind === "Binding" && receiver.path.length <= 1
@@ -2290,18 +2253,10 @@ export class Interpreter {
         })
       );
     }
-    const test = getTestExpression(receiver);
-    return {
-      ...receiver,
-      consequent: this.#iterateLiteralBranches(methodName, receiver.consequent, callback, loc, {
-        ...pathState,
-        guards: [...pathState.guards, test],
-      }),
-      alternate: this.#iterateLiteralBranches(methodName, receiver.alternate, callback, loc, {
-        ...pathState,
-        guards: [...pathState.guards, negate(test)],
-      }),
-    };
+    const [consequent, alternate] = forkConditional(receiver, pathState.guards, (branch, guards) =>
+      this.#iterateLiteralBranches(methodName, branch, callback, loc, { ...pathState, guards }),
+    );
+    return { ...receiver, consequent, alternate };
   }
 
   #evaluateDerivedMethod(
@@ -2310,8 +2265,9 @@ export class Interpreter {
     callSite: CallSite,
   ): SymbolicValue | null {
     const isReadOnlyCollectionCall =
-      isCollectionRead(methodName) && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
-    if (!isStringMethod(methodName) && !isReadOnlyCollectionCall) return null;
+      isBuiltinMethod(methodName, "collectionRead") &&
+      this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
+    if (!isBuiltinMethod(methodName, "string") && !isReadOnlyCollectionCall) return null;
     const argumentValues = callSite.argumentValues.flatMap((argument) =>
       argument.kind === "Primitive" ? [argument.value] : [],
     );
@@ -2367,7 +2323,6 @@ export class Interpreter {
   }
 
   evaluateInstruction(instruction: Instruction, pathState: PathState): void {
-    this.#recordLoadedProperty(instruction);
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, pathState);
     const instructionResult = this.#evaluateInstructionValue(instruction, pathState);
@@ -2457,7 +2412,7 @@ export class Interpreter {
           settlement: "fulfilled",
         });
       case "NewExpression": {
-        const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
+        const argumentValues = [...eachCallArgument(value.args)].map((place) => this.read(place));
         this.callbacks.passCallbacks(argumentValues, value.loc, pathState);
         const constructor = this.read(value.callee);
         const collection =
@@ -2510,7 +2465,11 @@ export class Interpreter {
         return createUnknown(value.kind, value.loc);
       }
       case "IteratorNext":
-        return this.iteration.createLoopItem(this.read(value.collection), value.loc);
+        return this.iteration.createLoopItem(
+          this.read(value.collection),
+          this.currentFacts.loopTargets[instruction.lvalue.identifier.id],
+          value.loc,
+        );
       case "RegExpLiteral":
         return { kind: "RegExp", pattern: value.pattern, flags: value.flags };
       case "TaggedTemplateExpression":
@@ -2562,7 +2521,7 @@ export class Interpreter {
       load.loc,
     );
     if (!this.#handlerEffects || !isRefCell(object, property)) return loaded;
-    const cellValue = this.cells.read(getRefCellKey(object.binding), loaded, load.loc, pathState);
+    const cellValue = this.cells.read("ref", object.binding.id, loaded, load.loc, pathState);
     const isUnstoredAsyncRead =
       cellValue.kind === "Unknown" &&
       cellValue.reason === "async" &&
@@ -2599,7 +2558,7 @@ export class Interpreter {
       this.bindingTable.forgetInitial(object.binding);
       return storedValue;
     }
-    this.cells.store(getRefCellKey(object.binding), storedValue, pathState);
+    this.cells.store("ref", object.binding.id, storedValue, pathState);
     this.#handlerEffects.addPossibleMutation(object.binding);
     return storedValue;
   }
@@ -2609,9 +2568,10 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue {
     const loaded = this.read(load.place);
-    const isConstant = this.#constantContextIds.has(load.place.identifier.id);
+    const isConstant =
+      this.getCompilationTables().facts.constantContextIds[load.place.identifier.id] ?? false;
     return this.#handlerEffects && !isConstant
-      ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, pathState)
+      ? this.cells.read("context", load.place.identifier.id, loaded, load.loc, pathState)
       : loaded;
   }
 
@@ -2625,14 +2585,13 @@ export class Interpreter {
     const isContextCell =
       this.#handlerEffects !== null &&
       (update.kind === "PrefixUpdateContext" || update.kind === "PostfixUpdateContext");
-    const cellKey = getContextCellKey(update.lvalue);
     const loaded = this.read(update.value);
     const previous = isContextCell
-      ? this.cells.read(cellKey, loaded, update.loc, pathState)
+      ? this.cells.read("context", update.lvalue.identifier.id, loaded, update.loc, pathState)
       : loaded;
     const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
     this.write(update.lvalue, next);
-    if (isContextCell) this.cells.store(cellKey, next, pathState);
+    if (isContextCell) this.cells.store("context", update.lvalue.identifier.id, next, pathState);
     return isPrefix ? next : previous;
   }
 
@@ -2658,8 +2617,6 @@ export class Interpreter {
     pathState: PathState,
   ): SymbolicValue {
     const storedValue = this.read(store.value);
-    if (store.kind === "StoreContext" && CONSTANT_DECLARATION_KINDS.has(store.lvalue.kind))
-      this.#constantContextIds.add(store.lvalue.place.identifier.id);
     const [initialRef] = storedValue.kind === "HookResult" ? storedValue.argumentValues : [];
     const isConstantRef =
       storedValue.kind === "HookResult" &&
@@ -2682,7 +2639,7 @@ export class Interpreter {
         : storedValue;
     this.write(store.lvalue.place, localValue);
     if (store.kind === "StoreContext" && this.#handlerEffects)
-      this.cells.store(getContextCellKey(store.lvalue.place), localValue, pathState);
+      this.cells.store("context", store.lvalue.place.identifier.id, localValue, pathState);
     return localValue;
   }
 
@@ -2692,11 +2649,9 @@ export class Interpreter {
     computedLoad: InstructionValueOfKind<"ComputedLoad">,
   ): SymbolicValue {
     if (object.kind === "Conditional" && propertyKey.kind !== "Primitive")
-      return {
-        ...object,
-        consequent: this.#loadComputedMember(object.consequent, propertyKey, computedLoad),
-        alternate: this.#loadComputedMember(object.alternate, propertyKey, computedLoad),
-      };
+      return mapConditionalLeaves(object, (leaf) =>
+        this.#loadComputedMember(leaf, propertyKey, computedLoad),
+      );
     const bindingLiteral =
       object.kind === "Binding" && object.path.length <= 1
         ? getLiteralPathValue(object.binding.initial, object.path)
@@ -2818,7 +2773,7 @@ export class Interpreter {
     call: InstructionValueOfKind<"CallExpression">,
     pathState: PathState,
   ): SymbolicValue {
-    const argumentPlaces = call.args.map(getPlaceOrSpread);
+    const argumentPlaces = [...eachCallArgument(call.args)];
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, pathState);
     if (mapped) return mapped;
@@ -2837,34 +2792,16 @@ export class Interpreter {
   }
 
   getPropertyName(place: Place): string | null {
-    return this.getCompilationTables().propertyNames.get(place.identifier.id) ?? null;
+    return this.getCompilationTables().facts.propertyNames[place.identifier.id] ?? null;
   }
 
   getPropertyObject(place: Place): Place | undefined {
-    return this.getCompilationTables().propertyObjects.get(place.identifier.id);
+    return this.getCompilationTables().facts.propertyObjects[place.identifier.id];
   }
 
-  #recordLoadedProperty(instruction: Instruction): void {
-    const tables = this.getCompilationTables();
-    if (instruction.value.kind === "PropertyLoad") {
-      tables.propertyNames.set(
-        instruction.lvalue.identifier.id,
-        String(instruction.value.property),
-      );
-      tables.propertyObjects.set(instruction.lvalue.identifier.id, instruction.value.object);
-      return;
-    }
-    const [from, to] =
-      instruction.value.kind === "StoreLocal"
-        ? [instruction.value.value, instruction.value.lvalue.place]
-        : instruction.value.kind === "LoadLocal"
-          ? [instruction.value.place, instruction.lvalue]
-          : [null, null];
-    if (!from || !to) return;
-    const name = tables.propertyNames.get(from.identifier.id);
-    const object = tables.propertyObjects.get(from.identifier.id);
-    if (name !== undefined) tables.propertyNames.set(to.identifier.id, name);
-    if (object) tables.propertyObjects.set(to.identifier.id, object);
+  get currentFacts(): FunctionFacts {
+    if (!this.#currentFacts) throw new Error("No function is being evaluated");
+    return this.#currentFacts;
   }
 
   #readJsxProps(element: InstructionValueOfKind<"JsxExpression">): Array<JsxProp | JsxSpreadProp> {
@@ -3000,10 +2937,13 @@ export class Interpreter {
     thisValue?: SymbolicValue,
   ): SymbolicValue {
     const previousFunction = this.#currentFunction;
+    const previousFacts = this.#currentFacts;
     const previousResolver = this.#resolver;
     const previousFunctionScope = this.walker.functionScope;
     this.walker.functionScope = createFunctionScope();
     this.#currentFunction = hirFunction;
+    this.#currentFacts =
+      functionId === null ? buildFunctionFacts(hirFunction) : this.functions.getFacts(functionId);
     if (thisValue) this.#thisValues.set(hirFunction, thisValue);
     this.#resolver = this.functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
@@ -3051,6 +2991,7 @@ export class Interpreter {
       restoreLiveValues();
       if (thisValue) this.#thisValues.delete(hirFunction);
       this.#currentFunction = previousFunction;
+      this.#currentFacts = previousFacts;
       this.#resolver = previousResolver;
       this.walker.functionScope = previousFunctionScope;
     }
@@ -3072,22 +3013,14 @@ export class Interpreter {
     thisValue?: SymbolicValue,
   ): SymbolicValue | null {
     if (callback.kind === "Conditional") {
-      const test = getTestExpression(callback);
-      const consequentPathState = { ...pathState, guards: [...pathState.guards, test] };
-      const alternatePathState = { ...pathState, guards: [...pathState.guards, negate(test)] };
-      this.#runCallback(
-        callback.consequent,
-        argumentValues,
-        new Set(visitedFunctionIds),
-        consequentPathState,
-        thisValue,
-      );
-      this.#runCallback(
-        callback.alternate,
-        argumentValues,
-        new Set(visitedFunctionIds),
-        alternatePathState,
-        thisValue,
+      forkConditional(callback, pathState.guards, (branch, guards) =>
+        this.#runCallback(
+          branch,
+          argumentValues,
+          new Set(visitedFunctionIds),
+          { ...pathState, guards },
+          thisValue,
+        ),
       );
       return null;
     }

@@ -8,12 +8,14 @@ import type {
   SymbolicValue,
 } from "../types";
 import {
+  createBindingValue,
   createUnknown,
   foldUnary,
   getPassedCallbacks,
   isCallableValue,
 } from "../values/symbolic-values";
 import { isStateBinding } from "../values/is-state-binding";
+import type { Interpreter } from "../interpret/interpret";
 
 export const EVENT_ARGUMENT: SymbolicValue = {
   kind: "Unknown",
@@ -225,6 +227,27 @@ export const getControlEvent = (
       ...(nextChecked ? [{ key: "checked", value: nextChecked }] : []),
     ]),
     guards: isRadio && checked && prop.name !== "onClick" ? [foldUnary("!", checked)] : [],
+  };
+};
+
+export const getSelectEvent = (
+  element: JsxExpressionValue,
+  prop: JsxProp,
+  interpreter: Pick<Interpreter, "createBinding">,
+): ControlEvent | null => {
+  const isSelect = element.tag.kind === "BuiltinTag" && element.tag.name === "select";
+  const values = isSelect && CHECK_EVENTS.has(prop.name) ? getOptionValues(element) : null;
+  if (!values) return null;
+  const selected = interpreter.createBinding("event.target.value", "call", prop.loc, {
+    domain: {
+      kind: "Cases",
+      cases: values.map((value) => ({ kind: "Literal", value })),
+      origin: "call-sites",
+    },
+  });
+  return {
+    argument: createTargetEvent([{ key: "value", value: createBindingValue(selected) }]),
+    guards: [],
   };
 };
 

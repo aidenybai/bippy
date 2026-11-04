@@ -48,17 +48,20 @@ stateDiagram-v2
 
 exports[`fixture analysis > Box keeps its TLA+ module 1`] = `
 "---- MODULE Box ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "button"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 \\* bump
 t1 ==
+  /\\ UNCHANGED <<placeholder>>
 
 Next == t1
 
@@ -80,14 +83,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Button keeps its TLA+ module 1`] = `
 "---- MODULE Button ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "button"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -873,14 +878,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Empty keeps its TLA+ module 1`] = `
 "---- MODULE Empty ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "p \\"No items\\""
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -901,14 +908,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > EmptyObjectCast keeps its TLA+ module 1`] = `
 "---- MODULE EmptyObjectCast ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "p"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -929,14 +938,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > FabRow keeps its TLA+ module 1`] = `
 "---- MODULE FabRow ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "p"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1141,20 +1152,24 @@ stateDiagram-v2
 
 exports[`fixture analysis > FilterLabel keeps its TLA+ module 1`] = `
 "---- MODULE FilterLabel ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 \\* "Active"
 t1 ==
+  /\\ UNCHANGED <<placeholder>>
 
 \\* "Done"
 t2 ==
+  /\\ UNCHANGED <<placeholder>>
 
 Next == t1 \\/ t2
 
@@ -1262,14 +1277,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > FromLength keeps its TLA+ module 1`] = `
 "---- MODULE FromLength ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "ul"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1290,14 +1307,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Gallery keeps its TLA+ module 1`] = `
 "---- MODULE Gallery ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1524,14 +1543,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Inbox keeps its TLA+ module 1`] = `
 "---- MODULE Inbox ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "section"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1601,17 +1622,20 @@ stateDiagram-v2
 
 exports[`fixture analysis > Latest keeps its TLA+ module 1`] = `
 "---- MODULE Latest ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "button"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 \\* bump
 t1 ==
+  /\\ UNCHANGED <<placeholder>>
 
 Next == t1
 
@@ -1633,14 +1657,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > List keeps its TLA+ module 1`] = `
 "---- MODULE List ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "ul"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1661,14 +1687,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > ListSummary keeps its TLA+ module 1`] = `
 "---- MODULE ListSummary ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "p \\"some\\""
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -1689,20 +1717,24 @@ stateDiagram-v2
 
 exports[`fixture analysis > Loader keeps its TLA+ module 1`] = `
 "---- MODULE Loader ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 \\* "Start"
 t1 ==
+  /\\ UNCHANGED <<placeholder>>
 
 \\* "Finish"
 t2 ==
+  /\\ UNCHANGED <<placeholder>>
 
 Next == t1 \\/ t2
 
@@ -1724,14 +1756,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Loading keeps its TLA+ module 1`] = `
 "---- MODULE Loading ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "p \\"Loading…\\""
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -2083,14 +2117,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Page keeps its TLA+ module 1`] = `
 "---- MODULE Page ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "Toggle"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -3116,14 +3152,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > SignIn keeps its TLA+ module 1`] = `
 "---- MODULE SignIn ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "a \\"Sign in\\""
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -3413,14 +3451,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > SortedList keeps its TLA+ module 1`] = `
 "---- MODULE SortedList ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "ul"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -3441,14 +3481,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Spinner keeps its TLA+ module 1`] = `
 "---- MODULE Spinner ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "div"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -3469,14 +3511,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > SpreadArray keeps its TLA+ module 1`] = `
 "---- MODULE SpreadArray ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "ul"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 
@@ -3673,14 +3717,16 @@ stateDiagram-v2
 
 exports[`fixture analysis > Switch keeps its TLA+ module 1`] = `
 "---- MODULE Switch ----
+\\* placeholder: TLC needs a variable (control), 1 values
+VARIABLES placeholder
 
-vars == <<>>
+vars == <<placeholder>>
 
 view == CASE TRUE -> "input"
           [] OTHER -> "nothing"
 
 Init ==
-  TRUE
+  /\\ placeholder = "true"
 
 Next == UNCHANGED vars
 

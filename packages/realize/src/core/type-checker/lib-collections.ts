@@ -4,7 +4,7 @@ import type { Checker, Type } from "typescript/unstable/sync";
 import type { MutableCollection } from "../../react-compiler/HIR/Environment";
 import { LIBRARY_DECLARATION_PATTERN } from "./typescript";
 
-const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
+export const LIB_COLLECTION_NAMES = new Map<string, MutableCollection>([
   ["Map", "Map"],
   ["ReadonlyMap", "Map"],
   ["Set", "Set"],

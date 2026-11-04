@@ -6,7 +6,7 @@ import { getUnionMembers } from "./get-union-members";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 
-const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
+export const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
   if (type.flags & TypeFlags.StringLike) return "string";
   if (type.flags & TypeFlags.NumberLike) return "number";
   if (type.flags & TypeFlags.BigIntLike) return "bigint";
@@ -17,8 +17,7 @@ const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
 export const getAbstractValue = (checker: Checker, type: Type): AbstractValue => {
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return { kind: "Literal", value: type.value };
-  if (type.isBooleanLiteralType())
-    return { kind: "Literal", value: checker.typeToString(type) === "true" };
+  if (type.isBooleanLiteralType()) return { kind: "Literal", value: type.value };
   if (type.flags & TypeFlags.Null) return { kind: "Literal", value: null };
   if (type.flags & TypeFlags.Undefined) return UNDEFINED_CASE;
   return {
