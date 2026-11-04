@@ -10,7 +10,7 @@ type RangeValue = Extract<Abstract, { kind: "Range" }>;
 const isNaNValue = (value: PrimitiveValue): boolean =>
   typeof value === "number" && Number.isNaN(value);
 
-const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
+export const isSameValue = (left: PrimitiveValue, right: PrimitiveValue): boolean =>
   left === right || (isNaNValue(left) && isNaNValue(right));
 
 const isStrict = (operator: Comparison): boolean => operator === "===" || operator === "!==";
