@@ -1,6 +1,7 @@
 import { builtinModules } from "node:module";
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, sep } from "node:path";
+import type { types } from "@babel/core";
 import type { DepOptimizationConfig, Plugin } from "vite";
 import {
   PACKAGE_SPECIFIER_PATTERN,
@@ -9,6 +10,7 @@ import {
   isAppSourceModule,
   isRequirable,
 } from "./packages";
+import { parseBody } from "../source-index";
 import { PREBUNDLED_STUBS, STAND_IN_SOURCE } from "./stubs";
 
 type OptimizerPlugin = NonNullable<
@@ -66,6 +68,7 @@ const GENERATED_RUNTIME_PACKAGES = new Set(["umi", "@umijs/max"]);
 const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
 const SERVER_ONLY_ADAPTER_PATTERN = /^@(?:next-)?auth\/.+-adapter$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
+const AMBIENT_GLOBAL_MODULE_PREFIX = "\0bippy-verify-ambient-globals:";
 const MISSING_MODULE_NAMESPACE = "bippy-verify-missing-module";
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
@@ -126,6 +129,55 @@ export const createStandInPlugin = (
           packageImports.get(id.slice(STAND_IN_MODULE_PREFIX.length)) ?? new Set(),
         )
       : null,
+});
+
+const getAmbientNames = (
+  statement: types.Statement,
+  isAmbient = "declare" in statement && statement.declare === true,
+): string[] => {
+  if (statement.type === "ExportNamedDeclaration" && statement.declaration)
+    return isAmbient ? getAmbientNames(statement.declaration, true) : [];
+  if (
+    statement.type === "TSModuleDeclaration" &&
+    statement.global &&
+    statement.body.type === "TSModuleBlock"
+  )
+    return statement.body.body.flatMap((member) => getAmbientNames(member, true));
+  if (!isAmbient) return [];
+  if (statement.type === "TSDeclareFunction" || statement.type === "ClassDeclaration")
+    return statement.id ? [statement.id.name] : [];
+  if (statement.type === "VariableDeclaration")
+    return statement.declarations.flatMap((declarator) =>
+      declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+    );
+  return [];
+};
+
+export const createAmbientGlobalPlugin = (): Plugin => ({
+  name: "bippy-verify-ambient-globals",
+  enforce: "pre",
+  resolveId: (source) => (source.startsWith(AMBIENT_GLOBAL_MODULE_PREFIX) ? source : null),
+  load: (id) =>
+    id.startsWith(AMBIENT_GLOBAL_MODULE_PREFIX)
+      ? [
+          `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
+          ...id
+            .slice(AMBIENT_GLOBAL_MODULE_PREFIX.length)
+            .split(",")
+            .map((name) => `globalThis.${name} ??= STAND_IN;`),
+        ].join("\n")
+      : null,
+  transform(code, id) {
+    if (!isAppSourceModule(id) || !code.includes("declare ")) return null;
+    const names = new Set(
+      parseBody(code)
+        .flatMap((statement) => getAmbientNames(statement))
+        .filter((name) => IDENTIFIER_PATTERN.test(name)),
+    );
+    if (names.size === 0) return null;
+    const specifier = `${AMBIENT_GLOBAL_MODULE_PREFIX}${[...names].join(",")}`;
+    return { code: `${code}\nimport ${JSON.stringify(specifier)};\n`, map: null };
+  },
 });
 
 export const createMissingModulePlugin = (): Plugin => ({
