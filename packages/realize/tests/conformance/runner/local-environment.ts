@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { getCheckoutArguments } from "./checkout";
 import { collect } from "./collect";
 import type { CollectSummary } from "./collect-summary";
 import { CACHE_DIRECTORY } from "./repos";
@@ -43,24 +44,6 @@ const runSetupStep = (
     );
 };
 
-const checkout = (repo: RepoConfig, appDirectory: string): void => {
-  rmSync(appDirectory, { recursive: true, force: true });
-  runSetupStep(repo, "git", ["init", "-q", appDirectory]);
-  runSetupStep(repo, "git", [
-    "-C",
-    appDirectory,
-    "fetch",
-    "-q",
-    "--depth",
-    "1",
-    repo.repository,
-    repo.revision,
-  ]);
-  runSetupStep(repo, "git", ["-C", appDirectory, "checkout", "-q", "FETCH_HEAD"]);
-  if (repo.patchFile)
-    runSetupStep(repo, "git", ["-C", appDirectory, "apply", "--whitespace=nowarn", repo.patchFile]);
-};
-
 const prepare = (repo: RepoConfig, log: LineLogger): string => {
   const appDirectory = join(CACHE_DIRECTORY, repo.id);
   const markerFile = join(CACHE_DIRECTORY, `${repo.id}.ready`);
@@ -68,7 +51,8 @@ const prepare = (repo: RepoConfig, log: LineLogger): string => {
     return appDirectory;
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
-  checkout(repo, appDirectory);
+  rmSync(appDirectory, { recursive: true, force: true });
+  runSetupStep(repo, "bash", getCheckoutArguments(appDirectory, repo));
   runSetupStep(repo, repo.install, [], { cwd: appDirectory, shell: "bash" });
   writeFileSync(markerFile, getSetupKey(repo));
   return appDirectory;

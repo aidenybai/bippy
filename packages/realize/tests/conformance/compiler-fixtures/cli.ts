@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { z } from "zod";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
 import { admitsOutput, admitsSequentialOutput } from "./match-output";
@@ -11,14 +12,9 @@ type FixtureResult =
   | { kind: "mismatch"; output: string }
   | { kind: "skipped"; reason: string };
 
-interface SkippedFixture {
-  fixture: string;
-  reason: string;
-}
-
-const SKIPPED: SkippedFixture[] = JSON.parse(
-  readFileSync(join(import.meta.dirname, "skipped.json"), "utf8"),
-);
+const SKIPPED = z
+  .array(z.object({ fixture: z.string(), reason: z.string() }))
+  .parse(JSON.parse(readFileSync(join(import.meta.dirname, "skipped.json"), "utf8")));
 
 const RESULTS_FILE = join(import.meta.dirname, "../results/compiler-fixtures.json");
 

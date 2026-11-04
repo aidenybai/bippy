@@ -5,12 +5,12 @@ import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/project/analyze-project";
 import type { AnalyzedComponent, ComponentAnalysis, Sample } from "../../../src/core/types";
 import type { View } from "../../../src/core/model/types";
-import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
+import { listActionsInPage, mountComponent, performInPage } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
 import { indexModel, canShowView, abstractCapture, checkComponent } from "./check";
 import { formatCounterexamples } from "./verdict-report";
-import type { Action, Capture, MountRequest, Scenario } from "./types";
+import type { Action, Capture, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
 import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/values/format";
@@ -182,30 +182,24 @@ const startSession = async (
 ): Promise<FixtureContext> => {
   const { component, exportName } = findExportedComponent(project, componentName);
   const props = getMountProps(component.analysis, options);
-  const baseRequest: MountRequest = {
-    module: project.getComponentModule(component.analysis.file),
-    exportName,
-    props,
-    scenario: null,
-    wrappers: [],
-  };
-  const { wrappers } = await resolveWrappers(
+  const mounted = await mountComponent(
     page,
-    baseRequest,
     component.analysis,
+    {
+      module: project.getComponentModule(component.analysis.file),
+      exportName,
+      props,
+      scenario: options.scenario ?? null,
+      wrappers: [],
+    },
     project.projectIndex,
   );
-  const initialCapture = await mountInPage(page, {
-    ...baseRequest,
-    scenario: options.scenario ?? null,
-    wrappers,
-  });
-  expect(initialCapture.error, `${componentName} failed to render`).toBeNull();
+  expect(mounted.capture.error, `${componentName} failed to render`).toBeNull();
   const session: Session = {
     component,
-    observations: [{ props, path: [], action: null, before: null, after: initialCapture }],
+    observations: [{ props, path: [], action: null, before: null, after: mounted.capture }],
   };
-  return { page, session, props, initialCapture };
+  return { page, session, props, initialCapture: mounted.capture };
 };
 
 const expectNoCounterexamples = async (session: Session): Promise<void> => {
