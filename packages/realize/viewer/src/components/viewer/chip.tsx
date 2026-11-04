@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { getSolidColor } from "@/lib/colors";
-import { useHoverStore, useIsDimmed } from "@/store/hover";
+import type { CSSProperties, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { useViewerStore, useIsDimmed } from "@/store/viewer";
 import { useViewer } from "./context";
 
 interface ChipProps {
@@ -9,23 +9,27 @@ interface ChipProps {
   children: ReactNode;
 }
 
+interface ChipStyle extends CSSProperties {
+  "--chip-color": string;
+}
+
 const ColoredChip = ({ nodeIds, canDim, color, children }: ChipProps & { color: string }) => {
   const [first] = nodeIds;
-  const hover = useHoverStore((state) => state.hover);
-  const leave = useHoverStore((state) => state.leave);
-  const isHovered = useHoverStore(
+  const hover = useViewerStore((state) => state.hover);
+  const leave = useViewerStore((state) => state.leave);
+  const isHovered = useViewerStore(
     (state) => state.hoveredNodeId !== null && nodeIds.includes(state.hoveredNodeId),
   );
   const isDimmed = useIsDimmed(nodeIds) && canDim;
+  const style: ChipStyle = { "--chip-color": color, opacity: isDimmed ? 0.35 : 1 };
   return (
     <span
       data-seg={nodeIds.join(" ")}
-      className="inline-block max-w-full rounded-sm px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150"
-      style={{
-        background: color,
-        boxShadow: isHovered ? `inset 0 0 0 1.5px ${getSolidColor(color)}` : undefined,
-        opacity: isDimmed ? 0.35 : 1,
-      }}
+      className={cn(
+        "inline-block max-w-full rounded-sm bg-(--chip-color)/30 px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150",
+        isHovered && "shadow-[inset_0_0_0_1.5px_var(--chip-color)]",
+      )}
+      style={style}
       onMouseEnter={() => first !== undefined && hover(first)}
       onMouseLeave={leave}
     >
