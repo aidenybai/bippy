@@ -387,6 +387,9 @@ const getSetterAccessor = (object: SymbolicValue, property: string): FunctionVal
     .map((leaf) => getLeafSetter(leaf, property))
     .find((setter) => setter !== null) ?? null;
 
+const isDataProperty = (property: ObjectExpressionValue["properties"][number]): boolean =>
+  !property.key.startsWith(SETTER_KEY_PREFIX);
+
 const getStoredLabel = (value: BindingValue): string =>
   `${formatPlace(value.binding, value.path)}@${value.binding.id}`;
 
@@ -2168,10 +2171,12 @@ export class Interpreter {
     if (!isObjectRead || target?.kind !== "Binding" || target.path.length > 1) return null;
     const literal = getLiteralPathValue(target.binding.initial, target.path);
     if (literal?.kind !== "ObjectExpression" || literal.spreads.length > 0) return null;
-    const entries = literal.properties.map(({ key }): [string, SymbolicValue] => [
-      key,
-      this.evaluatePropertyLoad(target, key, loc),
-    ]);
+    const entries = literal.properties
+      .filter(isDataProperty)
+      .map(({ key }): [string, SymbolicValue] => [
+        key,
+        this.evaluatePropertyLoad(target, key, loc),
+      ]);
     return {
       kind: "ArrayExpression",
       elements: readObjectEntries(methodName, entries),
@@ -2731,7 +2736,7 @@ export class Interpreter {
     loc: SourceLocation,
   ): ObjectExpressionValue["properties"] | null {
     if (spread.kind === "ObjectExpression")
-      return spread.spreads.length === 0 ? spread.properties : null;
+      return spread.spreads.length === 0 ? spread.properties.filter(isDataProperty) : null;
     if (spread.kind !== "Binding") return null;
     const domains = this.#resolver.getPropertyDomains(loc);
     return (
