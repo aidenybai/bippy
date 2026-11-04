@@ -107,6 +107,10 @@ export const commitBranchHits = (): void => {
   branchHits = [];
 };
 
+export const discardBranchHits = (): void => {
+  branchHits = [];
+};
+
 export const takeBranchHits = (hasRenderError: boolean): BranchHit[] => {
   const hits = hasRenderError && branchHits.length > 0 ? branchHits : committedBranchHits;
   branchHits = [];

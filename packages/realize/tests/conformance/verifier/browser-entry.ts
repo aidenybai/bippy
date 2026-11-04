@@ -5,7 +5,7 @@ import "./stubs/react-shims";
 import { didFiberRender, instrument } from "bippy";
 import { collectActions, performAction } from "./browser/actions";
 import { captureMountedComponent } from "./browser/capture";
-import { commitBranchHits } from "./browser/coverage";
+import { commitBranchHits, discardBranchHits } from "./browser/coverage";
 import { recordCommit } from "./browser/fibers";
 import { loadWrapper } from "./browser/load";
 import { mount } from "./browser/mount";
@@ -23,6 +23,7 @@ instrument({
     const fiber = recordCommit(root);
     if (!fiber) return;
     if (didFiberRender(fiber)) commitBranchHits();
+    else discardBranchHits();
     trackStates(fiber);
   },
   onPostCommitFiberRoot: recordPassiveFlush,
