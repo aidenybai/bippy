@@ -1,10 +1,10 @@
 import type { SymbolicValue } from "../types";
 import { getValueLabels } from "./domains";
-import { isComparison } from "../values/comparison";
 import { forEachSymbolicValue, getChildValues } from "../values/for-each-symbolic-value";
 import { getBindingPlace } from "../values/get-binding-place";
 import { getTestExpression } from "../values/get-test-expression";
-import { ANY, COMPARISONS, addAbstract, mayOverlap } from "./abstract";
+import { isComparison } from "../values/comparison";
+import { ANY, addAbstract, mayOverlap } from "./abstract";
 import {
   UNCHANGED,
   and,
@@ -183,7 +183,7 @@ const collectDependencies = (table: VariableTable, value: SymbolicValue): Variab
     if (node.kind === "Conditional")
       collectPredicateVariables(table.compile(getTestExpression(node)), names);
     if (
-      (node.kind === "BinaryExpression" && COMPARISONS.has(node.operator)) ||
+      (node.kind === "BinaryExpression" && isComparison(node.operator)) ||
       (node.kind === "UnaryExpression" && node.operator === "!")
     )
       collectPredicateVariables(table.compile(node), names);
