@@ -8,7 +8,8 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { findPackageJSON } from "node:module";
+import { join, relative } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { gunzipSync } from "node:zlib";
 import { Sandbox } from "@vercel/sandbox";
@@ -55,26 +56,11 @@ const ANALYZER_SOURCE_PATHS = [
   "tests/conformance/verifier",
 ];
 const BIPPY_SOURCE_DIRECTORY = join(PACKAGE_DIRECTORY, "../bippy/src");
-const ANALYZER_DEPENDENCIES = [
-  "@babel/code-frame",
-  "@babel/core",
-  "@babel/parser",
-  "@babel/traverse",
-  "@babel/types",
-  "commander",
-  "diff",
-  "invariant",
-  "magic-string",
-  "picocolors",
-  "playwright",
-  "pretty-format",
-  "tsx",
-  "typescript",
-  "vite",
-  "vite-tsconfig-paths",
-  "zod",
-  "zod-validation-error",
-];
+const PACKAGE_JSON_PATH = join(PACKAGE_DIRECTORY, "package.json");
+const PACKAGE_JSON_SCHEMA = z.object({ dependencies: z.record(z.string(), z.string()) });
+const INSTALLED_PACKAGE_JSON_SCHEMA = z.object({ version: z.string() });
+const WORKSPACE_PROTOCOL = "workspace:";
+const SANDBOX_RUNNER = "tsx";
 
 const getCredentials = (): Credentials => {
   const envFile = join(PACKAGE_DIRECTORY, ".env.local");
@@ -104,29 +90,24 @@ const writeSnapshot = (id: string, record: SnapshotRecord): void => {
   );
 };
 
-const findInstalledPackageJson = (name: string): string | null => {
-  for (let directory = PACKAGE_DIRECTORY; ; directory = dirname(directory)) {
-    const packageJsonPath = join(directory, "node_modules", name, "package.json");
-    if (existsSync(packageJsonPath)) return packageJsonPath;
-    if (dirname(directory) === directory) return null;
-  }
+const getInstalledVersion = (name: string): string => {
+  const packageJsonPath = findPackageJSON(name, PACKAGE_JSON_PATH);
+  if (!packageJsonPath) throw new Error(`${name} is not installed`);
+  return INSTALLED_PACKAGE_JSON_SCHEMA.parse(JSON.parse(readFileSync(packageJsonPath, "utf8")))
+    .version;
 };
 
-const getInstalledVersion = (name: string): string | null => {
-  const packageJsonPath = findInstalledPackageJson(name);
-  if (packageJsonPath === null) return null;
-  const version: unknown = Reflect.get(
-    Object(JSON.parse(readFileSync(packageJsonPath, "utf8"))),
-    "version",
+export const getAnalyzerPackageJson = (): string => {
+  const dependencies = PACKAGE_JSON_SCHEMA.parse(
+    JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8")),
+  ).dependencies;
+  const names = Object.entries(dependencies).flatMap(([name, range]) =>
+    range.startsWith(WORKSPACE_PROTOCOL) ? [] : [name],
   );
-  return typeof version === "string" ? version : null;
-};
-
-const getAnalyzerPackageJson = (): string => {
-  const dependencies = Object.fromEntries(
-    ANALYZER_DEPENDENCIES.map((name) => [name, getInstalledVersion(name) ?? "latest"]),
+  const sandboxDependencies = Object.fromEntries(
+    [...names, SANDBOX_RUNNER].map((name) => [name, getInstalledVersion(name)]),
   );
-  return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies }, null, 2)}\n`;
+  return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies: sandboxDependencies }, null, 2)}\n`;
 };
 
 const getSnapshotKey = (repo: RepoConfig): string =>
